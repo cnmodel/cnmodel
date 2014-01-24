@@ -344,7 +344,7 @@ def sgc(debugFlag=False, ttx=False, message=None, nach='jsrnaf',
         vm0 = -63.6
     if species == 'guineapig-sgc-II':
          # guinea pig data from Rothman and Manis, 2003, type II
-        if debug:
+        if debugFlag:
             print 'Guinea pig sgc cell type II'
         if 'kht' in chlist:
             s.kht.gkhtbar = nstomho(150.0, somaarea) * scalefactor
@@ -512,14 +512,14 @@ def bushy(debug=False, ttx=False, message=None, nach='jsrnaf',
         maindend.insert('klt')
         maindend.insert('ihvcn')
         if newModFiles:
-            maindend().klt2.gkltbar = s.klt2.gkltbar / 2.0
+            maindend().klt2.gkltbar = soma().klt2.gkltbar / 2.0
         else:
-            maindend().klt.gkltbar = s.klt.gkltbar / 2.0
+            maindend().klt.gkltbar = soma().klt.gkltbar / 2.0
 
-        maindend().ihvcn.ghbar - s.ihvcn.ghbar / 2.0
+        maindend().ihvcn.ghbar = soma().ihvcn.ghbar / 2.0
 
-        maindend.cm = cm
-        maindend.Ra = Ra
+        maindend.cm = c_m
+        maindend.Ra = R_a
         nsecd = range(0, 5)
         secdend = []
         for ibd in nsecd:
@@ -528,8 +528,8 @@ def bushy(debug=False, ttx=False, message=None, nach='jsrnaf',
             secdend[ibd].connect(maindend)
             secdend[ibd].diam = 1.0
             secdend[ibd].L = 15.0
-            secdend[ibd].cm = cm
-            secdend[ibd].Ra = Ra
+            secdend[ibd].cm = c_m
+            secdend[ibd].Ra = R_a
         h.topology()
 
     if not runQuiet:
@@ -1058,6 +1058,7 @@ def dstellateIF(debug=False, ttx=False, message=None):
     #  Larger value of 25 best fit for mouse D-stellate cell
     effcap = totcap # sometimes we change capacitance - that's effcap
     somaarea = totcap * 1E-6 / cm # pf -> uF, cm = 1uf/cm^2 nominal;
+    lstd = 1E4 * sqrt(somaarea / 3.14159) # convert from cm to um
 
     soma.nseg = 1
     soma.diam = lstd
@@ -1655,11 +1656,6 @@ def run_democlamp(cell, dend, vsteps=[-60,-70,-60], tsteps=[10,50,100]):
     pylab.show()    
 
 
-#-----------------------------------------------------------------------------
-#
-# If we call this directly, provide a test with the IV function
-# - see below to switch cells
-#
 
 if __name__ == "__main__":
     import argparse
@@ -1765,7 +1761,7 @@ if __name__ == "__main__":
     elif args.celltype == 'bushy' and args.configuration == 'dendrite':
         dendriteFlag = True
         (cell, bdends) = bushy(debug=debugFlag, dendrite=dendriteFlag)
-        sites = [cell, dends[0], dends[1][0]]
+        sites = [cell, bdends[0], bdends[1][0]]
     elif args.celltype == 'stellate' and args.nav == 'std':
         cell = tstellate_f(debug=debugFlag)
     elif args.celltype == 'dstellate':
@@ -1785,3 +1781,10 @@ if __name__ == "__main__":
     else:
         if args.demo is True:
             run_democlamp(cell, dendrites)
+#-----------------------------------------------------------------------------
+#
+# If we call this directly, provide a test with the IV function
+# - see below to switch cells
+#
+
+

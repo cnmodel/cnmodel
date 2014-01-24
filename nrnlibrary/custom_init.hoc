@@ -1,0 +1,23 @@
+INITDUR = 100 // # ms to reach steady state
+DTSTEP = 0.1
+proc init() { local temp
+  //print "Using Custom Init"
+  finitialize(v_init)
+  t = -2*INITDUR // jump to a time "before" 0
+  temp = cvode.active()
+  if (temp != 0) { // if cvode is on, turn it off
+    cvode.active(0)
+    dt = DTSTEP
+  }
+  while (t < -INITDUR) {
+    fadvance()
+  }
+  if (temp != 0) { cvode.active(1) } // turn cvode back on if necessary
+  t = 0
+  if (cvode.active()) {
+    cvode.re_init()
+  } else {
+    fcurrent()
+  }
+  frecord_init()
+}

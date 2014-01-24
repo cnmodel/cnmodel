@@ -59,17 +59,40 @@ def template_Calyx_Billup(debug=False, nzones=1, message=None):
     h.pop_section()
     return (calyx, coh)
 
+"""
+Problem: as written, this routine creates an hh section to insert the mechanisms
+However, we need just to attach the mechanisms to the existing structure as well, so
+term should be replaced with parentSection.
+This in turn requires changes in stochastic... the returned "terminal" is actually the
+"parentSection" that we pass in here.
+Need to fix and test.
+This is why Calyx7 is broken for multiple inputs.
 
-def template_multisite(debug=False, nzones=1, celltype='bushy', message=None,
-                       type='lognormal', Identifier=0, stochasticPars=None, calciumPars=None):
+"""
+
+def template_multisite(debug=False, parentSection = None, nzones=1, celltype='bushy', message=None,
+                       type='lognormal', Identifier=0, stochasticPars=None, calciumPars=None,
+                       ):
+    """
+    This routine creates the NEURON sections for a multisite synapse
+    The synapse is attached to a parentSection, may include calcium dynamics and channels,
+    and inserts a COH4 release mechanism that includes stochastic release, with a lognormal
+    release latency distribution.
+    It also inserts a "cleft" mechanism (models diffusion of transmitter). However the cleft
+    is not connected to the
+    """
     if stochasticPars is None:
         raise TypeError
     global veryFirst
     mu = u'\u03bc'
     sigma = u'\u03c3'
-    term = Cells.hh(
-        message='  >> creating terminal with %d release zones using lognormal release latencies (coh4)' % nzones)
-    terminal = term[0]
+    message='  >> creating terminal with %d release zones using lognormal release latencies (coh4)' % nzones
+    print message
+    if parentSection is None:
+        term = Cells.hh()
+        terminal = term[0]
+    else:
+        terminal = parentSection
     terminal.push()
     cleft = []
     if calciumPars is not None:
@@ -547,10 +570,28 @@ def bushy_ipsc_single(synapse, select=None):
         synapse.glu = 4.97494
 
     return (synapse)
+"""
+stochastic_synapses routine has a problem: it takes on too many actions,
+preventing it from being more generally useful.
+1. nFibers should be done through a separate routine
+2. Call to template_multisite should accept a section for insertion, but should
+not create it's own hh type section (that should be provided by the caller).
 
+Proper usage:
+If the goal is to model a single stochastic site, set the section with axon, set
+nFibers to 1 and nRZones to 1.
+If the goal os to model multiple stochastic sites from a single presynaptic axon,
+then set nFibers to 1 and nRZones to the number of desired sites.
+If the goal is to model all converging inputs, then increase nFibers.
+"""
 
 # make the calyx synapses (or just endings on stellate cells)
-def stochastic_synapses(h, axon=None, targetcell=None, nFibers=1, nRZones=1,
+# This routine is maintained because it is used in EIModelX.py.
+# This routine is deprecated, in favor of
+# converging_synapses_stochastic() uses nFibers, calls single site inserts)
+# insert_multisite_stochastic(): inserts nzones associated with a single presynaptic section
+#
+def stochastic_synapses(h, parentSection=None, targetcell=None, nFibers=1, nRZones=1,
                         cellname='bushy', psdtype='ampa', message=None, debug=False,
                         thresh=0.0, gmax=1.0, gvar=0, eRev=0,
                         stochasticPars=None, calciumPars=None,
@@ -571,10 +612,7 @@ def stochastic_synapses(h, axon=None, targetcell=None, nFibers=1, nRZones=1,
     """
     if stochasticPars is None:
         raise TypeError
-    if axon is None:
-        raise TypeError
         exit()
-        #if debug is True:
     print "\nTarget cell  = %s, psdtype = %s" % (cellname, psdtype)
     printParams(stochasticPars)
     glyslowPoMax = 0.162297  # thse were measured from the kinetic models in Synapses.py, as peak open P for the glycine receptors
@@ -589,12 +627,11 @@ def stochastic_synapses(h, axon=None, targetcell=None, nFibers=1, nRZones=1,
     allpsd = []
     allpar = []
     netcons = [] # build list of connections from individual release sites to the mother calyx
-    if isinstance(axon, tuple):
-        axon = axon[0]
     for j in range(0, nFibers):  # for each input fiber to the target cell
     #        print "Stochastic syn: j = %d of nFibers = %d nRZones = %d\n" % (j, nFibers, nRZones)
         # for each fiber, create a presynaptic ending with nzones release sites
-        (terminal, relzone, clefts) = template_multisite(nzones=nRZones, celltype=cellname,
+        (terminal, relzone, clefts) = template_multisite(parentSection = parentSection,
+                                                         nzones=nRZones, celltype=cellname,
                                                          message='   synapse %d' % j,
                                                          stochasticPars=stochasticPars,
                                                          calciumPars=calciumPars,
@@ -628,8 +665,9 @@ def stochastic_synapses(h, axon=None, targetcell=None, nFibers=1, nRZones=1,
             exit()
             # connect the mechanisms on the presynaptic side together
         print 'terminal: ', terminal
-        print 'axon: ', axon
-        terminal.connect(axon, 1, 0) # 1. connect the axon to the current calyx
+        print 'parentSection: ', parentSection
+        if terminal != parentSection:
+            terminal.connect(parentSection, 1, 0) # 1. connect the terminal to the parent section
         terminal.push()
         netcons.append(h.NetCon(terminal(0.5)._ref_v, relzone, thresh, stochasticPars.delay, 1.0))
         netcons[-1].weight[0] = 1
@@ -679,7 +717,7 @@ def stochastic_synapses(h, axon=None, targetcell=None, nFibers=1, nRZones=1,
         releasesites.append(relzone) # build the release site list
         allpsd.extend(psd) # keep a list of the psds as well
         allpar.extend(par)
-        if psdtype == 'ampa':
+        if psdtype == 'ampa': # include nmda receptors in psd
             allpsd.extend(psdn)
             allpar.extend(parn)
         if psdtype is not 'ampa' and psdtype is not 'nmda': # we don't use "cleft" in the AMPA model
@@ -894,7 +932,7 @@ def testSynapses(TargetCellName='bushy'):
         #
     # stochastic_synapses builds the multisite synapse.     
     #
-    (calyx, coh, psd, cleft, nc2, par) = stochastic_synapses(h, axon=axon,
+    (calyx, coh, psd, cleft, nc2, par) = stochastic_synapses(h, parentSection=axon[0],
                                                              targetcell=TC, cellname=TargetCellName,
                                                              nFibers=nANTerminals, nRZones=nANTerminals_ReleaseZones,
                                                              eRev=0, debug=False,
