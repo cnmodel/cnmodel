@@ -142,10 +142,10 @@ def template_multisite(debug=False, parentSection = None, nzones=1, celltype='bu
     if veryFirst == 1 and debug is True:
         veryFirst = 0
         #mpl.figure(2)
-    if celltype == 'bushy':
+    if celltype in ['bushy', 'MNTB']:
         relsite.TDur = 0.10
         relsite.TAmp = 0.770
-    else:
+    else: # stellate
         relsite.TDur = 0.25
         relsite.TAmp = 1.56625
     h.pop_section()
@@ -176,7 +176,7 @@ def template_iGluR_PSD(sec, nReceptors=1, debug=False, cellname=None, message=No
         psd.append(h.AMPATRUSSELL(0.5, sec)) # raman/trussell AMPA with rectification
         psdn.append(h.NMDA_Kampa(0.5, sec)) # Kampa state model NMDA receptors
 
-        if cellname == 'bushy':
+        if cellname in ['bushy', 'MNTB']:
             psd[-1].Ro1 = 107.85
             psd[-1].Ro2 = 0.6193
             psd[-1].Rc1 = 3.678
@@ -354,7 +354,7 @@ def setDF(coh, celltype, synapsetype, select=None):
         for times out to about 0.5 - 1.0 second. Data from Ruili Xie and Yong Wang.
         Fitting by Paul Manis
     """
-    if celltype == 'bushy':
+    if celltype in ['bushy', 'MNTB']:
         if synapsetype == 'epsc':
             coh = bushy_epsc(coh)
         if synapsetype == 'ipsc':
@@ -611,6 +611,9 @@ def stochastic_synapses(h, parentSection=None, targetcell=None, nFibers=1, nRZon
             .Latency is the latency to the mean release event... this could be confusing.
     """
     if stochasticPars is None:
+        raise TypeError
+        exit()
+    if cellname not in ['bushy', 'MNTB', 'stellate']:
         raise TypeError
         exit()
     print "\nTarget cell  = %s, psdtype = %s" % (cellname, psdtype)
