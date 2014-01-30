@@ -161,17 +161,11 @@ def hasenstaub(debug=False, ttx=False, message=None, pump=False):
     return(soma, [None, None, None])
 
 
-# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# The following routine defines the DCN pyramidal cell model
-#   The model is for a point cell, 300 Mohm input R, 12 pF cap
-#   This resembles an isolated neuron (about 20x20 micron cylinder)
-#   The cell can be scaled by changing scalefactor (10 would be about right
-#   for a full-sized somatic model, except Rin is too low -
-#   should be about 50 Mohm)
 
 
 def pyr(scalefactor=1.0, debug=False):
 
+    """"""
     ndend = 1
     soma = h.Section()
     dend = h.Section()
