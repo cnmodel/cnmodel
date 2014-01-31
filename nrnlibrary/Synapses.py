@@ -97,7 +97,8 @@ def template_multisite(debug=False, parentSection = None, nzones=1, celltype='bu
     mu = u'\u03bc'
     sigma = u'\u03c3'
     message='  >> creating terminal with %d release zones using lognormal release latencies (coh4)' % nzones
-    print message
+    if debug:
+        print message
     if parentSection is None:
         term = Cells.hh()
         terminal = term[0]
@@ -203,8 +204,8 @@ def template_iGluR_PSD(sec, nReceptors=1, debug=False, cellname=None, message=No
             psd[-1].Rc1 = 3.678
             psd[-1].Rc2 = 0.3212
             psdn[-1].gNAR = 0.036 * AN_Po_Ratio * NMDARatio # 0.36*AN_Po_Ratio*NMDARatio
-            if k == 0:
-                print "Bushy NMDAR set to %8.2f" % psdn[-1].gNAR
+            #if k == 0:
+            #    print "Bushy NMDAR set to %8.2f" % psdn[-1].gNAR
         if cellname == 'stellate':
             psd[-1].Ro1 = 39.25
             psd[-1].Ro2 = 4.40
@@ -640,7 +641,8 @@ def stochastic_synapses(h, parentSection=None, targetcell=None, nFibers=1, nRZon
     if cellname not in ['bushy', 'MNTB', 'stellate']:
         raise TypeError
         exit()
-    print "\nTarget cell  = %s, psdtype = %s" % (cellname, psdtype)
+    if debug:
+        print "\nTarget cell  = %s, psdtype = %s" % (cellname, psdtype)
     #printParams(stochasticPars)
     glyslowPoMax = 0.162297  # thse were measured from the kinetic models in Synapses.py, as peak open P for the glycine receptors
     glyfastPoMax = 0.038475  # also later verified, same numbers...
@@ -691,8 +693,9 @@ def stochastic_synapses(h, parentSection=None, targetcell=None, nFibers=1, nRZon
             print "**PSDTYPE IS NOT RECOGNIZED: [%s]\n" % (psdtype)
             exit()
             # connect the mechanisms on the presynaptic side together
-        print 'terminal: ', terminal
-        print 'parentSection: ', parentSection
+        if debug:
+            print 'terminal: ', terminal
+            print 'parentSection: ', parentSection
         if terminal != parentSection:
             terminal.connect(parentSection, 1, 0) # 1. connect the terminal to the parent section
         terminal.push()

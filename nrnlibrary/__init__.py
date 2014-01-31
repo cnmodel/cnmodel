@@ -6,6 +6,8 @@ import nrnutils
 import pynrnutilities
 import qmatpy
 import XuF
+import makestim
+
 
 
 
