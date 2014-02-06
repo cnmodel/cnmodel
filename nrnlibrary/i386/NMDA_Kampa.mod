@@ -1,0 +1,1 @@
+../../../PyNeuronLibrary/mechanisms//NMDA_Kampa.mod

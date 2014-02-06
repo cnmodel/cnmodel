@@ -1,0 +1,1 @@
+../../../PyNeuronLibrary/mechanisms//inav11.mod

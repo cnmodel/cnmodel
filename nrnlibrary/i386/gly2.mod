@@ -1,0 +1,1 @@
+../../../PyNeuronLibrary/mechanisms//gly2.mod

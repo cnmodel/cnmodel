@@ -1,0 +1,1 @@
+../../../PyNeuronLibrary/mechanisms//nak_pump.mod

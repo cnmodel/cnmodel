@@ -1,0 +1,1 @@
+../../../PyNeuronLibrary/mechanisms//gstim.mod
