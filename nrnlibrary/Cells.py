@@ -17,7 +17,7 @@ import os.path
 from neuron import h
 from neuron import *
 from math import sqrt
-from pylibrary.PyNrnUtilities import *
+from nrnlibrary.pynrnutilities import *
 import pylibrary.Utility as U
 import pylibrary.PlotHelpers as PH
 import numpy
