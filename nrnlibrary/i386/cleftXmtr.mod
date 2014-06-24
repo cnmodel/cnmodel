@@ -1,1 +1,0 @@
-../../../PyNeuronLibrary/mechanisms//cleftXmtr.mod

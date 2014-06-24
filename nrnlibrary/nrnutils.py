@@ -18,9 +18,13 @@ class Mechanism(object):
     Examples:
     >>> leak = Mechanism('pas', {'e': -65, 'g': 0.0002})
     >>> hh = Mechanism('hh')
+    added set_parameters to allow post-instantiation parameter modification
     """
     def __init__(self, name, **parameters):
         self.name = name
+        self.parameters = parameters
+
+    def set_parameters(self, parameters):
         self.parameters = parameters
 
     def insert_into(self, section):
@@ -172,7 +176,8 @@ if __name__ == "__main__":
     print neuron.gnabar
     neuron.gnabar = 0.15
     assert neuron.soma(0.5).hh.gnabar == 0.15
-    
+
+
     h.dt = 0.025
     v_init = -65
     tstop = 5

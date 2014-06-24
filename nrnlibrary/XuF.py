@@ -195,10 +195,10 @@ def XuF(callmode = None, table=None, stim = None, recovery=None, plot=False, cel
 				pt = 0.010+pt-pt[0] # make starts all the same.
 			elif mode == 1:
 				pt=[]
-				pt[0] = randexpo(freq)
+				pt[0] = numpy.randexpo(freq)
 				k = 1
 				while numpy.max(numpy.cumsum(pt)) < traindur:
-					pt[k]=randexpo(freq) ##ok<AGROW>
+					pt[k]=numpy.randexpo(freq) ##ok<AGROW>
 					k = k + 1
 				pt=numpy.cumsum(pt) # that's the stimulus train.
 				pt = 0.010+pt-pt[0] # make starts all the same.
@@ -308,7 +308,6 @@ def XuF(callmode = None, table=None, stim = None, recovery=None, plot=False, cel
 		MP.show()
 	return(xout, yout)
 
-
 # [CaDi'; CaFi']'
 # this is the discreet step for solving the analytical equations as
 # described in the papers. This version, including F, is from Dittman et
@@ -332,6 +331,8 @@ def dstep(dt, T, Di, CaDi, Fi, CaFi):
 	Fn = T.F + (1-T.F)/(1+T.kf/CaFn)
 	return(Dn, CaDn, Fn, CaFn)
 
+def test():
+    XuF(plot=True, celltype = 'bushy_epsc')
 
 if __name__ == "__main__":
 

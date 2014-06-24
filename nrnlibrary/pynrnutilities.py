@@ -3,27 +3,46 @@
 # utilities for NEURON, in Python
 # Module pynrnutilites for nrnlibrary
 
-from numpy import *
+import numpy as np
 import numpy.ma as ma # masked array
 import pylab as pl
-
+import re
 # routine to convert conductances from nS as given elsewhere
 #   to mho/cm2 as required by NEURON 1/28/99 P. Manis
 # units: nano siemens, soma area in um^2
 #
 def nstomho(ns, somaarea):
-    return (1E-9*float(ns)/float(somaarea))
+    return 1E-9*float(ns)/float(somaarea)
 
 def mho2ns(mho, somaarea):
-    return (float(mho)*somaarea/1E-9)
+    return float(mho)*somaarea/1E-9
+
+def get_sections(h):
+    """
+    go through all the sections and find the names of the sections and all of their
+    parts (ids). Returns a dict, of sec: [id0, id1...]
+
+    """
+    secnames = {}
+    resec = re.compile('(\w+)\[(\d*)\]')
+    for sec in h.allsec():
+        g = resec.match(sec.name())
+        if g.group(1) not in secnames.keys():
+            secnames[g.group(1)] = [int(g.group(2))]
+        else:
+            secnames[g.group(1)].append(int(g.group(2)))
+    return secnames
+
+
+
 
 def alpha(alpha=0.1, delay=1, amp = 1.0, tdur = 50., dt=0.010):
-    tvec = arange(0, tdur , dt)
-    aw = zeros(size(tvec))
+    tvec = np.arange(0, tdur , dt)
+    aw = np.zeros(tvec.shape)
     i = 0
     for t in tvec:
         if t > delay:
-            aw[i] = amp * (t-delay)*(1./alpha) * exp(-(t-delay)/alpha) # alpha waveform time course
+            aw[i] = amp * (t-delay)*(1./alpha) * np.exp(-(t-delay)/alpha) # alpha waveform time course
         else:
             aw[i] = 0.
         i += 1
@@ -35,26 +54,26 @@ def syns(alpha=0.1, rate=10, delay=0, dur=50, amp=1.0, dt=0.020, N=1, mindur = 1
     N specifies the number of such independent waveforms to sum """
     deadtime = 0.7
     if dur + delay < mindur:
-        tvec = arange(0.0, mindur , dt)
+        tvec = np.arange(0.0, mindur , dt)
     else:
-        tvec = arange(0.0, dur+delay , dt)
+        tvec = np.arange(0.0, dur+delay , dt)
     npts = len(tvec)
-    ta = arange(0.0, 20.0, dt)
-    aw = ta * alpha* exp(-ta/alpha)/alpha # alpha waveform time course
+    ta = np.arange(0.0, 20.0, dt)
+    aw = ta * alpha* np.exp(-ta/alpha)/alpha # alpha waveform time course
     spt = [[]]*N # list of spike times
-    wave = array([]) # waveform
+    wave = np.array([]) # waveform
     sptime=[]
     for j in range(0,N):
         done = False
         t=0.0
         nsp = 0
         while not done:
-            a = random.sample(1)
+            a = np.random.sample(1)
             if t < delay:
                 t = delay
                 continue
             if t >= delay and t <= (delay+dur):
-                ti = -log(a)/(rate/1000.0) # convert to exponential distribution with rate
+                ti = -np.log(a)/(rate/1000.0) # convert to exponential distribution with rate
                 if ti < deadtime:
                     continue
                 t = t + ti # running time
@@ -65,19 +84,19 @@ def syns(alpha=0.1, rate=10, delay=0, dur=50, amp=1.0, dt=0.020, N=1, mindur = 1
                 sptime = t
                 nsp = nsp+1
             else:
-                sptime = append(sptime, t)
+                sptime = np.append(sptime, t)
                 nsp = nsp+1
         if j is 0:
-            wavej = zeros(len(tvec))
+            wavej = np.zeros(len(tvec))
         for i in range(0,len(sptime)):
             st = int(sptime[i]/dt)
             wavej[st] = wavej[st] + 1
         spt[j] = sptime
 
         if makewave:
-            w = convolve(wavej, aw/max(aw))*amp
+            w = np.convolve(wavej, aw/max(aw))*amp
             if len(w) < npts:
-                w = append(w, zeros(npts-len(w)))
+                w = np.append(w, np.zeros(npts-len(w)))
             if len(w) > npts:
                 w = w[0:npts]
             if j is 0:
@@ -101,9 +120,9 @@ def an_syn(alpha=0.1, spont=10, driven=100, delay=50, dur=100, post = 20,
     ton = delay # msec
     stim_end = ton + dur
     trace_end = stim_end + post
-    tvec = arange(0.0, trace_end , dt) # dt is in msec, so tvec is in milliseconds
-    ta = arange(0.0, 20.0, dt)
-    aw = ta * alpha* exp(-ta/alpha)/alpha # alpha waveform time course
+    tvec = np.arange(0.0, trace_end , dt) # dt is in msec, so tvec is in milliseconds
+    ta = np.arange(0.0, 20.0, dt)
+    aw = ta * alpha* np.exp(-ta/alpha)/alpha # alpha waveform time course
     spt = [[]]*N # list of spike times
     wave = [[]]*N # waveform
     for j in range(0,N): # for each
@@ -118,12 +137,12 @@ def an_syn(alpha=0.1, spont=10, driven=100, delay=50, dur=100, post = 20,
             q = 1000.0/spont # q is in msec (spont in spikes/second)
         t = 0.0
         while not done:
-            a = random.sample(1)
+            a = np.random.sample(1)
             if t < ton:
                 if spont <= 0:
                     t = ton
                     continue
-                ti = - (log(a)/(spont/1000.0)) # convert to msec
+                ti = - (np.log(a)/(spont/1000.0)) # convert to msec
                 if ti < deadtime: # delete intervals less than deadtime
                     continue
                 t = t + ti
@@ -132,13 +151,13 @@ def an_syn(alpha=0.1, spont=10, driven=100, delay=50, dur=100, post = 20,
                     continue
             if t >= ton and t < stim_end:
                 if t > ton:
-                    rise = 1.0 - exp(-(t-ton)/trise)
+                    rise = 1.0 - np.exp(-(t-ton)/trise)
                 else:
                     rise = 1.0
-                ra = rr*exp(-(t-ton)/taur)
-                rs = rst*exp(-(t-ton)/taust)
+                ra = rr*np.exp(-(t-ton)/taur)
+                rs = rst*np.exp(-(t-ton)/taust)
                 q = rise*(ra+rs+rss)
-                ti = - log(a)/(q + spont/1000) # random.negexp(1000/q)
+                ti = - np.log(a)/(q + spont/1000) # random.negexp(1000/q)
                 if ti < deadtime:
                     continue
                 t = t + ti
@@ -150,13 +169,13 @@ def an_syn(alpha=0.1, spont=10, driven=100, delay=50, dur=100, post = 20,
                     t = trace_end
                     continue
                 if qe is 0: # have not calculated the new qe at end of stimulus
-                    rise = 1.0 - exp(-(stim_end-ton)/trise)
-                    ra = rr*exp(-(stim_end-ton)/taur)
-                    rs = rst*exp(-(stim_end-ton)/taust)
+                    rise = 1.0 - np.exp(-(stim_end-ton)/trise)
+                    ra = rr*np.exp(-(stim_end-ton)/taur)
+                    rs = rst*np.exp(-(stim_end-ton)/taust)
                     qe = rise*(ra+rs+rss) # calculate the rate at the end
-                fall = exp(-(t-stim_end)/tfall)
+                fall = np.exp(-(t-stim_end)/tfall)
                 q = qe * fall
-                ti = -log(a)/(q + spont/1000.) # keeps rate from falling below spont rate
+                ti = -np.log(a)/(q + spont/1000.) # keeps rate from falling below spont rate
                 if ti < deadtime:
                     continue
                 t = t + ti
@@ -168,18 +187,18 @@ def an_syn(alpha=0.1, spont=10, driven=100, delay=50, dur=100, post = 20,
                 sptime = t
                 nsp = nsp+1
             else:
-                sptime = append(sptime, t)
+                sptime = np.append(sptime, t)
                 nsp = nsp+1
         # end of for loop on i
         if j is 0:
-            wavej = zeros(len(tvec))
+            wavej = np.zeros(len(tvec))
         for i in range(0,len(sptime)):
             st = int(sptime[i]/dt)
             wavej[st] = wavej[st] + 1
         spt[j] = sptime
         npts = len(tvec)
         if makewave:
-            w = convolve(wavej, aw/max(aw))*amp
+            w = np.convolve(wavej, aw/max(aw))*amp
             wave[j] = w[0:npts]
     return (spt, wave, tvec, N)
 
@@ -187,10 +206,10 @@ def findspikes(t, v, thresh):
     """ findspikes identifies the times of action potential in the trace v, with the
     times in t. An action potential is simply timed at the first point that exceeds
     the threshold. """
-    tm = array(t)
-    s0 = array(v) > thresh # find points above threshold
+    tm = np.array(t)
+    s0 = np.array(v) > thresh # find points above threshold
     dsp = tm[s0]
-    sd = append(True, diff(dsp) > 1.0) # find first points of spikes
+    sd = np.append(True, np.diff(dsp) > 1.0) # find first points of spikes
     if len(dsp) > 0:
         sp = dsp[sd]
     else:
@@ -231,33 +250,33 @@ def isi_cv2(splist, binwidth=1, t0=0, t1=300, tgrace=25):
         the end of the stimulus
         VERSION using dictionary for cvisi
     """
-    cvisit = arange(0, t1, binwidth) # build time bins
+    cvisit = np.arange(0, t1, binwidth) # build time bins
     cvisi = {} # isi is dictionary, since each bin may have different length
     for i in range(0, len(splist)): # for all the traces
         isit = splist[i] # get the spike times for this trial [1:-1]
         if len(isit) <= 1: # need 2 spikes to get an interval
             continue
-        isib = floor(isit[0:-2]/binwidth) # discreetize
-        isii = diff(splist[i]) # isis.
+        isib = np.floor(isit[0:-2]/binwidth) # discreetize
+        isii = np.diff(splist[i]) # isis.
         for j in range(0, len(isib)): # loop over possible start time bins
             if isit[j] < t0 or isit[j] > t1 or isit[j+1] > t1+tgrace: # start time and interval in the window
                 continue
             if isib[j] in cvisi:
                 print "spike in bin: %d" % (isib[j])
-                cvisi[isib[j]] = append(cvisi[isib[j]], isii[j]) # and add the isi in that bin
+                cvisi[isib[j]] = np.append(cvisi[isib[j]], isii[j]) # and add the isi in that bin
             else:
                 cvisi[isib[j]] = isii[j]	# create it
-    cvm = array([]) # set up numpy arrays for mean, std and time for cv analysis
-    cvs = array([])
-    cvt = array([])
+    cvm = np.array([]) # set up numpy arrays for mean, std and time for cv analysis
+    cvs = np.array([])
+    cvt = np.array([])
     for i in cvisi.keys(): # for each entry (possible bin)
         c = [cvisi[i]]
-        s = shape(c)
+        s = c.shape
         print c
         if len(s) > 1 and s[1] >= 3: # require 3 spikes in a bin for statistics
-            cvm = append(cvm, mean(c))
-            cvs = append(cvs, std(c))
-            cvt = append(cvt, i*binwidth)
+            cvm = np.append(cvm, np.mean(c))
+            cvs = np.append(cvs, np.std(c))
+            cvt = np.append(cvt, i*binwidth)
     return(cvisit, cvisi, cvt, cvm, cvs)
 
 def isi_cv(splist, binwidth=1, t0=0, t1=300, tgrace=25):
@@ -267,26 +286,26 @@ def isi_cv(splist, binwidth=1, t0=0, t1=300, tgrace=25):
         the end of the stimulus
         Version using a list of numpy arrays for cvisi
     """
-    cvisit = arange(0, t1, binwidth) # build time bins
+    cvisit = np.arange(0, t1, binwidth) # build time bins
     cvisi = [[]]*len(cvisit)
     for i in range(0, len(splist)): # for all the traces
         if len(splist[i]) < 2: # need at least 2 spikes
             continue
-        isib = floor(splist[i][0:-2]/binwidth) # begining spike times for each interval
-        isii = diff(splist[i]) # associated intervals
+        isib = np.floor(splist[i][0:-2]/binwidth) # begining spike times for each interval
+        isii = np.diff(splist[i]) # associated intervals
         for j in range(0, len(isib)): # loop over spikes
             if splist[i][j] < t0 or splist[i][j] > t1 or splist[i][j+1] > t1+tgrace: # start time and interval in the window
                 continue
-            cvisi[int(isib[j])] = append(cvisi[int(isib[j])], isii[j]) # and add the isi in that bin
-    cvm = array([]) # set up numpy arrays for mean, std and time for cv analysis
-    cvs = array([])
-    cvt = array([])
+            cvisi[int(isib[j])] = np.append(cvisi[int(isib[j])], isii[j]) # and add the isi in that bin
+    cvm = np.array([]) # set up numpy arrays for mean, std and time for cv analysis
+    cvs = np.array([])
+    cvt = np.array([])
     for i in range(0, len(cvisi)): # for each entry (possible bin)
         c = cvisi[i]
         if len(c) >= 3: # require 3 spikes in a bin for statistics
-            cvm = append(cvm, mean(c))
-            cvs = append(cvs, std(c))
-            cvt = append(cvt, i*binwidth)
+            cvm = np.append(cvm, np.mean(c))
+            cvs = np.append(cvs, np.std(c))
+            cvt = np.append(cvt, i*binwidth)
     return(cvisit, cvisi, cvt, cvm, cvs)
 
 if __name__ == "__main__":
@@ -311,19 +330,19 @@ if __name__ == "__main__":
                 t = float(j) * isi
                 sd = float(j)/isi
                 if sd == 0.0:
-                    d[i] = append(d[i], t)
+                    d[i] = np.append(d[i], t)
                 else:
-                    d[i] = append(d[i], random.normal(t, sd, 1) )
+                    d[i] = np.append(d[i], np.random.normal(t, sd, 1) )
             for j in range(1, 10): # add more intervals at the end
                 te = t + float(j)*isi
-                d[i] = append(d[i], random.normal(te, sd, 1))
-            d[i] = sort(d[i])
+                d[i] = np.append(d[i], np.random.normal(te, sd, 1))
+            d[i] = np.sort(d[i])
 #			print d[i]
 #			print diff(d[i])
-        sh = array([])
+        sh = np.array([])
         for i in  range(len(d)):
-            sh = append(sh, array(d[i]))
-        (hist, bins) = histogram(sh, bins = 250, range=(0, 250), new=True)
+            sh = np.append(sh, np.array(d[i]))
+        (hist, bins) = np.histogram(sh, bins = 250, range=(0, 250), new=True)
         if len(bins) > len(hist):
             bins=bins[0:len(hist)]
 
@@ -332,7 +351,7 @@ if __name__ == "__main__":
         pl.plot(bins, hist)
 
         (cvisit, cvisi, cvt, cvm, cvs) = isi_cv(d, binwidth = 0.5, t0=0, t1=100, tgrace = 25)
-        order = argsort(cvt)
+        order = np.argsort(cvt)
         cvt = cvt[order]
         cvs = cvs[order]
         cvm = cvm[order]
@@ -345,9 +364,9 @@ if __name__ == "__main__":
         pl.show()
 
     if test == 'measure':
-        x = arange(0, 100, 0.1)
-        s = shape(x)
-        y = random.randn(s[0])
+        x = np.arange(0, 100, 0.1)
+        s = np.shape(x)
+        y = np.random.randn(s[0])
         for i in range(0,4):
             print "\ni is : %d" % (i)
             x0 = i*20
@@ -365,10 +384,10 @@ if __name__ == "__main__":
 
     if test == 'an_syn':
         (s,w,t,n) = an_syn(N=50, spont=50, driven=150, post=100, makewave=True)
-        sh = array([])
+        sh = np.array([])
         for i in  range(len(s)):
-            sh = append(sh, array(s[i]))
-        (hist, bins) = histogram(sh, bins = 250, range=(0, 250), new=True)
+            sh = np.append(sh, np.array(s[i]))
+        (hist, bins) = np.histogram(sh, bins = 250, range=(0, 250), new=True)
         if len(bins) > len(hist):
             bins=bins[0:len(hist)]
 
@@ -382,7 +401,7 @@ if __name__ == "__main__":
             pl.plot(t, w[i])
             pl.hold = True
         (cvisit, cvisi, cvt, cvm, cvs) = isi_cv(s)
-        order = argsort(cvt)
+        order = np.argsort(cvt)
         cvt = cvt[order]
         cvs = cvs[order]
         cvm = cvm[order]
@@ -392,10 +411,10 @@ if __name__ == "__main__":
 
     if test == 'syns':
         (s,w,t,n) = syns(rate=20, delay=0, dur=100.0, N=5, makewave=True)
-        sh = array([])
+        sh = np.array([])
         for i in  range(len(s)):
-            sh = append(sh, array(s[i]))
-        (hist, bins) = histogram(sh, bins = 250, range=(0, 250), new=True)
+            sh = np.append(sh, np.array(s[i]))
+        (hist, bins) = np.histogram(sh, bins = 250, range=(0, 250), new=True)
         if len(bins) > len(hist):
             bins=bins[0:len(hist)]
 
@@ -408,7 +427,7 @@ if __name__ == "__main__":
         pl.plot(t, w)
         pl.hold = True
         (cvisit, cvisi, cvt, cvm, cvs) = isi_cv(s)
-        order = argsort(cvt)
+        order = np.argsort(cvt)
         cvt = cvt[order]
         cvs = cvs[order]
         cvm = cvm[order]

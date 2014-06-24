@@ -446,6 +446,50 @@ def bushy(debug=False, ttx=False, message=None, nach='jsrnaf',
     else:
         soma().na.gnabar = gnabar
         soma.ena = 50
+
+    vm0 = bushy_species_scaling(soma, species, newModFiles, somaarea, scalefactor, debug)
+
+    maindend = None
+    secdend = None
+    if dendrite:
+        print 'Adding dendrite to Bushy model'
+        section = h.Section
+        maindend = section(cell=soma)
+        maindend.connect(soma)
+        maindend.nseg = 10
+        maindend.L = 100.0
+        maindend.diam = 2.5
+        maindend.insert('klt')
+        maindend.insert('ihvcn')
+        if newModFiles:
+            maindend().klt2.gkltbar = soma().klt2.gkltbar / 2.0
+        else:
+            maindend().klt.gkltbar = soma().klt.gkltbar / 2.0
+
+        maindend().ihvcn.ghbar = soma().ihvcn.ghbar / 2.0
+
+        maindend.cm = c_m
+        maindend.Ra = R_a
+        nsecd = range(0, 5)
+        secdend = []
+        for ibd in nsecd:
+            secdend.append(section(cell=soma))
+        for ibd in nsecd:
+            secdend[ibd].connect(maindend)
+            secdend[ibd].diam = 1.0
+            secdend[ibd].L = 15.0
+            secdend[ibd].cm = c_m
+            secdend[ibd].Ra = R_a
+        #h.topology()
+
+    if not runQuiet:
+        if message is None:
+            print "<< bushy: JSR bushy cell model created >>"
+        else:
+            print message
+    return(soma, [maindend, secdend, None])
+
+def bushy_species_scaling(soma, species, newModFiles, somaarea, scalefactor, debug):
     if species == 'mouse':
         # use conductance levels from Cao et al.,  J. Neurophys., 2007.
         #if debug:
@@ -492,46 +536,7 @@ def bushy(debug=False, ttx=False, message=None, nach='jsrnaf',
         #s.hcno.gbar = 0.0
         soma().leak.g = nstomho(2.0, somaarea) * scalefactor
         vm0 = -63.8
-
-    maindend = None
-    secdend = None
-    if dendrite:
-        print 'Adding dendrite to Bushy model'
-        section = h.Section
-        maindend = section(cell=soma)
-        maindend.connect(soma)
-        maindend.nseg = 10
-        maindend.L = 100.0
-        maindend.diam = 2.5
-        maindend.insert('klt')
-        maindend.insert('ihvcn')
-        if newModFiles:
-            maindend().klt2.gkltbar = soma().klt2.gkltbar / 2.0
-        else:
-            maindend().klt.gkltbar = soma().klt.gkltbar / 2.0
-
-        maindend().ihvcn.ghbar = soma().ihvcn.ghbar / 2.0
-
-        maindend.cm = c_m
-        maindend.Ra = R_a
-        nsecd = range(0, 5)
-        secdend = []
-        for ibd in nsecd:
-            secdend.append(section(cell=soma))
-        for ibd in nsecd:
-            secdend[ibd].connect(maindend)
-            secdend[ibd].diam = 1.0
-            secdend[ibd].L = 15.0
-            secdend[ibd].cm = c_m
-            secdend[ibd].Ra = R_a
-        h.topology()
-
-    if not runQuiet:
-        if message is None:
-            print "<< bushy: JSR bushy cell model created >>"
-        else:
-            print message
-    return(soma, [maindend, secdend, None])
+    return vm0
 
 
 # def bushy_addAxon(debug=False, ttx=False, message=None, nach=None):
@@ -1541,7 +1546,7 @@ def run_democlamp(cell, dend, vsteps=[-60,-70,-60], tsteps=[10,50,100]):
     pCi = INSETS.inset_axes(pC, width="66%", height="40%", loc=2)
     pD = f1.add_subplot(gs[3])
     pDi = INSETS.inset_axes(pD, width="66%", height="40%", loc=1)
-    h.topology()
+    #h.topology()
     
     Ld = 0.5
     Ld2 = 1.0
