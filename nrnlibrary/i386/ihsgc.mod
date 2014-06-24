@@ -1,1 +1,0 @@
-../../../PyNeuronLibrary/mechanisms//ihsgc.mod

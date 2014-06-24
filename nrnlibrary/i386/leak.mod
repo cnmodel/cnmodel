@@ -1,1 +1,0 @@
-../../../PyNeuronLibrary/mechanisms//leak.mod

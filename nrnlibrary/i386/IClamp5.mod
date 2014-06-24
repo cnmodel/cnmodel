@@ -1,1 +1,0 @@
-../../../PyNeuronLibrary/mechanisms//IClamp5.mod

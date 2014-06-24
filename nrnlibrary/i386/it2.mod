@@ -1,1 +1,0 @@
-../../../PyNeuronLibrary/mechanisms//it2.mod

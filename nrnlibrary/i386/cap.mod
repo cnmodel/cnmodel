@@ -1,1 +1,0 @@
-../../../PyNeuronLibrary/mechanisms//cap.mod

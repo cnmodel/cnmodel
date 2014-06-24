@@ -1,1 +1,0 @@
-../../../PyNeuronLibrary/mechanisms//hh2.mod

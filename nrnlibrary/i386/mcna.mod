@@ -1,1 +1,0 @@
-../../../PyNeuronLibrary/mechanisms//mcna.mod

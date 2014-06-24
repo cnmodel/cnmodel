@@ -1,1 +1,0 @@
-../../../PyNeuronLibrary/mechanisms//Gly6S.mod

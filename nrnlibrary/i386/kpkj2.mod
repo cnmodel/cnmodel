@@ -1,1 +1,0 @@
-../../../PyNeuronLibrary/mechanisms//kpkj2.mod

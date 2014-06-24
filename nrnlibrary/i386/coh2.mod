@@ -1,1 +1,0 @@
-../../../PyNeuronLibrary/mechanisms//coh2.mod

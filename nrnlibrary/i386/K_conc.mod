@@ -1,1 +1,0 @@
-../../../PyNeuronLibrary/mechanisms//K_conc.mod

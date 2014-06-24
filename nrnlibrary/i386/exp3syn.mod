@@ -1,1 +1,0 @@
-../../../PyNeuronLibrary/mechanisms//exp3syn.mod

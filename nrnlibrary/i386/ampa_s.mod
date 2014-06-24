@@ -1,1 +1,0 @@
-../../../PyNeuronLibrary/mechanisms//ampa_s.mod

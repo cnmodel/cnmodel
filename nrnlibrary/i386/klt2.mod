@@ -1,1 +1,0 @@
-../../../PyNeuronLibrary/mechanisms//klt2.mod

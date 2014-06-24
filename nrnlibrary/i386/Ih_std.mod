@@ -1,1 +1,0 @@
-../../../PyNeuronLibrary/mechanisms//Ih_std.mod

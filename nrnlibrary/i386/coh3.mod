@@ -1,1 +1,0 @@
-../../../PyNeuronLibrary/mechanisms//coh3.mod
