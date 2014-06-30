@@ -313,7 +313,7 @@ def sgc(debugFlag=False, ttx=False, message=None, nach='jsrna',
             soma.ena = 50
         elif nach == 'nav11':
             s.nav11.gnatbar = gnabar * 0.5
-            soma.enat = 50
+            soma.ena = 50
             s.nav11.vsna = 4.3
             print "sgc using inva11"
         else:
@@ -440,7 +440,7 @@ def bushy(debug=False, ttx=False, message=None, nach='jsrna',
         soma.ena = 50
     elif nach == 'nav11':
         soma().nav11.gnatbar = gnabar * 0.5
-        soma.enat = 50
+        soma.ena = 50
         soma().nav11.vsna = 4.3
         print "bushy using inva11"
     else:
@@ -759,7 +759,7 @@ def loadinternodes(internode, somaarea, scalefactor, internodeLength=1000,
         inno.kht.gbar = 0 * nstomho(150.0, somaarea) * scalefactor
         inno.ek = v_potassium
         inno.ena = v_sodium
-        inno.leak.erev = -80
+        inno.leak.e = -80
     return(internode)
 
 
@@ -794,7 +794,7 @@ def tstellate_rothman(debug=False, ttx=False, message=None,
         seg.ena = 50
     else:
         seg.insert('nav11')
-        seg.enat = 50
+        seg.ena = 50
     seg.insert('ka')
     seg.insert('ihvcn')
     seg.insert('leak')
@@ -901,7 +901,7 @@ def tstellate_rothman_nav11(debug=False, ttx=False, cs = False, message=None, de
     seg.insert('ka')
     seg.insert('ihvcn')
     seg.insert('leak')
-    seg.enat = 10
+    seg.ena = 10
     seg.ek = -84
     s = soma()
     if ttx is False:
@@ -954,33 +954,37 @@ def tstellate_f(debug=False, ttx=False, message=None, dend=False):
     seg.insert('kht')
     seg.insert('nav11')
     seg.insert('ka')
-    seg.insert('it') # low-voltage activated ca channel
+    # 'it' is not part of canonical model; 
+    # just trying it to reproduce some data.
+    #seg.insert('it') # low-voltage activated ca channel
     seg.insert('ihvcn')
     #seg.insert('iH_std')
     seg.insert('leak')
-    seg.enat = 10
+    seg.ena = 10
     seg.ek = -80
     #seg.eh = -40 # Rodrigues and Oertel, 2006
 
     s = soma()
     if ttx is False:
-        s.nav11.gbar = nstomho(3500.0, somaarea) * scalefactor
+        s.nav11.gbar = nstomho(1500.0, somaarea) * scalefactor
     else:
         s.nav11.gbar = 0.0 # print s.nav11.gnat
     s.nav11.vsna = 4.3 # was 8
     s.kht.gbar = nstomho(380.0 * 2.0, somaarea) * scalefactor
     s.ka.gbar = nstomho(90.0, somaarea) * scalefactor # was 280
-    s.it.gbar = nstomho(14.0 * 4.0, somaarea) * scalefactor
+    
+    #s.it.gbar = nstomho(14.0 * 4.0, somaarea) * scalefactor
     # this creates a better rebound! with it
-    s.it.vshift = -16
+    #s.it.vshift = -16
+    
     #  was 16.5to allow the tau shift to be about right so it is not so fast.
     #s.iH_std.gbar = nstomho(100.0, somaarea) * scalefactor
     #s.iH_std.vshift = 1.8
     s.ihvcn.gbar = nstomho(220.0, somaarea) * scalefactor
     s.ihvcn.vshift = 16.0
     s.ihvcn.eh = -43
-    s.lek.gbar = nstomho(18.0, somaarea) * scalefactor
-    s.leak.erev = -61
+    s.leak.gbar = nstomho(18.0, somaarea) * scalefactor
+    s.leak.e = -61
     vm0 = -60.0
     if not runQuiet:
         if message is None:
@@ -1017,7 +1021,7 @@ def dstellate(debug=False, ttx=False, message=None):
     seg.insert('ihvcn')
     #seg.insert('iH_std')
     seg.insert('leak')
-    seg.enat = 20
+    seg.ena = 20
     seg.ek = -77
     #seg.eh = -43 # Rodrigues and Oertel, 2006
     s = soma()
@@ -1071,7 +1075,7 @@ def dstellateIF(debug=False, ttx=False, message=None):
     #seg.insert('ihvcn')
     seg.insert('iH_std')
     seg.insert('leak')
-    seg.enat = 20
+    seg.ena = 20
     seg.ek = -77
     seg.eh = -40 # Rodrigues and Oertel, 2006
     s = soma()
@@ -1154,7 +1158,7 @@ def dstellate_eager(debug=False, ttx=False, message=None):
         seg.insert('ihvcn')
         #seg.insert('iH_std')
         seg.insert('leak')
-        seg.enat = 20
+        seg.ena = 20
         seg.ek = -77
         # seg.eh = -40 # Rodrigues and Oertel, 2006
         seg.Ra = 150.0
