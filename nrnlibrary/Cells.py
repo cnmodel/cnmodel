@@ -121,8 +121,8 @@ def hasenstaub(debug=False, ttx=False, message=None, pump=False):
     gkb = nstomho(7000, somaarea) * scalefactor
     gnab = nstomho(1500, somaarea) * scalefactor
     gl = nstomho(100, somaarea) * scalefactor
-    soma().hstb.gnabar = gnab
-    soma().hstb.gkbar = gkb
+    soma().hstb.gbar = gnab
+    soma().hstb.gbar = gkb
     soma().hstb.gl = gl
     print 'gkb, gnab: ', gkb, gnab
     if pump:
@@ -149,8 +149,8 @@ def hasenstaub(debug=False, ttx=False, message=None, pump=False):
     soma.ek = v_potassium
     soma().v = -60.
     if ttx:
-        gnabar = 0.0
-        soma().na.gnabar = gnabar
+        gbar = 0.0
+        soma().na.gbar = gbar
         soma.ena = 50
 
     if not runQuiet:
@@ -210,16 +210,16 @@ def pyr(scalefactor=1.0, debug=False):
     # soma.insert('kna')
 
     seg = soma()
-    seg.kpksk.gskbar = gkpksk
+    seg.kpksk.gbar = gkpksk
     seg.cap.pcabar = 0.00002
-    seg.pyr.gnabar = gnab
-    seg.pyr.gnapbar = gnap
-    seg.pyr.gkbar = gkb
-    seg.pyr.gkifbar = gkfb
-    seg.pyr.gkisbar = gksb
+    seg.pyr.gbar = gnab
+    seg.pyr.gbar = gnap
+    seg.pyr.gbar = gkb
+    seg.pyr.gbar = gkfb
+    seg.pyr.gbar = gksb
     seg.pyr.gl = glb
-    seg.pyr.ghbar = ghb
-   # seg.pyr.gkirbar = gkir
+    seg.pyr.gbar = ghb
+   # seg.pyr.gbar = gkir
     seg.pyr.kif_ivh = -89.6
     if not runQuiet:
         print " "
@@ -251,13 +251,13 @@ def cartwheel(debug=False):
     seg.ena = 60
     seg.ek = -80
     s = soma()
-    s.kpksk.gskbar = 0.002
+    s.kpksk.gbar = 0.002
     if not runQuiet:
         print "<< cartwheel: Raman Purkinje cell model (modified) created >>"
     return(soma)
 
 
-def sgc(debugFlag=False, ttx=False, message=None, nach='jsrnaf',
+def sgc(debugFlag=False, ttx=False, message=None, nach='jsrna',
         species='mouse', chlist=None):
     """
     Definitions for spiral ganglion cells
@@ -289,10 +289,10 @@ def sgc(debugFlag=False, ttx=False, message=None, nach='jsrnaf',
     if 'kht' in chlist:
         soma.insert('kht')
     if 'na' in chlist:
-        if nach == 'jsr':
-            soma.insert('jsrnaf')
-        elif nach == 'inav11':
-            soma.insert('inav11')
+        if nach == 'jsrna':
+            soma.insert('jsrna')
+        elif nach == 'nav11':
+            soma.insert('nav11')
         else:
             soma.insert('na')
     #soma.insert('ka')
@@ -308,48 +308,48 @@ def sgc(debugFlag=False, ttx=False, message=None, nach='jsrnaf',
     if 'na' in chlist:
         if ttx:
             gnabar = 0.0
-        if nach == 'jsr':
-            s.jsrnaf.gna = gnabar
+        if nach == 'jsrna':
+            s.jsrna.gna = gnabar
             soma.ena = 50
-        elif nach == 'inav11':
-            s.inav11.gnatbar = gnabar * 0.5
+        elif nach == 'nav11':
+            s.nav11.gnatbar = gnabar * 0.5
             soma.enat = 50
-            s.inav11.vsna = 4.3
+            s.nav11.vsna = 4.3
             print "sgc using inva11"
         else:
-            s.na.gnabar = gnabar
+            s.na.gbar = gnabar
             soma.ena = 50
     if species == 'mouse':
         # use conductance levels from Cao et al.,  J. Neurophys., 2007.
         #if debug:
         print 'Mouse sgc cell'
-        #s.inav11.gnatbar = gnabar*0.3
+        #s.nav11.gbar = gnabar*0.3
         if 'kht' in chlist:
-            s.kht.gkhtbar = nstomho(58.0, somaarea) * scalefactor
+            s.kht.gbar = nstomho(58.0, somaarea) * scalefactor
         if 'klt' in chlist:
-            s.klt.gkltbar = nstomho(80.0, somaarea) * scalefactor
+            s.klt.gbar = nstomho(80.0, somaarea) * scalefactor
             # nstomho(200.0, somaarea) * scalefactor
         #s.ka.gkabar = nstomho(0.0, somaarea) * scalefactor
         if 'ih' in chlist:
-            s.ihsgc.ghbar = nstomho(10.0, somaarea) * scalefactor
+            s.ihsgc.gbar = nstomho(10.0, somaarea) * scalefactor
             s.ihsgc.eh = v_eh
         #s.hcno.gbar = 0.0
-        s.leak.g = nstomho(0.5, somaarea) * scalefactor
+        s.lek.gbar = nstomho(0.5, somaarea) * scalefactor
         vm0 = -63.6
     if species == 'guineapig-sgc-II':
          # guinea pig data from Rothman and Manis, 2003, type II
         if debugFlag:
             print 'Guinea pig sgc cell type II'
         if 'kht' in chlist:
-            s.kht.gkhtbar = nstomho(150.0, somaarea) * scalefactor
+            s.kht.gbar = nstomho(150.0, somaarea) * scalefactor
         if 'klt' in chlist:
-            s.klt.gkltbar = nstomho(200.0, somaarea) * scalefactor
+            s.klt.gbar = nstomho(200.0, somaarea) * scalefactor
             # nstomho(200.0, somaarea) * scalefactor
-        #s.ka.gkabar = nstomho(0.0, somaarea) * scalefactor
+        #s.ka.gbar = nstomho(0.0, somaarea) * scalefactor
         if 'ih' in chlist:
-            s.ihsgc.ghbar = nstomho(1.0, somaarea) * scalefactor
+            s.ihsgc.gbar = nstomho(1.0, somaarea) * scalefactor
         #s.hcno.gbar = 0.0
-        s.leak.g = nstomho(2.0, somaarea) * scalefactor
+        s.lek.gbar = nstomho(2.0, somaarea) * scalefactor
         vm0 = -63.6
 
     if not runQuiet:
@@ -360,7 +360,7 @@ def sgc(debugFlag=False, ttx=False, message=None, nach='jsrnaf',
     return(soma, [None, None, None])
 
 
-def bushy(debug=False, ttx=False, message=None, nach='jsrnaf',
+def bushy(debug=False, ttx=False, message=None, nach='jsrna',
     species='mouse', axon=False, dendrite=False,
     newModFiles=False, pump=False):
     v_potassium = -70       # potassium reversal potential
@@ -421,10 +421,10 @@ def bushy(debug=False, ttx=False, message=None, nach='jsrnaf',
         soma.insert('klt')
         soma.insert('kht')
 
-    if nach == 'jsr':
-        soma.insert('jsrnaf')
-    elif nach == 'inav11':
-        soma.insert('inav11')
+    if nach == 'jsrna':
+        soma.insert('jsrna')
+    elif nach == 'nav11':
+        soma.insert('nav11')
     else:
         soma.insert('na')
     #soma.insert('ka')
@@ -435,13 +435,13 @@ def bushy(debug=False, ttx=False, message=None, nach='jsrnaf',
     gnabar = nstomho(1000.0, somaarea) * scalefactor
     if ttx:
         gnabar = 0.0
-    if nach == 'jsr':
-        soma().jsrnaf.gna = gnabar
+    if nach == 'jsrna':
+        soma().jsrna.gna = gnabar
         soma.ena = 50
-    elif nach == 'inav11':
-        soma().inav11.gnatbar = gnabar * 0.5
+    elif nach == 'nav11':
+        soma().nav11.gnatbar = gnabar * 0.5
         soma.enat = 50
-        soma().inav11.vsna = 4.3
+        soma().nav11.vsna = 4.3
         print "bushy using inva11"
     else:
         soma().na.gnabar = gnabar
@@ -462,11 +462,11 @@ def bushy(debug=False, ttx=False, message=None, nach='jsrnaf',
         maindend.insert('klt')
         maindend.insert('ihvcn')
         if newModFiles:
-            maindend().klt2.gkltbar = soma().klt2.gkltbar / 2.0
+            maindend().klt2.gbar = soma().klt2.gbar / 2.0
         else:
-            maindend().klt.gkltbar = soma().klt.gkltbar / 2.0
+            maindend().klt.gbar = soma().klt.gbar / 2.0
 
-        maindend().ihvcn.ghbar = soma().ihvcn.ghbar / 2.0
+        maindend().ihvcn.gbar = soma().ihvcn.gbar / 2.0
 
         maindend.cm = c_m
         maindend.Ra = R_a
@@ -494,47 +494,47 @@ def bushy_species_scaling(soma, species, newModFiles, somaarea, scalefactor, deb
         # use conductance levels from Cao et al.,  J. Neurophys., 2007.
         #if debug:
         print 'Mouse bushy cell'
-        #s.inav11.gnatbar = gnabar*0.3
+        #s.nav11.gbar = gnabar*0.3
         if newModFiles:
-            soma().kht2.gkhtbar = nstomho(58.0, somaarea) * scalefactor
-            soma().klt2.gkltbar = nstomho(80.0, somaarea) * scalefactor
+            soma().kht2.gbar = nstomho(58.0, somaarea) * scalefactor
+            soma().klt2.gbar = nstomho(80.0, somaarea) * scalefactor
         else:
-            soma().kht.gkhtbar = nstomho(58.0, somaarea) * scalefactor
-            soma().klt.gkltbar = nstomho(80.0, somaarea) * scalefactor
+            soma().kht.gbar = nstomho(58.0, somaarea) * scalefactor
+            soma().klt.gbar = nstomho(80.0, somaarea) * scalefactor
         #s.ka.gkabar = nstomho(0.0, somaarea) * scalefactor
-        soma().ihvcn.ghbar = nstomho(30.0, somaarea) * scalefactor
+        soma().ihvcn.gbar = nstomho(30.0, somaarea) * scalefactor
         #s.hcno.gbar = 0.0
-        soma().leak.g = nstomho(2.0, somaarea) * scalefactor
+        soma().leak.gbar = nstomho(2.0, somaarea) * scalefactor
         vm0 = -63.6
     if species == 'guineapig-bushy-II':
         # guinea pig data from Rothman and Manis, 2003, type II
         if debug:
             print 'Guinea pig bushy cell type II'
         if newModFiles:
-            soma().kht2.gkhtbar = nstomho(150.0, somaarea) * scalefactor
-            soma().klt2.gkltbar = nstomho(200.0, somaarea) * scalefactor
+            soma().kht2.gbar = nstomho(150.0, somaarea) * scalefactor
+            soma().klt2.gbar = nstomho(200.0, somaarea) * scalefactor
         else:
-            soma().kht.gkhtbar = nstomho(150.0, somaarea) * scalefactor
-            soma().klt.gkltbar = nstomho(200.0, somaarea) * scalefactor
+            soma().kht.gbar = nstomho(150.0, somaarea) * scalefactor
+            soma().klt.gbar = nstomho(200.0, somaarea) * scalefactor
         #s.ka.gkabar = nstomho(0.0, somaarea) * scalefactor
-        soma().ihvcn.ghbar = nstomho(20.0, somaarea) * scalefactor
+        soma().ihvcn.gbar = nstomho(20.0, somaarea) * scalefactor
         #s.hcno.gbar = 0.0
-        soma().leak.g = nstomho(2.0, somaarea) * scalefactor
+        soma().lek.gbar = nstomho(2.0, somaarea) * scalefactor
         vm0 = -63.6
     if species == 'guineapig-bushy-II-I':
          # guinea pig data from Rothman and Manis, 2003, type II=I
         if debug:
             print 'Guinea pig bushy cell type II-I'
         if newModFiles:
-            soma().kht2.gkhtbar = nstomho(150.0, somaarea) * scalefactor
-            soma().klt2.gkltbar = nstomho(35.0, somaarea) * scalefactor
+            soma().kht2.gbar = nstomho(150.0, somaarea) * scalefactor
+            soma().klt2.gbar = nstomho(35.0, somaarea) * scalefactor
         else:
-            soma().kht.gkhtbar = nstomho(150.0, somaarea) * scalefactor
-            soma().klt.gkltbar = nstomho(35.0, somaarea) * scalefactor
+            soma().kht.gbar = nstomho(150.0, somaarea) * scalefactor
+            soma().klt.gbar = nstomho(35.0, somaarea) * scalefactor
         #s.ka.gkabar = nstomho(0.0, somaarea) * scalefactor
-        soma().ihvcn.ghbar = nstomho(3.5, somaarea) * scalefactor
+        soma().ihvcn.gbar = nstomho(3.5, somaarea) * scalefactor
         #s.hcno.gbar = 0.0
-        soma().leak.g = nstomho(2.0, somaarea) * scalefactor
+        soma().lek.gbar = nstomho(2.0, somaarea) * scalefactor
         vm0 = -63.8
     return vm0
 
@@ -580,11 +580,11 @@ def bushy_species_scaling(soma, species, newModFiles, somaarea, scalefactor, deb
 #     for inseg in initsegment:
 #         ina = gnamin + ip * gnastep
 #         print 'seg %d ina = %9.6f' % (ip, ina)
-#         inseg.na.gnabar = ina
-#         inseg.klt.gkltbar = 0.2 * nstomho(200.0, somaarea) * scalefactor
-#         inseg.kht.gkhtbar = nstomho(150.0, somaarea) * scalefactor
-#         inseg.ihvcn.ghbar = 0.0 * nstomho(20.0, somaarea) * scalefactor
-#         inseg.leak.g = nstomho(2.0, somaarea) * scalefactor
+#         inseg.na.gbar = ina
+#         inseg.klt.gbar = 0.2 * nstomho(200.0, somaarea) * scalefactor
+#         inseg.kht.gbar = nstomho(150.0, somaarea) * scalefactor
+#         inseg.ihvcn.gbar = 0.0 * nstomho(20.0, somaarea) * scalefactor
+#         inseg.lek.gbar = nstomho(2.0, somaarea) * scalefactor
 #         inseg.ena = v_sodium
 #         inseg.ek = v_potassium
 #         ip = ip + 1
@@ -659,13 +659,13 @@ def bushy_waxon(debug=False, ttx=False, message=None, nach=None):
 #    print dir(soma)
     for s in soma:
         if ttx is False:
-            s.na.gnabar = 0. * nstomho(1000.0, somaarea) * scalefactor
+            s.na.gbar = 0. * nstomho(1000.0, somaarea) * scalefactor
         else:
-            s.na.gnabar = 0.0
-        s.kht.gkhtbar = nstomho(150.0, somaarea) * scalefactor
-        s.klt.gkltbar = nstomho(200.0, somaarea) * scalefactor
-        s.ihvcn.ghbar = nstomho(20.0, somaarea) * scalefactor
-        s.leak.g = nstomho(2.0, somaarea) * scalefactor
+            s.na.gbar = 0.0
+        s.kht.gbar = nstomho(150.0, somaarea) * scalefactor
+        s.klt.gbar = nstomho(200.0, somaarea) * scalefactor
+        s.ihvcn.gbar = nstomho(20.0, somaarea) * scalefactor
+        s.lek.gbar = nstomho(2.0, somaarea) * scalefactor
 
 # create an initial segment
     ninitseg = 21
@@ -687,11 +687,11 @@ def bushy_waxon(debug=False, ttx=False, message=None, nach=None):
     for inseg in initsegment:
         ina = gnamin + ip * gnastep
         print 'seg %d ina = %9.6f' % (ip, ina)
-        inseg.na.gnabar = ina
-        inseg.klt.gkltbar = 0.2 * nstomho(200.0, somaarea) * scalefactor
-        inseg.kht.gkhtbar = nstomho(150.0, somaarea) * scalefactor
-        inseg.ihvcn.ghbar = 0.0 * nstomho(20.0, somaarea) * scalefactor
-        inseg.leak.g = nstomho(2.0, somaarea) * scalefactor
+        inseg.na.gbar = ina
+        inseg.klt.gbar = 0.2 * nstomho(200.0, somaarea) * scalefactor
+        inseg.kht.gbar = nstomho(150.0, somaarea) * scalefactor
+        inseg.ihvcn.gbar = 0.0 * nstomho(20.0, somaarea) * scalefactor
+        inseg.lek.gbar = nstomho(2.0, somaarea) * scalefactor
         inseg.ena = v_sodium
         inseg.ek = v_potassium
         ip = ip + 1
@@ -728,11 +728,11 @@ def loadaxnodes(axnode, somaarea, scalefactor, nodeLength=2.5,
     axnode.insert('ihvcn')
     for ax in axnode:
     #    print "   segment: ", ax
-        ax.na.gnabar = nstomho(1000.0, somaarea) * scalefactor
-        ax.kht.gkhtbar = nstomho(150.0, somaarea) * scalefactor
-        ax.klt.gkltbar = nstomho(200.0, somaarea) * scalefactor
-        ax.ihvcn.ghbar = 0
-        ax.leak.g = nstomho(2.0, somaarea) * scalefactor
+        ax.na.gbar = nstomho(1000.0, somaarea) * scalefactor
+        ax.kht.gbar = nstomho(150.0, somaarea) * scalefactor
+        ax.klt.gbar = nstomho(200.0, somaarea) * scalefactor
+        ax.ihvcn.gbar = 0
+        ax.lek.gbar = nstomho(2.0, somaarea) * scalefactor
         ax.ena = v_sodium
         ax.ek = v_potassium
     return(axnode)
@@ -754,9 +754,9 @@ def loadinternodes(internode, somaarea, scalefactor, internodeLength=1000,
     internode.insert('kht')
     internode.insert('leak')
     for inno in internode:
-        inno.leak.g = nstomho(0.002, somaarea) * scalefactor
-        inno.na.gnabar = 0 * nstomho(500.0, somaarea) * scalefactor
-        inno.kht.gkhtbar = 0 * nstomho(150.0, somaarea) * scalefactor
+        inno.lek.gbar = nstomho(0.002, somaarea) * scalefactor
+        inno.na.gbar = 0 * nstomho(500.0, somaarea) * scalefactor
+        inno.kht.gbar = 0 * nstomho(150.0, somaarea) * scalefactor
         inno.ek = v_potassium
         inno.ena = v_sodium
         inno.leak.erev = -80
@@ -793,7 +793,7 @@ def tstellate_rothman(debug=False, ttx=False, message=None,
         seg.insert('na')
         seg.ena = 50
     else:
-        seg.insert('inav11')
+        seg.insert('nav11')
         seg.enat = 50
     seg.insert('ka')
     seg.insert('ihvcn')
@@ -802,20 +802,20 @@ def tstellate_rothman(debug=False, ttx=False, message=None,
     s = soma()
     if species == 'guinea pig':
         gnamax = 1000.0
-        s.kht.gkhtbar = nstomho(150.0, somaarea) * scalefactor
-        s.ka.gkabar = nstomho(0.0, somaarea) * scalefactor
-        s.ihvcn.ghbar = nstomho(0.5, somaarea) * scalefactor
+        s.kht.gbar = nstomho(150.0, somaarea) * scalefactor
+        s.ka.gbar = nstomho(0.0, somaarea) * scalefactor
+        s.ihvcn.gbar = nstomho(0.5, somaarea) * scalefactor
         s.ihvcn.eh = -43 # Rodrigues and Oertel, 2006
         #print 'ih vcn vh: %f ' % (s.ihvcn.vh)
-        s.leak.g = nstomho(2.0, somaarea) * scalefactor
+        s.lek.gbar = nstomho(2.0, somaarea) * scalefactor
         vm0 = -63.9
     elif species == 'mouse':
         gnamax = 800.0
-        s.kht.gkhtbar = nstomho(250.0, somaarea) * scalefactor
-        s.ka.gkabar = nstomho(0.0, somaarea) * scalefactor
-        s.ihvcn.ghbar = nstomho(18.0, somaarea) * scalefactor
+        s.kht.gbar = nstomho(250.0, somaarea) * scalefactor
+        s.ka.gbar = nstomho(0.0, somaarea) * scalefactor
+        s.ihvcn.gbar = nstomho(18.0, somaarea) * scalefactor
         s.ihvcn.eh = -43 # Rodrigues and Oertel, 2006
-        s.leak.g = nstomho(8.0, somaarea) * scalefactor
+        s.lek.gbar = nstomho(8.0, somaarea) * scalefactor
         # yields input resistance of 74.2 Mohm measured from -60 to -70 mV
         vm0 = -60.0
     else:
@@ -825,13 +825,13 @@ def tstellate_rothman(debug=False, ttx=False, message=None,
         if nav11 is False:
             s.na.gna = nstomho(gnamax, somaarea) * scalefactor
         else:
-            s.inav11.gnatbar = nstomho(1800.0, somaarea) * scalefactor
-            s.inav11.vsna = 4.3 # was 8
+            s.nav11.gbar = nstomho(1800.0, somaarea) * scalefactor
+            s.nav11.vsna = 4.3 # was 8
     else:
         if nav11 is False:
             s.na.gna = 0.0
         else:
-            s.inav11.gnatbar = 0.0
+            s.nav11.gbar = 0.0
 
     if not runQuiet:
         if message is None:
@@ -887,17 +887,17 @@ def tstellate_rothman_nav11(debug=False, ttx=False, cs = False, message=None, de
             ds = d()
             d.insert('kht')
             if cs is False:
-                ds.kht.gkhtbar = 0.005 # a little Ht
+                ds.kht.gbar = 0.005 # a little Ht
             else:
-                ds.kht.gkhtbar = 0.0
+                ds.kht.gbar = 0.0
             d.insert('leak') # leak
-            ds.leak.g = 0.0001
+            ds.lek.gbar = 0.0001
             d.insert('ihvcn') # some H current
-            ds.ihvcn.ghbar = 0.# 0.001
+            ds.ihvcn.gbar = 0.# 0.001
             ds.ihvcn.eh = -43.0
     seg = soma
     seg.insert('kht')
-    seg.insert('inav11')
+    seg.insert('nav11')
     seg.insert('ka')
     seg.insert('ihvcn')
     seg.insert('leak')
@@ -905,21 +905,21 @@ def tstellate_rothman_nav11(debug=False, ttx=False, cs = False, message=None, de
     seg.ek = -84
     s = soma()
     if ttx is False:
-        s.inav11.gnatbar = nstomho(1800.0, somaarea) * scalefactor
+        s.nav11.gbar = nstomho(1800.0, somaarea) * scalefactor
     else:
-        s.inav11.gnatbar = 0.0 # print s.inav11.gnat
-    s.inav11.vsna = 4.3 # was 8
+        s.nav11.gbar = 0.0 # print s.nav11.gnat
+    s.nav11.vsna = 4.3 # was 8
 
     if cs is False:
-        s.kht.gkhtbar = nstomho(200.0, somaarea) * scalefactor
-        s.ka.gkabar = nstomho(0.0, somaarea) * scalefactor
+        s.kht.gbar = nstomho(200.0, somaarea) * scalefactor
+        s.ka.gbar = nstomho(0.0, somaarea) * scalefactor
     else:
-        s.kht.gkhtbar = 0.
-        s.ka.gkabar = 0.
-    s.ihvcn.ghbar = nstomho(18.0, somaarea) * scalefactor # was 10
+        s.kht.gbar = 0.
+        s.ka.gbar = 0.
+    s.ihvcn.gbar = nstomho(18.0, somaarea) * scalefactor # was 10
     s.ihvcn.eh = -43 # Rodrigues and Oertel, 2006
 #    print 'ih vcn vh: %f ' % (s.ihvcn.vh)
-    s.leak.g = nstomho(2.0, somaarea) * scalefactor
+    s.lek.gbar = nstomho(2.0, somaarea) * scalefactor
     vm0 = -63.9
     if not runQuiet:
         if message is None:
@@ -952,7 +952,7 @@ def tstellate_f(debug=False, ttx=False, message=None, dend=False):
 
     seg = soma
     seg.insert('kht')
-    seg.insert('inav11')
+    seg.insert('nav11')
     seg.insert('ka')
     seg.insert('it') # low-voltage activated ca channel
     seg.insert('ihvcn')
@@ -964,22 +964,22 @@ def tstellate_f(debug=False, ttx=False, message=None, dend=False):
 
     s = soma()
     if ttx is False:
-        s.inav11.gnatbar = nstomho(3500.0, somaarea) * scalefactor
+        s.nav11.gbar = nstomho(3500.0, somaarea) * scalefactor
     else:
-        s.inav11.gnatbar = 0.0 # print s.inav11.gnat
-    s.inav11.vsna = 4.3 # was 8
-    s.kht.gkhtbar = nstomho(380.0 * 2.0, somaarea) * scalefactor
-    s.ka.gkabar = nstomho(90.0, somaarea) * scalefactor # was 280
-    s.it.gcabar = nstomho(14.0 * 4.0, somaarea) * scalefactor
+        s.nav11.gbar = 0.0 # print s.nav11.gnat
+    s.nav11.vsna = 4.3 # was 8
+    s.kht.gbar = nstomho(380.0 * 2.0, somaarea) * scalefactor
+    s.ka.gbar = nstomho(90.0, somaarea) * scalefactor # was 280
+    s.it.gbar = nstomho(14.0 * 4.0, somaarea) * scalefactor
     # this creates a better rebound! with it
     s.it.vshift = -16
     #  was 16.5to allow the tau shift to be about right so it is not so fast.
-    #s.iH_std.ghbar = nstomho(100.0, somaarea) * scalefactor
+    #s.iH_std.gbar = nstomho(100.0, somaarea) * scalefactor
     #s.iH_std.vshift = 1.8
-    s.ihvcn.ghbar = nstomho(220.0, somaarea) * scalefactor
+    s.ihvcn.gbar = nstomho(220.0, somaarea) * scalefactor
     s.ihvcn.vshift = 16.0
     s.ihvcn.eh = -43
-    s.leak.g = nstomho(18.0, somaarea) * scalefactor
+    s.lek.gbar = nstomho(18.0, somaarea) * scalefactor
     s.leak.erev = -61
     vm0 = -60.0
     if not runQuiet:
@@ -1012,7 +1012,7 @@ def dstellate(debug=False, ttx=False, message=None):
     seg = soma
     seg.insert('kht')
     seg.insert('klt')
-    seg.insert('inav11')
+    seg.insert('nav11')
     seg.insert('ka')
     seg.insert('ihvcn')
     #seg.insert('iH_std')
@@ -1022,16 +1022,16 @@ def dstellate(debug=False, ttx=False, message=None):
     #seg.eh = -43 # Rodrigues and Oertel, 2006
     s = soma()
     if not ttx:
-        s.inav11.gnatbar = nstomho(1000.0, somaarea) * scalefactor
+        s.nav11.gbar = nstomho(1000.0, somaarea) * scalefactor
     else:
-        s.na.gnatbar = 0.0
-    s.inav11.vsna = 8 # voltage shift
-    s.kht.gkhtbar = nstomho(250.0, somaarea) * scalefactor
-    s.klt.gkltbar = nstomho(35.0, somaarea) * scalefactor
-    s.ka.gkabar = nstomho(0.0, somaarea) * scalefactor
-    s.ihvcn.ghbar = nstomho(3.5, somaarea) * scalefactor
+        s.na.gbar = 0.0
+    s.nav11.vsna = 8 # voltage shift
+    s.kht.gbar = nstomho(250.0, somaarea) * scalefactor
+    s.klt.gbar = nstomho(35.0, somaarea) * scalefactor
+    s.ka.gbar = nstomho(0.0, somaarea) * scalefactor
+    s.ihvcn.gbar = nstomho(3.5, somaarea) * scalefactor
     s.ihvcn.vshift = 0
-    s.leak.g = nstomho(2, somaarea) * scalefactor
+    s.lek.gbar = nstomho(2, somaarea) * scalefactor
     vm0 = -64.1
     if not runQuiet:
         if message is None:
@@ -1066,7 +1066,7 @@ def dstellateIF(debug=False, ttx=False, message=None):
     seg = soma
     seg.insert('kht')
     seg.insert('klt')
-    seg.insert('inav11')
+    seg.insert('nav11')
     seg.insert('ka')
     #seg.insert('ihvcn')
     seg.insert('iH_std')
@@ -1076,16 +1076,16 @@ def dstellateIF(debug=False, ttx=False, message=None):
     seg.eh = -40 # Rodrigues and Oertel, 2006
     s = soma()
     if not ttx:
-        s.inav11.gnatbar = nstomho(3500.0, somaarea) * scalefactor
+        s.nav11.gbar = nstomho(3500.0, somaarea) * scalefactor
     else:
-        s.na.gnatbar = 0.0
-    s.inav11.vsna = 8 # voltage shift
-    s.kht.gkhtbar = nstomho(150.0, somaarea) * scalefactor
-    s.klt.gkltbar = nstomho(10.0, somaarea) * scalefactor
-    s.ka.gkabar = nstomho(0.0, somaarea) * scalefactor
-    s.iH_std.ghbar = nstomho(120.0, somaarea) * scalefactor
+        s.na.gbar = 0.0
+    s.nav11.vsna = 8 # voltage shift
+    s.kht.gbar = nstomho(150.0, somaarea) * scalefactor
+    s.klt.gbar = nstomho(10.0, somaarea) * scalefactor
+    s.ka.gbar = nstomho(0.0, somaarea) * scalefactor
+    s.iH_std.gbar = nstomho(120.0, somaarea) * scalefactor
     s.iH_std.vshift = 16
-    s.leak.g = nstomho(24, somaarea) * scalefactor
+    s.lek.gbar = nstomho(24, somaarea) * scalefactor
     vm0 = -64.1
     if not runQuiet:
         if message is None:
@@ -1149,7 +1149,7 @@ def dstellate_eager(debug=False, ttx=False, message=None):
         s = seg()
         seg.insert('kht')
         seg.insert('klt')
-        seg.insert('inav11')
+        seg.insert('nav11')
         seg.insert('ka')
         seg.insert('ihvcn')
         #seg.insert('iH_std')
@@ -1164,27 +1164,27 @@ def dstellate_eager(debug=False, ttx=False, message=None):
         else:
             gna = 0.0
         if seg not in dend:
-            s.inav11.gnatbar = gna # nstomho(gna, somaarea) * scalefactor
-            s.inav11.vsna = 8 # voltage shift
-            s.kht.gkhtbar = 0.01 # nstomho(500.0, somaarea) * scalefactor
-            s.klt.gkltbar = 0.005 # nstomho(125.0, somaarea) * scalefactor
-            s.ka.gkabar = 0.0 # nstomho(0.0, somaarea) * scalefactor
-            s.ihvcn.ghbar = 0.0001 # nstomho(5.0, somaarea) * scalefactor
+            s.nav11.gbar = gna # nstomho(gna, somaarea) * scalefactor
+            s.nav11.vsna = 8 # voltage shift
+            s.kht.gbar = 0.01 # nstomho(500.0, somaarea) * scalefactor
+            s.klt.gbar = 0.005 # nstomho(125.0, somaarea) * scalefactor
+            s.ka.gbar = 0.0 # nstomho(0.0, somaarea) * scalefactor
+            s.ihvcn.gbar = 0.0001 # nstomho(5.0, somaarea) * scalefactor
             s.ihvcn.vshift = 0 # 16
-            s.leak.g = 0.00025 # nstomho(12.5, somaarea) * scalefactor
+            s.lek.gbar = 0.00025 # nstomho(12.5, somaarea) * scalefactor
         else:
-            s.inav11.gnatbar = 0 # nstomho(gna, somaarea) * scalefactor
-            s.inav11.vsna = 0 # voltage shift
-            s.kht.gkhtbar = 0.00 # nstomho(500.0, somaarea) * scalefactor
-            s.klt.gkltbar = 0.001 # nstomho(125.0, somaarea) * scalefactor
-            s.ka.gkabar = 0.0 # nstomho(0.0, somaarea) * scalefactor
-            s.ihvcn.ghbar = 0.0001 # nstomho(5.0, somaarea) * scalefactor
+            s.nav11.gbar = 0 # nstomho(gna, somaarea) * scalefactor
+            s.nav11.vsna = 0 # voltage shift
+            s.kht.gbar = 0.00 # nstomho(500.0, somaarea) * scalefactor
+            s.klt.gbar = 0.001 # nstomho(125.0, somaarea) * scalefactor
+            s.ka.gbar = 0.0 # nstomho(0.0, somaarea) * scalefactor
+            s.ihvcn.gbar = 0.0001 # nstomho(5.0, somaarea) * scalefactor
             s.ihvcn.vshift = 0 # 16
-            s.leak.g = 0.00025 # nstomho(12.5, somaarea
-        print 'nav: ', s.inav11.gnatbar
-        print 'khe: ', s.kht.gkhtbar
-        print 'klt: ', s.klt.gkltbar
-        print 'ih:  ', s.ihvcn.ghbar
+            s.lek.gbar = 0.00025 # nstomho(12.5, somaarea
+        print 'nav: ', s.nav11.gbar
+        print 'khe: ', s.kht.gbar
+        print 'klt: ', s.klt.gbar
+        print 'ih:  ', s.ihvcn.gbar
         print 'gleak:', s.leak.g
     vm0 = -64.1
     if not runQuiet:
@@ -1258,16 +1258,16 @@ def run_iv(ivrange, cell, durs=None, sites=None,
     icur = []
     if reppulse is None:
         istim = h.IClamp2(0.5, sec=cell) # use our new iclamp method
-        istim.dur1 = durs[0]
-        istim.amp1 = 0
-        istim.dur2 = durs[1]
-        istim.amp2 = 0.0 #-70.00
-        istim.dur3 = durs[2]
-        istim.amp3 = 0.0 # 0.045
-        istim.dur4 = 0
-        istim.amp4 = 0
-        istim.dur5 = 0
-        istim.amp5 = 0
+        istim.dur[0] = durs[0]
+        istim.amp[0] = 0
+        istim.dur[1] = durs[1]
+        istim.amp[1] = 0.0 #-70.00
+        istim.dur[2] = durs[2]
+        istim.amp[2] = 0.0 # 0.045
+        istim.dur[3] = 0
+        istim.amp[3] = 0
+        istim.dur[4] = 0
+        istim.amp[4] = 0
         tend = numpy.sum(durs)
     else:
         #
@@ -1339,7 +1339,7 @@ def run_iv(ivrange, cell, durs=None, sites=None,
             for j in range(len(sites)):
                 vec['v_meas_%d' % (j)] = h.Vector()
         if not reppulse:
-            istim.amp2 = icur[i]
+            istim.amp[1] = icur[i]
         else:
             stim['Amp'] = icur[i]
             (secmd, maxt, tstims) = make_pulse(stim)
@@ -1666,7 +1666,7 @@ if __name__ == "__main__":
     cellinfo = {'types': ['bushy', 'stellate', 'steldend', 'dstellate', 'sgc',
                             'cartwheel', 'pyramidal', 'octopus'],
                 'configs': ['std, ''waxon', 'dendrite'],
-                'nav': ['std', 'inav11'],
+                'nav': ['std', 'jsrna', 'nav11'],
                 'species': ['guineapig', 'guineapig-bushy-II-I',
                                     'guineapig-bushy-II', 'rat', 'mouse'],
                 'pulse': ['step', 'pulse']}
@@ -1726,9 +1726,10 @@ if __name__ == "__main__":
         print 'celltypes: ', cellinfo['types']
         sys.exit(1)
 
-    h.nrn_load_dll(os.getcwd() + '/i386/special')
+    path = os.path.dirname(__file__)
+    h.nrn_load_dll(os.path.join(path, 'i386/special'))
     h.load_file("stdrun.hoc")
-    h.load_file(os.getcwd() + "/custom_init.hoc")
+    h.load_file(os.path.join(path, "custom_init.hoc"))
     # replace init with one that gets closer to steady state
 
     print 'configuration: ', args.configuration
@@ -1741,14 +1742,14 @@ if __name__ == "__main__":
         print 'Configuration %s is ok' % args.configuration
     if args.celltype == 'sgc':
         (cell, sgcaxon) = sgc(debugFlag = debugFlag, species = 'mouse',
-        nach = 'inav11', chlist = ['ih'])
-    elif (args.celltype == 'stellate' and args.nav == 'inav11'
+        nach = 'nav11', chlist = ['ih'])
+    elif (args.celltype == 'stellate' and args.nav == 'nav11'
             and args.species == 'guineapig'):
         (cell, dend, axon) = tstellate_rothman_nav11(debug=debugFlag)
     elif (args.celltype == 'steldend'):
         (cell, dendrites, axon) = tstellate_rothman_nav11(debug=debugFlag, dend=True,
          ttx=False, cs=False)
-    elif (args.celltype == 'stellate' and args.nav == 'inav11'
+    elif (args.celltype == 'stellate' and args.nav == 'nav11'
             and args.species == 'mouse'):
         cell = tstellate_rothman(species=args.species,
             nav11=True, debug=debugFlag)
