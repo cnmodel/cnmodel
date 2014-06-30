@@ -1028,14 +1028,14 @@ def dstellate(debug=False, ttx=False, message=None):
     if not ttx:
         s.nav11.gbar = nstomho(1000.0, somaarea) * scalefactor
     else:
-        s.na.gbar = 0.0
+        s.nav11.gbar = 0.0
     s.nav11.vsna = 8 # voltage shift
     s.kht.gbar = nstomho(250.0, somaarea) * scalefactor
     s.klt.gbar = nstomho(35.0, somaarea) * scalefactor
     s.ka.gbar = nstomho(0.0, somaarea) * scalefactor
     s.ihvcn.gbar = nstomho(3.5, somaarea) * scalefactor
     s.ihvcn.vshift = 0
-    s.lek.gbar = nstomho(2, somaarea) * scalefactor
+    s.leak.gbar = nstomho(2, somaarea) * scalefactor
     vm0 = -64.1
     if not runQuiet:
         if message is None:
