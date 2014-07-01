@@ -334,7 +334,7 @@ def sgc(debugFlag=False, ttx=False, message=None, nach='jsrna',
             s.ihsgc.gbar = nstomho(10.0, somaarea) * scalefactor
             s.ihsgc.eh = v_eh
         #s.hcno.gbar = 0.0
-        s.lek.gbar = nstomho(0.5, somaarea) * scalefactor
+        s.leak.gbar = nstomho(0.5, somaarea) * scalefactor
         vm0 = -63.6
     if species == 'guineapig-sgc-II':
          # guinea pig data from Rothman and Manis, 2003, type II
@@ -349,7 +349,7 @@ def sgc(debugFlag=False, ttx=False, message=None, nach='jsrna',
         if 'ih' in chlist:
             s.ihsgc.gbar = nstomho(1.0, somaarea) * scalefactor
         #s.hcno.gbar = 0.0
-        s.lek.gbar = nstomho(2.0, somaarea) * scalefactor
+        s.leak.gbar = nstomho(2.0, somaarea) * scalefactor
         vm0 = -63.6
 
     if not runQuiet:
@@ -519,7 +519,7 @@ def bushy_species_scaling(soma, species, newModFiles, somaarea, scalefactor, deb
         #s.ka.gkabar = nstomho(0.0, somaarea) * scalefactor
         soma().ihvcn.gbar = nstomho(20.0, somaarea) * scalefactor
         #s.hcno.gbar = 0.0
-        soma().lek.gbar = nstomho(2.0, somaarea) * scalefactor
+        soma().leak.gbar = nstomho(2.0, somaarea) * scalefactor
         vm0 = -63.6
     if species == 'guineapig-bushy-II-I':
          # guinea pig data from Rothman and Manis, 2003, type II=I
@@ -534,7 +534,7 @@ def bushy_species_scaling(soma, species, newModFiles, somaarea, scalefactor, deb
         #s.ka.gkabar = nstomho(0.0, somaarea) * scalefactor
         soma().ihvcn.gbar = nstomho(3.5, somaarea) * scalefactor
         #s.hcno.gbar = 0.0
-        soma().lek.gbar = nstomho(2.0, somaarea) * scalefactor
+        soma().leak.gbar = nstomho(2.0, somaarea) * scalefactor
         vm0 = -63.8
     return vm0
 
@@ -584,7 +584,7 @@ def bushy_species_scaling(soma, species, newModFiles, somaarea, scalefactor, deb
 #         inseg.klt.gbar = 0.2 * nstomho(200.0, somaarea) * scalefactor
 #         inseg.kht.gbar = nstomho(150.0, somaarea) * scalefactor
 #         inseg.ihvcn.gbar = 0.0 * nstomho(20.0, somaarea) * scalefactor
-#         inseg.lek.gbar = nstomho(2.0, somaarea) * scalefactor
+#         inseg.leak.gbar = nstomho(2.0, somaarea) * scalefactor
 #         inseg.ena = v_sodium
 #         inseg.ek = v_potassium
 #         ip = ip + 1
@@ -665,7 +665,7 @@ def bushy_waxon(debug=False, ttx=False, message=None, nach=None):
         s.kht.gbar = nstomho(150.0, somaarea) * scalefactor
         s.klt.gbar = nstomho(200.0, somaarea) * scalefactor
         s.ihvcn.gbar = nstomho(20.0, somaarea) * scalefactor
-        s.lek.gbar = nstomho(2.0, somaarea) * scalefactor
+        s.leak.gbar = nstomho(2.0, somaarea) * scalefactor
 
 # create an initial segment
     ninitseg = 21
@@ -691,7 +691,7 @@ def bushy_waxon(debug=False, ttx=False, message=None, nach=None):
         inseg.klt.gbar = 0.2 * nstomho(200.0, somaarea) * scalefactor
         inseg.kht.gbar = nstomho(150.0, somaarea) * scalefactor
         inseg.ihvcn.gbar = 0.0 * nstomho(20.0, somaarea) * scalefactor
-        inseg.lek.gbar = nstomho(2.0, somaarea) * scalefactor
+        inseg.leak.gbar = nstomho(2.0, somaarea) * scalefactor
         inseg.ena = v_sodium
         inseg.ek = v_potassium
         ip = ip + 1
@@ -732,7 +732,7 @@ def loadaxnodes(axnode, somaarea, scalefactor, nodeLength=2.5,
         ax.kht.gbar = nstomho(150.0, somaarea) * scalefactor
         ax.klt.gbar = nstomho(200.0, somaarea) * scalefactor
         ax.ihvcn.gbar = 0
-        ax.lek.gbar = nstomho(2.0, somaarea) * scalefactor
+        ax.leak.gbar = nstomho(2.0, somaarea) * scalefactor
         ax.ena = v_sodium
         ax.ek = v_potassium
     return(axnode)
@@ -754,7 +754,7 @@ def loadinternodes(internode, somaarea, scalefactor, internodeLength=1000,
     internode.insert('kht')
     internode.insert('leak')
     for inno in internode:
-        inno.lek.gbar = nstomho(0.002, somaarea) * scalefactor
+        inno.leak.gbar = nstomho(0.002, somaarea) * scalefactor
         inno.na.gbar = 0 * nstomho(500.0, somaarea) * scalefactor
         inno.kht.gbar = 0 * nstomho(150.0, somaarea) * scalefactor
         inno.ek = v_potassium
@@ -807,7 +807,7 @@ def tstellate_rothman(debug=False, ttx=False, message=None,
         s.ihvcn.gbar = nstomho(0.5, somaarea) * scalefactor
         s.ihvcn.eh = -43 # Rodrigues and Oertel, 2006
         #print 'ih vcn vh: %f ' % (s.ihvcn.vh)
-        s.lek.gbar = nstomho(2.0, somaarea) * scalefactor
+        s.leak.gbar = nstomho(2.0, somaarea) * scalefactor
         vm0 = -63.9
     elif species == 'mouse':
         gnamax = 800.0
@@ -815,7 +815,7 @@ def tstellate_rothman(debug=False, ttx=False, message=None,
         s.ka.gbar = nstomho(0.0, somaarea) * scalefactor
         s.ihvcn.gbar = nstomho(18.0, somaarea) * scalefactor
         s.ihvcn.eh = -43 # Rodrigues and Oertel, 2006
-        s.lek.gbar = nstomho(8.0, somaarea) * scalefactor
+        s.leak.gbar = nstomho(8.0, somaarea) * scalefactor
         # yields input resistance of 74.2 Mohm measured from -60 to -70 mV
         vm0 = -60.0
     else:
@@ -891,7 +891,7 @@ def tstellate_rothman_nav11(debug=False, ttx=False, cs = False, message=None, de
             else:
                 ds.kht.gbar = 0.0
             d.insert('leak') # leak
-            ds.lek.gbar = 0.0001
+            ds.leak.gbar = 0.0001
             d.insert('ihvcn') # some H current
             ds.ihvcn.gbar = 0.# 0.001
             ds.ihvcn.eh = -43.0
@@ -919,7 +919,7 @@ def tstellate_rothman_nav11(debug=False, ttx=False, cs = False, message=None, de
     s.ihvcn.gbar = nstomho(18.0, somaarea) * scalefactor # was 10
     s.ihvcn.eh = -43 # Rodrigues and Oertel, 2006
 #    print 'ih vcn vh: %f ' % (s.ihvcn.vh)
-    s.lek.gbar = nstomho(2.0, somaarea) * scalefactor
+    s.leak.gbar = nstomho(2.0, somaarea) * scalefactor
     vm0 = -63.9
     if not runQuiet:
         if message is None:
@@ -1089,7 +1089,7 @@ def dstellateIF(debug=False, ttx=False, message=None):
     s.ka.gbar = nstomho(0.0, somaarea) * scalefactor
     s.iH_std.gbar = nstomho(120.0, somaarea) * scalefactor
     s.iH_std.vshift = 16
-    s.lek.gbar = nstomho(24, somaarea) * scalefactor
+    s.leak.gbar = nstomho(24, somaarea) * scalefactor
     vm0 = -64.1
     if not runQuiet:
         if message is None:
@@ -1175,7 +1175,7 @@ def dstellate_eager(debug=False, ttx=False, message=None):
             s.ka.gbar = 0.0 # nstomho(0.0, somaarea) * scalefactor
             s.ihvcn.gbar = 0.0001 # nstomho(5.0, somaarea) * scalefactor
             s.ihvcn.vshift = 0 # 16
-            s.lek.gbar = 0.00025 # nstomho(12.5, somaarea) * scalefactor
+            s.leak.gbar = 0.00025 # nstomho(12.5, somaarea) * scalefactor
         else:
             s.nav11.gbar = 0 # nstomho(gna, somaarea) * scalefactor
             s.nav11.vsna = 0 # voltage shift
@@ -1184,7 +1184,7 @@ def dstellate_eager(debug=False, ttx=False, message=None):
             s.ka.gbar = 0.0 # nstomho(0.0, somaarea) * scalefactor
             s.ihvcn.gbar = 0.0001 # nstomho(5.0, somaarea) * scalefactor
             s.ihvcn.vshift = 0 # 16
-            s.lek.gbar = 0.00025 # nstomho(12.5, somaarea
+            s.leak.gbar = 0.00025 # nstomho(12.5, somaarea
         print 'nav: ', s.nav11.gbar
         print 'khe: ', s.kht.gbar
         print 'klt: ', s.klt.gbar
