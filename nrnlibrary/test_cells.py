@@ -637,7 +637,7 @@ if __name__ == "__main__":
 
 
     if args.celltype == 'sgc':
-        (cell, sgcaxon) = sgc(debugFlag = debugFlag, species = 'mouse',
+        (cell, sgcaxon) = cells.SGC(debug=debugFlag, species='mouse',
         nach = 'nav11', chlist = ['ih'])
     
     #

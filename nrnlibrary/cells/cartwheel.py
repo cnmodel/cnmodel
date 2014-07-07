@@ -7,7 +7,7 @@ from .cell import Cell
 __all__ = ['Cartwheel']
 
 
-class Carwheel(Cell):
+class Cartwheel(Cell):
     """
     DCN cartwheel cell model.
     
