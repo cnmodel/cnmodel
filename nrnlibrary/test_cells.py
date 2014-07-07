@@ -673,7 +673,7 @@ if __name__ == "__main__":
     # D-stellate tests
     #
     elif args.celltype == 'dstellate':
-        cell = dstellate(debug=debugFlag)
+        cell = cells.DStellate(debug=debugFlag)
         
     else:
         print ("Cell Type %s and configurations nav=%s or config=%s are not available" % (args.celltype, args.nav, args.configuration))
