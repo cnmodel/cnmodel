@@ -1,4 +1,3 @@
-
 import os
 import os.path
 from neuron import h
@@ -39,23 +38,46 @@ runQuiet = True
 
 
 def make_pulse(stim, pulsetype="square"):
-
+    """
+    Generate a pulse train for current / voltage command. Returns a tuple:
+    
+    * w : stimulus waveform
+    * maxt : duration of waveform
+    * tstims : index of each pulse in the train
+    
+    Parameters:
+    stim : dict
+        Holds parameters that determine stimulus shape:
+        
+        * delay : time before first pulse
+        * Sfreq : frequency of pulses 
+        * dur : duration of one pulse
+        * amp : pulse amplitude
+        * PT : delay between end of train and test pulse (0 for no test)
+        * NP : number of pulses
+        * hold : holding level (optional)
+    pulsetype : str
+        'square' : square pulses  (default)
+        'exp' : psg-like pulses
+        
+    """
     delay = int(numpy.floor(stim['delay'] / h.dt))
     ipi = int(numpy.floor((1000.0 / stim['Sfreq']) / h.dt))
     pdur = int(numpy.floor(stim['dur'] / h.dt))
     posttest = int(numpy.floor(stim['PT'] / h.dt))
     ndur = 5
     if stim['PT'] == 0:
-        ndur =1
+        ndur = 1
+    
     maxt = h.dt * (stim['delay'] + (ipi * (stim['NP'] + 3)) +
         posttest + pdur * ndur)
-    if 'hold' in stim.keys():
-        hold = stim['hold']
-    else:
-        hold = None
+    
+    hold = stim.get('hold', None)
+    
     w = numpy.zeros(floor(maxt / h.dt))
     if hold is not None:
         w += hold
+    
     #   make pulse
     tstims = [0] * int(stim['NP'])
     if pulsetype == 'square':
@@ -82,19 +104,32 @@ def make_pulse(stim, pulsetype="square"):
                 w[i] += (stim['amp'] *
                     (1.0 - exp(-1.0 * i / (pdur / 3.0))) *
                     exp(-1.0 * (i - (pdur / 3.0)) / pdur))
+    
     return(w, maxt, tstims)
 
 
-def run_iv(ivrange, cell, durs=None, sites=None,
-    scales=None, reppulse=None):
+def run_iv(ivrange, cell, durs=None, sites=None, scales=None, reppulse=None):
+    """
+    Run a current-clamp I/V curve and display results.
+    
+    Parameters:
+    ivrange : tuple
+        (min, max, step)
+    cell : Cell
+        The Cell instance to test.
+    durs : tuple
+        durations of (pre, pulse, post) regions of the command
+    sites : 
+    scales : 
+    reppulse : 
+        stimulate with pulse train
+    """
     try:
         (imin, imax, istep) = ivrange # unpack the tuple...
     except:
-        print ("Cells.py: run_iv argument 1 must have 3 values:",
-        " imin, imax and istep")
-        sys.exit(1)
-    (imin, imax, istep) = ivrange # unpack the tuple...
+        raise TypeError("run_iv argument 1 must be a tuple (imin, imax, istep)")
     #print "min max step: ", imin, imax, istep
+    
     if durs is None:
         durs = [10.0, 100.0, 50.0]
     icur = []
@@ -161,9 +196,6 @@ def run_iv(ivrange, cell, durs=None, sites=None,
     f4 = pylab.figure(3)
     p41 = pylab.subplot2grid((4, 1), (0, 0), rowspan=2)
 
-    #print 'icur: ', icur
-    s = cell()
-
 #    if message is not None:
 #        print 'meas: ', dir(measseg(0.5))
 
@@ -205,7 +237,7 @@ def run_iv(ivrange, cell, durs=None, sites=None,
                     vec['v_meas_%d' % (j)].record(
                         sites[j](0.5)._ref_v, sec=sites[j])
         vec['i_inj'].record(istim._ref_i, sec=cell)
-        vec['gh'].record(s.ihvcn._ref_i, sec=cell)
+        vec['gh'].record(cell.soma.ihvcn._ref_i, sec=cell)
         vec['time'].record(h._ref_t)
         if reppulse is not None:
             vec['i_stim'].play(istim._ref_i, h.dt, 0, sec=cell)
@@ -307,7 +339,20 @@ def run_iv(ivrange, cell, durs=None, sites=None,
 
 
 def run_vc(vmin, vmax, vstep, cell):
-    vstim = h.SEClamp(0.5, cell) # use our new iclamp method
+    """
+    Run voltage-clamp I/V curve.
+    
+    Parameters:
+    vmin : float
+        Minimum voltage step value
+    vmax : 
+        Maximum voltage step value
+    vstep :
+        Voltage difference between steps
+    cell :
+        The Cell instance to test.
+    """
+    vstim = h.SEClamp(0.5, cell.soma) # use our new iclamp method
     vstim.dur1 = 50.0
     vstim.amp1 = -60
     vstim.dur2 = 500.0
@@ -315,7 +360,7 @@ def run_vc(vmin, vmax, vstep, cell):
     vstim.dur3 = 400
     vstim.amp3 = -60.0
     vstim.rs = 0.01
-    cell.cm = 0.001
+    cell.soma.cm = 0.001
     vcmd = []
     tend = 900.0
     iv_nstepv = int(numpy.ceil((vmax - vmin) / vstep))
@@ -348,8 +393,8 @@ def run_vc(vmin, vmax, vstep, cell):
             vec[var] = h.Vector()
         vstim.amp2 = vcmd[i]
         h.tstop = tend
-        vec['v_soma'].record(cell(0.5)._ref_v, sec=cell)
-        vec['i_inj'].record(vstim._ref_i, sec=cell)
+        vec['v_soma'].record(cell.soma(0.5)._ref_v, sec=cell.soma)
+        vec['i_inj'].record(vstim._ref_i, sec=cell.soma)
         vec['time'].record(h._ref_t)
         h.init()
         h.run()
@@ -373,6 +418,10 @@ def run_vc(vmin, vmax, vstep, cell):
     pylab.show()
     
 def run_democlamp(cell, dend, vsteps=[-60,-70,-60], tsteps=[10,50,100]):
+    """
+    Does some stuff.
+    
+    """
     f1 = pylab.figure(1)
     gs = GS.GridSpec(2, 2,
                        width_ratios=[1, 1],
@@ -501,6 +550,9 @@ def run_democlamp(cell, dend, vsteps=[-60,-70,-60], tsteps=[10,50,100]):
 if __name__ == "__main__":
     import argparse
     import sys
+    
+    from . import cells
+    
     debugFlag = True
     parser = argparse.ArgumentParser(description=('Cells.py:',
     ' Biophysical representatoins of neuorns (mostly auditory)'))
@@ -596,14 +648,14 @@ if __name__ == "__main__":
         cell = tstellate_rothman(species=args.species,
             nav11=True, debug=debugFlag)
     elif (args.celltype == 'bushy' and args.configuration == 'waxon'):
-        (cell, [bwaiseg, bwaaxn, bwainternode]) = bushy_waxon(debug=debugFlag)
+        cell = BushyWithAxon(debug=debugFlag)
     elif args.celltype == 'bushy' and args.configuration == 'std':
-        (cell, [biseg, baxn, binternode]) = bushy(debug=debugFlag)
-        sites = [cell, None, None, None]
+        cell = Bushy(debug=debugFlag)
+        sites = [cell.soma, None, None, None]
     elif args.celltype == 'bushy' and args.configuration == 'dendrite':
         dendriteFlag = True
-        (cell, bdends) = bushy(debug=debugFlag, dendrite=dendriteFlag)
-        sites = [cell, bdends[0], bdends[1][0]]
+        cell = Bushy(debug=debugFlag, dendrite=dendriteFlag)
+        sites = [cell.soma, cell.maindend, cell.secdend[0]]
     elif args.celltype == 'stellate' and args.nav == 'std':
         cell = tstellate_f(debug=debugFlag)
     elif args.celltype == 'dstellate':

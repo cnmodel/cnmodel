@@ -11,6 +11,8 @@ T-stellate cell from teh VCN: tstellate (Rothman and Manis, 2003abc) Type I
 Paul B. Manis, Ph.D. 2009 (August - November 2009)
 """
 
+from .bushy import *
+
 def getcelltypes():
     """
     Return the types of cells that area generally avaialble.
