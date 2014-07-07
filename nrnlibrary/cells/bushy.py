@@ -1,3 +1,7 @@
+from neuron import h
+import neuron as nrn
+from ..pynrnutilities import nstomho
+
 from .cell import Cell
 
 __all__ = ['Bushy', 'BushyWithAxon'] 
@@ -30,7 +34,7 @@ class Bushy(Cell):
 
     #    effcap = totcap # sometimes we change capacitance - that's effcap
         somaarea = totcap * 1E-6 / c_m # pf -> uF, cm = 1uf/cm^2 nominal
-        lstd = 1E4 * sqrt(somaarea / 3.14159) # convert from cm to um
+        lstd = 1E4 * ((somaarea / 3.14159) ** 0.5) # convert from cm to um
 
         soma = h.Section() # one compartment of about 29000 um2
         soma.nseg = 1
@@ -92,7 +96,7 @@ class Bushy(Cell):
             soma().na.gnabar = gnabar
             soma.ena = 50
 
-        vm0 = bushy_species_scaling(soma, species, newModFiles, somaarea, scalefactor, debug)
+        vm0 = self.bushy_species_scaling(soma, species, newModFiles, somaarea, scalefactor, debug)
 
         maindend = None
         secdend = None
@@ -127,7 +131,7 @@ class Bushy(Cell):
                 secdend[ibd].Ra = R_a
             #h.topology()
 
-        if not runQuiet:
+        if debug:
             if message is None:
                 print "<< bushy: JSR bushy cell model created >>"
             else:
@@ -137,6 +141,7 @@ class Bushy(Cell):
         self.maindend = maindend
         self.secdend = secdend
 
+    @staticmethod
     def bushy_species_scaling(soma, species, newModFiles, somaarea, scalefactor, debug):
         if species == 'mouse':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.

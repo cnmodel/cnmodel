@@ -134,7 +134,7 @@ def run_iv(ivrange, cell, durs=None, sites=None, scales=None, reppulse=None):
         durs = [10.0, 100.0, 50.0]
     icur = []
     if reppulse is None:
-        istim = h.IClamp2(0.5, sec=cell) # use our new iclamp method
+        istim = h.IClamp2(0.5, sec=cell.soma) # use our new iclamp method
         istim.dur[0] = durs[0]
         istim.amp[0] = 0
         istim.dur[1] = durs[1]
@@ -150,7 +150,7 @@ def run_iv(ivrange, cell, durs=None, sites=None, scales=None, reppulse=None):
         #
         # set up stimulation with a pulse train
         #
-        istim = h.iStim(0.5, sec=cell)
+        istim = h.iStim(0.5, sec=cell.soma)
         stim = {}
         stim['NP'] = 10
         stim['Sfreq'] = 50.0 # stimulus frequency
@@ -220,14 +220,14 @@ def run_iv(ivrange, cell, durs=None, sites=None, scales=None, reppulse=None):
             vec['i_stim'] = h.Vector(secmd)
 #print "current: %f" % icur[i]
         h.tstop = tend
-        vec['v_soma'].record(cell(0.5)._ref_v, sec=cell)
-        vec['ik'].record(cell(0.5)._ref_ik, sec=cell)
+        vec['v_soma'].record(cell.soma(0.5)._ref_v, sec=cell.soma)
+        vec['ik'].record(cell.soma(0.5)._ref_ik, sec=cell.soma)
         natFlag = False
         try:
-            vec['inat'].record(cell(0.5)._ref_inat, sec=cell)
+            vec['inat'].record(cell.soma(0.5)._ref_inat, sec=cell.soma)
             natFlag = True
         except:
-            vec['ina'].record(cell(0.5)._ref_ina, sec=cell)
+            vec['ina'].record(cell.soma(0.5)._ref_ina, sec=cell.soma)
             pass
         if sites is not None:
             for j in range(len(sites)):
@@ -236,11 +236,11 @@ def run_iv(ivrange, cell, durs=None, sites=None, scales=None, reppulse=None):
                     print sites[j]
                     vec['v_meas_%d' % (j)].record(
                         sites[j](0.5)._ref_v, sec=sites[j])
-        vec['i_inj'].record(istim._ref_i, sec=cell)
-        vec['gh'].record(cell.soma.ihvcn._ref_i, sec=cell)
+        vec['i_inj'].record(istim._ref_i, sec=cell.soma)
+        vec['gh'].record(cell.soma().ihvcn._ref_i, sec=cell.soma)
         vec['time'].record(h._ref_t)
         if reppulse is not None:
-            vec['i_stim'].play(istim._ref_i, h.dt, 0, sec=cell)
+            vec['i_stim'].play(istim._ref_i, h.dt, 0, sec=cell.soma)
 
         # h.t = -200.
         # dtsav = h.dt
@@ -551,7 +551,7 @@ if __name__ == "__main__":
     import argparse
     import sys
     
-    from . import cells
+    import nrnlibrary.cells as cells
     
     debugFlag = True
     parser = argparse.ArgumentParser(description=('Cells.py:',
@@ -648,13 +648,13 @@ if __name__ == "__main__":
         cell = tstellate_rothman(species=args.species,
             nav11=True, debug=debugFlag)
     elif (args.celltype == 'bushy' and args.configuration == 'waxon'):
-        cell = BushyWithAxon(debug=debugFlag)
+        cell = cells.BushyWithAxon(debug=debugFlag)
     elif args.celltype == 'bushy' and args.configuration == 'std':
-        cell = Bushy(debug=debugFlag)
+        cell = cells.Bushy(debug=debugFlag)
         sites = [cell.soma, None, None, None]
     elif args.celltype == 'bushy' and args.configuration == 'dendrite':
         dendriteFlag = True
-        cell = Bushy(debug=debugFlag, dendrite=dendriteFlag)
+        cell = cells.Bushy(debug=debugFlag, dendrite=dendriteFlag)
         sites = [cell.soma, cell.maindend, cell.secdend[0]]
     elif args.celltype == 'stellate' and args.nav == 'std':
         cell = tstellate_f(debug=debugFlag)
