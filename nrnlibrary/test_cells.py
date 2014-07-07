@@ -1,5 +1,6 @@
 import argparse
-import sys
+import os, sys
+from neuron import h
 
 import nrnlibrary.cells as cells
 from nrnlibrary.util.testing import run_iv, run_vc, run_democlamp
