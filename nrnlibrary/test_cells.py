@@ -634,19 +634,31 @@ if __name__ == "__main__":
         ptype = 'pulses'
     if args.configuration in cellinfo['configs']:
         print 'Configuration %s is ok' % args.configuration
+
+
     if args.celltype == 'sgc':
         (cell, sgcaxon) = sgc(debugFlag = debugFlag, species = 'mouse',
         nach = 'nav11', chlist = ['ih'])
+    
+    #
+    # T-stellate tests
+    #
     elif (args.celltype == 'stellate' and args.nav == 'nav11'
             and args.species == 'guineapig'):
-        (cell, dend, axon) = tstellate_rothman_nav11(debug=debugFlag)
+        cell = cells.TStellateNav11(debug=debugFlag)
     elif (args.celltype == 'steldend'):
-        (cell, dendrites, axon) = tstellate_rothman_nav11(debug=debugFlag, dend=True,
-         ttx=False, cs=False)
+        cell = cells.TStellateNav11(debug=debugFlag, dend=True,
+                                    ttx=False, cs=False)
     elif (args.celltype == 'stellate' and args.nav == 'nav11'
             and args.species == 'mouse'):
-        cell = tstellate_rothman(species=args.species,
-            nav11=True, debug=debugFlag)
+        cell = cells.TStellate(species=args.species, nav11=True, 
+                               debug=debugFlag)
+    elif args.celltype == 'stellate' and args.nav == 'std':
+        cell = cells.TStellateFast(debug=debugFlag)
+    
+    #
+    # Bushy tests
+    #
     elif (args.celltype == 'bushy' and args.configuration == 'waxon'):
         cell = cells.BushyWithAxon(debug=debugFlag)
     elif args.celltype == 'bushy' and args.configuration == 'std':
@@ -656,17 +668,23 @@ if __name__ == "__main__":
         dendriteFlag = True
         cell = cells.Bushy(debug=debugFlag, dendrite=dendriteFlag)
         sites = [cell.soma, cell.maindend, cell.secdend[0]]
-    elif args.celltype == 'stellate' and args.nav == 'std':
-        cell = tstellate_f(debug=debugFlag)
+        
+    #
+    # D-stellate tests
+    #
     elif args.celltype == 'dstellate':
         cell = dstellate(debug=debugFlag)
+        
     else:
         print ("Cell Type %s and configurations nav=%s or config=%s are not available" % (args.celltype, args.nav, args.configuration))
         sys.exit(1)
 #    seg = cell()
-#
-# define the current clamp electrode and default settings
-#
+
+    print("Cell model: %s" % cell.__class__.__name__)
+    print(cell.__doc__)
+    #
+    # define the current clamp electrode and default settings
+    #
     if args.cc is True:
         run_iv(ccivrange[args.celltype], cell,
             scales=scale[args.celltype], sites=sites, reppulse=ptype)

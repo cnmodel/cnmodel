@@ -12,6 +12,7 @@ Paul B. Manis, Ph.D. 2009 (August - November 2009)
 """
 
 from .bushy import *
+from .tstellate import *
 
 def getcelltypes():
     """

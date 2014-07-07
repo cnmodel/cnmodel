@@ -7,6 +7,10 @@ from .cell import Cell
 __all__ = ['Bushy', 'BushyWithAxon'] 
 
 class Bushy(Cell):
+    """
+    VCN bushy cell model.
+    
+    """
     def __init__(self, debug=False, ttx=False, message=None, nach='jsrna',
                  species='mouse', axon=False, dendrite=False,
                  newModFiles=False, pump=False):
@@ -274,7 +278,7 @@ class BushyWithAxon(Cell):
         totcap = scalefactor * 12.0 # cap in pF for cell
         effcap = totcap # sometimes we change capacitance - that's effcap
         somaarea = totcap * 1E-6 / cm # pf -> uF, cm = 1uf/cm^2 nominal
-        lstd = 1E4 * sqrt(somaarea / 3.14159) # convert from cm to um
+        lstd = 1E4 * ((somaarea / 3.14159) ** 0.5) # convert from cm to um
 
         nnodes = range(5)
     #    print nnodes
