@@ -9,7 +9,7 @@ __all__ = ['Bushy', 'BushyWithAxon']
 class Bushy(Cell):
     """
     VCN bushy cell model.
-    
+    Rothman and Manis, 2003abc (Type II)    
     """
     def __init__(self, debug=False, ttx=False, message=None, nach='jsrna',
                  species='mouse', axon=False, dendrite=False,

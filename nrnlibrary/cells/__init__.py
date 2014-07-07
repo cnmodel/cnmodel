@@ -14,6 +14,9 @@ Paul B. Manis, Ph.D. 2009 (August - November 2009)
 from .bushy import *
 from .tstellate import *
 from .dstellate import *
+from .cartwheel import *
+from .pyramidal import *
+from .sgc import *
 
 def getcelltypes():
     """

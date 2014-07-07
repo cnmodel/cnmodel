@@ -9,7 +9,7 @@ __all__ = ['TStellate', 'TStellateNav11', 'TStellateFast']
 class TStellate(Cell):
     """
     VCN T-stellate model.
-    
+    Rothman and Manis, 2003abc (Type I)    
     """
     def __init__(self, debug=False, ttx=False, message=None,
         species='guinea pig', nav11=False):
