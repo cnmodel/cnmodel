@@ -53,6 +53,23 @@ def make_pulse(stim):
         * hold : holding level (optional)
         
     """
+    defaults = {
+        'delay': 10,
+        'Sfreq': 50,
+        'dur': 50,
+        'amp': 0.4,
+        'PT': 0,
+        'NP': 1,
+        'hold': 0.0,
+        }
+    for k in stim:
+        if k not in defaults:
+            raise Exception("Stim parameter '%s' not accepted." % k)
+    defaults.update(stim)
+    stim = defaults
+    
+    
+    
     delay = int(numpy.floor(stim['delay'] / h.dt))
     ipi = int(numpy.floor((1000.0 / stim['Sfreq']) / h.dt))
     pdur = int(numpy.floor(stim['dur'] / h.dt))
@@ -95,7 +112,7 @@ class Protocol(object):
     def reset(self):
         self._vectors = {}
     
-    def record(self, variable, name):
+    def __setitem__(self, name, variable):
         """
         Record *variable* during the next run.
         """
@@ -103,7 +120,7 @@ class Protocol(object):
         self._vectors[name] = vec
         vec.record(variable)
         
-    def get_record(self, name):
+    def __getitem__(self, name):
         """
         Return a numpy array for previously recorded data given *name*.
         """
@@ -120,6 +137,8 @@ class IVCurve(Protocol):
         self.durs = None  # durations of current steps
         self.current_cmd = None # Current command levels
         self.current_traces = []
+        self.time_values = None
+        self.dt = None
         
     def run(self, ivrange, cell, durs=None, sites=None, reppulse=None):
         """
@@ -152,34 +171,42 @@ class IVCurve(Protocol):
         self.durs = durs
         
         icur = []
+        # set up stimulation with a pulse train
         if reppulse is None:
-            istim = h.IClamp2(0.5, sec=cell.soma) # use our new iclamp method
-            istim.dur[0] = durs[0]
-            istim.amp[0] = 0
-            istim.dur[1] = durs[1]
-            istim.amp[1] = 0.0 #-70.00
-            istim.dur[2] = durs[2]
-            istim.amp[2] = 0.0 # 0.045
-            istim.dur[3] = 0
-            istim.amp[3] = 0
-            istim.dur[4] = 0
-            istim.amp[4] = 0
-            tend = numpy.sum(durs)
+            #istim = h.IClamp2(0.5, sec=cell.soma) # use our new iclamp method
+            #istim.dur[0] = durs[0]
+            #istim.amp[0] = 0
+            #istim.dur[1] = durs[1]
+            #istim.amp[1] = 0.0 #-70.00
+            #istim.dur[2] = durs[2]
+            #istim.amp[2] = 0.0 # 0.045
+            #istim.dur[3] = 0
+            #istim.amp[3] = 0
+            #istim.dur[4] = 0
+            #istim.amp[4] = 0
+            #tend = numpy.sum(durs)
+            stim = {
+                'NP': 1,
+                'delay': durs[0],
+                'dur': durs[1],
+                'amp': 1.0,
+                }
         else:
-            # set up stimulation with a pulse train
-            istim = h.iStim(0.5, sec=cell.soma)
-            stim = {}
-            stim['NP'] = 10
-            stim['Sfreq'] = 50.0 # stimulus frequency
-            stim['delay'] = 10.0
-            stim['dur'] = 2
-            stim['amp'] = 1.0
-            stim['PT'] = 0.0
-            istim.delay = 0
-            istim.dur = 1e9 # these actually do not matter...
-            istim.iMax = 0.0
-            (secmd, maxt, tstims) = make_pulse(stim)
-            tend = maxt
+            stim = {
+                'NP': 10,
+                'Sfreq': 50.0,
+                'delay': 10.0,
+                'dur': 2,
+                'amp': 1.0,
+                'PT': 0.0,
+                }
+        istim = h.iStim(0.5, sec=cell.soma)
+        istim.delay = 0
+        istim.dur = 1e9 # these actually do not matter...
+        istim.iMax = 0.0
+        (secmd, maxt, tstims) = make_pulse(stim)
+        tend = maxt
+
 
         # Calculate current pulse levels
         iv_nstepi = int(numpy.ceil((imax - imin) / istep))
@@ -193,6 +220,7 @@ class IVCurve(Protocol):
         nsteps = iv_nstepi
         
         self.current_cmd = icur
+        self.dt = h.dt
         vec = {}
         
         #f1 = pylab.figure(1)
@@ -226,54 +254,50 @@ class IVCurve(Protocol):
         for i in range(nsteps):
             
             # Set up recording vectors
-            for var in ['v_soma', 'i_inj', 'time', 'm', 'h', 'ah', 'bh', 'am',
-                        'bm', 'gh', 'ik', 'ina', 'inat', 'i_stim']:
-                vec[var] = h.Vector()
-            if sites is not None:
-                for j in range(len(sites)):
-                    vec['v_meas_%d' % (j)] = h.Vector()
+            #for var in ['v_soma', 'i_inj', 'time', 'm', 'h', 'ah', 'bh', 'am',
+                        #'bm', 'gh', 'ik', 'ina', 'inat', 'i_stim']:
+                #vec[var] = h.Vector()
+            #if sites is not None:
+                #for j in range(len(sites)):
+                    #vec['v_meas_%d' % (j)] = h.Vector()
                     
             # Generate current command for this level 
-            if not reppulse:
-                istim.amp[1] = icur[i]
-            else:
-                stim['Amp'] = icur[i]
-                (secmd, maxt, tstims) = make_pulse(stim)
-                vec['i_stim'] = h.Vector(secmd)
+            stim['amp'] = icur[i]
+            (secmd, maxt, tstims) = make_pulse(stim)
+            vec['i_stim'] = h.Vector(secmd)
                 
             
             # Connect recording vectors
-            #vec['v_soma'].record(cell.soma(0.5)._ref_v, sec=cell.soma)
-            self.record(cell.soma(0.5)._ref_v, 'v_soma')
-            vec['ik'].record(cell.soma(0.5)._ref_ik, sec=cell.soma)
-            natFlag = False
-            try:
-                vec['inat'].record(cell.soma(0.5)._ref_inat, sec=cell.soma)
-                natFlag = True
-            except:
-                vec['ina'].record(cell.soma(0.5)._ref_ina, sec=cell.soma)
-                pass
+            self['v_soma'] = cell.soma(0.5)._ref_v
+            #self['ik'] = cell.soma(0.5)._ref_ik
+            #natFlag = False
+            #try:
+                #vec['inat'].record(cell.soma(0.5)._ref_inat, sec=cell.soma)
+                #natFlag = True
+            #except:
+                #vec['ina'].record(cell.soma(0.5)._ref_ina, sec=cell.soma)
+                #pass
             
-            if sites is not None:
-                for j in range(len(sites)):
-                    if sites[j] is not None:
-                        vec['v_meas_%d' % (j)].record(
-                            sites[j](0.5)._ref_v, sec=sites[j])
-            vec['i_inj'].record(istim._ref_i, sec=cell.soma)
-            vec['gh'].record(cell.soma().ihvcn._ref_i, sec=cell.soma)
-            vec['time'].record(h._ref_t)
+            #if sites is not None:
+                #for j in range(len(sites)):
+                    #if sites[j] is not None:
+                        #vec['v_meas_%d' % (j)].record(
+                            #sites[j](0.5)._ref_v, sec=sites[j])
+            self['i_inj'] = istim._ref_i
+            #vec['gh'].record(cell.soma().ihvcn._ref_i, sec=cell.soma)
+            self['time'] = h._ref_t
             
             # connect current command vector
-            if reppulse is not None:
-                vec['i_stim'].play(istim._ref_i, h.dt, 0, sec=cell.soma)
+            vec['i_stim'].play(istim._ref_i, h.dt, 0, sec=cell.soma)
 
             # GO
             h.tstop = tend
             h.init()
             h.run()
             
-            self.voltage_traces.append(self.get_record('v_soma'))
-            self.current_traces.append(np.array(vec['i_inj']))
+            self.voltage_traces.append(self['v_soma'])
+            self.current_traces.append(self['i_inj'])
+            self.time_values = np.array(self['time'])
             
     def analyze(self):
         """
@@ -377,15 +401,50 @@ class IVCurve(Protocol):
         
         app = pg.mkQApp()
         win = pg.GraphicsWindow()
-        Vplot = win.addPlot()
-        IVplot = win.addPlot()
+        Vplot = win.addPlot(labels={'left': 'Vm (mV)', 'bottom': 'Time (ms)'})
+        IVplot = win.addPlot(labels={'left': 'Vm (mV)', 'bottom': 'Icmd (nA)'})
+        IVplot.showGrid(x=True, y=True)
         win.nextRow()
-        Iplot = win.addPlot()
+        Iplot = win.addPlot(labels={'left': 'Iinj (nA)', 'bottom': 'Time (ms)'})
         FIplot = win.addPlot()
+        
+        Vm = self.voltage_traces
+        Iinj = self.current_traces
+        Icmd = self.current_cmd
+        t = self.time_values
+        steps = len(Icmd)
     
-        for i in range(len(self.current_cmd)):
-            Vplot.plot(self.voltage_traces[i])
-            Iplot.plot(self.current_traces[i])
+        # plot I, V traces
+        for i in range(steps):
+            c = (i, steps*3./2.)
+            Vplot.plot(t, Vm[i], pen=c)
+            Iplot.plot(t, Iinj[i], pen=c)
+        
+        # I/V relationships
+        peakStart = self.durs[0] / self.dt
+        peakStop = peakStart + 10. / self.dt
+        steadyStop = (self.durs[0] + self.durs[1]) / self.dt
+        steadyStart = steadyStop - 30. / self.dt
+        Vpeak = []
+        for i in range(steps):
+            if Icmd[i] > 0:
+                Vpeak.append(Vm[i][peakStart:peakStop].max())
+            else:
+                Vpeak.append(Vm[i][peakStart:peakStop].min())
+        Vsteady = [Vm[i][steadyStart:steadyStop].mean() for i in range(steps)]
+        IVplot.plot(Icmd, Vpeak, symbol='o')
+        IVplot.plot(Icmd, Vsteady, symbol='s')
+        
+        # F/I relationship
+        spikes = []
+        for i in range(steps):
+            dvdt = np.diff(Vm[i]) / self.dt
+            mask = (dvdt > 40).astype(int)
+            indexes = np.argwhere(np.diff(mask) == 1)[:, 0] + 2
+            times = indexes.astype(float) * self.dt
+            print times
+            spikes.append(times)
+            FIplot.plot(x=times, y=[Icmd[i]]*len(times), pen=None, symbol='d')
         
         self.win = win
     
