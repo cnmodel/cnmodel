@@ -22,3 +22,10 @@ def test_make_pulse():
     
     triggers = np.argwhere(np.diff(w) > 0)[:,0] + 1
     assert np.all(triggers == times)
+    assert w.sum() == 15 * len(times) * int(1/h.dt)
+    
+    params['PT'] = 100
+    w, maxt, times = testing.make_pulse(params)
+    triggers = np.argwhere(np.diff(w) > 0)[:,0] + 1
+    assert triggers[-1] - triggers[-2] == 100/h.dt
+    
