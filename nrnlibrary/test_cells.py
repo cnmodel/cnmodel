@@ -6,8 +6,9 @@ import nrnlibrary.cells as cells
 from nrnlibrary.util.testing import run_iv, run_vc, run_democlamp
 
 debugFlag = True
-parser = argparse.ArgumentParser(description=('Cells.py:',
-' Biophysical representatoins of neuorns (mostly auditory)'))
+parser = argparse.ArgumentParser(description=('test_cells.py:',
+' Biophysical representations of neurons (mostly auditory), test file'))
+
 cclamp = False
 cellinfo = {'types': ['bushy', 'stellate', 'steldend', 'dstellate', 'sgc',
                         'cartwheel', 'pyramidal', 'octopus'],
@@ -73,7 +74,7 @@ else:
     sys.exit(1)
 
 path = os.path.dirname(__file__)
-h.nrn_load_dll(os.path.join(path, 'i386/special'))
+#h.nrn_load_dll(os.path.join(path, 'i386/special'))
 h.load_file("stdrun.hoc")
 h.load_file(os.path.join(path, "custom_init.hoc"))
 # replace init with one that gets closer to steady state
