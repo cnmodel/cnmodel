@@ -4,7 +4,7 @@ from neuron import h
 
 import nrnlibrary
 import nrnlibrary.cells as cells
-from nrnlibrary.util.testing import run_iv, run_vc, run_democlamp
+from nrnlibrary.util.testing import IVCurve, run_vc, run_democlamp
 
 debugFlag = True
 parser = argparse.ArgumentParser(description=('test_cells.py:',
@@ -140,8 +140,11 @@ print(cell.__doc__)
 # define the current clamp electrode and default settings
 #
 if args.cc is True:
-    run_iv(ccivrange[args.celltype], cell,
-        sites=sites, reppulse=ptype)
+    #run_iv(ccivrange[args.celltype], cell,
+        #sites=sites, reppulse=ptype)
+    iv = IVCurve()
+    iv.run(ccivrange[args.celltype], cell, sites=sites, reppulse=ptype)
+    iv.show()
 elif args.vc is True:
     run_vc(-120, -40, 5, cell)
 else:

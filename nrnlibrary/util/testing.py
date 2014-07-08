@@ -10,25 +10,26 @@ import scipy
 import scipy.integrate
 import scipy.stats as SStat
 
-import matplotlib as MP # must call first... before pylag/pyplot or backends
-MP.use('Qt4Agg')
+try:
+    import pyqtgraph as pg
+    HAVE_PG = True
+except ImportError:
+    HAVE_PG = False
 
-import matplotlib.gridspec as GS
-import mpl_toolkits.axes_grid1.inset_locator as INSETS
-#import inset_axes, zoomed_inset_axes
-import mpl_toolkits.axes_grid1.anchored_artists as ANCHOR
-# import AnchoredSizeBar
+#import matplotlib as MP # must call first... before pylag/pyplot or backends
+#MP.use('Qt4Agg')
 
-stdFont = 'Arial'
-#MP.use('pdf')
-import  matplotlib.pyplot as pylab
-pylab.rcParams['interactive'] = False
-pylab.rcParams['mathtext.default'] = 'sf'
-# next setting allows pdf font to be readable in Adobe Illustrator
-pylab.rcParams['pdf.fonttype'] = 42
-pylab.rcParams['figure.facecolor'] = 'white'
+#import matplotlib.gridspec as GS
+#import mpl_toolkits.axes_grid1.inset_locator as INSETS
+#import mpl_toolkits.axes_grid1.anchored_artists as ANCHOR
 
-print MP.__version__
+#stdFont = 'Arial'
+#import  matplotlib.pyplot as pylab
+#pylab.rcParams['interactive'] = False
+#pylab.rcParams['mathtext.default'] = 'sf'
+## next setting allows pdf font to be readable in Adobe Illustrator
+#pylab.rcParams['pdf.fonttype'] = 42
+#pylab.rcParams['figure.facecolor'] = 'white'
 
 
 def make_pulse(stim):
@@ -83,218 +84,311 @@ def make_pulse(stim):
     return(w, maxt, tstims)
 
 
-def run_iv(ivrange, cell, durs=None, sites=None, reppulse=None):
+class Protocol(object):
     """
-    Run a current-clamp I/V curve and display results.
-    
-    Parameters:
-    ivrange : tuple
-        (min, max, step)
-    cell : Cell
-        The Cell instance to test.
-    durs : tuple
-        durations of (pre, pulse, post) regions of the command
-    sites : list
-        Sections to add recording electrodes
-    reppulse : 
-        stimulate with pulse train
+    Base class providing common tools for running, analyzing, and displaying
+    simulations.
     """
-    try:
-        (imin, imax, istep) = ivrange # unpack the tuple...
-    except:
-        raise TypeError("run_iv argument 1 must be a tuple (imin, imax, istep)")
-    #print "min max step: ", imin, imax, istep
+    def __init__(self):
+        pass
+
+    def reset(self):
+        self._vectors = {}
     
-    if durs is None:
-        durs = [10.0, 100.0, 50.0]
-    icur = []
-    if reppulse is None:
-        istim = h.IClamp2(0.5, sec=cell.soma) # use our new iclamp method
-        istim.dur[0] = durs[0]
-        istim.amp[0] = 0
-        istim.dur[1] = durs[1]
-        istim.amp[1] = 0.0 #-70.00
-        istim.dur[2] = durs[2]
-        istim.amp[2] = 0.0 # 0.045
-        istim.dur[3] = 0
-        istim.amp[3] = 0
-        istim.dur[4] = 0
-        istim.amp[4] = 0
-        tend = numpy.sum(durs)
-    else:
-        #
-        # set up stimulation with a pulse train
-        #
-        istim = h.iStim(0.5, sec=cell.soma)
-        stim = {}
-        stim['NP'] = 10
-        stim['Sfreq'] = 50.0 # stimulus frequency
-        stim['delay'] = 10.0
-        stim['dur'] = 2
-        stim['amp'] = 1.0
-        stim['PT'] = 0.0
-        istim.delay = 0
-        istim.dur = 1e9 # these actually do not matter...
-        istim.iMax = 0.0
-        (secmd, maxt, tstims) = make_pulse(stim)
-        tend = maxt
-        # istim current pulse train
+    def record(self, variable, name):
+        """
+        Record *variable* during the next run.
+        """
+        vec = h.Vector()
+        self._vectors[name] = vec
+        vec.record(variable)
+        
+    def get_record(self, name):
+        """
+        Return a numpy array for previously recorded data given *name*.
+        """
+        return np.array(self._vectors[name])
 
-    iv_nstepi = int(numpy.ceil((imax - imin) / istep))
-    iv_mini = imin
-    iv_maxi = imax
-    nreps = iv_nstepi
-    istep = (iv_maxi - iv_mini) / iv_nstepi
-    iv_nstepi = iv_nstepi + 1
-    for i in range(iv_nstepi):
-        icur.append(float(i * istep) + iv_mini)
-    nsteps = iv_nstepi
-    vec = {}
-    #f1 = pylab.figure(1)
-    #p1 = pylab.subplot2grid((4, 1), (0, 0), rowspan=3)
-    #p2 = pylab.subplot2grid((4, 1), (3, 0), rowspan=1)
-    ##p3a = f1.add_subplot(6,1,6)
-    ##p3b = f1.add_subplot(6,1,5)
-    #f3 = pylab.figure(2)
-    #p3 = pylab.subplot2grid((2, 2), (0, 0), rowspan=1)
-    #p3.axes.set_ylabel(r'# spikes')
-    #p3.axes.set_xlabel(r'$I_{inj} (nA)$')
-    #p4 = pylab.subplot2grid((2, 2), (1, 0), rowspan=1)
-    #p4.axes.set_ylabel(r'Trial')
-    #p4.axes.set_xlabel(r'Time (ms)')
-    #p5 = pylab.subplot2grid((2, 2), (0, 1), rowspan=1)
-    #p5.axes.set_ylabel(r'V (mV)')
-    #p5.axes.set_xlabel(r'$I_{inj} (nA)$')
-    #p6 = pylab.subplot2grid((2, 2), (1, 1), rowspan=1)
-    #PH.cleanAxes([p1, p2, p3, p4, p5, p6])
 
-    #f4 = pylab.figure(3)
-    #p41 = pylab.subplot2grid((4, 1), (0, 0), rowspan=2)
-
-    #clist = ['k-', 'r-', 'b-', 'y-', 'g-']
-    #slist = ['ko', 'rx', 'gx', 'bx', 'mx']
-    splist = numpy.zeros(nsteps)
-    meanVss = numpy.zeros(nsteps)
-    meanIss = numpy.zeros(nsteps)
-    minVpk = numpy.zeros(nsteps)
-    for i in range(nsteps):
-        for var in ['v_soma', 'i_inj', 'time', 'm', 'h', 'ah', 'bh', 'am',
-                    'bm', 'gh', 'ik', 'ina', 'inat', 'i_stim']:
-            vec[var] = h.Vector()
-        if sites is not None:
-            for j in range(len(sites)):
-                vec['v_meas_%d' % (j)] = h.Vector()
-        if not reppulse:
-            istim.amp[1] = icur[i]
-        else:
-            stim['Amp'] = icur[i]
-            (secmd, maxt, tstims) = make_pulse(stim)
-            vec['i_stim'] = h.Vector(secmd)
-        h.tstop = tend
-        vec['v_soma'].record(cell.soma(0.5)._ref_v, sec=cell.soma)
-        vec['ik'].record(cell.soma(0.5)._ref_ik, sec=cell.soma)
-        natFlag = False
+class IVCurve(Protocol):
+    def __init__(self):
+        super(IVCurve, self).__init__()
+    
+    def reset(self):
+        super(IVCurve, self).reset()
+        self.voltage_traces = []
+        self.durs = None  # durations of current steps
+        self.current_cmd = None # Current command levels
+        self.current_traces = []
+        
+    def run(self, ivrange, cell, durs=None, sites=None, reppulse=None):
+        """
+        Run a current-clamp I/V curve on *cell*.
+        
+        Parameters:
+        ivrange : tuple
+            (min, max, step)
+        cell : Cell
+            The Cell instance to test.
+        durs : tuple
+            durations of (pre, pulse, post) regions of the command
+        sites : list
+            Sections to add recording electrodes
+        reppulse : 
+            stimulate with pulse train
+        """
+        self.reset()
+        
         try:
-            vec['inat'].record(cell.soma(0.5)._ref_inat, sec=cell.soma)
-            natFlag = True
+            (imin, imax, istep) = ivrange # unpack the tuple...
         except:
-            vec['ina'].record(cell.soma(0.5)._ref_ina, sec=cell.soma)
-            pass
-        if sites is not None:
-            for j in range(len(sites)):
-                if sites[j] is not None:
-                    vec['v_meas_%d' % (j)].record(
-                        sites[j](0.5)._ref_v, sec=sites[j])
-        vec['i_inj'].record(istim._ref_i, sec=cell.soma)
-        vec['gh'].record(cell.soma().ihvcn._ref_i, sec=cell.soma)
-        vec['time'].record(h._ref_t)
-        if reppulse is not None:
-            vec['i_stim'].play(istim._ref_i, h.dt, 0, sec=cell.soma)
-
-        h.init()
-        h.run()
+            raise TypeError("run_iv argument 1 must be a tuple (imin, imax, istep)")
         
-        #p1.plot(vec['time'], vec['v_soma'], 'k') # soma is plotted in black...
-        #p1.axes.set_ylabel('V (mV)')
-        ik = numpy.asarray(vec['ik'])
-        ina = numpy.asarray(vec['ina'])
-        if natFlag:
-            if len(ina) == 0:
-                ina = numpy.asarray(vec['inat'])
+        
+        # Configure IClamp
+        if durs is None:
+            durs = [10.0, 100.0, 50.0]
+            
+        self.durs = durs
+        
+        icur = []
+        if reppulse is None:
+            istim = h.IClamp2(0.5, sec=cell.soma) # use our new iclamp method
+            istim.dur[0] = durs[0]
+            istim.amp[0] = 0
+            istim.dur[1] = durs[1]
+            istim.amp[1] = 0.0 #-70.00
+            istim.dur[2] = durs[2]
+            istim.amp[2] = 0.0 # 0.045
+            istim.dur[3] = 0
+            istim.amp[3] = 0
+            istim.dur[4] = 0
+            istim.amp[4] = 0
+            tend = numpy.sum(durs)
+        else:
+            # set up stimulation with a pulse train
+            istim = h.iStim(0.5, sec=cell.soma)
+            stim = {}
+            stim['NP'] = 10
+            stim['Sfreq'] = 50.0 # stimulus frequency
+            stim['delay'] = 10.0
+            stim['dur'] = 2
+            stim['amp'] = 1.0
+            stim['PT'] = 0.0
+            istim.delay = 0
+            istim.dur = 1e9 # these actually do not matter...
+            istim.iMax = 0.0
+            (secmd, maxt, tstims) = make_pulse(stim)
+            tend = maxt
+
+        # Calculate current pulse levels
+        iv_nstepi = int(numpy.ceil((imax - imin) / istep))
+        iv_mini = imin
+        iv_maxi = imax
+        nreps = iv_nstepi
+        istep = (iv_maxi - iv_mini) / iv_nstepi
+        iv_nstepi = iv_nstepi + 1
+        for i in range(iv_nstepi):
+            icur.append(float(i * istep) + iv_mini)
+        nsteps = iv_nstepi
+        
+        self.current_cmd = icur
+        vec = {}
+        
+        #f1 = pylab.figure(1)
+        #p1 = pylab.subplot2grid((4, 1), (0, 0), rowspan=3)
+        #p2 = pylab.subplot2grid((4, 1), (3, 0), rowspan=1)
+        ##p3a = f1.add_subplot(6,1,6)
+        ##p3b = f1.add_subplot(6,1,5)
+        #f3 = pylab.figure(2)
+        #p3 = pylab.subplot2grid((2, 2), (0, 0), rowspan=1)
+        #p3.axes.set_ylabel(r'# spikes')
+        #p3.axes.set_xlabel(r'$I_{inj} (nA)$')
+        #p4 = pylab.subplot2grid((2, 2), (1, 0), rowspan=1)
+        #p4.axes.set_ylabel(r'Trial')
+        #p4.axes.set_xlabel(r'Time (ms)')
+        #p5 = pylab.subplot2grid((2, 2), (0, 1), rowspan=1)
+        #p5.axes.set_ylabel(r'V (mV)')
+        #p5.axes.set_xlabel(r'$I_{inj} (nA)$')
+        #p6 = pylab.subplot2grid((2, 2), (1, 1), rowspan=1)
+        #PH.cleanAxes([p1, p2, p3, p4, p5, p6])
+
+        #f4 = pylab.figure(3)
+        #p41 = pylab.subplot2grid((4, 1), (0, 0), rowspan=2)
+
+        #clist = ['k-', 'r-', 'b-', 'y-', 'g-']
+        #slist = ['ko', 'rx', 'gx', 'bx', 'mx']
+        splist = numpy.zeros(nsteps)
+        meanVss = numpy.zeros(nsteps)
+        meanIss = numpy.zeros(nsteps)
+        minVpk = numpy.zeros(nsteps)
+        
+        for i in range(nsteps):
+            
+            # Set up recording vectors
+            for var in ['v_soma', 'i_inj', 'time', 'm', 'h', 'ah', 'bh', 'am',
+                        'bm', 'gh', 'ik', 'ina', 'inat', 'i_stim']:
+                vec[var] = h.Vector()
+            if sites is not None:
+                for j in range(len(sites)):
+                    vec['v_meas_%d' % (j)] = h.Vector()
+                    
+            # Generate current command for this level 
+            if not reppulse:
+                istim.amp[1] = icur[i]
             else:
-                ina = ina + numpy.asarray(vec['inat'])
-        t = numpy.asarray(vec['time'])
-        iQ = scipy.integrate.trapz(ik, t) # total charge at end of run
-        iQKt = scipy.integrate.cumtrapz(ik, t, initial=0.0)
+                stim['Amp'] = icur[i]
+                (secmd, maxt, tstims) = make_pulse(stim)
+                vec['i_stim'] = h.Vector(secmd)
+                
+            
+            # Connect recording vectors
+            #vec['v_soma'].record(cell.soma(0.5)._ref_v, sec=cell.soma)
+            self.record(cell.soma(0.5)._ref_v, 'v_soma')
+            vec['ik'].record(cell.soma(0.5)._ref_ik, sec=cell.soma)
+            natFlag = False
+            try:
+                vec['inat'].record(cell.soma(0.5)._ref_inat, sec=cell.soma)
+                natFlag = True
+            except:
+                vec['ina'].record(cell.soma(0.5)._ref_ina, sec=cell.soma)
+                pass
+            
+            if sites is not None:
+                for j in range(len(sites)):
+                    if sites[j] is not None:
+                        vec['v_meas_%d' % (j)].record(
+                            sites[j](0.5)._ref_v, sec=sites[j])
+            vec['i_inj'].record(istim._ref_i, sec=cell.soma)
+            vec['gh'].record(cell.soma().ihvcn._ref_i, sec=cell.soma)
+            vec['time'].record(h._ref_t)
+            
+            # connect current command vector
+            if reppulse is not None:
+                vec['i_stim'].play(istim._ref_i, h.dt, 0, sec=cell.soma)
+
+            # GO
+            h.tstop = tend
+            h.init()
+            h.run()
+            
+            self.voltage_traces.append(self.get_record('v_soma'))
+            self.current_traces.append(np.array(vec['i_inj']))
+            
+    def analyze(self):
+        """
+        Return a structure describing analysis results:
         
-        # cumulative with trapezoidal integration
-        iQNat = scipy.integrate.cumtrapz(ina, t, initial=0.0)
-        #p41.plot(t, iQKt, 'g')
-        #p41.plot(t, iQNat, 'r')
-        #PH.cleanAxes(p41)
-        mwine = durs[0] + durs[1]
-        mwins = mwine - 0.2 * durs[1]
-        vsoma = numpy.asarray(vec['v_soma'])
-        (meanVss[i], r2) = U.measure('mean', vec['time'], vsoma, mwins, mwine)
-        (meanIss[i], r2) = U.measure('mean', vec['time'], vec['i_inj'],
-                            mwins, mwine)
-        (minVpk[i], r2) = U.measure('min', vec['time'], vsoma, durs[0],
-                            durs[0] + 0.5 * durs[1])
-        #if sites is not None:
-            #for j in range(len(sites)):
-                #if sites[j] is not None:
-                    #p1.plot(vec['time'], numpy.asarray(
-                            #vec['v_meas_%d' % (j)]), clist[j])
-        #p2.plot(vec['time'], vec['i_inj'], 'k')
-        #p2.axes.set_ylabel(r'$I_{inj} (nA)$')
-        #p2.axes.set_xlabel(r'Time (ms)')
-        spli = findspikes(vec['time'], vec['v_soma'], -30.0)
-        nsoma = i * numpy.ones(len(spli))
-        splist[i] = len(spli)
-        #p4.plot(spli, nsoma, 'bo-')
-        if sites is not None:
-            for j in range(len(sites)):
-                if sites[j] is not None:
-                    splim = U.findspikes(vec['time'], numpy.asarray(
-                            vec['v_meas_%d' % (j)]), -30.0)
-                    nseg = i * numpy.ones(len(splim))
-                    #if len(splim) > 0 and len(nseg) > 0:
-                        #p2.plot(splim, nseg, slist[j])
+        Vm traces
+        I/V relationship
+        F/I relationship
+        Spike times
+        """
+        for i in range(len(self.current_cmd)):
+            
+            #p1.plot(vec['time'], vec['v_soma'], 'k') # soma is plotted in black...
+            #p1.axes.set_ylabel('V (mV)')
+            ik = numpy.asarray(vec['ik'])
+            ina = numpy.asarray(vec['ina'])
+            if natFlag:
+                if len(ina) == 0:
+                    ina = numpy.asarray(vec['inat'])
+                else:
+                    ina = ina + numpy.asarray(vec['inat'])
+            t = numpy.asarray(vec['time'])
+            iQ = scipy.integrate.trapz(ik, t) # total charge at end of run
+            iQKt = scipy.integrate.cumtrapz(ik, t, initial=0.0)
+            
+            # cumulative with trapezoidal integration
+            iQNat = scipy.integrate.cumtrapz(ina, t, initial=0.0)
+            #p41.plot(t, iQKt, 'g')
+            #p41.plot(t, iQNat, 'r')
+            #PH.cleanAxes(p41)
+            mwine = durs[0] + durs[1]
+            mwins = mwine - 0.2 * durs[1]
+            vsoma = numpy.asarray(vec['v_soma'])
+            (meanVss[i], r2) = U.measure('mean', vec['time'], vsoma, mwins, mwine)
+            (meanIss[i], r2) = U.measure('mean', vec['time'], vec['i_inj'],
+                                mwins, mwine)
+            (minVpk[i], r2) = U.measure('min', vec['time'], vsoma, durs[0],
+                                durs[0] + 0.5 * durs[1])
+            #if sites is not None:
+                #for j in range(len(sites)):
+                    #if sites[j] is not None:
+                        #p1.plot(vec['time'], numpy.asarray(
+                                #vec['v_meas_%d' % (j)]), clist[j])
+            #p2.plot(vec['time'], vec['i_inj'], 'k')
+            #p2.axes.set_ylabel(r'$I_{inj} (nA)$')
+            #p2.axes.set_xlabel(r'Time (ms)')
+            spli = findspikes(vec['time'], vec['v_soma'], -30.0)
+            nsoma = i * numpy.ones(len(spli))
+            splist[i] = len(spli)
+            #p4.plot(spli, nsoma, 'bo-')
+            if sites is not None:
+                for j in range(len(sites)):
+                    if sites[j] is not None:
+                        splim = U.findspikes(vec['time'], numpy.asarray(
+                                vec['v_meas_%d' % (j)]), -30.0)
+                        nseg = i * numpy.ones(len(splim))
+                        #if len(splim) > 0 and len(nseg) > 0:
+                            #p2.plot(splim, nseg, slist[j])
 
-        #pylab.draw()
+            #pylab.draw()
 
-    ok1 = numpy.where(meanIss <= 0.0)[0].tolist()
-    ok2 = numpy.where(meanVss >= -70.0)[0].tolist()
-    ok3 = numpy.where(splist == 0)[0].tolist()
-    ok = list(set(ok1).intersection(set(ok2)))
-    #Linear regression using stats.linregress
-    if len(ok) > 1: # need 2 points to make that line
-        (a_s, b_s, r, tt, stderr)=SStat.linregress(meanIss[ok], meanVss[ok])
-        print('Linear regression using stats.linregress')
-        print('regression: slope=%.2f intercept=%.2f, std error= %.3f'
-         % (a_s, b_s, stderr))
-        print '  r: %.3f   p: %.3f' % (r, tt)
+        ok1 = numpy.where(meanIss <= 0.0)[0].tolist()
+        ok2 = numpy.where(meanVss >= -70.0)[0].tolist()
+        ok3 = numpy.where(splist == 0)[0].tolist()
+        ok = list(set(ok1).intersection(set(ok2)))
+        #Linear regression using stats.linregress
+        if len(ok) > 1: # need 2 points to make that line
+            (a_s, b_s, r, tt, stderr)=SStat.linregress(meanIss[ok], meanVss[ok])
+            print('Linear regression using stats.linregress')
+            print('regression: slope=%.2f intercept=%.2f, std error= %.3f'
+            % (a_s, b_s, stderr))
+            print '  r: %.3f   p: %.3f' % (r, tt)
 
-    #p2.set_xlim(0, 160)
-    #p1.set_xlim(0, 160)
-    #if scales is not None:
-        #p3.set_xlim(scales[0], scales[2])
-        #p3.set_ylim(scales[4], scales[5])
-        #PH.crossAxes(p5, limits=scales[0:4], xyzero=scales[9])
-        #if scales[6] == 'offset':
-            #PH.nice_plot(p3, direction='outward')
-    #p5.plot(meanIss[ok3], meanVss[ok3], 'ko-')
-    #p5.plot(meanIss[ok1], minVpk[ok1], 'ks-')
-    #p3.plot(icur, splist, 'ro-')
+        #p2.set_xlim(0, 160)
+        #p1.set_xlim(0, 160)
+        #if scales is not None:
+            #p3.set_xlim(scales[0], scales[2])
+            #p3.set_ylim(scales[4], scales[5])
+            #PH.crossAxes(p5, limits=scales[0:4], xyzero=scales[9])
+            #if scales[6] == 'offset':
+                #PH.nice_plot(p3, direction='outward')
+        #p5.plot(meanIss[ok3], meanVss[ok3], 'ko-')
+        #p5.plot(meanIss[ok1], minVpk[ok1], 'ks-')
+        #p3.plot(icur, splist, 'ro-')
 
-    print 'I,Vss,Vpk,SpikesperSec'
-    for i in range(nsteps):
-        print '%8.4f,%8.3f,%8.3f,%8.2f' % (icur[i],
-            meanVss[i], minVpk[i], splist[i])
+        print 'I,Vss,Vpk,SpikesperSec'
+        for i in range(nsteps):
+            print '%8.4f,%8.3f,%8.3f,%8.2f' % (icur[i],
+                meanVss[i], minVpk[i], splist[i])
 
 
-    #pylab.show()
+        #pylab.show()
 
+
+    def show(self):
+        """
+        Plot results from run_iv()
+        """
+        if not HAVE_PG:
+            raise Exception("Requires pyqtgraph")
+        
+        app = pg.mkQApp()
+        win = pg.GraphicsWindow()
+        Vplot = win.addPlot()
+        IVplot = win.addPlot()
+        win.nextRow()
+        Iplot = win.addPlot()
+        FIplot = win.addPlot()
+    
+        for i in range(len(self.current_cmd)):
+            Vplot.plot(self.voltage_traces[i])
+            Iplot.plot(self.current_traces[i])
+        
+        self.win = win
+    
 
 def run_vc(vmin, vmax, vstep, cell):
     """
