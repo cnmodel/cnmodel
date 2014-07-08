@@ -554,8 +554,8 @@ if __name__ == "__main__":
     import nrnlibrary.cells as cells
     
     debugFlag = True
-    parser = argparse.ArgumentParser(description=('Cells.py:',
-    ' Biophysical representatoins of neuorns (mostly auditory)'))
+    parser = argparse.ArgumentParser(description=('test_cells.py:',
+    ' Biophysical representations of neurons (mostly auditory), test file'))
     cclamp = False
     cellinfo = {'types': ['bushy', 'stellate', 'steldend', 'dstellate', 'sgc',
                             'cartwheel', 'pyramidal', 'octopus'],
@@ -593,7 +593,7 @@ if __name__ == "__main__":
                 'octopus': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
                     'crossing', [0, -60])}
     ax = None
-    h.celsius = 32
+    h.celsius = 22
     parser.add_argument('celltype', action='store')
     parser.add_argument('species', action='store', default='guineapig')
      # species is an optional option....
@@ -621,7 +621,8 @@ if __name__ == "__main__":
         sys.exit(1)
 
     path = os.path.dirname(__file__)
-    h.nrn_load_dll(os.path.join(path, 'i386/special'))
+    #print path
+    #h.nrn_load_dll(os.path.join(path, 'i386/special'))
     h.load_file("stdrun.hoc")
     h.load_file(os.path.join(path, "custom_init.hoc"))
     # replace init with one that gets closer to steady state
