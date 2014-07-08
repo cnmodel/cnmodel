@@ -31,7 +31,7 @@ pylab.rcParams['figure.facecolor'] = 'white'
 print MP.__version__
 
 
-def make_pulse(stim, pulsetype="square"):
+def make_pulse(stim):
     """
     Generate a pulse train for current / voltage command. Returns a tuple:
     
@@ -50,9 +50,6 @@ def make_pulse(stim, pulsetype="square"):
         * PT : delay between end of train and test pulse (0 for no test)
         * NP : number of pulses
         * hold : holding level (optional)
-    pulsetype : str
-        'square' : square pulses  (default)
-        'exp' : psg-like pulses
         
     """
     delay = int(numpy.floor(stim['delay'] / h.dt))
@@ -68,37 +65,21 @@ def make_pulse(stim, pulsetype="square"):
     
     hold = stim.get('hold', None)
     
-    w = numpy.zeros(floor(maxt / h.dt))
+    w = numpy.zeros(numpy.floor(maxt / h.dt))
     if hold is not None:
         w += hold
     
     #   make pulse
     tstims = [0] * int(stim['NP'])
-    if pulsetype == 'square':
-        for j in range(0, int(stim['NP'])):
-            t = (delay + j * ipi) * h.dt
-            w[delay + ipi * j:delay + (ipi * j) + pdur] = stim['amp']
-            tstims[j] = delay + ipi * j
-        if stim['PT'] > 0.0:
-            send = delay + ipi * j
-            for i in range(send + posttest, send + posttest + pdur):
-                w[i] = stim['amp']
+    for j in range(0, int(stim['NP'])):
+        t = (delay + j * ipi) * h.dt
+        w[delay + ipi * j:delay + (ipi * j) + pdur] = stim['amp']
+        tstims[j] = delay + ipi * j
+    if stim['PT'] > 0.0:
+        send = delay + ipi * j
+        for i in range(send + posttest, send + posttest + pdur):
+            w[i] = stim['amp']
 
-    if pulsetype == 'exp':
-        for j in range(0, int(stim['NP'])):
-            for i in range(0, len(w)):
-                if delay + ipi * j + i < len(w):
-                    w[delay + ipi * j + i] += (stim['amp'] *
-                         (1.0 - exp(i / (pdur / -3.0))) *
-                         exp(-1.0 * (i - (pdur / 3.0)) / pdur))
-            tstims[j] = delay + ipi * j
-        if stim['PT'] > 0.0:
-            send = delay + ipi * j
-            for i in range(send + posttest, len(w)):
-                w[i] += (stim['amp'] *
-                    (1.0 - exp(-1.0 * i / (pdur / 3.0))) *
-                    exp(-1.0 * (i - (pdur / 3.0)) / pdur))
-    
     return(w, maxt, tstims)
 
 
@@ -113,7 +94,8 @@ def run_iv(ivrange, cell, durs=None, sites=None, scales=None, reppulse=None):
         The Cell instance to test.
     durs : tuple
         durations of (pre, pulse, post) regions of the command
-    sites : 
+    sites : list
+        Sections to add recording electrodes
     scales : 
     reppulse : 
         stimulate with pulse train
