@@ -72,18 +72,18 @@ def make_pulse(stim):
     #   make pulse
     tstims = [0] * int(stim['NP'])
     for j in range(0, int(stim['NP'])):
-        t = (delay + j * ipi) * h.dt
-        w[delay + ipi * j:delay + (ipi * j) + pdur] = stim['amp']
-        tstims[j] = delay + ipi * j
+        start = delay + j * ipi
+        t = start * h.dt
+        w[start:start + pdur] = stim['amp']
+        tstims[j] = start
     if stim['PT'] > 0.0:
-        send = delay + ipi * j
-        for i in range(send + posttest, send + posttest + pdur):
+        for i in range(start + posttest, start + posttest + pdur):
             w[i] = stim['amp']
 
     return(w, maxt, tstims)
 
 
-def run_iv(ivrange, cell, durs=None, sites=None, scales=None, reppulse=None):
+def run_iv(ivrange, cell, durs=None, sites=None, reppulse=None):
     """
     Run a current-clamp I/V curve and display results.
     
@@ -96,7 +96,6 @@ def run_iv(ivrange, cell, durs=None, sites=None, scales=None, reppulse=None):
         durations of (pre, pulse, post) regions of the command
     sites : list
         Sections to add recording electrodes
-    scales : 
     reppulse : 
         stimulate with pulse train
     """
@@ -151,32 +150,29 @@ def run_iv(ivrange, cell, durs=None, sites=None, scales=None, reppulse=None):
         icur.append(float(i * istep) + iv_mini)
     nsteps = iv_nstepi
     vec = {}
-    f1 = pylab.figure(1)
-    p1 = pylab.subplot2grid((4, 1), (0, 0), rowspan=3)
-    p2 = pylab.subplot2grid((4, 1), (3, 0), rowspan=1)
-    #p3a = f1.add_subplot(6,1,6)
-    #p3b = f1.add_subplot(6,1,5)
-    f3 = pylab.figure(2)
-    p3 = pylab.subplot2grid((2, 2), (0, 0), rowspan=1)
-    p3.axes.set_ylabel(r'# spikes')
-    p3.axes.set_xlabel(r'$I_{inj} (nA)$')
-    p4 = pylab.subplot2grid((2, 2), (1, 0), rowspan=1)
-    p4.axes.set_ylabel(r'Trial')
-    p4.axes.set_xlabel(r'Time (ms)')
-    p5 = pylab.subplot2grid((2, 2), (0, 1), rowspan=1)
-    p5.axes.set_ylabel(r'V (mV)')
-    p5.axes.set_xlabel(r'$I_{inj} (nA)$')
-    p6 = pylab.subplot2grid((2, 2), (1, 1), rowspan=1)
-    PH.cleanAxes([p1, p2, p3, p4, p5, p6])
+    #f1 = pylab.figure(1)
+    #p1 = pylab.subplot2grid((4, 1), (0, 0), rowspan=3)
+    #p2 = pylab.subplot2grid((4, 1), (3, 0), rowspan=1)
+    ##p3a = f1.add_subplot(6,1,6)
+    ##p3b = f1.add_subplot(6,1,5)
+    #f3 = pylab.figure(2)
+    #p3 = pylab.subplot2grid((2, 2), (0, 0), rowspan=1)
+    #p3.axes.set_ylabel(r'# spikes')
+    #p3.axes.set_xlabel(r'$I_{inj} (nA)$')
+    #p4 = pylab.subplot2grid((2, 2), (1, 0), rowspan=1)
+    #p4.axes.set_ylabel(r'Trial')
+    #p4.axes.set_xlabel(r'Time (ms)')
+    #p5 = pylab.subplot2grid((2, 2), (0, 1), rowspan=1)
+    #p5.axes.set_ylabel(r'V (mV)')
+    #p5.axes.set_xlabel(r'$I_{inj} (nA)$')
+    #p6 = pylab.subplot2grid((2, 2), (1, 1), rowspan=1)
+    #PH.cleanAxes([p1, p2, p3, p4, p5, p6])
 
-    f4 = pylab.figure(3)
-    p41 = pylab.subplot2grid((4, 1), (0, 0), rowspan=2)
+    #f4 = pylab.figure(3)
+    #p41 = pylab.subplot2grid((4, 1), (0, 0), rowspan=2)
 
-#    if message is not None:
-#        print 'meas: ', dir(measseg(0.5))
-
-    clist = ['k-', 'r-', 'b-', 'y-', 'g-']
-    slist = ['ko', 'rx', 'gx', 'bx', 'mx']
+    #clist = ['k-', 'r-', 'b-', 'y-', 'g-']
+    #slist = ['ko', 'rx', 'gx', 'bx', 'mx']
     splist = numpy.zeros(nsteps)
     meanVss = numpy.zeros(nsteps)
     meanIss = numpy.zeros(nsteps)
@@ -194,7 +190,6 @@ def run_iv(ivrange, cell, durs=None, sites=None, scales=None, reppulse=None):
             stim['Amp'] = icur[i]
             (secmd, maxt, tstims) = make_pulse(stim)
             vec['i_stim'] = h.Vector(secmd)
-#print "current: %f" % icur[i]
         h.tstop = tend
         vec['v_soma'].record(cell.soma(0.5)._ref_v, sec=cell.soma)
         vec['ik'].record(cell.soma(0.5)._ref_ik, sec=cell.soma)
@@ -208,8 +203,6 @@ def run_iv(ivrange, cell, durs=None, sites=None, scales=None, reppulse=None):
         if sites is not None:
             for j in range(len(sites)):
                 if sites[j] is not None:
-                    print 'section %d : ' % (j),
-                    print sites[j]
                     vec['v_meas_%d' % (j)].record(
                         sites[j](0.5)._ref_v, sec=sites[j])
         vec['i_inj'].record(istim._ref_i, sec=cell.soma)
@@ -218,20 +211,11 @@ def run_iv(ivrange, cell, durs=None, sites=None, scales=None, reppulse=None):
         if reppulse is not None:
             vec['i_stim'].play(istim._ref_i, h.dt, 0, sec=cell.soma)
 
-        # h.t = -200.
-        # dtsav = h.dt
-        # h.dt = 1e9
-        # while h.t < 0:
-        #     h.fadvance()
-        # h.dt = dtsav
-        # h.t = 0
-        # h.fcurrent()
-        # h.cvode.re_init()
         h.init()
         h.run()
-        #tvec = arange(0, h.tstop, h.dt)
-        p1.plot(vec['time'], vec['v_soma'], 'k') # soma is plotted in black...
-        p1.axes.set_ylabel('V (mV)')
+        
+        #p1.plot(vec['time'], vec['v_soma'], 'k') # soma is plotted in black...
+        #p1.axes.set_ylabel('V (mV)')
         ik = numpy.asarray(vec['ik'])
         ina = numpy.asarray(vec['ina'])
         if natFlag:
@@ -242,12 +226,12 @@ def run_iv(ivrange, cell, durs=None, sites=None, scales=None, reppulse=None):
         t = numpy.asarray(vec['time'])
         iQ = scipy.integrate.trapz(ik, t) # total charge at end of run
         iQKt = scipy.integrate.cumtrapz(ik, t, initial=0.0)
+        
         # cumulative with trapezoidal integration
         iQNat = scipy.integrate.cumtrapz(ina, t, initial=0.0)
-        p41.plot(t, iQKt, 'g')
-        p41.plot(t, iQNat, 'r')
-        PH.cleanAxes(p41)
-#        PH.cleanAxes(p1)
+        #p41.plot(t, iQKt, 'g')
+        #p41.plot(t, iQNat, 'r')
+        #PH.cleanAxes(p41)
         mwine = durs[0] + durs[1]
         mwins = mwine - 0.2 * durs[1]
         vsoma = numpy.asarray(vec['v_soma'])
@@ -256,30 +240,28 @@ def run_iv(ivrange, cell, durs=None, sites=None, scales=None, reppulse=None):
                             mwins, mwine)
         (minVpk[i], r2) = U.measure('min', vec['time'], vsoma, durs[0],
                             durs[0] + 0.5 * durs[1])
-        if sites is not None:
-            for j in range(len(sites)):
-                if sites[j] is not None:
-                    p1.plot(vec['time'], numpy.asarray(
-                            vec['v_meas_%d' % (j)]), clist[j])
-        p2.plot(vec['time'], vec['i_inj'], 'k')
-#        PH.cleanAxes(p2)
-        p2.axes.set_ylabel(r'$I_{inj} (nA)$')
-        p2.axes.set_xlabel(r'Time (ms)')
-        #p3b.plot(vec['time'], vec['gh'])
+        #if sites is not None:
+            #for j in range(len(sites)):
+                #if sites[j] is not None:
+                    #p1.plot(vec['time'], numpy.asarray(
+                            #vec['v_meas_%d' % (j)]), clist[j])
+        #p2.plot(vec['time'], vec['i_inj'], 'k')
+        #p2.axes.set_ylabel(r'$I_{inj} (nA)$')
+        #p2.axes.set_xlabel(r'Time (ms)')
         spli = findspikes(vec['time'], vec['v_soma'], -30.0)
         nsoma = i * numpy.ones(len(spli))
         splist[i] = len(spli)
-        p4.plot(spli, nsoma, 'bo-')
+        #p4.plot(spli, nsoma, 'bo-')
         if sites is not None:
             for j in range(len(sites)):
                 if sites[j] is not None:
                     splim = U.findspikes(vec['time'], numpy.asarray(
                             vec['v_meas_%d' % (j)]), -30.0)
                     nseg = i * numpy.ones(len(splim))
-                    if len(splim) > 0 and len(nseg) > 0:
-                        p2.plot(splim, nseg, slist[j])
+                    #if len(splim) > 0 and len(nseg) > 0:
+                        #p2.plot(splim, nseg, slist[j])
 
-        pylab.draw()
+        #pylab.draw()
 
     ok1 = numpy.where(meanIss <= 0.0)[0].tolist()
     ok2 = numpy.where(meanVss >= -70.0)[0].tolist()
@@ -293,17 +275,17 @@ def run_iv(ivrange, cell, durs=None, sites=None, scales=None, reppulse=None):
          % (a_s, b_s, stderr))
         print '  r: %.3f   p: %.3f' % (r, tt)
 
-    p2.set_xlim(0, 160)
-    p1.set_xlim(0, 160)
-    if scales is not None:
-        p3.set_xlim(scales[0], scales[2])
-        p3.set_ylim(scales[4], scales[5])
-        PH.crossAxes(p5, limits=scales[0:4], xyzero=scales[9])
-        if scales[6] == 'offset':
-            PH.nice_plot(p3, direction='outward')
-    p5.plot(meanIss[ok3], meanVss[ok3], 'ko-')
-    p5.plot(meanIss[ok1], minVpk[ok1], 'ks-')
-    p3.plot(icur, splist, 'ro-')
+    #p2.set_xlim(0, 160)
+    #p1.set_xlim(0, 160)
+    #if scales is not None:
+        #p3.set_xlim(scales[0], scales[2])
+        #p3.set_ylim(scales[4], scales[5])
+        #PH.crossAxes(p5, limits=scales[0:4], xyzero=scales[9])
+        #if scales[6] == 'offset':
+            #PH.nice_plot(p3, direction='outward')
+    #p5.plot(meanIss[ok3], meanVss[ok3], 'ko-')
+    #p5.plot(meanIss[ok1], minVpk[ok1], 'ks-')
+    #p3.plot(icur, splist, 'ro-')
 
     print 'I,Vss,Vpk,SpikesperSec'
     for i in range(nsteps):
@@ -311,7 +293,7 @@ def run_iv(ivrange, cell, durs=None, sites=None, scales=None, reppulse=None):
             meanVss[i], minVpk[i], splist[i])
 
 
-    pylab.show()
+    #pylab.show()
 
 
 def run_vc(vmin, vmax, vstep, cell):

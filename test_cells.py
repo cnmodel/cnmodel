@@ -2,6 +2,7 @@ import argparse
 import os, sys
 from neuron import h
 
+import nrnlibrary
 import nrnlibrary.cells as cells
 from nrnlibrary.util.testing import run_iv, run_vc, run_democlamp
 
@@ -73,7 +74,7 @@ else:
     print 'celltypes: ', cellinfo['types']
     sys.exit(1)
 
-path = os.path.dirname(__file__)
+path = os.path.dirname(nrnlibrary.__file__)
 #h.nrn_load_dll(os.path.join(path, 'i386/special'))
 h.load_file("stdrun.hoc")
 h.load_file(os.path.join(path, "custom_init.hoc"))
@@ -140,7 +141,7 @@ print(cell.__doc__)
 #
 if args.cc is True:
     run_iv(ccivrange[args.celltype], cell,
-        scales=scale[args.celltype], sites=sites, reppulse=ptype)
+        sites=sites, reppulse=ptype)
 elif args.vc is True:
     run_vc(-120, -40, 5, cell)
 else:
