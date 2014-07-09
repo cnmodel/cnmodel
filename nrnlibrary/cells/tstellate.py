@@ -24,9 +24,9 @@ class TStellate(Cell):
 
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': 'guineapig-TypeI', 'ttx': ttx}
-        self.e_k = -80  # potassium reversal potential, mV
-        self.e_na = 50
-        self.c_m = 1.0  # specific membrane capacitance,  uf/cm^2
+        self.e_k = -70  # potassium reversal potential, mV
+        self.e_na = 55
+        self.c_m = 0.9  # specific membrane capacitance,  uf/cm^2
         self.R_a = 150  # axial resistivity of cytoplasm/axoplasm, ohm.cm
         self.totcap = None
         self.somaarea = None
@@ -56,6 +56,7 @@ class TStellate(Cell):
         soma.insert('ihvcn')
         soma.insert('leak')
         soma.ek = self.e_k
+        soma().leak.e = -65.0
         self.mechanisms = ['kht', 'ka', 'ihvcn', 'leak', nach]
         self.soma = soma
         self.species_scaling()  # set the default type II cell parameters
@@ -69,6 +70,7 @@ class TStellate(Cell):
         lstd = 1E4 * ((self.somaarea / np.pi) ** 0.5)  # convert from cm to um
         self.soma.diam = lstd
         self.soma.L = lstd
+        print 'lstd: %f  area: %f  totcap: %f' % (lstd, self.somaarea, self.totcap)
 
     def species_scaling(self, species='guineapig'):
         """
@@ -85,7 +87,8 @@ class TStellate(Cell):
             soma().ihvcn.gbar = nstomho(18.0, self.somaarea)
             soma().ihvcn.eh = -43 # Rodrigues and Oertel, 2006
             soma().leak.gbar = nstomho(2.0, self.somaarea)
-            self.vm0 = -60.0
+            soma().leak.e = -65.0
+            self.vm0 = -63.9
             self.axonsf = 0.5
         if species == 'guineapig':  # values from R&M 2003, Type I
             self.set_soma_size_from_Cm(12.0)
@@ -94,9 +97,10 @@ class TStellate(Cell):
             soma().ka.gbar = nstomho(0.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(0.5, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
-            self.vm0 = -63.6
+            soma().leak.e = -65.0
+            self.vm0 = -63.9
             self.axonsf = 0.5
-        if species == 'guineapig-TypeIt':
+        if species == 'guineapig-typeI-t':
             # guinea pig data from Rothman and Manis, 2003, type It
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma)
@@ -104,6 +108,7 @@ class TStellate(Cell):
             soma().ka.gbar = nstomho(65.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(0.5, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
+            soma().leak.e = -65.0
             self.vm0 = -64.2
             self.axonsf = 0.5
         if species == 'cat':  # a cat is a big guinea pig Type I
@@ -113,6 +118,7 @@ class TStellate(Cell):
             soma().ka.gbar = nstomho(0.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(0.5, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
+            soma().leak.e = -65.0
             self.vm0 = -63.6
             self.axonsf = 1.0
         self.status['species'] = species

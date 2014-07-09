@@ -25,8 +25,8 @@ class Bushy(Cell):
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': 'guineapig-bushy-II', 'ttx': ttx}
         self.e_k = -70  # potassium reversal potential, mV
-        self.e_na = 50
-        self.c_m = 1.0  # specific membrane capacitance,  uf/cm^2
+        self.e_na = 55
+        self.c_m = 0.9  # specific membrane capacitance,  uf/cm^2
         self.R_a = 150  # axial resistivity of cytoplasm/axoplasm, ohm.cm
         self.totcap = None
         self.somaarea = None
@@ -36,7 +36,7 @@ class Bushy(Cell):
         self.maindend = None  # hold main dendrite sections
         self.secdend = None  # hold secondary dendrite sections
         self.axonsf = None  # axon diameter scale factor
-        self.vm0 = -60.
+        self.vm0 = -63.6   # nominal for type II; will be reset below
 
         soma = h.Section()  # one compartment of about 29000 um2
         soma.nseg = 1
@@ -45,6 +45,7 @@ class Bushy(Cell):
         soma.insert('ihvcn')
         soma.insert('leak')
         soma.ek = self.e_k
+        soma().leak.e = -65.0
 
         # insert the requested sodium channel
         if nach == 'jsrna':
@@ -54,7 +55,7 @@ class Bushy(Cell):
         else:
             soma.insert('nacn')
         self.soma = soma
-        self.species_scaling(soma)  # set the default type II cell parameters
+        self.species_scaling()  # set the default type II cell parameters
 
         if debug:
             print "<< bushy: JSR bushy cell model created >>"
@@ -66,11 +67,11 @@ class Bushy(Cell):
         self.soma.diam = lstd
         self.soma.L = lstd
 
-    def species_scaling(self, soma, species='guineapig-bushy-II'):
+    def species_scaling(self, species='guineapig-bushy-II'):
         """
         Adjust all of the conductances and the cell size according to the species requested.
         """
-
+        soma = self.soma
         if species == 'mouse':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
             print 'Mouse bushy cell'
@@ -80,18 +81,20 @@ class Bushy(Cell):
             soma().klt.gbar = nstomho(80.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(30.0, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
+            soma().leak.e = -65.0
             self.vm0 = -63.6
             self.axonsf = 0.57
-        if species == 'guineapig-bushy-II':
+        elif species == 'guineapig-bushy-II':
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
             soma().klt.gbar = nstomho(200.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(20.0, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
+            soma().leak.e = -65.0
             self.vm0 = -63.6
             self.axonsf = 0.57
-        if species == 'guineapig-bushy-II-I':
+        elif species == 'guineapig-bushy-II-I':
             # guinea pig data from Rothman and Manis, 2003, type II=I
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma)
@@ -99,17 +102,22 @@ class Bushy(Cell):
             soma().klt.gbar = nstomho(35.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(3.5, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
+            soma().leak.e = -65.0
             self.vm0 = -63.8
             self.axonsf = 0.57
-        if species == 'cat':  # a cat is a big guinea pig
+        elif species == 'cat':  # a cat is a big guinea pig
             self.set_soma_size_from_Cm(35.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
             soma().klt.gbar = nstomho(200.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(20.0, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
+            soma().leak.e = -65.0
             self.vm0 = -63.6
             self.axonsf = 1.0
+        else:
+            raise ValueError('Species %s is not recognized for Bushy cells', species)
+
         self.status['species'] = species
 
     def adjust_na_chans(self, soma, debug=False):

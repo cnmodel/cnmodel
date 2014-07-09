@@ -1,5 +1,6 @@
 from neuron import h
 from ..pynrnutilities import nstomho
+from ..pynrnutilities import mho2ns
 
 class Cell(object):
     """
@@ -30,10 +31,49 @@ class Cell(object):
             if m in ['cm', 'diam', 'k_ion', 'na_ion', 'next', 'point_processes', 'sec', 'v', 'x']:
                 continue  # skip non-mechanisms known to us
             try:
-                print('{0:>12s} : {1:<7.3g} '.format(m, eval('section().'+m+'.gbar')))
+                gx=eval('section().'+m+'.gbar')
+                print gx
+                print('{0:>12s} : {1:<7.3g} mho/cm2  {2:<7.3g} nS '.format(m, repr(gx), repr(mho2ns(gx))))
             except:
                 print('{0:>12s} : <no gbar> '.format(m))
         print '-'*32
+
+    def measure_rintau(self):
+        """
+        Run the model for 2 msec after initialization - then
+        compute the inverse of the sum of the conductances to get Rin at rest
+        compute Cm*Rin to get tau at rest
+        :param none:
+        :return Rin (Mohm), tau (ms) and Vm (mV):
+        """
+        u=dir(self.soma())
+        h.tstop = 2.0
+        h.init()
+        h.finitialize(self.vm0)
+        h.run()
+        gnames = {'nacn': 'gna', 'leak': 'gbar',
+                  'klt': 'gklt', 'kht': 'gkht',
+                  'ka': 'gka','ihvcn': 'gh',
+                  }
+        gsum = 0.
+        for m in u:
+            if m[0:2] == '__':
+                continue
+            if m in ['cm', 'diam', 'k_ion', 'na_ion', 'next', 'point_processes', 'sec', 'v', 'x']:
+                continue  # skip non-mechanisms known to us
+            gx = 'section().'+m+'.'+gnames[m]
+            try:
+                gsum += eval(gx)
+            except:
+                pass
+                #print('{0:>12s} : <no g> '.format(m))
+        # convert gsum from us/cm2 to nS using cell area
+        gs = mho2ns(gsum, self.somaarea)
+        Rin = 1e3/gs  # convert to megohms
+        tau = Rin*self.totcap*1e-3  # convert to msec
+       # print('Vm0: {0:8.1f} mV     Vmeas: {1:8.2f} mV'.format(self.vm0, self.soma(0.5).v))
+       # print('Rin: {0:8.1f} Mohm   tau: {1:8.2f} ms  cap: {2:8.1f}'.format(Rin, tau, self.totcap))
+        return Rin, tau, self.som(0.5).v
 
     def add_axon(self, soma, somaarea, c_m=1.0, R_a=150, axonsf=1.0, nodes=5, debug=False):
         """
