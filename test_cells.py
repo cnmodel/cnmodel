@@ -4,7 +4,7 @@ from neuron import h
 
 import nrnlibrary
 import nrnlibrary.cells as cells
-from nrnlibrary.util.testing import IVCurve, run_vc, run_democlamp
+from nrnlibrary.protocols import IVCurve, run_vc, run_democlamp
 
 debugFlag = True
 parser = argparse.ArgumentParser(description=('test_cells.py:',

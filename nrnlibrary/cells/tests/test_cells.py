@@ -1,10 +1,10 @@
 import os, pickle, pprint
 import numpy as np
+import neuron
 
 import nrnlibrary
 import nrnlibrary.cells as cells
-from nrnlibrary.util.testing import IVCurve, run_vc, run_democlamp
-import neuron
+from nrnlibrary.protocols import IVCurve
 
 #
 # Cell-type tests

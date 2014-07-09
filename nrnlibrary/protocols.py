@@ -1,11 +1,11 @@
 import os
 import os.path
 from neuron import h
-from neuron import *
-from nrnlibrary.pynrnutilities import *
+#from neuron import *
+#from nrnlibrary.pynrnutilities import *
 import pylibrary.Utility as U
 import pylibrary.PlotHelpers as PH
-import numpy
+import numpy as np
 import scipy
 import scipy.integrate
 import scipy.stats
@@ -15,6 +15,8 @@ try:
     HAVE_PG = True
 except ImportError:
     HAVE_PG = False
+
+from .util.stim import make_pulse
 
 #import matplotlib as MP # must call first... before pylag/pyplot or backends
 #MP.use('Qt4Agg')
@@ -31,74 +33,6 @@ except ImportError:
 #pylab.rcParams['pdf.fonttype'] = 42
 #pylab.rcParams['figure.facecolor'] = 'white'
 
-
-def make_pulse(stim):
-    """
-    Generate a pulse train for current / voltage command. Returns a tuple:
-    
-    * w : stimulus waveform
-    * maxt : duration of waveform
-    * tstims : index of each pulse in the train
-    
-    Parameters:
-    stim : dict
-        Holds parameters that determine stimulus shape:
-        
-        * delay : time before first pulse
-        * Sfreq : frequency of pulses 
-        * dur : duration of one pulse
-        * amp : pulse amplitude
-        * PT : delay between end of train and test pulse (0 for no test)
-        * NP : number of pulses
-        * hold : holding level (optional)
-        
-    """
-    defaults = {
-        'delay': 10,
-        'Sfreq': 50,
-        'dur': 50,
-        'amp': 0.4,
-        'PT': 0,
-        'NP': 1,
-        'hold': 0.0,
-        }
-    for k in stim:
-        if k not in defaults:
-            raise Exception("Stim parameter '%s' not accepted." % k)
-    defaults.update(stim)
-    stim = defaults
-    
-    
-    
-    delay = int(numpy.floor(stim['delay'] / h.dt))
-    ipi = int(numpy.floor((1000.0 / stim['Sfreq']) / h.dt))
-    pdur = int(numpy.floor(stim['dur'] / h.dt))
-    posttest = int(numpy.floor(stim['PT'] / h.dt))
-    ndur = 5
-    if stim['PT'] == 0:
-        ndur = 1
-    
-    maxt = h.dt * (stim['delay'] + (ipi * (stim['NP'] + 3)) +
-        posttest + pdur * ndur)
-    
-    hold = stim.get('hold', None)
-    
-    w = numpy.zeros(numpy.floor(maxt / h.dt))
-    if hold is not None:
-        w += hold
-    
-    #   make pulse
-    tstims = [0] * int(stim['NP'])
-    for j in range(0, int(stim['NP'])):
-        start = delay + j * ipi
-        t = start * h.dt
-        w[start:start + pdur] = stim['amp']
-        tstims[j] = start
-    if stim['PT'] > 0.0:
-        for i in range(start + posttest, start + posttest + pdur):
-            w[i] = stim['amp']
-
-    return(w, maxt, tstims)
 
 
 class Protocol(object):
@@ -122,7 +56,7 @@ class Protocol(object):
         
     def __getitem__(self, name):
         """
-        Return a numpy array for previously recorded data given *name*.
+        Return a np array for previously recorded data given *name*.
         """
         return np.array(self._vectors[name])
 
@@ -189,12 +123,13 @@ class IVCurve(Protocol):
             #istim.amp[3] = 0
             #istim.dur[4] = 0
             #istim.amp[4] = 0
-            #tend = numpy.sum(durs)
+            #tend = np.sum(durs)
             stim = {
                 'NP': 1,
                 'delay': durs[0],
                 'dur': durs[1],
                 'amp': 1.0,
+                'dt': dt,
                 }
         else:
             stim = {
@@ -204,6 +139,7 @@ class IVCurve(Protocol):
                 'dur': 2,
                 'amp': 1.0,
                 'PT': 0.0,
+                'dt': dt,
                 }
         istim = h.iStim(0.5, sec=cell.soma)
         istim.delay = 0
@@ -214,7 +150,7 @@ class IVCurve(Protocol):
 
 
         # Calculate current pulse levels
-        iv_nstepi = int(numpy.ceil((imax - imin) / istep))
+        iv_nstepi = int(np.ceil((imax - imin) / istep))
         iv_mini = imin
         iv_maxi = imax
         nreps = iv_nstepi
@@ -252,10 +188,10 @@ class IVCurve(Protocol):
 
         #clist = ['k-', 'r-', 'b-', 'y-', 'g-']
         #slist = ['ko', 'rx', 'gx', 'bx', 'mx']
-        splist = numpy.zeros(nsteps)
-        meanVss = numpy.zeros(nsteps)
-        meanIss = numpy.zeros(nsteps)
-        minVpk = numpy.zeros(nsteps)
+        splist = np.zeros(nsteps)
+        meanVss = np.zeros(nsteps)
+        meanIss = np.zeros(nsteps)
+        minVpk = np.zeros(nsteps)
         
         for i in range(nsteps):
             
@@ -323,15 +259,15 @@ class IVCurve(Protocol):
             #p1.axes.set_ylabel('V (mV)')
             
             # plot sodium and potassium currents
-            ik = numpy.asarray(vec['ik'])
-            ina = numpy.asarray(vec['ina'])
+            ik = np.asarray(vec['ik'])
+            ina = np.asarray(vec['ina'])
             if natFlag:
                 if len(ina) == 0:
-                    ina = numpy.asarray(vec['inat'])
+                    ina = np.asarray(vec['inat'])
                 else:
-                    ina = ina + numpy.asarray(vec['inat'])
+                    ina = ina + np.asarray(vec['inat'])
                     
-            t = numpy.asarray(vec['time'])
+            t = np.asarray(vec['time'])
             iQ = scipy.integrate.trapz(ik, t) # total charge at end of run
             iQKt = scipy.integrate.cumtrapz(ik, t, initial=0.0)
             
@@ -344,7 +280,7 @@ class IVCurve(Protocol):
             # Measure peak and steady-state voltage
             mwine = durs[0] + durs[1]
             mwins = mwine - 0.2 * durs[1]
-            vsoma = numpy.asarray(vec['v_soma'])
+            vsoma = np.asarray(vec['v_soma'])
             (meanVss[i], r2) = U.measure('mean', vec['time'], vsoma, mwins, mwine)
             (meanIss[i], r2) = U.measure('mean', vec['time'], vec['i_inj'],
                                 mwins, mwine)
@@ -355,7 +291,7 @@ class IVCurve(Protocol):
             #if sites is not None:
                 #for j in range(len(sites)):
                     #if sites[j] is not None:
-                        #p1.plot(vec['time'], numpy.asarray(
+                        #p1.plot(vec['time'], np.asarray(
                                 #vec['v_meas_%d' % (j)]), clist[j])
                                 
             # plot current command
@@ -365,7 +301,7 @@ class IVCurve(Protocol):
             
             # find spikes at soma
             spli = findspikes(vec['time'], vec['v_soma'], -30.0)
-            nsoma = i * numpy.ones(len(spli))
+            nsoma = i * np.ones(len(spli))
             splist[i] = len(spli)
             #p4.plot(spli, nsoma, 'bo-')
             
@@ -373,9 +309,9 @@ class IVCurve(Protocol):
             if sites is not None:
                 for j in range(len(sites)):
                     if sites[j] is not None:
-                        splim = U.findspikes(vec['time'], numpy.asarray(
+                        splim = U.findspikes(vec['time'], np.asarray(
                                 vec['v_meas_%d' % (j)]), -30.0)
-                        nseg = i * numpy.ones(len(splim))
+                        nseg = i * np.ones(len(splim))
                         #if len(splim) > 0 and len(nseg) > 0:
                             #p2.plot(splim, nseg, slist[j])
 
@@ -383,9 +319,9 @@ class IVCurve(Protocol):
 
         # find traces with Icmd < 0, Vm > -70, and no spikes.
         # Use this to measure input resistance by linear regression.
-        ok1 = numpy.where(meanIss <= 0.0)[0].tolist()
-        ok2 = numpy.where(meanVss >= -70.0)[0].tolist()
-        ok3 = numpy.where(splist == 0)[0].tolist()
+        ok1 = np.where(meanIss <= 0.0)[0].tolist()
+        ok2 = np.where(meanVss >= -70.0)[0].tolist()
+        ok3 = np.where(splist == 0)[0].tolist()
         ok = list(set(ok1).intersection(set(ok2)))
         #Linear regression using stats.linregress
         if len(ok) > 1: # need 2 points to make that line
@@ -592,7 +528,7 @@ def run_vc(vmin, vmax, vstep, cell):
     cell.soma.cm = 0.001
     vcmd = []
     tend = 900.0
-    iv_nstepv = int(numpy.ceil((vmax - vmin) / vstep))
+    iv_nstepv = int(np.ceil((vmax - vmin) / vstep))
     iv_minv = vmin
     iv_maxv = vmax
     nreps = iv_nstepv
@@ -614,8 +550,8 @@ def run_vc(vmin, vmax, vstep, cell):
 #    p1 = f1.add_subplot(2,1,1)
 #    p2 = f1.add_subplot(2,1,2)
 #    p3 = f1.add_subplot(3,1,3)
-    meanVss = numpy.zeros(nreps)
-    meanIss = numpy.zeros(nreps)
+    meanVss = np.zeros(nreps)
+    meanIss = np.zeros(nreps)
     for i in range(nreps):
         for var in ['v_soma', 'i_inj', 'time', 'm', 'h',
                     'ah', 'bh', 'am', 'bm']:
@@ -735,8 +671,8 @@ def run_democlamp(cell, dend, vsteps=[-60,-70,-60], tsteps=[10,50,100]):
             h.init()
             h.finitialize(-60)
             h.run()
-            vc = numpy.asarray(vec['Vsoma'])
-            tc = numpy.asarray(vec['time'])
+            vc = np.asarray(vec['Vsoma'])
+            tc = np.asarray(vec['time'])
             
             # now plot the data, raw and as insets
             for k in [0, 1]:
