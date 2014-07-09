@@ -68,7 +68,7 @@ def make_pulse(stim, pulsetype="square"):
     ndur = 5
     if stim['PT'] == 0:
         ndur = 1
-    
+    print 'delay: ', delay
     maxt = h.dt * (stim['delay'] + (ipi * (stim['NP'] + 3)) +
         posttest + pdur * ndur)
     
@@ -158,7 +158,7 @@ def run_iv(ivrange, cell, durs=None, sites=None, scales=None, reppulse=None):
         stim['dur'] = 2
         stim['amp'] = 1.0
         stim['PT'] = 0.0
-        istim.delay = 0
+        istim.delay = 10
         istim.dur = 1e9 # these actually do not matter...
         istim.iMax = 0.0
         (secmd, maxt, tstims) = make_pulse(stim)
@@ -232,7 +232,7 @@ def run_iv(ivrange, cell, durs=None, sites=None, scales=None, reppulse=None):
         if sites is not None:
             for j in range(len(sites)):
                 if sites[j] is not None:
-                    print 'section %d : ' % (j),
+                    print 'inserting recording sites in  : %d ' % (j),
                     print sites[j]
                     vec['v_meas_%d' % (j)].record(
                         sites[j](0.5)._ref_v, sec=sites[j])
@@ -328,7 +328,8 @@ def run_iv(ivrange, cell, durs=None, sites=None, scales=None, reppulse=None):
     p5.plot(meanIss[ok3], meanVss[ok3], 'ko-')
     p5.plot(meanIss[ok1], minVpk[ok1], 'ks-')
     p3.plot(icur, splist, 'ro-')
-
+    for p in [p1, p2, p3, p4, p5, p6]:
+        PH.nice_plot(p)
     print 'I,Vss,Vpk,SpikesperSec'
     for i in range(nsteps):
         print '%8.4f,%8.3f,%8.3f,%8.2f' % (icur[i],
@@ -557,7 +558,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=('test_cells.py:',
     ' Biophysical representations of neurons (mostly auditory), test file'))
     cclamp = False
-    cellinfo = {'types': ['bushy', 'stellate', 'steldend', 'dstellate', 'sgc',
+    cellinfo = {'types': ['bushy', 'stellate', 'typeI-t', 'steldend', 'dstellate', 'sgc',
                             'cartwheel', 'pyramidal', 'octopus'],
                 'configs': ['std, ''waxon', 'dendrite'],
                 'nav': ['std', 'jsrna', 'nav11'],
@@ -565,9 +566,10 @@ if __name__ == "__main__":
                                     'guineapig-bushy-II', 'rat', 'mouse'],
                 'pulse': ['step', 'pulse']}
     ccivrange = {'bushy': (-1.0, 1.0, 0.1),
-                'stellate': (-1.0, 1.0, 0.1),
+                'stellate': (-0.2, 0.2, 0.04),
+                'typeI-t': (-0.2, 0.2, 0.04),
                 'steldend': (-1.0, 1.0, 0.1),
-                'dstellate': (-0.25, 1.0, 0.05),
+                'dstellate': (-0.150, 0.150, 0.025),
                 'sgc:': (-0.5, 0.5, 0.05),
                 'cartwheel': (-0.5, 0.5, 0.05),
                 'pyramidal': (-1., 1., 0.1),
@@ -579,6 +581,8 @@ if __name__ == "__main__":
     scale = {'bushy': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
                     'crossing', [0, -60]),
                 'stellate': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
+                    'crossing', [0, -60]),
+                'typeI-t': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
                     'crossing', [0, -60]),
                 'steldend': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
                     'crossing', [0, -60]),
@@ -646,28 +650,38 @@ if __name__ == "__main__":
     #
     elif (args.celltype == 'stellate' and args.nav == 'nav11'
             and args.species == 'guineapig'):
-        cell = cells.TStellateNav11(debug=debugFlag)
+        cell = cells.TStellate(debug=debugFlag, nach=args.nav)
     elif (args.celltype == 'steldend'):
-        cell = cells.TStellateNav11(debug=debugFlag, dend=True,
-                                    ttx=False, cs=False)
+        cell = cells.TStellate(debug=debugFlag)
+        cell.species_scaling(species='guineapig')
+        cell.add_dendrites()
     elif (args.celltype == 'stellate' and args.nav == 'nav11'
             and args.species == 'mouse'):
-        cell = cells.TStellate(species=args.species, nav11=True, 
-                               debug=debugFlag)
+        cell = cells.TStellate(nach=args.nav, debug=debugFlag)
+        cell.species_scaling(species=args.species)
     elif args.celltype == 'stellate' and args.nav == 'std':
-        cell = cells.TStellateFast(debug=debugFlag)
+        cell = cells.TStellate(debug=debugFlag, nach='nacn')
+        cell.species_scaling(species='guineapig')
+    elif args.celltype == 'typeI-t':
+        cell = cells.TStellate(debug=debugFlag, nach='nacn')
+        cell.species_scaling(species='guineapig-typeI-t')
     
     #
     # Bushy tests
     #
     elif (args.celltype == 'bushy' and args.configuration == 'waxon'):
-        cell = cells.BushyWithAxon(debug=debugFlag)
-    elif args.celltype == 'bushy' and args.configuration == 'std':
         cell = cells.Bushy(debug=debugFlag)
-        sites = [cell.soma, None, None, None]
+        cell.species_scaling(species=args.species)
+        cell.add_axon()
+    elif args.celltype == 'bushy' and args.configuration == 'std':
+        cell = cells.Bushy(debug=debugFlag, nach=args.nav)
+        cell.species_scaling(species=args.species)
+        #sites = [cell.soma, None, None, None]
     elif args.celltype == 'bushy' and args.configuration == 'dendrite':
         dendriteFlag = True
-        cell = cells.Bushy(debug=debugFlag, dendrite=dendriteFlag)
+        cell = cells.Bushy(debug=debugFlag)
+        cell.species_scaling(species=args.species)
+        cell.add_dendrites()
         sites = [cell.soma, cell.maindend, cell.secdend[0]]
         
     #
@@ -681,8 +695,9 @@ if __name__ == "__main__":
         sys.exit(1)
 #    seg = cell()
 
-    print("Cell model: %s" % cell.__class__.__name__)
-    print(cell.__doc__)
+    cell.print_status()
+    cell.print_mechs(cell.soma)
+    cell.measure_rintau()
     #
     # define the current clamp electrode and default settings
     #
