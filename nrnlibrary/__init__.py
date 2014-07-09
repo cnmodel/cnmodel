@@ -6,7 +6,8 @@ import qmatpy
 import XuF
 from makestim import makestim
 
-
+# flag to allow unit tests to store / overwrite test results
+AUDIT_TESTS = False
 
 
 

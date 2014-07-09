@@ -8,7 +8,7 @@ import pylibrary.PlotHelpers as PH
 import numpy
 import scipy
 import scipy.integrate
-import scipy.stats as SStat
+import scipy.stats
 
 try:
     import pyqtgraph as pg
@@ -219,7 +219,7 @@ class IVCurve(Protocol):
             icur.append(float(i * istep) + iv_mini)
         nsteps = iv_nstepi
         
-        self.current_cmd = icur
+        self.current_cmd = np.array(icur)
         self.dt = h.dt
         vec = {}
         
@@ -310,8 +310,11 @@ class IVCurve(Protocol):
         """
         for i in range(len(self.current_cmd)):
             
+            # plot voltage traces
             #p1.plot(vec['time'], vec['v_soma'], 'k') # soma is plotted in black...
             #p1.axes.set_ylabel('V (mV)')
+            
+            # plot sodium and potassium currents
             ik = numpy.asarray(vec['ik'])
             ina = numpy.asarray(vec['ina'])
             if natFlag:
@@ -319,6 +322,7 @@ class IVCurve(Protocol):
                     ina = numpy.asarray(vec['inat'])
                 else:
                     ina = ina + numpy.asarray(vec['inat'])
+                    
             t = numpy.asarray(vec['time'])
             iQ = scipy.integrate.trapz(ik, t) # total charge at end of run
             iQKt = scipy.integrate.cumtrapz(ik, t, initial=0.0)
@@ -328,6 +332,8 @@ class IVCurve(Protocol):
             #p41.plot(t, iQKt, 'g')
             #p41.plot(t, iQNat, 'r')
             #PH.cleanAxes(p41)
+            
+            # Measure peak and steady-state voltage
             mwine = durs[0] + durs[1]
             mwins = mwine - 0.2 * durs[1]
             vsoma = numpy.asarray(vec['v_soma'])
@@ -336,18 +342,26 @@ class IVCurve(Protocol):
                                 mwins, mwine)
             (minVpk[i], r2) = U.measure('min', vec['time'], vsoma, durs[0],
                                 durs[0] + 0.5 * durs[1])
+            
+            # plot per-site voltage
             #if sites is not None:
                 #for j in range(len(sites)):
                     #if sites[j] is not None:
                         #p1.plot(vec['time'], numpy.asarray(
                                 #vec['v_meas_%d' % (j)]), clist[j])
+                                
+            # plot current command
             #p2.plot(vec['time'], vec['i_inj'], 'k')
             #p2.axes.set_ylabel(r'$I_{inj} (nA)$')
             #p2.axes.set_xlabel(r'Time (ms)')
+            
+            # find spikes at soma
             spli = findspikes(vec['time'], vec['v_soma'], -30.0)
             nsoma = i * numpy.ones(len(spli))
             splist[i] = len(spli)
             #p4.plot(spli, nsoma, 'bo-')
+            
+            # find spikes at each site
             if sites is not None:
                 for j in range(len(sites)):
                     if sites[j] is not None:
@@ -359,6 +373,8 @@ class IVCurve(Protocol):
 
             #pylab.draw()
 
+        # find traces with Icmd < 0, Vm > -70, and no spikes.
+        # Use this to measure input resistance by linear regression.
         ok1 = numpy.where(meanIss <= 0.0)[0].tolist()
         ok2 = numpy.where(meanVss >= -70.0)[0].tolist()
         ok3 = numpy.where(splist == 0)[0].tolist()
@@ -389,8 +405,79 @@ class IVCurve(Protocol):
                 meanVss[i], minVpk[i], splist[i])
 
 
-        #pylab.show()
+    def peak_vm(self):
+        """
+        Return peak membrane voltage for each trace.
+        """
+        Vm = self.voltage_traces
+        Icmd = self.current_cmd
+        steps = len(Icmd)
+        peakStart = self.durs[0] / self.dt
+        peakStop = peakStart + 10. / self.dt
+        Vpeak = []
+        for i in range(steps):
+            if Icmd[i] > 0:
+                Vpeak.append(Vm[i][peakStart:peakStop].max())
+            else:
+                Vpeak.append(Vm[i][peakStart:peakStop].min())
+        return np.array(Vpeak)
+    
+    def steady_vm(self):
+        """
+        Return steady-state membrane voltage for each trace.
+        """
+        Vm = self.voltage_traces
+        steps = len(Vm)
+        steadyStop = (self.durs[0] + self.durs[1]) / self.dt
+        steadyStart = steadyStop - 30. / self.dt
+        Vsteady = [Vm[i][steadyStart:steadyStop].mean() for i in range(steps)]
+        return np.array(Vsteady)
 
+    def spike_times(self):
+        """
+        Return an array of spike times for each trace.
+        """
+        Vm = self.voltage_traces
+        steps = len(Vm)
+        spikes = []
+        for i in range(steps):
+            dvdt = np.diff(Vm[i]) / self.dt
+            mask = (dvdt > 40).astype(int)
+            indexes = np.argwhere(np.diff(mask) == 1)[:, 0] + 2
+            times = indexes.astype(float) * self.dt
+            spikes.append(times)
+        return spikes
+
+    def rest_vm(self):
+        """
+        Return the resting membrane potential.
+        """
+        d = int(self.durs[0] / self.dt)
+        return self.voltage_traces[-1][d//2:d].mean()
+    
+    def input_resistance(self, vmin=-70, imax=0):
+        """
+        Estimate resting input resistance.
+        Return (slope, intercept) of linear regression for subthreshold traces
+        near rest.
+        """
+        Vss = self.steady_vm()
+        Icmd = self.current_cmd
+        spikes = self.spike_times()
+        steps = len(Icmd)
+        
+        nSpikes = np.array([len(s) for s in spikes])
+        
+        # find traces with Icmd < 0, Vm > -70, and no spikes.
+        mask = (Vss >= vmin) & (Icmd <= imax) & (nSpikes == 0)
+        if mask.sum() < 2:
+            raise Exception("Not enough traces to do linear regression.")
+        
+        # Use these to measure input resistance by linear regression.
+        reg = scipy.stats.linregress(Icmd[mask], Vss[mask])
+        (slope, intercept, r, p, stderr) = reg
+        
+        return slope, intercept
 
     def show(self):
         """
@@ -399,54 +486,71 @@ class IVCurve(Protocol):
         if not HAVE_PG:
             raise Exception("Requires pyqtgraph")
         
+        #
+        # Generate figure with subplots
+        #
         app = pg.mkQApp()
         win = pg.GraphicsWindow()
+        win.resize(1000, 800)
         Vplot = win.addPlot(labels={'left': 'Vm (mV)', 'bottom': 'Time (ms)'})
-        IVplot = win.addPlot(labels={'left': 'Vm (mV)', 'bottom': 'Icmd (nA)'})
-        IVplot.showGrid(x=True, y=True)
+        rightGrid = win.addLayout(rowspan=2)
         win.nextRow()
         Iplot = win.addPlot(labels={'left': 'Iinj (nA)', 'bottom': 'Time (ms)'})
-        FIplot = win.addPlot()
         
+        IVplot = rightGrid.addPlot(labels={'left': 'Vm (mV)', 'bottom': 'Icmd (nA)'})
+        IVplot.showGrid(x=True, y=True)
+        rightGrid.nextRow()
+        spikePlot = rightGrid.addPlot(labels={'left': 'Iinj (nA)', 'bottom': 'Spike times (ms)'})
+        rightGrid.nextRow()
+        FIplot = rightGrid.addPlot(labels={'left': 'Spike count', 'bottom': 'Iinj (nA)'})
+        
+        win.ci.layout.setRowStretchFactor(0, 10)
+        win.ci.layout.setRowStretchFactor(1, 5)
+
+        #
+        # Plot simulation and analysis results
+        #
         Vm = self.voltage_traces
         Iinj = self.current_traces
         Icmd = self.current_cmd
         t = self.time_values
         steps = len(Icmd)
+
     
         # plot I, V traces
+        colors = [(i, steps*3./2.) for i in range(steps)]
         for i in range(steps):
-            c = (i, steps*3./2.)
-            Vplot.plot(t, Vm[i], pen=c)
-            Iplot.plot(t, Iinj[i], pen=c)
-        
+            Vplot.plot(t, Vm[i], pen=colors[i])
+            Iplot.plot(t, Iinj[i], pen=colors[i])
+
+
         # I/V relationships
-        peakStart = self.durs[0] / self.dt
-        peakStop = peakStart + 10. / self.dt
-        steadyStop = (self.durs[0] + self.durs[1]) / self.dt
-        steadyStart = steadyStop - 30. / self.dt
-        Vpeak = []
-        for i in range(steps):
-            if Icmd[i] > 0:
-                Vpeak.append(Vm[i][peakStart:peakStop].max())
-            else:
-                Vpeak.append(Vm[i][peakStart:peakStop].min())
-        Vsteady = [Vm[i][steadyStart:steadyStop].mean() for i in range(steps)]
-        IVplot.plot(Icmd, Vpeak, symbol='o')
-        IVplot.plot(Icmd, Vsteady, symbol='s')
+        IVplot.plot(Icmd, self.peak_vm(), symbol='o')
+        IVplot.plot(Icmd, self.steady_vm(), symbol='s')
+
+
+        # F/I relationship and raster plot
+        spikes = self.spike_times()
+        for i,times in enumerate(spikes):
+            spikePlot.plot(x=times, y=[Icmd[i]]*len(times), pen=None, 
+                           symbol='d', symbolBrush=colors[i])
+        FIplot.plot(x=Icmd, y=[len(s) for s in spikes], symbol='o')
         
-        # F/I relationship
-        spikes = []
-        for i in range(steps):
-            dvdt = np.diff(Vm[i]) / self.dt
-            mask = (dvdt > 40).astype(int)
-            indexes = np.argwhere(np.diff(mask) == 1)[:, 0] + 2
-            times = indexes.astype(float) * self.dt
-            print times
-            spikes.append(times)
-            FIplot.plot(x=times, y=[Icmd[i]]*len(times), pen=None, symbol='d')
+        
+        # Print Rm, Vrest 
+        (s, i) = self.input_resistance()
+        print "Membrane resistance: %0.1f MOhm" % s
+        ivals = np.array([Icmd.min(), Icmd.max()])
+        vvals = s * ivals + i
+        line = pg.QtGui.QGraphicsLineItem(ivals[0], vvals[0], ivals[1], vvals[1])
+        line.setPen(pg.mkPen(255, 0, 0, 70))
+        line.setZValue(-10)
+        IVplot.addItem(line, ignoreBounds=True)
+        
+        print "Resting membrane potential: %0.1f mV" % self.rest_vm()
         
         self.win = win
+
     
 
 def run_vc(vmin, vmax, vstep, cell):
