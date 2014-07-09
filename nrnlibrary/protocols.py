@@ -112,18 +112,6 @@ class IVCurve(Protocol):
         icur = []
         # set up stimulation with a pulse train
         if reppulse is None:
-            #istim = h.IClamp2(0.5, sec=cell.soma) # use our new iclamp method
-            #istim.dur[0] = durs[0]
-            #istim.amp[0] = 0
-            #istim.dur[1] = durs[1]
-            #istim.amp[1] = 0.0 #-70.00
-            #istim.dur[2] = durs[2]
-            #istim.amp[2] = 0.0 # 0.045
-            #istim.dur[3] = 0
-            #istim.amp[3] = 0
-            #istim.dur[4] = 0
-            #istim.amp[4] = 0
-            #tend = np.sum(durs)
             stim = {
                 'NP': 1,
                 'delay': durs[0],
@@ -165,36 +153,12 @@ class IVCurve(Protocol):
         self.temp = temp
         vec = {}
         
-        #f1 = pylab.figure(1)
-        #p1 = pylab.subplot2grid((4, 1), (0, 0), rowspan=3)
-        #p2 = pylab.subplot2grid((4, 1), (3, 0), rowspan=1)
-        ##p3a = f1.add_subplot(6,1,6)
-        ##p3b = f1.add_subplot(6,1,5)
-        #f3 = pylab.figure(2)
-        #p3 = pylab.subplot2grid((2, 2), (0, 0), rowspan=1)
-        #p3.axes.set_ylabel(r'# spikes')
-        #p3.axes.set_xlabel(r'$I_{inj} (nA)$')
-        #p4 = pylab.subplot2grid((2, 2), (1, 0), rowspan=1)
-        #p4.axes.set_ylabel(r'Trial')
-        #p4.axes.set_xlabel(r'Time (ms)')
-        #p5 = pylab.subplot2grid((2, 2), (0, 1), rowspan=1)
-        #p5.axes.set_ylabel(r'V (mV)')
-        #p5.axes.set_xlabel(r'$I_{inj} (nA)$')
-        #p6 = pylab.subplot2grid((2, 2), (1, 1), rowspan=1)
-        #PH.cleanAxes([p1, p2, p3, p4, p5, p6])
-
-        #f4 = pylab.figure(3)
-        #p41 = pylab.subplot2grid((4, 1), (0, 0), rowspan=2)
-
-        #clist = ['k-', 'r-', 'b-', 'y-', 'g-']
-        #slist = ['ko', 'rx', 'gx', 'bx', 'mx']
         splist = np.zeros(nsteps)
         meanVss = np.zeros(nsteps)
         meanIss = np.zeros(nsteps)
         minVpk = np.zeros(nsteps)
         
         for i in range(nsteps):
-            
             # Set up recording vectors
             #for var in ['v_soma', 'i_inj', 'time', 'm', 'h', 'ah', 'bh', 'am',
                         #'bm', 'gh', 'ik', 'ina', 'inat', 'i_stim']:
@@ -242,112 +206,6 @@ class IVCurve(Protocol):
             self.voltage_traces.append(self['v_soma'])
             self.current_traces.append(self['i_inj'])
             self.time_values = np.array(self['time'])
-            
-    def analyze(self):
-        """
-        Return a structure describing analysis results:
-        
-        Vm traces
-        I/V relationship
-        F/I relationship
-        Spike times
-        """
-        for i in range(len(self.current_cmd)):
-            
-            # plot voltage traces
-            #p1.plot(vec['time'], vec['v_soma'], 'k') # soma is plotted in black...
-            #p1.axes.set_ylabel('V (mV)')
-            
-            # plot sodium and potassium currents
-            ik = np.asarray(vec['ik'])
-            ina = np.asarray(vec['ina'])
-            if natFlag:
-                if len(ina) == 0:
-                    ina = np.asarray(vec['inat'])
-                else:
-                    ina = ina + np.asarray(vec['inat'])
-                    
-            t = np.asarray(vec['time'])
-            iQ = scipy.integrate.trapz(ik, t) # total charge at end of run
-            iQKt = scipy.integrate.cumtrapz(ik, t, initial=0.0)
-            
-            # cumulative with trapezoidal integration
-            iQNat = scipy.integrate.cumtrapz(ina, t, initial=0.0)
-            #p41.plot(t, iQKt, 'g')
-            #p41.plot(t, iQNat, 'r')
-            #PH.cleanAxes(p41)
-            
-            # Measure peak and steady-state voltage
-            mwine = durs[0] + durs[1]
-            mwins = mwine - 0.2 * durs[1]
-            vsoma = np.asarray(vec['v_soma'])
-            (meanVss[i], r2) = U.measure('mean', vec['time'], vsoma, mwins, mwine)
-            (meanIss[i], r2) = U.measure('mean', vec['time'], vec['i_inj'],
-                                mwins, mwine)
-            (minVpk[i], r2) = U.measure('min', vec['time'], vsoma, durs[0],
-                                durs[0] + 0.5 * durs[1])
-            
-            # plot per-site voltage
-            #if sites is not None:
-                #for j in range(len(sites)):
-                    #if sites[j] is not None:
-                        #p1.plot(vec['time'], np.asarray(
-                                #vec['v_meas_%d' % (j)]), clist[j])
-                                
-            # plot current command
-            #p2.plot(vec['time'], vec['i_inj'], 'k')
-            #p2.axes.set_ylabel(r'$I_{inj} (nA)$')
-            #p2.axes.set_xlabel(r'Time (ms)')
-            
-            # find spikes at soma
-            spli = findspikes(vec['time'], vec['v_soma'], -30.0)
-            nsoma = i * np.ones(len(spli))
-            splist[i] = len(spli)
-            #p4.plot(spli, nsoma, 'bo-')
-            
-            # find spikes at each site
-            if sites is not None:
-                for j in range(len(sites)):
-                    if sites[j] is not None:
-                        splim = U.findspikes(vec['time'], np.asarray(
-                                vec['v_meas_%d' % (j)]), -30.0)
-                        nseg = i * np.ones(len(splim))
-                        #if len(splim) > 0 and len(nseg) > 0:
-                            #p2.plot(splim, nseg, slist[j])
-
-            #pylab.draw()
-
-        # find traces with Icmd < 0, Vm > -70, and no spikes.
-        # Use this to measure input resistance by linear regression.
-        ok1 = np.where(meanIss <= 0.0)[0].tolist()
-        ok2 = np.where(meanVss >= -70.0)[0].tolist()
-        ok3 = np.where(splist == 0)[0].tolist()
-        ok = list(set(ok1).intersection(set(ok2)))
-        #Linear regression using stats.linregress
-        if len(ok) > 1: # need 2 points to make that line
-            (a_s, b_s, r, tt, stderr)=SStat.linregress(meanIss[ok], meanVss[ok])
-            print('Linear regression using stats.linregress')
-            print('regression: slope=%.2f intercept=%.2f, std error= %.3f'
-            % (a_s, b_s, stderr))
-            print '  r: %.3f   p: %.3f' % (r, tt)
-
-        #p2.set_xlim(0, 160)
-        #p1.set_xlim(0, 160)
-        #if scales is not None:
-            #p3.set_xlim(scales[0], scales[2])
-            #p3.set_ylim(scales[4], scales[5])
-            #PH.crossAxes(p5, limits=scales[0:4], xyzero=scales[9])
-            #if scales[6] == 'offset':
-                #PH.nice_plot(p3, direction='outward')
-        #p5.plot(meanIss[ok3], meanVss[ok3], 'ko-')
-        #p5.plot(meanIss[ok1], minVpk[ok1], 'ks-')
-        #p3.plot(icur, splist, 'ro-')
-
-        print 'I,Vss,Vpk,SpikesperSec'
-        for i in range(nsteps):
-            print '%8.4f,%8.3f,%8.3f,%8.2f' % (icur[i],
-                meanVss[i], minVpk[i], splist[i])
-
 
     def peak_vm(self):
         """
