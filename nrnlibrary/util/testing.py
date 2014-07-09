@@ -140,7 +140,8 @@ class IVCurve(Protocol):
         self.time_values = None
         self.dt = None
         
-    def run(self, ivrange, cell, durs=None, sites=None, reppulse=None):
+    def run(self, ivrange, cell, durs=None, sites=None, reppulse=None, temp=32,
+            dt=0.025):
         """
         Run a current-clamp I/V curve on *cell*.
         
@@ -155,6 +156,10 @@ class IVCurve(Protocol):
             Sections to add recording electrodes
         reppulse : 
             stimulate with pulse train
+        temp : 
+            temperature of simulation (32)
+        dt : 
+            timestep of simulation (0.025)
         """
         self.reset()
         
@@ -220,7 +225,8 @@ class IVCurve(Protocol):
         nsteps = iv_nstepi
         
         self.current_cmd = np.array(icur)
-        self.dt = h.dt
+        self.dt = dt
+        self.temp = temp
         vec = {}
         
         #f1 = pylab.figure(1)
@@ -291,6 +297,8 @@ class IVCurve(Protocol):
             vec['i_stim'].play(istim._ref_i, h.dt, 0, sec=cell.soma)
 
             # GO
+            h.dt = dt
+            h.celsius = temp
             h.tstop = tend
             h.init()
             h.run()
@@ -469,8 +477,14 @@ class IVCurve(Protocol):
         nSpikes = np.array([len(s) for s in spikes])
         
         # find traces with Icmd < 0, Vm > -70, and no spikes.
-        mask = (Vss >= vmin) & (Icmd <= imax) & (nSpikes == 0)
+        vmask = Vss >= vmin
+        imask = Icmd <= imax
+        smask = nSpikes == 0
+        mask = vmask & imask & smask
         if mask.sum() < 2:
+            print vmask.astype(int)
+            print imask.astype(int)
+            print smask.astype(int)
             raise Exception("Not enough traces to do linear regression.")
         
         # Use these to measure input resistance by linear regression.
