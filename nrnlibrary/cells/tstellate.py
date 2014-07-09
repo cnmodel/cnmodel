@@ -9,7 +9,7 @@ __all__ = ['TStellate', 'TStellateNav11', 'TStellateFast']
 
 class TStellate(Cell):
     """
-    VCN T-stellate model.
+    VCN T-stellate base model.
     Rothman and Manis, 2003abc (Type I)    
     """
     def __init__(self, nach='nacn', ttx=False, debug=False):
@@ -58,11 +58,10 @@ class TStellate(Cell):
         soma.ek = self.e_k
         self.mechanisms = ['kht', 'ka', 'ihvcn', 'leak', nach]
         self.soma = soma
-        self.species_scaling(soma)  # set the default type II cell parameters
+        self.species_scaling()  # set the default type II cell parameters
 
         if debug:
                 print "<< T-stellate: JSR Stellate Type 1 cell model created >>"
-        self.print_mechs(self.soma)
 
     def set_soma_size_from_Cm(self, cap):
         self.totcap = cap
@@ -71,10 +70,11 @@ class TStellate(Cell):
         self.soma.diam = lstd
         self.soma.L = lstd
 
-    def species_scaling(self, soma, species='guineapig-TypeI'):
+    def species_scaling(self, species='guineapig'):
         """
         Adjust all of the conductances and the cell size according to the species requested.
         """
+        soma = self.soma
         if species == 'mouse':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
             print 'Mouse Tstellate cell'
@@ -87,7 +87,7 @@ class TStellate(Cell):
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             self.vm0 = -60.0
             self.axonsf = 0.5
-        if species == 'guineapig-TypeI':  # values from R&M 2003, Type I
+        if species == 'guineapig':  # values from R&M 2003, Type I
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
@@ -150,6 +150,34 @@ class TStellate(Cell):
     def add_axon(self):
         Cell.add_axon(self, self.soma, self.somaarea, self.c_m, self.R_a, self.axonsf)
 
+    def add_dendrites(self):
+        """
+        Add simple unbranched dendrites to basic Rothman Type I models.
+        The dendrites have some kht and ih current
+        """
+        cs = False  # not implemented outside here - internal Cesium.
+        nDend = range(4) # these will be simple, unbranced, N=4 dendrites
+        dendrites=[]
+        for i in nDend:
+            dendrites.append(h.Section(cell=self.soma))
+        for i in nDend:
+            dendrites[i].connect(self.soma)
+            dendrites[i].L = 200 # length of the dendrite (not tapered)
+            dendrites[i].diam = 1.5 # dendrite diameter
+            dendrites[i].nseg = 21 # # segments in dendrites
+            dendrites[i].Ra = 150 # ohm.cm
+            dendrites[i].insert('kht')
+            if cs is False:
+                dendrites[i]().kht.gbar = 0.005 # a little Ht
+            else:
+                dendrites[i]().kht.gbar = 0.0
+            dendrites[i].insert('leak') # leak
+            dendrites[i]().leak.gbar = 0.0001
+            dendrites[i].insert('ihvcn') # some H current
+            dendrites[i]().ihvcn.gbar = 0.# 0.001
+            dendrites[i]().ihvcn.eh = -43.0
+        self.maindend = dendrites
+        self.status['dendrites'] = True
 
 class TStellateNav11(Cell):
     """

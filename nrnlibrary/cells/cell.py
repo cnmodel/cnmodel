@@ -8,22 +8,38 @@ class Cell(object):
     def __init__(self):
         pass
 
-    def print_mechs(self, soma):
+    def print_status(self):
+        print("\nCell model: %s" % self.__class__.__name__)
+        print(self.__doc__)
+        print '    Model Status:'
+        print '-'*24
+        for s in self.status.keys():
+            print('{0:>12s} : {1:<12s}'.format(s, repr(self.status[s])))
+        print '-'*32
+
+    def print_mechs(self, section):
         """
-        print the mechanimsms and their densities that are inserted into the soma
+        print the mechanisms that are inserted into the specified section,
+        and their densities (in uS/cm^2)
         """
-        u=dir(soma())
+        print '\n    Installed mechanisms:'
+        u=dir(section())
         for m in u:
             if m[0:2] == '__':
                 continue
             if m in ['cm', 'diam', 'k_ion', 'na_ion', 'next', 'point_processes', 'sec', 'v', 'x']:
-                continue
-            print '%s: %g ' % (m, eval('soma().'+m+'.gbar'))
+                continue  # skip non-mechanisms known to us
+            try:
+                print('{0:>12s} : {1:<7.3g} '.format(m, eval('section().'+m+'.gbar')))
+            except:
+                print('{0:>12s} : <no gbar> '.format(m))
+        print '-'*32
 
-    def add_axon(self, soma, somaarea, c_m, R_a, axonsf, nodes=5, debug=False):
+    def add_axon(self, soma, somaarea, c_m=1.0, R_a=150, axonsf=1.0, nodes=5, debug=False):
         """
         Add an axon to the soma with an initial segment (tapered), and multiple nodes of Ranvier
         The size of the axon is determined by self.axonsf, which in turn is set by the species
+        The somaarea is used to scale the density of ion channels in the initial segment
         """
         nnodes = range(nodes)
         axnode = []
@@ -57,10 +73,10 @@ class Cell(object):
 
         gnastep = (gnamax - gnamin) / ninitseg  # taper sodium channel density
         for ip, inseg in enumerate(initsegment):
-            ina = gnamin + ip * gnastep
+            gna = gnamin + ip * gnastep
             if debug:
-                print 'seg %d ina = %9.6f' % (ip, ina)
-            inseg.nacn.gbar = ina
+                print 'Initial segment %d: gnabar = %9.6f' % (ip, gna)
+            inseg.nacn.gbar = gna
             inseg.klt.gbar = 0.2 * nstomho(200.0, somaarea)
             inseg.kht.gbar = nstomho(150.0, somaarea)
             inseg.ihvcn.gbar = 0.0 * nstomho(20.0, somaarea)
@@ -73,7 +89,7 @@ class Cell(object):
             internode[i] = self.loadinternodes(internode[i], self.somaarea)
 
         if debug:
-            print "<< bushy: Axon Added >>"
+            print("<< {:s} Axon Added >>".format(self.__class__.__name__))
             h.topology()
         return(initsegment, axnode, internode)
 
