@@ -1,4 +1,5 @@
 from neuron import h
+import numpy as np
 import neuron as nrn
 from ..pynrnutilities import nstomho
 
@@ -11,83 +12,144 @@ class TStellate(Cell):
     VCN T-stellate model.
     Rothman and Manis, 2003abc (Type I)    
     """
-    def __init__(self, debug=False, ttx=False, message=None,
-        species='guinea pig', nav11=False):
+    def __init__(self, nach='nacn', ttx=False, debug=False):
+        """
+        initialize a planar stellate (T-stellate) cell, using the default parameters for guinea pig from
+        R&M2003, as a type I cell.
+        Modifications to the cell can be made by calling methods below. These include:
+            Converting to a type IA model (add transient K current) (species: guineapig-TypeIA).
+            Changing "species" to mouse or cat (scales conductances)
+        """
+        super(TStellate, self).__init__()
+
+        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+                       'na': nach, 'species': 'guineapig-TypeI', 'ttx': ttx}
+        self.e_k = -80  # potassium reversal potential, mV
+        self.e_na = 50
+        self.c_m = 1.0  # specific membrane capacitance,  uf/cm^2
+        self.R_a = 150  # axial resistivity of cytoplasm/axoplasm, ohm.cm
+        self.totcap = None
+        self.somaarea = None
+        self.initsegment = None  # hold initial segment sections
+        self.axnode = None  # hold nodes of ranvier sections
+        self.internode = None  # hold internode sections
+        self.maindend = None  # hold main dendrite sections
+        self.secdend = None  # hold secondary dendrite sections
+        self.axonsf = None  # axon diameter scale factor
+        self.vm0 = -60.
+
         soma = h.Section() # one compartment of about 29000 um2
-        v_potassium = -80       # potassium reversal potential
-        v_sodium = 50           # sodium reversal potential
-
-        cm = 1.0
-        scalefactor = 1.0 # This determines the relative size of the cell
-        rinsf = 1.0           # input resistance adjustment (also current...)
-        if species == 'guinea pig':
-            totcap = scalefactor * 12.0 # cap in pF for cell
-        elif species == 'mouse':
-            totcap = scalefactor * 25.0 # adjusted...
-        else:
-            raise ValueError('Unrecognized species in call to tstellate_rothman')
-
-        effcap = totcap # sometimes we change capacitance - that's effcap
-        somaarea = totcap * 1E-6 / cm # pf -> uF, cm = 1uf/cm^2 nominal
-        lstd = 1E4 * ((somaarea / 3.14159) ** 0.5) # convert from cm to um
 
         soma.nseg = 1
-        soma.diam = lstd
-        soma.L = lstd
 
-        seg = soma
-        seg.insert("kht")
-        if nav11 is False:
-            seg.insert('na')
-            seg.ena = 50
+        if nach == 'nacn':
+            soma.insert('nacn')
+        elif nach == 'nav11':
+            soma.insert('nav11')
+        elif nach == 'jsrna':
+            soma.insert('jsrna')
         else:
-            seg.insert('nav11')
-            seg.ena = 50
-        seg.insert('ka')
-        seg.insert('ihvcn')
-        seg.insert('leak')
-        seg.ek = -84
-        s = soma()
-        if species == 'guinea pig':
-            gnamax = 1000.0
-            s.kht.gbar = nstomho(150.0, somaarea) * scalefactor
-            s.ka.gbar = nstomho(0.0, somaarea) * scalefactor
-            s.ihvcn.gbar = nstomho(0.5, somaarea) * scalefactor
-            s.ihvcn.eh = -43 # Rodrigues and Oertel, 2006
-            #print 'ih vcn vh: %f ' % (s.ihvcn.vh)
-            s.leak.gbar = nstomho(2.0, somaarea) * scalefactor
-            vm0 = -63.9
-        elif species == 'mouse':
-            gnamax = 800.0
-            s.kht.gbar = nstomho(250.0, somaarea) * scalefactor
-            s.ka.gbar = nstomho(0.0, somaarea) * scalefactor
-            s.ihvcn.gbar = nstomho(18.0, somaarea) * scalefactor
-            s.ihvcn.eh = -43 # Rodrigues and Oertel, 2006
-            s.leak.gbar = nstomho(8.0, somaarea) * scalefactor
-            # yields input resistance of 74.2 Mohm measured from -60 to -70 mV
-            vm0 = -60.0
-        else:
-            raise ValueError('species not recognized in tstellate_rothman')
+            raise ValueError('Sodium channel %s in type 1 cell not known' % nach)
 
-        if not ttx:
-            if nav11 is False:
-                s.na.gna = nstomho(gnamax, somaarea) * scalefactor
-            else:
-                s.nav11.gbar = nstomho(1800.0, somaarea) * scalefactor
-                s.nav11.vsna = 4.3 # was 8
-        else:
-            if nav11 is False:
-                s.na.gna = 0.0
-            else:
-                s.nav11.gbar = 0.0
+        soma.insert("kht")
+        soma.insert('ka')
+        soma.insert('ihvcn')
+        soma.insert('leak')
+        soma.ek = self.e_k
+        self.mechanisms = ['kht', 'ka', 'ihvcn', 'leak', nach]
+        self.soma = soma
+        self.species_scaling(soma)  # set the default type II cell parameters
 
         if debug:
-            if message is None:
                 print "<< T-stellate: JSR Stellate Type 1 cell model created >>"
-            else:
-                print message
-        
-        self.soma = soma
+        self.print_mechs(self.soma)
+
+    def set_soma_size_from_Cm(self, cap):
+        self.totcap = cap
+        self.somaarea = self.totcap * 1E-6 / self.c_m  # pf -> uF, cm = 1uf/cm^2 nominal
+        lstd = 1E4 * ((self.somaarea / np.pi) ** 0.5)  # convert from cm to um
+        self.soma.diam = lstd
+        self.soma.L = lstd
+
+    def species_scaling(self, soma, species='guineapig-TypeI'):
+        """
+        Adjust all of the conductances and the cell size according to the species requested.
+        """
+        if species == 'mouse':
+            # use conductance levels from Cao et al.,  J. Neurophys., 2007.
+            print 'Mouse Tstellate cell'
+            self.set_soma_size_from_Cm(25.0)
+            self.adjust_na_chans(soma, gbar=800.)
+            soma().kht.gbar = nstomho(250.0, self.somaarea)
+            soma().ka.gbar = nstomho(0.0, self.somaarea)
+            soma().ihvcn.gbar = nstomho(18.0, self.somaarea)
+            soma().ihvcn.eh = -43 # Rodrigues and Oertel, 2006
+            soma().leak.gbar = nstomho(2.0, self.somaarea)
+            self.vm0 = -60.0
+            self.axonsf = 0.5
+        if species == 'guineapig-TypeI':  # values from R&M 2003, Type I
+            self.set_soma_size_from_Cm(12.0)
+            self.adjust_na_chans(soma)
+            soma().kht.gbar = nstomho(150.0, self.somaarea)
+            soma().ka.gbar = nstomho(0.0, self.somaarea)
+            soma().ihvcn.gbar = nstomho(0.5, self.somaarea)
+            soma().leak.gbar = nstomho(2.0, self.somaarea)
+            self.vm0 = -63.6
+            self.axonsf = 0.5
+        if species == 'guineapig-TypeIt':
+            # guinea pig data from Rothman and Manis, 2003, type It
+            self.set_soma_size_from_Cm(12.0)
+            self.adjust_na_chans(soma)
+            soma().kht.gbar = nstomho(80.0, self.somaarea)
+            soma().ka.gbar = nstomho(65.0, self.somaarea)
+            soma().ihvcn.gbar = nstomho(0.5, self.somaarea)
+            soma().leak.gbar = nstomho(2.0, self.somaarea)
+            self.vm0 = -64.2
+            self.axonsf = 0.5
+        if species == 'cat':  # a cat is a big guinea pig Type I
+            self.set_soma_size_from_Cm(30.0)
+            self.adjust_na_chans(soma)
+            soma().kht.gbar = nstomho(150.0, self.somaarea)
+            soma().ka.gbar = nstomho(0.0, self.somaarea)
+            soma().ihvcn.gbar = nstomho(0.5, self.somaarea)
+            soma().leak.gbar = nstomho(2.0, self.somaarea)
+            self.vm0 = -63.6
+            self.axonsf = 1.0
+        self.status['species'] = species
+
+    def adjust_na_chans(self, soma, gbar=1000., debug=False):
+        """
+        adjust the sodium channel conductance
+        :param soma: a soma object whose sodium channel complement will have it's
+        conductances adjusted depending on the channel type
+        :return nothing:
+        """
+        if self.status['ttx']:
+            gnabar = 0.0
+        else:
+            gnabar = nstomho(gbar, self.somaarea)
+        nach = self.status['na']
+        if nach == 'jsrna':
+            soma().jsrna.gbar = gnabar
+            soma.ena = self.e_na
+            if debug:
+                print 'jsrna gbar: ', soma().jsrna.gbar
+        elif nach == 'nav11':
+            soma().nav11.gbar = gnabar * 0.5
+            soma.ena = self.e_na
+            soma().nav11.vsna = 4.3
+            if debug:
+                print "bushy using inva11"
+            print 'nav11 gbar: ', soma().nav11.gbar
+        else:
+            soma().nacn.gbar = gnabar
+            soma.ena = self.e_na
+            if debug:
+                print 'nacn gbar: ', soma().nacn.gbar
+
+    def add_axon(self):
+        Cell.add_axon(self, self.soma, self.somaarea, self.c_m, self.R_a, self.axonsf)
+
 
 class TStellateNav11(Cell):
     """
