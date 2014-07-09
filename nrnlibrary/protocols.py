@@ -243,9 +243,10 @@ class IVCurve(Protocol):
         steps = len(Vm)
         spikes = []
         for i in range(steps):
-            dvdt = np.diff(Vm[i]) / self.dt
-            mask = (dvdt > 40).astype(int)
-            indexes = np.argwhere(np.diff(mask) == 1)[:, 0] + 2
+            #dvdt = np.diff(Vm[i]) / self.dt
+            #mask = (dvdt > 40).astype(int)
+            mask = (Vm[i] > -40.).astype(int)
+            indexes = np.argwhere(np.diff(mask) == 1)[:, 0] + 1
             times = indexes.astype(float) * self.dt
             spikes.append(times)
         return spikes
