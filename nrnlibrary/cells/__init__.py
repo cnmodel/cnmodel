@@ -17,17 +17,3 @@ from .dstellate import *
 from .cartwheel import *
 from .pyramidal import *
 from .sgc import *
-
-def getcelltypes():
-    """
-    Return the types of cells that area generally avaialble.
-    This is sorely outdated for the files here.
-    """
-    return({'pyramidal': (pyr, 'pyrprc.txt',
-                'PYR-PRC.py output file for pyramidal'),
-            'cartwheel': (cartwheel, 'cwprc.txt',
-                'CW-PRC.py output file for Cartwheel'),
-            'bushy': (bushy, 'bushyprc.txt',
-                'BU-PRC.py output file for Bushy'),
-            'tstellate': (tstellate_rothman, 'tstellateprc.txt',
-                'ST-PRC.py output file for T-Stellate')})
