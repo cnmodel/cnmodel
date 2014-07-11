@@ -165,7 +165,7 @@ if __name__ == "__main__":
             if str(o) == str(nrn.Mechanism):
                 print "    ", n
         sys.exit(1)
-    ChannelKinetics(sys.argv[1:])
+    ck = ChannelKinetics(sys.argv[1:])
 
     if sys.flags.interactive == 0:
         import pyqtgraph as pg
