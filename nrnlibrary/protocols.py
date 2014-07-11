@@ -1,8 +1,6 @@
 import os
 import os.path
 from neuron import h
-#from neuron import *
-#from nrnlibrary.pynrnutilities import *
 import pylibrary.Utility as U
 import pylibrary.PlotHelpers as PH
 import numpy as np

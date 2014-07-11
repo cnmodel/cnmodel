@@ -1,6 +1,5 @@
 from neuron import h
-from ..pynrnutilities import nstomho
-from ..pynrnutilities import mho2ns
+from ..util import nstomho, mho2ns
 
 class Cell(object):
     """

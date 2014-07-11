@@ -1,7 +1,7 @@
 from neuron import h
 import numpy as np
 import neuron as nrn
-from ..pynrnutilities import nstomho
+from ..util import nstomho
 
 from .cell import Cell
 

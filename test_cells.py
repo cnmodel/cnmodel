@@ -157,3 +157,6 @@ else:
 #
 
 
+if sys.flags.interactive == 0:
+    import pyqtgraph as pg
+    pg.QtGui.QApplication.exec_()

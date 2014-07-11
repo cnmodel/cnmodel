@@ -9,22 +9,10 @@
 #
 # Paul B. Manis, Ph.D. 2009 (August - November 2009)
 #
-
-import os, os.path
-import gc
-from optparse import OptionParser
-from itertools import chain
 from neuron import h
-from neuron import *
-from math import sqrt
-from math import pi as PI
-import numpy
-import scipy
-from scipy.stats import gamma
-from numpy.random import lognormal
-import pdb
+import numpy as np 
 
-from .. import pynrnutilities as util
+from .. import util
 from .. import cells
 
 
@@ -110,7 +98,7 @@ def template_multisite(debug=False, parentSection = None, nzones=1, celltype='bu
         terminal.insert('cad')
     relsite = h.COH4(0.5, sec=terminal)
     relsite.nZones = nzones
-    relsite.rseed = 2 # int(numpy.random.random_integers(1,1024))
+    relsite.rseed = 2 # int(np.random.random_integers(1,1024))
     relsite.latency = stochasticPars.latency
     relsite.latstd = stochasticPars.LN_std
     if debug is True:
@@ -121,12 +109,12 @@ def template_multisite(debug=False, parentSection = None, nzones=1, celltype='bu
     #     if relsite.latstd > 0.0:
     #         gds = relsite.latency+std*(gd-1.0)/gd.std() # scale standard deviation
     #     else:
-    #         gds = relsite.latency*numpy.ones((10000,1))
+    #         gds = relsite.latency*np.ones((10000,1))
     # if type == 'lognormal':
     #     if std > 0.0:
     #         gds = lognormal(mean=0, sigma=relsite.latstd, size=10000)
     #     else:
-    #         gds = numpy.zeros((10000, 1))
+    #         gds = np.zeros((10000, 1))
     # use the variable latency mode of COH4. And, it is lognormal no matter what.
     # the parameters are defined in COH4.mod as follows
     # 	 Time course of latency shift in release during repetitive stimulation
@@ -706,7 +694,7 @@ def stochastic_synapses(h, parentSection=None, targetcell=None, nFibers=1, nRZon
         # but is not the individual site release latency. That is handled in COH4
         #        if cellname == 'bushy':
         #            delcv = 0.3*(delay/0.75) # scale by specified delay
-        #            newdelay = delay+delcv*numpy.random.standard_normal()
+        #            newdelay = delay+delcv*np.random.standard_normal()
         #            print "delay: %f   newdelay: %f   delcv: %f" % (delay, newdelay, delcv)
         #            netcons[-1].delay = newdelay # assign a delay to EACH zone that is different...
         #*****************
@@ -734,7 +722,7 @@ def stochastic_synapses(h, parentSection=None, targetcell=None, nFibers=1, nRZon
             else:
                 print "PSDTYPE IS NOT RECOGNIZED: [%s]\n" % (psdtype)
                 exit()
-            v = 1.0 + gvar * numpy.random.standard_normal()
+            v = 1.0 + gvar * np.random.standard_normal()
             psd[k].gmax = gmax * v # add a little variability - gvar is CV of amplitudes
             psd[k].Erev = eRev # set the reversal potential
             if psdtype == 'ampa': # also adjust the nmda receptors at the same synapse

@@ -1,6 +1,6 @@
 from neuron import h
 import neuron as nrn
-from ..pynrnutilities import nstomho
+from ..util import nstomho
 import numpy as np
 from .cell import Cell
 
