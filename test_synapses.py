@@ -1,98 +1,22 @@
 from scipy import interpolate
-import scipy.interpolate
 import numpy as np
 import matplotlib.pylab as mpl
+import pyqtgraph as pg
 
 from neuron import h
 
 from nrnlibrary.synapses import (Params, stochastic_synapses, template_SGAxon)
 from nrnlibrary import cells
-
+import nrnlibrary.util as util
 
 mpl.rcParams['interactive'] = False
 
 
-def make_pulse(stim, pulsetype='square'):
-    global j
-    delay = int(np.floor(stim['delay'] / h.dt))
-    ipi = int(np.floor((1000.0 / stim['Sfreq']) / h.dt))
-    pdur = int(np.floor(stim['dur'] / h.dt))
-    posttest = int(np.floor(stim['PT'] / h.dt))
-    maxt = h.dt * (stim['delay'] + (ipi * (stim['NP'] + 3)) + posttest + pdur * 5)
-    w = np.zeros(np.floor(maxt / h.dt))
-    #   make pulse
-    tstims = [0] * int(stim['NP'])
-    if pulsetype == 'square':
-        for j in range(0, int(stim['NP'])):
-            t = (delay + j * ipi) * h.dt
-            w[delay + ipi * j:delay + (ipi * j) + pdur] = stim['amp']
-            tstims[j] = delay + ipi * j
-        if stim['PT'] > 0.0:
-            send = delay + ipi * j
-            for i in range(send + posttest, send + posttest + pdur):
-                w[i] = stim['amp']
-
-    if pulsetype == 'exp':
-        for j in range(0, int(stim['NP'])):
-            for i in range(0, len(w)):
-                if delay + ipi * j + i < len(w):
-                    w[delay + ipi * j + i] += stim['amp'] * (1.0 - exp(-i / (pdur / 3.0))) * exp(
-                        -(i - (pdur / 3.0)) / pdur)
-            tstims[j] = delay + ipi * j
-        if stim['PT'] > 0.0:
-            send = delay + ipi * j
-            for i in range(send + posttest, len(w)):
-                w[i] += stim['amp'] * (1.0 - exp(-i / (pdur / 3.0))) * exp(-(i - (pdur / 3.0)) / pdur)
-    return (w, maxt, tstims)
-
-
-def findPoint(x, y, peakindex, val, direction='left', limits=None):
-    F = scipy.interpolate.UnivariateSpline(x, y, s=0) # declare function
-    #To find x at y then do:
-    istart = 0
-    iend = len(y)
-    if limits is not None:
-        istart = int(limits[0] / limits[2])
-        iend = int(limits[1] / limits[2])
-    yToFind = y[peakindex] * val
-    if direction == 'left':
-        yreduced = np.array(y[istart:peakindex]) - yToFind
-        try:
-            Fr = scipy.interpolate.UnivariateSpline(x[istart:peakindex], yreduced, s=0)
-        except:
-            print 'findPoint: insufficient time points for analysis'
-            print 'istart, peakindex: ', istart, peakindex
-            print 'ytofine: ', yToFind
-            res = float('nan')
-            return (res)
-        res = Fr.roots()
-        if len(res) > 1:
-            res = res[-1]
-    else:
-        yreduced = np.array(y[peakindex:iend]) - yToFind
-        try:
-            Fr = scipy.interpolate.UnivariateSpline(x[peakindex:iend], yreduced, s=0)
-        except:
-            print 'findPoint: insufficient time points for analysis'
-            res = float('nan')
-            return (res)
-        res = Fr.roots()
-        if len(res) > 1:
-            res = res[0]
-            #pdb.set_trace()
-    try:
-        res.pop()
-    except:
-        pass
-    if not res: # tricky - an empty list is False, but does not evaluate to False
-        res = float('nan') # replace with a NaN
-    else:
-        res = float(res) # make sure is just a simple number (no arrays)
-    return (res)
 
 
 def testSynapses(TargetCellName='bushy'):
-    """ Test the synapse function. 
+    """ 
+    Test the synapse function. 
     v_pre is the presynaptic voltage
         v_soma is the postsynaptic voltage
         v_calyx is the calyx voltage
@@ -234,7 +158,9 @@ def testSynapses(TargetCellName='bushy'):
     stim['dur'] = 0.5
     stim['amp'] = 10.0
     stim['PT'] = 0.0
-    (secmd, maxt, tstims) = make_pulse(stim, pulsetype='square')
+    stim['dt'] = h.dt
+    (secmd, maxt, tstims) = util.make_pulse(stim)
+    
     istim.delay = 0
     istim.dur = 1e9 # these actually do not matter...
     istim.iMax = 0.0
@@ -389,10 +315,14 @@ def testSynapses(TargetCellName='bushy'):
         if psc_pk == 0:
             continue
         pkval = ipsc[i, psc_pk]
-        psc_20_lat[i] = findPoint(tpsc, ipsc[i, :], psc_pk, 0.2, direction='left', limits=(minLat, ipi + textend, h.dt))
-        psc_80_lat[i] = findPoint(tpsc, ipsc[i, :], psc_pk, 0.8, direction='left', limits=(minLat, ipi + textend, h.dt))
-        psc_50l = findPoint(tpsc, ipsc[i, :], psc_pk, 0.5, direction='left', limits=(minLat, ipi + textend, h.dt))
-        psc_50r = findPoint(tpsc, ipsc[i, :], psc_pk, 0.5, direction='right', limits=(minLat, ipi + textend, h.dt))
+        psc_20_lat[i] = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.2, direction='left', 
+                                        limits=(minLat, ipi + textend, h.dt))
+        psc_80_lat[i] = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.8, direction='left', 
+                                        limits=(minLat, ipi + textend, h.dt))
+        psc_50l = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.5, direction='left', 
+                                  limits=(minLat, ipi + textend, h.dt))
+        psc_50r = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.5, direction='right', 
+                                  limits=(minLat, ipi + textend, h.dt))
         if not np.isnan(psc_20_lat[i]) and not np.isnan(psc_80_lat[i]):
             psc_rt[i] = psc_80_lat[i] - psc_20_lat[i]
         else:
