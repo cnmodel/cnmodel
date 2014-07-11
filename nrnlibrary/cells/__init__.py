@@ -17,3 +17,4 @@ from .dstellate import *
 from .cartwheel import *
 from .pyramidal import *
 from .sgc import *
+from .hh import *
