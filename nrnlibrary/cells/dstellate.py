@@ -29,15 +29,8 @@ class DStellate(Cell):
         self.e_na = 50
         self.c_m = 0.9  # specific membrane capacitance,  uf/cm^2
         self.R_a = 150  # axial resistivity of cytoplasm/axoplasm, ohm.cm
-        self.totcap = None
-        self.somaarea = None
-        self.initsegment = None  # hold initial segment sections
-        self.axnode = None  # hold nodes of ranvier sections
-        self.internode = None  # hold internode sections
-        self.maindend = None  # hold main dendrite sections
-        self.secdend = None  # hold secondary dendrite sections
-        self.axonsf = None  # axon diameter scale factor
         self.vm0 = -64.1
+        self.i_test_range=(-0.25, 0.25, 0.025)  # set range for ic command test
 
         soma = h.Section() # one compartment
 
@@ -61,6 +54,8 @@ class DStellate(Cell):
         self.mechanisms = ['kht', 'klt', 'ihvcn', 'leak', nach]
         self.soma = soma
         self.species_scaling()  # set the default type II cell parameters
+        self.all_sections['soma'].extend(soma)
+        self.add_section(soma)
         if debug:
                 print "<< D-stellate: JSR Stellate Type I-II cell model created >>"
 
@@ -169,6 +164,7 @@ class DStellate(Cell):
             dendrites[i]().ihvcn.eh = -43.0
         self.maindend = dendrites
         self.status['dendrites'] = True
+        self.all_sections.extend(self.maindend)
 
 
 class DStellateIF(Cell):

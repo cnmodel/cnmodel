@@ -6,8 +6,24 @@ class Cell(object):
     """
     Base class for all cell types.
     """
+    sec_lookup = {}  # create a lookup table to map sections to their parent cell
+    def add_section(self, sec):
+        Cell.sec_lookup[sec.name()] = self
+
     def __init__(self):
-        pass
+        self.all_sections = {}  # dictionary of all sections associated with this cell
+        # the following section types (parts) are known to us:
+        for k in ['soma', 'maindend', 'secdend', 'internode', 'initialsegment', 'axonnode']:
+            self.all_sections[k] = []  # initialize to an empty list
+        # each cell has the following parameters:
+        self.totcap = None  # total membrane capacitance (somatic)
+        self.somaarea = None  # total soma area
+        self.initsegment = None  # hold initial segment sections
+        self.axnode = None  # hold nodes of ranvier sections
+        self.internode = None  # hold internode sections
+        self.maindend = None  # hold main dendrite sections
+        self.secdend = None  # hold secondary dendrite sections
+        self.axonsf = None  # axon diameter scale factor
 
     def print_status(self):
         print("\nCell model: %s" % self.__class__.__name__)
@@ -17,6 +33,18 @@ class Cell(object):
         for s in self.status.keys():
             print('{0:>12s} : {1:<12s}'.format(s, repr(self.status[s])))
         print '-'*32
+
+    def initialize(self):
+        """
+        Initialize this cell to it's specified RMP.
+        All sections in the cell are set to the same value
+        """
+        for part in self.all_sections.keys():
+            for sec in self.all_sections[part]:
+                sec.v = self.vm0
+        h.finitialize()
+        h.fcurrent()
+
 
     def print_mechs(self, section):
         """
@@ -75,7 +103,7 @@ class Cell(object):
        # print('Rin: {0:8.1f} Mohm   tau: {1:8.2f} ms  cap: {2:8.1f}'.format(Rin, tau, self.totcap))
         return Rin, tau, self.som(0.5).v
 
-    def add_axon(self, soma, somaarea, c_m=1.0, R_a=150, axonsf=1.0, nodes=5, debug=False):
+    def add_axon(self, c_m=1.0, R_a=150, axonsf=1.0, nodes=5, debug=False):
         """
         Add an axon to the soma with an initial segment (tapered), and multiple nodes of Ranvier
         The size of the axon is determined by self.axonsf, which in turn is set by the species
@@ -85,11 +113,11 @@ class Cell(object):
         axnode = []
         internode = []
         Section = h.Section
-        initsegment = Section(cell=soma)
-        initsegment.connect(soma)
+        initsegment = Section(cell=self.soma)
+        initsegment.connect(self.soma)
         for i in nnodes:
-            axnode.append(Section(cell=soma))
-            internode.append(Section(cell=soma))
+            axnode.append(Section(cell=self.soma))
+            internode.append(Section(cell=self.soma))
         axnode[0].connect(initsegment)
         for i in nnodes:
             internode[i].connect(axnode[i])
@@ -108,7 +136,7 @@ class Cell(object):
         initsegment.insert('klt')
         initsegment.insert('ihvcn')
         initsegment.insert('leak')
-        gnamax = nstomho(6000.0, somaarea)
+        gnamax = nstomho(6000.0, self.somaarea)
         gnamin = 0.0 * gnamax
 
         gnastep = (gnamax - gnamin) / ninitseg  # taper sodium channel density
@@ -117,10 +145,10 @@ class Cell(object):
             if debug:
                 print 'Initial segment %d: gnabar = %9.6f' % (ip, gna)
             inseg.nacn.gbar = gna
-            inseg.klt.gbar = 0.2 * nstomho(200.0, somaarea)
-            inseg.kht.gbar = nstomho(150.0, somaarea)
-            inseg.ihvcn.gbar = 0.0 * nstomho(20.0, somaarea)
-            inseg.leak.gbar = nstomho(2.0, somaarea)
+            inseg.klt.gbar = 0.2 * nstomho(200.0, self.somaarea)
+            inseg.kht.gbar = nstomho(150.0, self.somaarea)
+            inseg.ihvcn.gbar = 0.0 * nstomho(20.0, self.somaarea)
+            inseg.leak.gbar = nstomho(2.0, self.somaarea)
             inseg.ena = self.e_na
             inseg.ek = self.e_k
 
@@ -131,10 +159,12 @@ class Cell(object):
         if debug:
             print("<< {:s} Axon Added >>".format(self.__class__.__name__))
             h.topology()
-        return(initsegment, axnode, internode)
+        self.all_sections['initsegment'].extend(initsegment)
+        self.all_sections['axonnode'].extend(axnode)
+        self.all_sections['internode'].extend(internode)
 
     @staticmethod
-    def loadaxnodes(axnode, somaarea, scalefactor, nodeLength=2.5, nodeDiameter=2.0):
+    def loadaxnodes(axnode, somaarea, nodeLength=2.5, nodeDiameter=2.0):
         v_potassium = -80  # potassium reversal potential
         v_sodium = 50  # sodium reversal potential
         Ra = 150
@@ -160,7 +190,7 @@ class Cell(object):
         return axnode
 
     @staticmethod
-    def loadinternodes(internode, somaarea, scalefactor, internodeLength=1000, internodeDiameter=10):
+    def loadinternodes(internode, somaarea, internodeLength=1000, internodeDiameter=10):
         v_potassium = -80  # potassium reversal potential
         v_sodium = 50  # sodium reversal potential
         Ra = 150
