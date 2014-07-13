@@ -1,8 +1,4 @@
-import os
-import os.path
 from neuron import h
-import pylibrary.Utility as U
-import pylibrary.PlotHelpers as PH
 import numpy as np
 import scipy
 import scipy.integrate
@@ -30,7 +26,7 @@ class IVCurve(Protocol):
         self.time_values = None
         self.dt = None
         
-    def run(self, ivrange, cell, durs=None, sites=None, reppulse=None, temp=32,
+    def run(self, ivrange, cell, durs=None, sites=None, reppulse=None, temp=22,
             dt=0.025):
         """
         Run a current-clamp I/V curve on *cell*.
@@ -57,7 +53,6 @@ class IVCurve(Protocol):
             (imin, imax, istep) = ivrange # unpack the tuple...
         except:
             raise TypeError("run_iv argument 1 must be a tuple (imin, imax, istep)")
-        
         
         # Configure IClamp
         if durs is None:
@@ -97,7 +92,6 @@ class IVCurve(Protocol):
         iv_nstepi = int(np.ceil((imax - imin) / istep))
         iv_mini = imin
         iv_maxi = imax
-        nreps = iv_nstepi
         istep = (iv_maxi - iv_mini) / iv_nstepi
         iv_nstepi = iv_nstepi + 1
         for i in range(iv_nstepi):
@@ -108,47 +102,17 @@ class IVCurve(Protocol):
         self.dt = dt
         self.temp = temp
         vec = {}
-        
-        splist = np.zeros(nsteps)
-        meanVss = np.zeros(nsteps)
-        meanIss = np.zeros(nsteps)
-        minVpk = np.zeros(nsteps)
-        
+
         for i in range(nsteps):
-            # Set up recording vectors
-            #for var in ['v_soma', 'i_inj', 'time', 'm', 'h', 'ah', 'bh', 'am',
-                        #'bm', 'gh', 'ik', 'ina', 'inat', 'i_stim']:
-                #vec[var] = h.Vector()
-            #if sites is not None:
-                #for j in range(len(sites)):
-                    #vec['v_meas_%d' % (j)] = h.Vector()
-                    
             # Generate current command for this level 
             stim['amp'] = icur[i]
             (secmd, maxt, tstims) = make_pulse(stim)
             vec['i_stim'] = h.Vector(secmd)
-                
             
             # Connect recording vectors
             self['v_soma'] = cell.soma(0.5)._ref_v
-            #self['ik'] = cell.soma(0.5)._ref_ik
-            #natFlag = False
-            #try:
-                #vec['inat'].record(cell.soma(0.5)._ref_inat, sec=cell.soma)
-                #natFlag = True
-            #except:
-                #vec['ina'].record(cell.soma(0.5)._ref_ina, sec=cell.soma)
-                #pass
-            
-            #if sites is not None:
-                #for j in range(len(sites)):
-                    #if sites[j] is not None:
-                        #vec['v_meas_%d' % (j)].record(
-                            #sites[j](0.5)._ref_v, sec=sites[j])
             self['i_inj'] = istim._ref_i
-            #vec['gh'].record(cell.soma().ihvcn._ref_i, sec=cell.soma)
             self['time'] = h._ref_t
-            
             # connect current command vector
             vec['i_stim'].play(istim._ref_i, h.dt, 0, sec=cell.soma)
 
@@ -156,22 +120,31 @@ class IVCurve(Protocol):
             h.dt = dt
             h.celsius = temp
             h.tstop = tend
-            h.init()
-            h.run()
-            
+            # h.init()
+            # h.finitialize(cell.vm0)
+            cell.initialize()
+            h.frecord_init()
+            print 'After finitialize: \nvm0: ', cell.vm0
+            print 'soma v: ', cell.soma(0.5).v
+            print 'temp: ', temp
+            #h.run()
+            while h.t < h.tstop:
+                h.fadvance()
             self.voltage_traces.append(self['v_soma'])
             self.current_traces.append(self['i_inj'])
             self.time_values = np.array(self['time'])
 
-    def peak_vm(self):
+    def peak_vm(self, window=0.5):
         """
+        :param window: fraction of trace to look at to find peak value
         Return peak membrane voltage for each trace.
+
         """
         Vm = self.voltage_traces
         Icmd = self.current_cmd
         steps = len(Icmd)
         peakStart = self.durs[0] / self.dt
-        peakStop = peakStart + 10. / self.dt
+        peakStop = peakStart + (self.durs[1]*window) / self.dt # peak can be in first half
         Vpeak = []
         for i in range(steps):
             if Icmd[i] > 0:
@@ -180,18 +153,20 @@ class IVCurve(Protocol):
                 Vpeak.append(Vm[i][peakStart:peakStop].min())
         return np.array(Vpeak)
     
-    def steady_vm(self):
+    def steady_vm(self, window=0.1):
         """
+        :param window: fraction of window to use for steady-state measurement, taken
+        immediately before the end of the step
         Return steady-state membrane voltage for each trace.
         """
         Vm = self.voltage_traces
         steps = len(Vm)
         steadyStop = (self.durs[0] + self.durs[1]) / self.dt
-        steadyStart = steadyStop - 30. / self.dt
+        steadyStart = steadyStop - (self.durs[1]*window) / self.dt  # measure last 10% of trace
         Vsteady = [Vm[i][steadyStart:steadyStop].mean() for i in range(steps)]
         return np.array(Vsteady)
 
-    def spike_times(self):
+    def spike_times(self, threshold=-40):
         """
         Return an array of spike times for each trace.
         """
@@ -201,11 +176,31 @@ class IVCurve(Protocol):
         for i in range(steps):
             #dvdt = np.diff(Vm[i]) / self.dt
             #mask = (dvdt > 40).astype(int)
-            mask = (Vm[i] > -40.).astype(int)
+            mask = (Vm[i] > threshold).astype(int)
             indexes = np.argwhere(np.diff(mask) == 1)[:, 0] + 1
             times = indexes.astype(float) * self.dt
             spikes.append(times)
         return spikes
+
+    def spike_filter(self, spikes, window=(0., np.inf)):
+        """
+        filter the spikes to only those occurring in a defined window.
+        Required to compute input resistance in traces with no spikes during
+        the stimulus, because some traces will have anodal break spikes.
+        :param spikes: the list of spike trains returned from the spike_times method
+        :param window: the window over which to look for spikes (in msec: default is
+        the entire trace).
+
+        return the spikes in a list
+        """
+        filteredspikes = []
+        for i in range(len(spikes)):
+            winspikes = []  # spikes is arranged by current; so this is for one level
+            for j in range(len(spikes[i])):
+                if spikes[i][j] >= window[0] and spikes[i][j] <= window[1]:
+                    winspikes.append(spikes[i][j])
+            filteredspikes.append(winspikes)  # now build filtered spike list
+        return filteredspikes
 
     def rest_vm(self):
         """
@@ -217,25 +212,29 @@ class IVCurve(Protocol):
     def input_resistance(self, vmin=-70, imax=0):
         """
         Estimate resting input resistance.
+        :param vmin: minimum voltage to use in computation
+        :param imax: maximum current to use in computation.
         Return (slope, intercept) of linear regression for subthreshold traces
         near rest.
+        Include traces in which spikes appear only AFTER the pulse using spike_filter
         """
         Vss = self.steady_vm()
         Icmd = self.current_cmd
-        spikes = self.spike_times()
+        rawspikes = self.spike_times()
+        spikes = self.spike_filter(rawspikes, window=[0., self.durs[0]+self.durs[1]])
         steps = len(Icmd)
         
         nSpikes = np.array([len(s) for s in spikes])
-        
         # find traces with Icmd < 0, Vm > -70, and no spikes.
         vmask = Vss >= vmin
         imask = Icmd <= imax
-        smask = nSpikes == 0
-        mask = vmask & imask & smask
+        smask = nSpikes > 0
+        mask = vmask & imask & ~smask
         if mask.sum() < 2:
-            print vmask.astype(int)
-            print imask.astype(int)
-            print smask.astype(int)
+            print('{0:<15s}: {1:s}'.format('vss', ', '.join(['{:.2f}'.format(v) for v in Vss])))
+            print('{0:<15s}: {1:s}'.format('vmask', repr(vmask.astype(int))))
+            print('{0:<15s}: {1:s} '.format('imask', repr(imask.astype(int))))
+            print('{0:<15s}: {1:s}'.format('spikemask', repr(smask.astype(int))))
             raise Exception("Not enough traces to do linear regression.")
         
         # Use these to measure input resistance by linear regression.
@@ -304,7 +303,7 @@ class IVCurve(Protocol):
         
         # Print Rm, Vrest 
         (s, i) = self.input_resistance()
-        print "Membrane resistance: %0.1f MOhm" % s
+        print "\nMembrane resistance: %0.1f MOhm" % s
         ivals = np.array([Icmd.min(), Icmd.max()])
         vvals = s * ivals + i
         line = pg.QtGui.QGraphicsLineItem(ivals[0], vvals[0], ivals[1], vvals[1])
@@ -312,6 +311,8 @@ class IVCurve(Protocol):
         line.setZValue(-10)
         IVplot.addItem(line, ignoreBounds=True)
         
-        print "Resting membrane potential: %0.1f mV" % self.rest_vm()
+        print "Resting membrane potential: %0.1f mV\n" % self.rest_vm()
         
         self.win = win
+
+    

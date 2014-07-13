@@ -28,15 +28,8 @@ class TStellate(Cell):
         self.e_na = 55
         self.c_m = 0.9  # specific membrane capacitance,  uf/cm^2
         self.R_a = 150  # axial resistivity of cytoplasm/axoplasm, ohm.cm
-        self.totcap = None
-        self.somaarea = None
-        self.initsegment = None  # hold initial segment sections
-        self.axnode = None  # hold nodes of ranvier sections
-        self.internode = None  # hold internode sections
-        self.maindend = None  # hold main dendrite sections
-        self.secdend = None  # hold secondary dendrite sections
-        self.axonsf = None  # axon diameter scale factor
         self.vm0 = -60.
+        self.i_test_range=(-0.15, 0.15, 0.01)
 
         soma = h.Section() # one compartment of about 29000 um2
 
@@ -60,7 +53,8 @@ class TStellate(Cell):
         self.mechanisms = ['kht', 'ka', 'ihvcn', 'leak', nach]
         self.soma = soma
         self.species_scaling()  # set the default type II cell parameters
-
+        self.all_sections['soma'].extend(soma)
+        self.add_section(soma)
         if debug:
                 print "<< T-stellate: JSR Stellate Type 1 cell model created >>"
 
@@ -70,7 +64,6 @@ class TStellate(Cell):
         lstd = 1E4 * ((self.somaarea / np.pi) ** 0.5)  # convert from cm to um
         self.soma.diam = lstd
         self.soma.L = lstd
-        print 'lstd: %f  area: %f  totcap: %f' % (lstd, self.somaarea, self.totcap)
 
     def species_scaling(self, species='guineapig'):
         """
@@ -119,7 +112,7 @@ class TStellate(Cell):
             soma().ihvcn.gbar = nstomho(0.5, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             soma().leak.e = -65.0
-            self.vm0 = -63.6
+            self.vm0 = -63.92
             self.axonsf = 1.0
         self.status['species'] = species
 
@@ -184,6 +177,7 @@ class TStellate(Cell):
             dendrites[i]().ihvcn.eh = -43.0
         self.maindend = dendrites
         self.status['dendrites'] = True
+        self.all_sections['maindend'].extend(self.maindend)
 
 class TStellateNav11(Cell):
     """

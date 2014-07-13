@@ -28,15 +28,8 @@ class Bushy(Cell):
         self.e_na = 55
         self.c_m = 0.9  # specific membrane capacitance,  uf/cm^2
         self.R_a = 150  # axial resistivity of cytoplasm/axoplasm, ohm.cm
-        self.totcap = None
-        self.somaarea = None
-        self.initsegment = None  # hold initial segment sections
-        self.axnode = None  # hold nodes of ranvier sections
-        self.internode = None  # hold internode sections
-        self.maindend = None  # hold main dendrite sections
-        self.secdend = None  # hold secondary dendrite sections
-        self.axonsf = None  # axon diameter scale factor
         self.vm0 = -63.6   # nominal for type II; will be reset below
+        self.i_test_range=(-0.5, 0.5, 0.05)
 
         soma = h.Section()  # one compartment of about 29000 um2
         soma.nseg = 1
@@ -56,7 +49,8 @@ class Bushy(Cell):
             soma.insert('nacn')
         self.soma = soma
         self.species_scaling()  # set the default type II cell parameters
-
+        self.all_sections['soma'].append(soma)
+        self.add_section(soma)
         if debug:
             print "<< bushy: JSR bushy cell model created >>"
 
@@ -74,7 +68,7 @@ class Bushy(Cell):
         soma = self.soma
         if species == 'mouse':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
-            print 'Mouse bushy cell'
+            #print 'Mouse bushy cell'
             self.set_soma_size_from_Cm(26.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(58.0, self.somaarea)
@@ -103,7 +97,7 @@ class Bushy(Cell):
             soma().ihvcn.gbar = nstomho(3.5, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             soma().leak.e = -65.0
-            self.vm0 = -63.8
+            self.vm0 = -63.655
             self.axonsf = 0.57
         elif species == 'cat':  # a cat is a big guinea pig
             self.set_soma_size_from_Cm(35.0)
@@ -151,7 +145,8 @@ class Bushy(Cell):
                 print 'nacn gbar: ', soma().nacn.gbar
 
     def add_axon(self):
-        Cell.add_axon(self, self.soma, self.somaarea, self.c_m, self.R_a, self.axonsf)
+        Cell.add_axon(self, self.c_m, self.R_a, self.axonsf)
+
 
     def add_pumps(self):
         """
@@ -216,4 +211,6 @@ class Bushy(Cell):
         if debug:
             print 'Bushy: added dendrite'
             h.topology()
+        self.all_sections['maindend'].extend(maindend)
+        self.all_sections['secdend'].extend(secdend)
 

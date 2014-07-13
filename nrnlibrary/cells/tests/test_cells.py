@@ -11,13 +11,15 @@ from nrnlibrary.protocols import IVCurve
 #
 
 def test_bushy():
-    cell = cells.Bushy(species='mouse')
-    assert_cell_info(cell, 'bushy_mouse')
+    cell = cells.Bushy()
+    cell.species_scaling(species='guineapig-bushy-II')
+    assert_cell_info(cell, 'bushy_guineapig-bushy-II')
     
 
 def test_stellate():
-    cell = cells.TStellate(species='mouse', nav11=True)
-    assert_cell_info(cell, 'tstellate_mouse_nav11')
+    cell = cells.TStellate()
+    cell.species_scaling(species='guineapig')
+    assert_cell_info(cell, 'tstellate_guineapig')
 
 
 
@@ -63,7 +65,8 @@ def assert_cell_info(cell, key):
     
     # run I/V test on cell
     iv = IVCurve()
-    iv.run([-1.0, 1.0, 0.1], cell)
+    iv.run(cell.i_test_range, cell)
+    iv.show()
     info = dict(
         icmd=iv.current_cmd,
         spikes=iv.spike_times(),
