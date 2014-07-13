@@ -136,6 +136,10 @@ else:
 
 print("Cell model: %s" % cell.__class__.__name__)
 print(cell.__doc__)
+
+import pyqtgraph as pg
+app = pg.mkQApp()
+
 #
 # define the current clamp electrode and default settings
 #
@@ -147,9 +151,11 @@ if args.cc is True:
     iv.show()
 elif args.vc is True:
     run_vc(-120, -40, 5, cell)
+elif args.demo is True:
+    run_democlamp(cell, dendrites)
 else:
-    if args.demo is True:
-        run_democlamp(cell, dendrites)
+    print("Nothing to run. Specify one of --cc, --vc, --democlamp.")
+    sys.exit(1)
 #-----------------------------------------------------------------------------
 #
 # If we call this directly, provide a test with the IV function
@@ -158,5 +164,4 @@ else:
 
 
 if sys.flags.interactive == 0:
-    import pyqtgraph as pg
     pg.QtGui.QApplication.exec_()

@@ -26,9 +26,9 @@ class Params(object):
         self.__dict__.update(kwds)
 
 
-def template_SGAxon(debug=False, message=None):
-    axon = cells.HH(message='')
-    return (axon,)
+#def template_SGAxon(debug=False, message=None):
+    #axon = cells.HH(message='')
+    #return (axon,)
 
 # define the "Calyx" template.
 # Each axon ends in (and thus includes) a calyx; therefore we make a list of axons
@@ -744,39 +744,123 @@ def stochastic_synapses(h, parentSection=None, targetcell=None, nFibers=1, nRZon
     return (presynaptic, releasesites, allpsd, allclefts, netcons, allpar)
 
 
-def print_model_parameters(psd, par, message=None):
-    if message is not None:
-        print "%s" % message
-    for i in range(0, len(par)):
-        for j in range(0, len(psd[i])):
-            print '%s: ' % (psd[i].hname()),
-            for k in par[i]:
-                v = eval('psd[i][j].' + k)
-                print '%8s  = %12f' % (k, v)
 
 
-def ParameterInit(delay=0.6, latency=0.0, std=0.0):
-    """ convenience function to set up a default parameter group for stochastic synapses, in which
-    there is no time variance in release or release latency
-    Note the following: these parameters are passed to coh4.mod. 
-    In that routine, if LN_Flag is 0, then there is no time evolution of the distribution,
-    BUT the sigma value is passed (called "std") and is used to jitter the release events.
-    If you don't want this, set LN_std to 0.0
-    """
-    vPars = Params(LN_Flag=0, LN_t0=10.0, LN_A0=0., LN_tau=10.0, LN_std=std,
-                   Lat_Flag=0, Lat_t0=10.0, Lat_A0=0., Lat_tau=10.,
-                   delay=delay, latency=latency)
-    return (vPars)
+class Synapse(object):
+    def connect(pre_sec, post_sec):
+        AN_Po_Ratio = 23.2917 # ration of open probabilities for AMPA and NMDAR's at peak currents
+        AMPA_Max_Po = 0.44727
+        NMDARatio = 0.0
+
+        #
+        # set parameters according to the target cell type
+        #
+        if isinstance(post_sec.cell, cells.TStellate):
+            nANTerminals = 6
+            nANTerminals_ReleaseZones = 1
+            AN_gMax = 4600.0 / AMPA_Max_Po # correct because Po in model is not 1.0
+
+        elif isinstance(post_sec.cell, cells.DStellateEager):
+            nANTerminals = 12
+            nANTerminals_ReleaseZones = 1
+            AN_gMax = 4600.0 / AMPA_Max_Po # correct because Po in model is not 1.0
+
+        elif isinstance(post_sec.cell, cells.Bushy):
+            nANTerminals = 3
+            nANTerminals_ReleaseZones = 100
+            # normally an_gmax would be about 22 nS (22000) total
+            # However, if we do this as a "per release site" conductance, we have ~100 pA / 60 mV = 1.7 nS
+            #AN_gMax = 22000.0/(AMPA_Max_Po) # correct because Po in model is not 1.0
+            AN_gMax = 1700.0 / (AMPA_Max_Po)
+
+        else:
+            raise ValueError("Unknown cell type '%s'" % cellType)
+
+        #
+        # make a multisite synapse (consists of an axon section and a coh point process)
+        # synapse is like a calyx or end bulb of Held
+        #
+        calyx_zones = 1
+        debug = False
+        plotFocus = 'EPSC'
+        psdType = 'ampa'
+        synType = 'epsc'
+        ipscdynamics = 1
+
+        ANTerminals_Delay = 0.0 # latency between AP and mode of release distribution, in milliseconds.    
+        ANTerminals_Latency = 0.5 # latency 
+        thresh = -30 # mV - AP detection on the presynaptic side.
+
+        # set parameter control for the stochastic release of vesicles...
+        # this structure is passed to stochastic synapses, and replaces several variables 
+        # that were previously defined in the call to that function.
+        vPars = Params(LN_Flag=1, LN_t0=10.0, LN_A0=0.05, LN_tau=35, LN_std=0.05,
+                    Lat_Flag=1, Lat_t0=10.0, Lat_A0=0.140, Lat_tau=21.5,
+                    delay=ANTerminals_Delay, latency=ANTerminals_Latency)
+
+        #printParams(vPars)
+        if hasattr(TargetCell, 'len') and len(TargetCell) > 1: # handle possible multi-segment cells
+            TC = TargetCell[0].soma # soma
+            SOMA = TargetCell[0].soma
+        else:
+            TC = TargetCell.soma
+            SOMA = TargetCell.soma
+        if cellType == 'dstellate': # well, these always have a dendrite... 
+            TC = TargetCell.dendrite
+            SOMA = TargetCell.soma
 
 
-def printParams(p):
-    """
-    print the parameter block created in Parameter Init"""
-    u = dir(p)
-    print "-------- Synapse Parameter Block----------"
-    for k in u:
-        if k[0] != '_':
-            print "%15s = " % (k), eval('p.%s' % k)
-    print "-------- ---------------------- ----------"
+        #
+        # stochastic_synapses builds the multisite synapse.     
+        #
+        (calyx, coh, psd, cleft, nc2, par) = stochastic_synapses(h, parentSection=pre_sec,
+                                                                targetcell=TC, cellname=cellType,
+                                                                nFibers=nANTerminals, nRZones=nANTerminals_ReleaseZones,
+                                                                eRev=0, debug=False,
+                                                                thresh=thresh, psdtype=psdType, gmax=AN_gMax, gvar=0.3,
+                                                                NMDARatio=0.0, Identifier=1,
+                                                                stochasticPars=vPars) # set gVar to 0 for testing
+
+
+
+
+#
+# Currently unused functions:
+#
+
+#def print_model_parameters(psd, par, message=None):
+    #if message is not None:
+        #print "%s" % message
+    #for i in range(0, len(par)):
+        #for j in range(0, len(psd[i])):
+            #print '%s: ' % (psd[i].hname()),
+            #for k in par[i]:
+                #v = eval('psd[i][j].' + k)
+                #print '%8s  = %12f' % (k, v)
+
+
+#def ParameterInit(delay=0.6, latency=0.0, std=0.0):
+    #""" convenience function to set up a default parameter group for stochastic synapses, in which
+    #there is no time variance in release or release latency
+    #Note the following: these parameters are passed to coh4.mod. 
+    #In that routine, if LN_Flag is 0, then there is no time evolution of the distribution,
+    #BUT the sigma value is passed (called "std") and is used to jitter the release events.
+    #If you don't want this, set LN_std to 0.0
+    #"""
+    #vPars = Params(LN_Flag=0, LN_t0=10.0, LN_A0=0., LN_tau=10.0, LN_std=std,
+                   #Lat_Flag=0, Lat_t0=10.0, Lat_A0=0., Lat_tau=10.,
+                   #delay=delay, latency=latency)
+    #return (vPars)
+
+
+#def printParams(p):
+    #"""
+    #print the parameter block created in Parameter Init"""
+    #u = dir(p)
+    #print "-------- Synapse Parameter Block----------"
+    #for k in u:
+        #if k[0] != '_':
+            #print "%15s = " % (k), eval('p.%s' % k)
+    #print "-------- ---------------------- ----------"
 
 
