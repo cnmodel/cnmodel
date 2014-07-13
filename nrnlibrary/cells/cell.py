@@ -24,6 +24,13 @@ class Cell(object):
         self.secdend = None  # hold secondary dendrite sections
         self.axonsf = None  # axon diameter scale factor
 
+        # Recommended current (min, max, step) for testing this cell
+        self.i_test_range=(-0.5, 0.5, 0.05)
+        
+        # Recommended threshold for detecting spikes from this cell
+        self.spike_threshold = -40
+
+
     def print_status(self):
         print("\nCell model: %s" % self.__class__.__name__)
         print(self.__doc__)

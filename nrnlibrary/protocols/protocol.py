@@ -1,3 +1,5 @@
+from neuron import h
+import numpy as np
 
 class Protocol(object):
     """

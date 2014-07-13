@@ -46,8 +46,8 @@ def template_Calyx_Billup(debug=False, nzones=1, message=None):
     return (calyx, coh)
 
 
-def template_multisite(debug=False, parentSection = None, nzones=1, celltype='bushy', message=None,
-                       type='lognormal', Identifier=0, stochasticPars=None, calciumPars=None,
+def template_multisite(debug=False, parent_section = None, nzones=1, celltype='bushy', message=None,
+                       type='lognormal', identifier=0, stochastic_pars=None, calcium_pars=None,
                        ):
     """
     This routine creates a (potentially) multisite synapse with:
@@ -56,7 +56,7 @@ def template_multisite(debug=False, parentSection = None, nzones=1, celltype='bu
         A "cleft" mechanism (models diffusion of transmitter). Note that the cleft is inserted as part of the
             presynaptic section, but is not connected to the postsynaptic side yet.
     Inputs:
-        parentSection: the section where the synaptic mechanisms should be inserted. If the parentSection is not
+        parent_section: the section where the synaptic mechanisms should be inserted. If the parent_section is not
             specified, then we create an HH section and insert things there (mostly for testing)
         nzones: the number of activate zones to insert into the section.
         celltype: bushy or (anything else), sets the duration and amplitude of the transmitter transient
@@ -64,20 +64,20 @@ def template_multisite(debug=False, parentSection = None, nzones=1, celltype='bu
         message: a message to type out when instantiating (mostly for verification of code flow)
         type: 'lognormal' sets the release event latency distribution to use a lognormal function. Currently,
             no other function is supported.
-        Identifier: an identifier to associate with these release sites so we can find them later.
-        stochasticPars: A dictionary of parameters (Param class) used to specifiy the stochastic behavior of this site,
+        identifier: an identifier to associate with these release sites so we can find them later.
+        stochastic_pars: A dictionary of parameters (Param class) used to specifiy the stochastic behavior of this site,
             including release latency, stdev, and lognormal distribution paramaters
-        calciumPars: A dictionary of parameters (Param class) to determine the calcium channels in this section.
+        calcium_pars: A dictionary of parameters (Param class) to determine the calcium channels in this section.
             If None, then no calcium channels are inserted; otherwise, a P-type calcium conductance and a dynamic
             mechanism are inserted, and their conductance is set.
     Outputs: a list with 3 variables:
     terminal, relsite, cleft
-        terminal: this is the pointer to the terminal section that was inserted (same as parentSection if it was
+        terminal: this is the pointer to the terminal section that was inserted (same as parent_section if it was
             specified)
         relsite: a list of the nzones release sites that were created
         cleft: a list of the nzones cleft mechanisms that were created.
     """
-    if stochasticPars is None:
+    if stochastic_pars is None:
         raise TypeError
     global veryFirst
     mu = u'\u03bc'
@@ -85,25 +85,25 @@ def template_multisite(debug=False, parentSection = None, nzones=1, celltype='bu
     message='  >> creating terminal with %d release zones using lognormal release latencies (coh4)' % nzones
     if debug:
         print message
-    if parentSection is None:
+    if parent_section is None:
         term = cells.HH()
         terminal = term[0].soma
     else:
-        terminal = parentSection
+        terminal = parent_section
     terminal.push()
     cleft = []
-    if calciumPars is not None:
+    if calcium_pars is not None:
         terminal.insert('cap') # insert calcium channel density
-        terminal().cap.pcabar = calciumPars.Ca_gbar
+        terminal().cap.pcabar = calcium_pars.Ca_gbar
         terminal.insert('cad')
     relsite = h.COH4(0.5, sec=terminal)
     relsite.nZones = nzones
     relsite.rseed = 2 # int(np.random.random_integers(1,1024))
-    relsite.latency = stochasticPars.latency
-    relsite.latstd = stochasticPars.LN_std
+    relsite.latency = stochastic_pars.latency
+    relsite.latstd = stochastic_pars.LN_std
     if debug is True:
         relsite.debug = 1
-    relsite.Identifier = Identifier
+    relsite.identifier = identifier
     # if type == 'gamma':
     #     gd = gamma.rvs(2, size=10000)/2.0 # get a sample of 10000 events with a gamma dist of 2, set to mean of 1.0
     #     if relsite.latstd > 0.0:
@@ -128,14 +128,14 @@ def template_multisite(debug=False, parentSection = None, nzones=1, celltype='bu
     # 	LN_A0 = 0.0 (ms) : size of change in sigma from t0 to infinity
     # 	LN_tau = 100.0 (ms) : rate of change of sigma over time (from fit of a+b*(1-exp(-t/tau)))
 
-    relsite.LN_Flag = stochasticPars.LN_Flag # enable use of lognormal release latency
-    relsite.LN_t0 = stochasticPars.LN_t0
-    relsite.LN_A0 = stochasticPars.LN_A0
-    relsite.LN_tau = stochasticPars.LN_tau
-    relsite.Lat_Flag = stochasticPars.Lat_Flag
-    relsite.Lat_t0 = stochasticPars.Lat_t0
-    relsite.Lat_A0 = stochasticPars.Lat_A0
-    relsite.Lat_tau = stochasticPars.Lat_tau
+    relsite.LN_Flag = stochastic_pars.LN_Flag # enable use of lognormal release latency
+    relsite.LN_t0 = stochastic_pars.LN_t0
+    relsite.LN_A0 = stochastic_pars.LN_A0
+    relsite.LN_tau = stochastic_pars.LN_tau
+    relsite.Lat_Flag = stochastic_pars.Lat_Flag
+    relsite.Lat_t0 = stochastic_pars.Lat_t0
+    relsite.Lat_A0 = stochastic_pars.Lat_A0
+    relsite.Lat_tau = stochastic_pars.Lat_tau
     if veryFirst == 1 and debug is True:
         veryFirst = 0
         #mpl.figure(2)
@@ -156,7 +156,7 @@ def template_multisite(debug=False, parentSection = None, nzones=1, celltype='bu
     return (terminal, relsite, cleft)
 
 
-def template_iGluR_PSD(sec, nReceptors=1, debug=False, cellname=None, message=None, NMDARatio=1):
+def template_iGluR_PSD(sec, nReceptors=1, debug=False, cellname=None, message=None, nmda_ratio=1):
     """
     Create an ionotropic Glutamate receptor "PSD"
     Each PSD has receptors for each active zone, which must be matched (connected) to presynaptic
@@ -167,7 +167,7 @@ def template_iGluR_PSD(sec, nReceptors=1, debug=False, cellname=None, message=No
         debug: flag for debugging (prints extra information)
         cellname: Bushy/MNTB/stellate: determines ampa receptor kinetics
         message: Not used.
-        NMDARatio: The relative conductance of the open NMDA receptors to the open AMPA receptors.
+        nmda_ratio: The relative conductance of the open NMDA receptors to the open AMPA receptors.
     Outputs:
         (psd, psdn, par, parn)
         psd is the list of PSDs that were created (AMPA)
@@ -189,7 +189,7 @@ def template_iGluR_PSD(sec, nReceptors=1, debug=False, cellname=None, message=No
             psd[-1].Ro2 = 0.6193
             psd[-1].Rc1 = 3.678
             psd[-1].Rc2 = 0.3212
-            psdn[-1].gNAR = 0.036 * AN_Po_Ratio * NMDARatio # 0.36*AN_Po_Ratio*NMDARatio
+            psdn[-1].gNAR = 0.036 * AN_Po_Ratio * nmda_ratio # 0.36*AN_Po_Ratio*nmda_ratio
             #if k == 0:
             #    print "Bushy NMDAR set to %8.2f" % psdn[-1].gNAR
         if cellname == 'stellate':
@@ -198,7 +198,7 @@ def template_iGluR_PSD(sec, nReceptors=1, debug=False, cellname=None, message=No
             psd[-1].Rc1 = 0.667
             psd[-1].Rc2 = 0.237
             psd[-1].PA = 0.1
-            psdn[-1].gNAR = 1 * AN_Po_Ratio * NMDARatio
+            psdn[-1].gNAR = 1 * AN_Po_Ratio * nmda_ratio
 
     h.pop_section()
     par = {'Ro1': ('r', psd[0].Ro1),
@@ -355,14 +355,14 @@ def template_Gly_PSD_State_GC(sec, debug=False, nReceptors=2, psdtype=None, mess
 # to the Dittman-Regehr model.
 ################################################################################
 
-def setDF(coh, celltype, synapsetype, select=None):
+def setDF(coh, target_cell, synapsetype, select=None):
     """ set the parameters for the calyx release model ...
         These paramteres were obtained from an optimized fit of the Dittman-Regehr
         model to stimulus and recovery data for the synapses at 100, 200 and 300 Hz,
         for times out to about 0.5 - 1.0 second. Data from Ruili Xie and Yong Wang.
         Fitting by Paul Manis
     """
-    if celltype in ['bushy', 'MNTB']:
+    if isinstance(target_cell, cells.Bushy):
         if synapsetype == 'epsc':
             coh = bushy_epsc(coh)
         if synapsetype == 'ipsc':
@@ -370,7 +370,7 @@ def setDF(coh, celltype, synapsetype, select=None):
                 coh = bushy_ipsc_average(coh)
             else:
                 coh = bushy_ipsc_single(coh, select=select)
-    if celltype == 'stellate':
+    elif isinstance(target_cell, cells.TStellate):
         if synapsetype == 'epsc':
             coh = stellate_epsc(coh)
         if synapsetype == 'ipsc':
@@ -582,32 +582,32 @@ def bushy_ipsc_single(synapse, select=None):
 """
 stochastic_synapses routine has a problem: it takes on too many actions,
 preventing it from being more generally useful.
-1. nFibers should be done through a separate routine
+1. n_fibers should be done through a separate routine
 2. Call to template_multisite should accept a section for insertion, but should
 not create it's own hh type section (that should be provided by the caller).
 
 Proper usage:
 If the goal is to model a single stochastic site, set the section with axon, set
-nFibers to 1 and nRZones to 1.
+n_fibers to 1 and n_rzones to 1.
 If the goal os to model multiple stochastic sites from a single presynaptic axon,
-then set nFibers to 1 and nRZones to the number of desired sites.
-If the goal is to model all converging inputs, then increase nFibers.
-Not changing at present, as setting nFibers to 1 works just fine.
+then set n_fibers to 1 and n_rzones to the number of desired sites.
+If the goal is to model all converging inputs, then increase n_fibers.
+Not changing at present, as setting n_fibers to 1 works just fine.
 
 """
 
 # make the calyx synapses (or just endings on stellate cells)
 # This routine is maintained because it is used in EIModelX.py.
 # This routine is deprecated, in favor of
-# converging_synapses_stochastic() uses nFibers, calls single site inserts)
+# converging_synapses_stochastic() uses n_fibers, calls single site inserts)
 # insert_multisite_stochastic(): inserts nzones associated with a single presynaptic section
 #
-def stochastic_synapses(h, parentSection=None, targetcell=None, nFibers=1, nRZones=1,
-                        cellname='bushy', psdtype='ampa', message=None, debug=False,
+def stochastic_synapses(h, parent_section=None, target_section=None, n_fibers=1, n_rzones=1,
+                        psdtype='ampa', message=None, debug=False,
                         thresh=0.0, gmax=1.0, gvar=0, eRev=0,
-                        stochasticPars=None, calciumPars=None,
-                        NMDARatio=1.0, select=None, Identifier=0):
-    """ This routine generates the synaptic connections from "nFibers" presynaptic
+                        stochastic_pars=None, calcium_pars=None,
+                        nmda_ratio=1.0, select=None, identifier=0):
+    """ This routine generates the synaptic connections from "n_fibers" presynaptic
         inputs onto a postsynaptic cell.
         Each connection is a stochastic presynaptic synapse ("presynaptic") with
         depression and facilitation.
@@ -617,19 +617,22 @@ def stochastic_synapses(h, parentSection=None, targetcell=None, nFibers=1, nRZon
         Each release site's transmitter is in turn attached to a PSD at each ending ("psd")
         Each psd can have a different conductance centered about the mean of
         gmax, according to a gaussian distribution set by gvar.
-        NOTE: stochasticPars must define parameters used by multisite, including:
+        NOTE: stochastic_pars must define parameters used by multisite, including:
             .delay is the netcon delay between the presynaptic AP and the start of release events
             .Latency is the latency to the mean release event... this could be confusing.
     """
-    if stochasticPars is None:
+    parent_cell = cells.cell_from_section(parent_section)
+    target_cell = cells.cell_from_section(targetSection)
+    
+    if stochastic_pars is None:
         raise TypeError
         exit()
-    if cellname not in ['bushy', 'MNTB', 'stellate']:
-        raise TypeError
-        exit()
-    if debug:
-        print "\nTarget cell  = %s, psdtype = %s" % (cellname, psdtype)
-    #printParams(stochasticPars)
+    #if cellname not in ['bushy', 'MNTB', 'stellate']:
+        #raise TypeError
+        #exit()
+    #if debug:
+        #print "\nTarget cell  = %s, psdtype = %s" % (cellname, psdtype)
+    #printParams(stochastic_pars)
     glyslowPoMax = 0.162297  # thse were measured from the kinetic models in Synapses.py, as peak open P for the glycine receptors
     glyfastPoMax = 0.038475  # also later verified, same numbers...
     if psdtype == 'glyfast':
@@ -642,38 +645,40 @@ def stochastic_synapses(h, parentSection=None, targetcell=None, nFibers=1, nRZon
     allpsd = []
     allpar = []
     netcons = [] # build list of connections from individual release sites to the mother calyx
-    for j in range(0, nFibers):  # for each input fiber to the target cell
-    #        print "Stochastic syn: j = %d of nFibers = %d nRZones = %d\n" % (j, nFibers, nRZones)
+    for j in range(0, n_fibers):  # for each input fiber to the target cell
+    #        print "Stochastic syn: j = %d of n_fibers = %d n_rzones = %d\n" % (j, n_fibers, n_rzones)
         # for each fiber, create a presynaptic ending with nzones release sites
-        (terminal, relzone, clefts) = template_multisite(parentSection = parentSection,
-                                                         nzones=nRZones, celltype=cellname,
+        (terminal, relzone, clefts) = template_multisite(parent_section=parent_section,
+                                                         nzones=n_rzones,
                                                          message='   synapse %d' % j,
-                                                         stochasticPars=stochasticPars,
-                                                         calciumPars=calciumPars,
-                                                         Identifier=Identifier, debug=debug)
+                                                         stochastic_pars=stochastic_pars,
+                                                         calcium_pars=calcium_pars,
+                                                         identifier=identifier, debug=debug)
         # and then make a set of postsynaptic zones on the postsynaptic side
         #        print 'PSDTYPE: ', psdtype
         if psdtype == 'ampa':
-            relzone = setDF(relzone, cellname, 'epsc') # set the parameters for release
+            relzone = setDF(relzone, target_cell, 'epsc') # set the parameters for release
         elif psdtype == 'glyslow' or psdtype == 'glyfast' or psdtype == 'glyexp' or psdtype == 'glya5' or psdtype == 'glyGC':
-            relzone = setDF(relzone, cellname, 'ipsc', select) # set the parameters for release
+            relzone = setDF(relzone, target_cell, 'ipsc', select) # set the parameters for release
+        
+        
         if psdtype == 'ampa':
-            (psd, psdn, par, parn) = template_iGluR_PSD(targetcell, nReceptors=nRZones,
-                                                        cellname=cellname, NMDARatio=NMDARatio)
+            (psd, psdn, par, parn) = template_iGluR_PSD(target_cell, nReceptors=n_rzones,
+                                                        nmda_ratio=nmda_ratio)
         elif psdtype == 'glyslow':
-            (psd, par) = template_Gly_PSD_State_Gly6S(targetcell, nReceptors=nRZones,
+            (psd, par) = template_Gly_PSD_State_Gly6S(targetcell, nReceptors=n_rzones,
                                                       psdtype=psdtype)
         elif psdtype == 'glyfast':
-            (psd, par) = template_Gly_PSD_State_PL(targetcell, nReceptors=nRZones,
+            (psd, par) = template_Gly_PSD_State_PL(targetcell, nReceptors=n_rzones,
                                                    psdtype=psdtype)
         elif psdtype == 'glyGC':
-            (psd, par) = template_Gly_PSD_State_GC(targetcell, nReceptors=nRZones,
+            (psd, par) = template_Gly_PSD_State_GC(targetcell, nReceptors=n_rzones,
                                                    psdtype=psdtype)
         elif psdtype == 'glya5':
-            (psd, par) = template_Gly_PSD_State_Glya5(targetcell, nReceptors=nRZones,
+            (psd, par) = template_Gly_PSD_State_Glya5(targetcell, nReceptors=n_rzones,
                                                       psdtype=psdtype)
         elif psdtype == 'glyexp':
-            (psd, par) = template_Gly_PSD_exp(targetcell, nReceptors=nRZones,
+            (psd, par) = template_Gly_PSD_exp(targetcell, nReceptors=n_rzones,
                                               psdtype=psdtype)
         else:
             print "**PSDTYPE IS NOT RECOGNIZED: [%s]\n" % (psdtype)
@@ -681,11 +686,11 @@ def stochastic_synapses(h, parentSection=None, targetcell=None, nFibers=1, nRZon
             # connect the mechanisms on the presynaptic side together
         if debug:
             print 'terminal: ', terminal
-            print 'parentSection: ', parentSection
-        if terminal != parentSection:
-            terminal.connect(parentSection, 1, 0) # 1. connect the terminal to the parent section
+            print 'parent_section: ', parent_section
+        if terminal != parent_section:
+            terminal.connect(parent_section, 1, 0) # 1. connect the terminal to the parent section
         terminal.push()
-        netcons.append(h.NetCon(terminal(0.5)._ref_v, relzone, thresh, stochasticPars.delay, 1.0))
+        netcons.append(h.NetCon(terminal(0.5)._ref_v, relzone, thresh, stochastic_pars.delay, 1.0))
         netcons[-1].weight[0] = 1
         netcons[-1].threshold = -30.0
         # ****************
@@ -699,7 +704,7 @@ def stochastic_synapses(h, parentSection=None, targetcell=None, nFibers=1, nRZon
         #            netcons[-1].delay = newdelay # assign a delay to EACH zone that is different...
         #*****************
 
-        for k in range(0, nRZones): # 2. connect each release site to the mother axon
+        for k in range(0, n_rzones): # 2. connect each release site to the mother axon
             if psdtype == 'ampa': # direct connection, no "cleft"
                 relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', psd[k])
                 relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', psdn[k]) # include NMDAR's as well at same release site
@@ -707,11 +712,11 @@ def stochastic_synapses(h, parentSection=None, targetcell=None, nFibers=1, nRZon
                 relzone.setpointer(relzone._ref_XMTR[k], 'pre',
                                    clefts[k]) # connect the cleft to the release of transmitter
                 clefts[k].preThresh = 0.1
-                if cellname == 'stellate' or cellname == 'test':
+                if isinstance(target_cell, cells.TStellate):
                     clefts[k].KV = 531.0 # set cleft transmitter kinetic parameters
                     clefts[k].KU = 4.17
                     clefts[k].XMax = 0.731
-                elif cellname == 'bushy':
+                elif isinstance(target_cell, cells.Bushy):
                     clefts[k].KV = 1e9 # really fast for bushy cells.
                     clefts[k].KU = 4.46
                     clefts[k].XMax = 0.733
@@ -747,25 +752,28 @@ def stochastic_synapses(h, parentSection=None, targetcell=None, nFibers=1, nRZon
 
 
 class Synapse(object):
-    def connect(pre_sec, post_sec):
+    def connect(self, pre_sec, post_sec):
         AN_Po_Ratio = 23.2917 # ration of open probabilities for AMPA and NMDAR's at peak currents
         AMPA_Max_Po = 0.44727
-        NMDARatio = 0.0
+        nmda_ratio = 0.0
+
+        pre_cell = cells.cell_from_section(pre_sec)
+        post_cell = cells.cell_from_section(post_sec)
 
         #
         # set parameters according to the target cell type
         #
-        if isinstance(post_sec.cell, cells.TStellate):
+        if isinstance(post_cell, cells.TStellate):
             nANTerminals = 6
             nANTerminals_ReleaseZones = 1
             AN_gMax = 4600.0 / AMPA_Max_Po # correct because Po in model is not 1.0
 
-        elif isinstance(post_sec.cell, cells.DStellateEager):
+        elif isinstance(post_cell, cells.DStellateEager):
             nANTerminals = 12
             nANTerminals_ReleaseZones = 1
             AN_gMax = 4600.0 / AMPA_Max_Po # correct because Po in model is not 1.0
 
-        elif isinstance(post_sec.cell, cells.Bushy):
+        elif isinstance(post_cell, cells.Bushy):
             nANTerminals = 3
             nANTerminals_ReleaseZones = 100
             # normally an_gmax would be about 22 nS (22000) total
@@ -799,28 +807,30 @@ class Synapse(object):
                     delay=ANTerminals_Delay, latency=ANTerminals_Latency)
 
         #printParams(vPars)
-        if hasattr(TargetCell, 'len') and len(TargetCell) > 1: # handle possible multi-segment cells
-            TC = TargetCell[0].soma # soma
-            SOMA = TargetCell[0].soma
-        else:
-            TC = TargetCell.soma
-            SOMA = TargetCell.soma
-        if cellType == 'dstellate': # well, these always have a dendrite... 
-            TC = TargetCell.dendrite
-            SOMA = TargetCell.soma
+        # LC: disabled this -- let the user decide which sections to connect.
+        #if hasattr(post_cell, 'len') and len(post_cell) > 1: # handle possible multi-segment cells
+            #TC = post_cell[0].soma # soma
+            #SOMA = post_cell[0].soma
+        #else:
+            #TC = post_cell.soma
+            #SOMA = post_cell.soma
+        #if isinstance(post_cell, cells.DStellateEager): 
+            ## well, these always have a dendrite... 
+            #TC = post_cell.dendrite
+            #SOMA = post_cell.soma
 
 
         #
         # stochastic_synapses builds the multisite synapse.     
         #
-        (calyx, coh, psd, cleft, nc2, par) = stochastic_synapses(h, parentSection=pre_sec,
-                                                                targetcell=TC, cellname=cellType,
-                                                                nFibers=nANTerminals, nRZones=nANTerminals_ReleaseZones,
-                                                                eRev=0, debug=False,
-                                                                thresh=thresh, psdtype=psdType, gmax=AN_gMax, gvar=0.3,
-                                                                NMDARatio=0.0, Identifier=1,
-                                                                stochasticPars=vPars) # set gVar to 0 for testing
-
+        ret = stochastic_synapses(h, parent_section=pre_sec,
+                                    targetSection=post_sec,
+                                    n_fibers=nANTerminals, n_rzones=nANTerminals_ReleaseZones,
+                                    eRev=0, debug=False,
+                                    thresh=thresh, psdtype=psdType, gmax=AN_gMax, gvar=0.3,
+                                    nmda_ratio=0.0, identifier=1,
+                                    stochastic_pars=vPars) # set gVar to 0 for testing
+        (calyx, coh, psd, cleft, nc2, par) = ret
 
 
 

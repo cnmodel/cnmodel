@@ -30,6 +30,7 @@ class Bushy(Cell):
         self.R_a = 150  # axial resistivity of cytoplasm/axoplasm, ohm.cm
         self.vm0 = -63.6   # nominal for type II; will be reset below
         self.i_test_range=(-0.5, 0.5, 0.05)
+        self.spike_threshold = -50
 
         soma = h.Section()  # one compartment of about 29000 um2
         soma.nseg = 1

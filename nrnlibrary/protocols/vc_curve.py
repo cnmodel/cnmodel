@@ -8,6 +8,9 @@ import scipy
 import scipy.integrate
 import scipy.stats
 
+from .protocol import Protocol
+
+
 try:
     import pyqtgraph as pg
     HAVE_PG = True

@@ -22,4 +22,5 @@ else:
     raise ValueError("Unknown cell type '%s'" % cellType)
 
 synapse = Synapse()
-SynapseTest(TargetCell.soma, synapse)
+st = SynapseTest()
+st.run(TargetCell, synapse)

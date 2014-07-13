@@ -5,19 +5,20 @@ import pyqtgraph as pg
 
 from neuron import h
 
-from nrnlibrary.synapses import (Params, stochastic_synapses, template_SGAxon)
+from nrnlibrary.synapses import (Params, stochastic_synapses)
 import nrnlibrary.util as util
-from nrnlibrary.protocols import Protocol
+from .protocol import Protocol
+from .. import cells
 
 mpl.rcParams['interactive'] = False
 
 
 
-class SynapseTest(Protocol)
+class SynapseTest(Protocol):
     def reset(self):
         super(IVCurve, self).reset()
 
-    def run(cell, synapse, temp=34.0):
+    def run(self, cell, synapse, temp=34.0):
         """ 
         Test the synapse function. 
         Creates a presynaptic HH neuron and connects it to *cell* via *synapse*.
@@ -32,7 +33,7 @@ class SynapseTest(Protocol)
         # create presynaptic cell and wire up network
         #
         pre_cell = cells.HH()
-        synapse.connect(pre_cell, cell)
+        synapse.connect(pre_cell.soma, cell.soma)
 
 
         VCLAMP = True

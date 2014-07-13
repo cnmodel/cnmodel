@@ -48,7 +48,7 @@ class IVCurve(Protocol):
             timestep of simulation (0.025)
         """
         self.reset()
-        
+        self.cell = cell
         try:
             (imin, imax, istep) = ivrange # unpack the tuple...
         except:
@@ -166,10 +166,16 @@ class IVCurve(Protocol):
         Vsteady = [Vm[i][steadyStart:steadyStop].mean() for i in range(steps)]
         return np.array(Vsteady)
 
-    def spike_times(self, threshold=-40):
+    def spike_times(self, threshold=None):
         """
         Return an array of spike times for each trace.
+        
+        :param threshold: Optional threshold at which to detect spikes. By 
+        default, this queries cell.spike_threshold.
         """
+        if threshold is None:
+            threshold = self.cell.spike_threshold
+        
         Vm = self.voltage_traces
         steps = len(Vm)
         spikes = []
@@ -289,7 +295,7 @@ class IVCurve(Protocol):
 
 
         # I/V relationships
-        IVplot.plot(Icmd, self.peak_vm(), symbol='o')
+        IVplot.plot(Icmd, self.peak_vm(), symbol='o', symbolBrush=(50, 150, 50, 255))
         IVplot.plot(Icmd, self.steady_vm(), symbol='s')
 
 
