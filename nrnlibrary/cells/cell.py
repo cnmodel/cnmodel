@@ -36,14 +36,15 @@ class Cell(object):
 
     def initialize(self):
         """
-        Initialize this cell to it's specified RMP.
+        Initialize this cell to it's "rmp" under current conditions
         All sections in the cell are set to the same value
         """
+        self.find_i0()
         for part in self.all_sections.keys():
             for sec in self.all_sections[part]:
                 sec.v = self.vm0
-        h.finitialize()
-        h.fcurrent()
+#        h.finitialize()  # do these once for the whole model
+#        h.fcurrent()
 
 
     def print_mechs(self, section):

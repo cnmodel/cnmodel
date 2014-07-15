@@ -27,7 +27,7 @@ UNITS {
 }
 
 NEURON {
-		THREADSAFE
+        THREADSAFE
         SUFFIX ka
         USEION k READ ek WRITE ik
         RANGE gbar, gka, ik
@@ -38,10 +38,10 @@ INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}
 
 PARAMETER {
         v (mV)
-        celsius = 22 (degC)  : model is defined on measurements made at room temp in Baltimore
         dt (ms)
-        ek = -77 (mV)
         gbar = 0.00477 (mho/cm2) <0,1e9>
+        q10tau = 3.0
+        q10g = 2.0
 }
 
 STATE {
@@ -49,79 +49,56 @@ STATE {
 }
 
 ASSIGNED {
+    celsius  (degC)  : model is defined on measurements made at room temp in Baltimore
     ik (mA/cm2) 
+    ek (mV)
     gka (mho/cm2)
     ainf binf cinf
     atau (ms) btau (ms) ctau (ms)
-    }
+    qg ()  : computed q10 for gnabar based on q10g
+    q10 ()
+}
 
 LOCAL aexp, bexp, cexp
 
 BREAKPOINT {
-	SOLVE states
+    SOLVE states METHOD cnexp
     
-	gka = gbar*(a^4)*b*c
+    gka = gbar*(a^4)*b*c
     ik = gka*(v - ek)
 
 }
 
-UNITSOFF
 
 INITIAL {
-    trates(v)
+    qg = q10g^((celsius-22)/10 (degC))
+    q10 = q10tau^((celsius - 22)/10 (degC)) : if you don't like room temp, it can be changed!
+    rates(v)
     a = ainf
     b = binf
     c = cinf
 }
 
-PROCEDURE states() {  :Computes state variables m, h, and n
-	trates(v)      :             at the current v and dt.
-	a = a + aexp*(ainf-a)
-	b = b + bexp*(binf-b)
-	c = c + cexp*(cinf-c)
-VERBATIM
-	return 0;
-ENDVERBATIM
+DERIVATIVE states {  :Computes state variables m, h, and n
+    rates(v)      :             at the current v and dt.
+    a' = (ainf - a)/atau
+    b' = (binf - b)/btau
+    c' = (cinf - c)/ctau
 }
 
-LOCAL q10
 
-PROCEDURE rates(v) {  :Computes rate and other constants at current v.
+PROCEDURE rates(v (mV)) {  :Computes rate and other constants at current v.
                       :Call once from HOC to initialize inf at resting v.
 
-	q10 = 3^((celsius - 22)/10) : if you don't like room temp, it can be changed!
+    ainf = (1 / (1 + exp(-1*(v + 31) / 6 (mV))))^0.25
+    binf = 1 / (1 + exp((v + 66) / 7 (mV)))^0.5
+    cinf = 1 / (1 + exp((v + 66) / 7 (mV)))^0.5
 
-    ainf = (1 / (1 + exp(-1*(v + 31) / 6)))^0.25
-    binf = 1 / (1 + exp((v + 66) / 7))^0.5
-    cinf = 1 / (1 + exp((v + 66) / 7))^0.5
-
-    atau =  (100 / (7*exp((v+60) / 14) + 29*exp(-(v+60) / 24))) + 0.1
-    btau =  (1000 / (14*exp((v+60) / 27) + 29*exp(-(v+60) / 24))) + 1
-    ctau = (90 / (1 + exp((-66-v) / 17))) + 10
+    atau =  (100 (ms)/ (7*exp((v+60) / 14 (mV)) + 29*exp(-(v+60) / 24 (mV)))) + 0.1
+    atau = atau/q10
+    btau =  (1000 (ms) / (14*exp((v+60) / 27 (mV)) + 29*exp(-(v+60) / 24 (mV)))) + 1
+    btau = btau/q10
+    ctau = (90 (ms)/ (1 + exp((-66-v) / 17 (mV)))) + 10
+    ctau = ctau/q10
 }
 
-PROCEDURE trates(v) {  :Computes rate and other constants at current v.
-                      :Call once from HOC to initialize inf at resting v.
-	LOCAL tinc
-	TABLE ainf, aexp, binf, bexp, cinf, cexp
-	DEPEND dt, celsius FROM -150 TO 150 WITH 300
-
-    rates(v)    : not consistently executed from here if usetable_hh == 1
-        : so don't expect the tau values to be tracking along with
-        : the inf values in hoc
-
-	tinc = -dt * q10
-	aexp = 1 - exp(tinc/atau)
-	bexp = 1 - exp(tinc/btau)
-	cexp = 1 - exp(tinc/ctau)
-	}
-
-FUNCTION vtrap(x,y) {  :Traps for 0 in denominator of rate eqns.
-        if (fabs(x/y) < 1e-6) {
-                vtrap = y*(1 - x/y/2)
-        }else{
-                vtrap = x/(exp(x/y) - 1)
-        }
-}
-
-UNITSON

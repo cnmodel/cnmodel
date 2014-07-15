@@ -39,6 +39,33 @@ class Protocol(object):
         """
         return np.array(self._vectors[name])
 
+    def custom_init(self):
+        """
+        Perform careful initialization cell states, without forcing
+        a particular Vm.
+        """
+        initdur = -1e10
+        tdt = h.dt
+        dtstep = 1e9
+        h.finitialize()
+        h.t = initdur
+        tmp = h.cvode.active()
+        if tmp != 0:
+            h.cvode.active(0)
+        h.dt = dtstep
+        while h.t < -dtstep:
+            h.fadvance()
+        if tmp != 0:
+            h.cvode.active(1)
+        h.t = 0
+        if h.cvode.active():
+            h.cvode.re_init()
+        else:
+            h.fcurrent()
+        h.frecord_init()
+        h.dt = tdt
+        h.fcurrent()
+        h.frecord_init()
 
 class IVCurve(Protocol):
     def __init__(self):
@@ -108,7 +135,7 @@ class IVCurve(Protocol):
                 'dt': dt,
                 }
         istim = h.iStim(0.5, sec=cell.soma)
-        istim.delay = 0
+        istim.delay = 5.
         istim.dur = 1e9 # these actually do not matter...
         istim.iMax = 0.0
         (secmd, maxt, tstims) = make_pulse(stim)
@@ -144,19 +171,25 @@ class IVCurve(Protocol):
             vec['i_stim'].play(istim._ref_i, h.dt, 0, sec=cell.soma)
 
             # GO
+            h('secondorder=0')  # direct call fails; let hoc do the work
             h.dt = dt
             h.celsius = temp
             h.tstop = tend
             # h.init()
             # h.finitialize(cell.vm0)
             cell.initialize()
-            h.frecord_init()
-            print 'After finitialize: \nvm0: ', cell.vm0
-            print 'soma v: ', cell.soma(0.5).v
-            print 'temp: ', temp
+            self.custom_init()
+            #h.finitialize(cell.vm0)
+            #h.fcurrent()
+            #h.frecord_init()
+            print('After initialization at {0:4.1f}: \n  vm0: {1:9.5f}  soma.v: {2:9.5f}'.format(
+                temp, cell.vm0, cell.soma(0.5).v))
             #h.run()
             while h.t < h.tstop:
                 h.fadvance()
+
+            k1 = int(stim['delay']/h.dt - 1)
+            print ('   V before step: {0:9.5f}'.format(self['v_soma'][k1]))
             self.voltage_traces.append(self['v_soma'])
             self.current_traces.append(self['i_inj'])
             self.time_values = np.array(self['time'])

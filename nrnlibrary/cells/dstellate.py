@@ -27,6 +27,7 @@ class DStellate(Cell):
                        'na': nach, 'species': 'guineapig', 'ttx': ttx}
         self.e_k = -70  # potassium reversal potential, mV
         self.e_na = 50
+        self.e_h = -43
         self.c_m = 0.9  # specific membrane capacitance,  uf/cm^2
         self.R_a = 150  # axial resistivity of cytoplasm/axoplasm, ohm.cm
         self.vm0 = -64.1
@@ -37,7 +38,7 @@ class DStellate(Cell):
         soma.nseg = 1
 
         if nach == 'nacn':
-            soma.insert('nacn')
+            soma.insert('na')
         elif nach == 'nav11':
             soma.insert('nav11')
         elif nach == 'jsrna':
@@ -50,6 +51,8 @@ class DStellate(Cell):
         soma.insert('ihvcn')
         soma.insert('leak')
         soma.ek = self.e_k
+        soma.ena = self.e_na
+        soma().ihvcn.eh = self.e_h
         soma().leak.e = -65
         self.mechanisms = ['kht', 'klt', 'ihvcn', 'leak', nach]
         self.soma = soma
@@ -128,10 +131,10 @@ class DStellate(Cell):
                 print "bushy using inva11"
             print 'nav11 gbar: ', soma().nav11.gbar
         else:
-            soma().nacn.gbar = gnabar
+            soma().na.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'nacn gbar: ', soma().nacn.gbar
+                print 'nacn gbar: ', soma().na.gbar
 
     def add_axon(self):
         Cell.add_axon(self, self.soma, self.somaarea, self.c_m, self.R_a, self.axonsf)
