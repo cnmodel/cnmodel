@@ -96,7 +96,10 @@ def template_multisite(debug=False, parent_section = None, nzones=1, celltype='b
         terminal.insert('cap') # insert calcium channel density
         terminal().cap.pcabar = calcium_pars.Ca_gbar
         terminal.insert('cad')
+        
+    # Create COH4 point process to simulate multiple independent release zones.
     relsite = h.COH4(0.5, sec=terminal)
+    print "Add PP %s to section %s" % (relsite.hname(), terminal.name())
     relsite.nZones = nzones
     relsite.rseed = 2 # int(np.random.random_integers(1,1024))
     relsite.latency = stochastic_pars.latency
@@ -690,6 +693,8 @@ def stochastic_synapses(h, parent_section=None, target_section=None, n_fibers=1,
         if terminal != parent_section:
             terminal.connect(parent_section, 1, 0) # 1. connect the terminal to the parent section
         terminal.push()
+        
+        print "NetCon %s => %s  thresh=%s delay=%s" % (terminal.name(), relzone.hname(), thresh, stochastic_pars.delay)
         netcons.append(h.NetCon(terminal(0.5)._ref_v, relzone, thresh, stochastic_pars.delay, 1.0))
         netcons[-1].weight[0] = 1
         netcons[-1].threshold = -30.0
@@ -752,7 +757,7 @@ def stochastic_synapses(h, parent_section=None, target_section=None, n_fibers=1,
 
 
 class Synapse(object):
-    def connect(self, pre_sec, post_sec):
+    def connect(self, pre_sec, post_sec, debug=False):
         
         self.AN_Po_Ratio = 23.2917 # ratio of open probabilities for AMPA and NMDAR's at peak currents
         self.AMPA_Max_Po = 0.44727
@@ -830,7 +835,7 @@ class Synapse(object):
         ret = stochastic_synapses(h, parent_section=pre_sec,
                                     target_section=post_sec,
                                     n_fibers=nANTerminals, n_rzones=nANTerminals_ReleaseZones,
-                                    eRev=0, debug=False,
+                                    eRev=0, debug=debug,
                                     thresh=thresh, psdtype=self.psdType, gmax=AN_gMax, gvar=0.3,
                                     nmda_ratio=0.0, identifier=1,
                                     stochastic_pars=vPars) # set gVar to 0 for testing

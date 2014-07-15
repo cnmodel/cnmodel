@@ -33,7 +33,7 @@ class SynapseTest(Protocol):
         # create presynaptic cell and wire up network
         #
         pre_cell = cells.HH()
-        synapse.connect(pre_cell.soma, cell.soma)
+        synapse.connect(pre_cell.soma, cell.soma, debug=True)
         psd = synapse.psd
         terminal = synapse.terminal
         self.synapse = synapse
@@ -97,6 +97,7 @@ class SynapseTest(Protocol):
         
         # create hoc vectors for each parameter we wish to monitor and display
         self['v_pre'] = pre_cell.soma(0.5)._ref_v
+        print "Recording v_pre from %s" % pre_cell.soma.name()
         self['v_calyx'] = terminal[0](0.5)._ref_v
         self['t'] = h._ref_t
         self['v_soma'] = pre_cell.soma(0.5)._ref_v
@@ -305,7 +306,7 @@ class SynapseTest(Protocol):
         ghw.axes.set_ylabel('Half-width (ms)')
         ghw.axes.set_xlabel('Time (ms)')
 
-        #mpl.show()
+        mpl.show()
         
         #
         # now print some average values
