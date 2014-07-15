@@ -103,7 +103,7 @@ def template_multisite(debug=False, parent_section = None, nzones=1, celltype='b
     relsite.latstd = stochastic_pars.LN_std
     if debug is True:
         relsite.debug = 1
-    relsite.identifier = identifier
+    relsite.Identifier = identifier
     # if type == 'gamma':
     #     gd = gamma.rvs(2, size=10000)/2.0 # get a sample of 10000 events with a gamma dist of 2, set to mean of 1.0
     #     if relsite.latstd > 0.0:
@@ -622,7 +622,7 @@ def stochastic_synapses(h, parent_section=None, target_section=None, n_fibers=1,
             .Latency is the latency to the mean release event... this could be confusing.
     """
     parent_cell = cells.cell_from_section(parent_section)
-    target_cell = cells.cell_from_section(targetSection)
+    target_cell = cells.cell_from_section(target_section)
     
     if stochastic_pars is None:
         raise TypeError
@@ -663,22 +663,22 @@ def stochastic_synapses(h, parent_section=None, target_section=None, n_fibers=1,
         
         
         if psdtype == 'ampa':
-            (psd, psdn, par, parn) = template_iGluR_PSD(target_cell, nReceptors=n_rzones,
+            (psd, psdn, par, parn) = template_iGluR_PSD(target_section, nReceptors=n_rzones,
                                                         nmda_ratio=nmda_ratio)
         elif psdtype == 'glyslow':
-            (psd, par) = template_Gly_PSD_State_Gly6S(targetcell, nReceptors=n_rzones,
+            (psd, par) = template_Gly_PSD_State_Gly6S(target_section, nReceptors=n_rzones,
                                                       psdtype=psdtype)
         elif psdtype == 'glyfast':
-            (psd, par) = template_Gly_PSD_State_PL(targetcell, nReceptors=n_rzones,
+            (psd, par) = template_Gly_PSD_State_PL(target_section, nReceptors=n_rzones,
                                                    psdtype=psdtype)
         elif psdtype == 'glyGC':
-            (psd, par) = template_Gly_PSD_State_GC(targetcell, nReceptors=n_rzones,
+            (psd, par) = template_Gly_PSD_State_GC(target_section, nReceptors=n_rzones,
                                                    psdtype=psdtype)
         elif psdtype == 'glya5':
-            (psd, par) = template_Gly_PSD_State_Glya5(targetcell, nReceptors=n_rzones,
+            (psd, par) = template_Gly_PSD_State_Glya5(target_section, nReceptors=n_rzones,
                                                       psdtype=psdtype)
         elif psdtype == 'glyexp':
-            (psd, par) = template_Gly_PSD_exp(targetcell, nReceptors=n_rzones,
+            (psd, par) = template_Gly_PSD_exp(target_section, nReceptors=n_rzones,
                                               psdtype=psdtype)
         else:
             print "**PSDTYPE IS NOT RECOGNIZED: [%s]\n" % (psdtype)
@@ -753,33 +753,36 @@ def stochastic_synapses(h, parent_section=None, target_section=None, n_fibers=1,
 
 class Synapse(object):
     def connect(self, pre_sec, post_sec):
-        AN_Po_Ratio = 23.2917 # ration of open probabilities for AMPA and NMDAR's at peak currents
-        AMPA_Max_Po = 0.44727
-        nmda_ratio = 0.0
+        
+        self.AN_Po_Ratio = 23.2917 # ratio of open probabilities for AMPA and NMDAR's at peak currents
+        self.AMPA_Max_Po = 0.44727
+        self.NMDARatio = 0.0
 
-        pre_cell = cells.cell_from_section(pre_sec)
-        post_cell = cells.cell_from_section(post_sec)
+        self.pre_sec = pre_sec
+        self.post_sec = post_sec
+        self.pre_cell = cells.cell_from_section(pre_sec)
+        self.post_cell = cells.cell_from_section(post_sec)
 
         #
         # set parameters according to the target cell type
         #
-        if isinstance(post_cell, cells.TStellate):
+        if isinstance(self.post_cell, cells.TStellate):
             nANTerminals = 6
             nANTerminals_ReleaseZones = 1
-            AN_gMax = 4600.0 / AMPA_Max_Po # correct because Po in model is not 1.0
+            AN_gMax = 4600.0 / self.AMPA_Max_Po # correct because Po in model is not 1.0
 
-        elif isinstance(post_cell, cells.DStellateEager):
+        elif isinstance(self.post_cell, cells.DStellateEager):
             nANTerminals = 12
             nANTerminals_ReleaseZones = 1
-            AN_gMax = 4600.0 / AMPA_Max_Po # correct because Po in model is not 1.0
+            AN_gMax = 4600.0 / self.AMPA_Max_Po # correct because Po in model is not 1.0
 
-        elif isinstance(post_cell, cells.Bushy):
+        elif isinstance(self.post_cell, cells.Bushy):
             nANTerminals = 3
             nANTerminals_ReleaseZones = 100
             # normally an_gmax would be about 22 nS (22000) total
             # However, if we do this as a "per release site" conductance, we have ~100 pA / 60 mV = 1.7 nS
             #AN_gMax = 22000.0/(AMPA_Max_Po) # correct because Po in model is not 1.0
-            AN_gMax = 1700.0 / (AMPA_Max_Po)
+            AN_gMax = 1700.0 / (self.AMPA_Max_Po)
 
         else:
             raise ValueError("Unknown cell type '%s'" % cellType)
@@ -791,7 +794,7 @@ class Synapse(object):
         calyx_zones = 1
         debug = False
         plotFocus = 'EPSC'
-        psdType = 'ampa'
+        self.psdType = 'ampa'
         synType = 'epsc'
         ipscdynamics = 1
 
@@ -824,15 +827,45 @@ class Synapse(object):
         # stochastic_synapses builds the multisite synapse.     
         #
         ret = stochastic_synapses(h, parent_section=pre_sec,
-                                    targetSection=post_sec,
+                                    target_section=post_sec,
                                     n_fibers=nANTerminals, n_rzones=nANTerminals_ReleaseZones,
                                     eRev=0, debug=False,
-                                    thresh=thresh, psdtype=psdType, gmax=AN_gMax, gvar=0.3,
+                                    thresh=thresh, psdtype=self.psdType, gmax=AN_gMax, gvar=0.3,
                                     nmda_ratio=0.0, identifier=1,
                                     stochastic_pars=vPars) # set gVar to 0 for testing
         (calyx, coh, psd, cleft, nc2, par) = ret
+        self.terminal = calyx
+        self.coh = coh
+        self.psd = psd
+        
+        # adjust NMDA receptors to match postsynaptic cell
+        self.adjust_nmda()
 
 
+    def adjust_nmda(self):
+        k = 0
+        kNMDA = -1
+        kAMPA = -1
+        for p in self.psd:
+            if p.hname().find('NMDA', 0, 6) >= 0:
+                if isinstance(self.post_cell, cells.TStellate):
+                    p.gNAR = 1.28 * self.AN_Po_Ratio * self.NMDARatio # for T-stellate cells, this yields correct AMPA, NMDA ratio of 1.13 at +40 mV
+                elif isinstance(self.post_cell, cells.Bushy):
+                    p.gNAR = 0.36 * self.AN_Po_Ratio * self.NMDARatio # for bushy cells, this yields correct AMPA, NMDA ratio of 0.429 at +40 mV
+                    #if p is psd[0]:
+                    #    print "NMDAR's for bushy cells set to %8.3f" % p.gNAR
+                elif isinstance(self.post_cell, cells.DStellate):
+                    p.gNAR = 1.28 * self.AN_Po_Ratio * self.NMDARatio # same as for T-stellate (no other data)
+                p.vshift = 0
+                if kNMDA == -1:
+                    kNMDA = k # save the first instance where we have an NMDA receptor
+            else:
+                if kAMPA == -1: # not NMDA, so get AMPA 
+                    kAMPA = k
+            k = k + 1
+
+        self.kNMDA = kNMDA
+        self.kAMPA = kAMPA
 
 #
 # Currently unused functions:

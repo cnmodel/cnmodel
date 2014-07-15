@@ -24,3 +24,5 @@ else:
 synapse = Synapse()
 st = SynapseTest()
 st.run(TargetCell, synapse)
+st.analyze()
+

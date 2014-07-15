@@ -48,10 +48,8 @@ class Bushy(Cell):
             soma.insert('nav11')
         else:
             soma.insert('nacn')
-        self.soma = soma
+        self.add_section(soma, 'soma')
         self.species_scaling()  # set the default type II cell parameters
-        self.all_sections['soma'].append(soma)
-        self.add_section(soma)
         if debug:
             print "<< bushy: JSR bushy cell model created >>"
 
@@ -212,6 +210,6 @@ class Bushy(Cell):
         if debug:
             print 'Bushy: added dendrite'
             h.topology()
-        self.all_sections['maindend'].extend(maindend)
-        self.all_sections['secdend'].extend(secdend)
+        self.add_section(maindend, 'maindend')
+        self.add_section(secdend, 'secdend')
 

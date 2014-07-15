@@ -13,6 +13,7 @@ class Pyramidal(Cell):
     Kanold and Manis, 1999, 2001, 2005
     """
     def __init__(self, scalefactor=1.0, debug=False):
+        super(Pyramidal, self).__init__()
         ndend = 1
         soma = h.Section()
         dend = h.Section()
@@ -73,4 +74,4 @@ class Pyramidal(Cell):
             print "<< PYR: POK Pyramidal Cell created >>"
             print " "
             
-        self.soma = soma
+        self.add_section(soma, 'soma')

@@ -12,6 +12,8 @@ class HH(Cell):
     Standard Hodgkin-Huxley mechanisms from NEURON
     """
     def __init__(self, debug=False, message=None):
+        super(HH, self).__init__()
+         
         soma = h.Section() # one compartment of about 29000 um2
         v_potassium = -80       # potassium reversal potential
         v_sodium = 50           # sodium reversal potential
@@ -36,4 +38,4 @@ class HH(Cell):
             else:
                 print message
         
-        self.soma = soma
+        self.add_section(soma, 'soma')

@@ -52,10 +52,8 @@ class DStellate(Cell):
         soma.ek = self.e_k
         soma().leak.e = -65
         self.mechanisms = ['kht', 'klt', 'ihvcn', 'leak', nach]
-        self.soma = soma
         self.species_scaling()  # set the default type II cell parameters
-        self.all_sections['soma'].extend(soma)
-        self.add_section(soma)
+        self.add_section(soma, 'soma')
         if debug:
                 print "<< D-stellate: JSR Stellate Type I-II cell model created >>"
 
@@ -164,7 +162,7 @@ class DStellate(Cell):
             dendrites[i]().ihvcn.eh = -43.0
         self.maindend = dendrites
         self.status['dendrites'] = True
-        self.all_sections.extend(self.maindend)
+        self.add_section(self.maindend, 'maindend')
 
 
 class DStellateIF(Cell):

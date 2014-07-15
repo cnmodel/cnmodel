@@ -34,7 +34,8 @@ class SynapseTest(Protocol):
         #
         pre_cell = cells.HH()
         synapse.connect(pre_cell.soma, cell.soma)
-
+        psd = synapse.psd
+        terminal = synapse.terminal
 
         VCLAMP = True
         glyPlot = False
@@ -45,7 +46,7 @@ class SynapseTest(Protocol):
         #
         if VCLAMP == True:
             clampV = -65.0
-            vccontrol = h.VClamp(0.5, sec=SOMA)
+            vccontrol = h.VClamp(0.5, sec=cell.soma)
             vccontrol.dur[0] = 10.0
             vccontrol.amp[0] = clampV
             vccontrol.dur[1] = 100.0
@@ -53,34 +54,13 @@ class SynapseTest(Protocol):
             vccontrol.dur[2] = 20.0
             vccontrol.amp[2] = clampV
 
-        #
-        # adjust NMDA receptors
-        #
-        k = 0
-        kNMDA = -1
-        kAMPA = -1
-        for p in psd:
-            if p.hname().find('NMDA', 0, 6) >= 0:
-                if TargetCellName == 'tstellate':
-                    p.gNAR = 1.28 * AN_Po_Ratio * NMDARatio # for T-stellate cells, this yields correct AMPA, NMDA ratio of 1.13 at +40 mV
-                if TargetCellName == 'bushy':
-                    p.gNAR = 0.36 * AN_Po_Ratio * NMDARatio # for bushy cells, this yields correct AMPA, NMDA ratio of 0.429 at +40 mV
-                    #if p is psd[0]:
-                    #    print "NMDAR's for bushy cells set to %8.3f" % p.gNAR
-                if TargetCellName == 'dstellate':
-                    p.gNAR = 1.28 * AN_Po_Ratio * NMDARatio # same as for T-stellate (no other data)
-                p.vshift = 0
-                if kNMDA == -1:
-                    kNMDA = k # save the first instance where we have an NMDA receptor
-            else:
-                if kAMPA == -1: # not NMDA, so get AMPA 
-                    kAMPA = k
-            k = k + 1
+
+        
         
         #
         # set up stimulation of the presynaptic axon/terminal
         #
-        istim = h.iStim(0.5, sec=axon[0])
+        istim = h.iStim(0.5, sec=pre_cell.soma)
         stim = {}
         stim['NP'] = 10
         stim['Sfreq'] = 100.0 # stimulus frequency
@@ -106,46 +86,48 @@ class SynapseTest(Protocol):
         # istim current pulse train
         vec['i_stim'] = h.Vector(secmd)
 
-        # make a synapse monitor for each release zone
-        for i in range(0, nANTerminals_ReleaseZones): 
-            vec['isyn%03d' % i] = h.Vector(nANTerminals_ReleaseZones, 1000)
+        #for i in range(0, nANTerminals_ReleaseZones): 
+            #vec['isyn%03d' % i] = h.Vector(nANTerminals_ReleaseZones, 1000)
         
         # create hoc vectors for each parameter we wish to monitor and display
-        vec['v_pre'].record(axon[0](0.5)._ref_v, sec=axon[0])
-        vec['v_calyx'].record(calyx[0](0.5)._ref_v, sec=calyx[0])
+        vec['v_pre'].record(pre_cell.soma(0.5)._ref_v)
+        vec['v_calyx'].record(terminal[0](0.5)._ref_v)
         vec['t'].record(h._ref_t)
-        vec['v_soma'].record(SOMA(0.5)._ref_v, sec=SOMA)
-        vec['coh'].record(coh[0]._ref_XMTR[0], sec=TC)
-        vec['i_stim'].play(istim._ref_i, h.dt, 0, sec=axon[0])
+        vec['v_soma'].record(pre_cell.soma(0.5)._ref_v)
+        vec['coh'].record(synapse.coh[0]._ref_XMTR[0])
+        vec['i_stim'].play(istim._ref_i, h.dt, 0)
 
+        # make a synapse monitor for each release zone
         k = 0
         for p in psd:
             vec['isyn%03d' % k] = h.Vector(len(psd), 1000)
-            vec['isyn%03d' % k].record(psd[k]._ref_i, sec=TC)
+            vec['isyn%03d' % k].record(psd[k]._ref_i)
             k = k + 1
-        vec['Open'].record(psd[0]._ref_Open, sec=TC)
-        if kNMDA >= 0:
-            vec['nmOpen'].record(psd[kNMDA]._ref_Open, sec=TC)
-        if kAMPA >= 0:
-            vec['amOpen'].record(psd[kAMPA]._ref_Open, sec=TC)
-        if psdType == 'glyslow':
+        
+        vec['Open'].record(psd[0]._ref_Open)
+        if synapse.kNMDA >= 0:
+            vec['nmOpen'].record(psd[synapse.kNMDA]._ref_Open)
+        if synapse.kAMPA >= 0:
+            vec['amOpen'].record(psd[synapse.kAMPA]._ref_Open)
+        
+        if synapse.psdType == 'glyslow':
             nstate = 7
-            vec['C0'].record(psd[0]._ref_C0, sec=TC)
-            vec['C1'].record(psd[0]._ref_C1, sec=TC)
-            vec['C2'].record(psd[0]._ref_C2, sec=TC)
-            vec['O1'].record(psd[0]._ref_O1, sec=TC)
-            vec['O2'].record(psd[0]._ref_O2, sec=TC)
-            vec['D1'].record(psd[0]._ref_D1, sec=TC)
-            #vec['D3'].record(psd[0]._ref_D3, sec=TC)
-            #vec['O1'].record(psd[0]._ref_O1, sec=TC)
-        if psdType == 'glyfast':
+            vec['C0'].record(psd[0]._ref_C0)
+            vec['C1'].record(psd[0]._ref_C1)
+            vec['C2'].record(psd[0]._ref_C2)
+            vec['O1'].record(psd[0]._ref_O1)
+            vec['O2'].record(psd[0]._ref_O2)
+            vec['D1'].record(psd[0]._ref_D1)
+            #vec['D3'].record(psd[0]._ref_D3)
+            #vec['O1'].record(psd[0]._ref_O1)
+        if synapse.psdType == 'glyfast':
             nstate = 7
-            vec['C0'].record(psd[0]._ref_C0, sec=TC)
-            vec['C1'].record(psd[0]._ref_C1, sec=TC)
-            vec['C2'].record(psd[0]._ref_C2, sec=TC)
-            vec['C3'].record(psd[0]._ref_C3, sec=TC)
-            vec['O1'].record(psd[0]._ref_O1, sec=TC)
-            vec['O2'].record(psd[0]._ref_O2, sec=TC)
+            vec['C0'].record(psd[0]._ref_C0)
+            vec['C1'].record(psd[0]._ref_C1)
+            vec['C2'].record(psd[0]._ref_C2)
+            vec['C3'].record(psd[0]._ref_C3)
+            vec['O1'].record(psd[0]._ref_O1)
+            vec['O2'].record(psd[0]._ref_O2)
 
         #
         # Run simulation

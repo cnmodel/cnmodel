@@ -51,10 +51,8 @@ class TStellate(Cell):
         soma.ek = self.e_k
         soma().leak.e = -65.0
         self.mechanisms = ['kht', 'ka', 'ihvcn', 'leak', nach]
-        self.soma = soma
         self.species_scaling()  # set the default type II cell parameters
-        self.all_sections['soma'].extend(soma)
-        self.add_section(soma)
+        self.add_section(soma, 'soma')
         if debug:
                 print "<< T-stellate: JSR Stellate Type 1 cell model created >>"
 
@@ -177,7 +175,7 @@ class TStellate(Cell):
             dendrites[i]().ihvcn.eh = -43.0
         self.maindend = dendrites
         self.status['dendrites'] = True
-        self.all_sections['maindend'].extend(self.maindend)
+        self.add_section(self.maindend, 'maindend')
 
 class TStellateNav11(Cell):
     """
