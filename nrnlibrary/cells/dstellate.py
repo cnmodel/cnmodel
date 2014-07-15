@@ -32,7 +32,7 @@ class DStellate(Cell):
         self.vm0 = -64.1
         self.i_test_range=(-0.25, 0.25, 0.025)  # set range for ic command test
 
-        soma = h.Section() # one compartment
+        soma = h.Section(name="DStellate_Soma_%x" % id(self)) # one compartment
 
         soma.nseg = 1
 

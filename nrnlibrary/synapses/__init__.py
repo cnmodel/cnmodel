@@ -787,16 +787,17 @@ class Synapse(object):
         else:
             raise ValueError("Unknown cell type '%s'" % cellType)
 
+        self.zones_per_terminal = nANTerminals_ReleaseZones
+
         #
         # make a multisite synapse (consists of an axon section and a coh point process)
         # synapse is like a calyx or end bulb of Held
         #
-        calyx_zones = 1
-        debug = False
-        plotFocus = 'EPSC'
+        #calyx_zones = 1
+        #debug = True
         self.psdType = 'ampa'
-        synType = 'epsc'
-        ipscdynamics = 1
+        #synType = 'epsc'
+        #ipscdynamics = 1
 
         ANTerminals_Delay = 0.0 # latency between AP and mode of release distribution, in milliseconds.    
         ANTerminals_Latency = 0.5 # latency 

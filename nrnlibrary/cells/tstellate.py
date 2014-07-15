@@ -31,7 +31,7 @@ class TStellate(Cell):
         self.vm0 = -60.
         self.i_test_range=(-0.15, 0.15, 0.01)
 
-        soma = h.Section() # one compartment of about 29000 um2
+        soma = h.Section(name="TStellate_Soma_%x" % id(self)) # one compartment of about 29000 um2
 
         soma.nseg = 1
 

@@ -14,7 +14,7 @@ class HH(Cell):
     def __init__(self, debug=False, message=None):
         super(HH, self).__init__()
          
-        soma = h.Section() # one compartment of about 29000 um2
+        soma = h.Section(name="HH_Soma_%x" % id(self)) # one compartment of about 29000 um2
         v_potassium = -80       # potassium reversal potential
         v_sodium = 50           # sodium reversal potential
         c_m = 1.0

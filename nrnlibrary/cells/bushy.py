@@ -32,7 +32,7 @@ class Bushy(Cell):
         self.i_test_range=(-0.5, 0.5, 0.05)
         self.spike_threshold = -50
 
-        soma = h.Section()  # one compartment of about 29000 um2
+        soma = h.Section(name="Bushy_Soma_%x" % id(self))  # one compartment of about 29000 um2
         soma.nseg = 1
         soma.insert('klt')
         soma.insert('kht')

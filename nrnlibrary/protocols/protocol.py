@@ -7,7 +7,7 @@ class Protocol(object):
     simulations.
     """
     def __init__(self):
-        pass
+        self.reset()
 
     def reset(self):
         self._vectors = {}

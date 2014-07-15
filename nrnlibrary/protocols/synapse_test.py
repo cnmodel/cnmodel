@@ -16,7 +16,7 @@ mpl.rcParams['interactive'] = False
 
 class SynapseTest(Protocol):
     def reset(self):
-        super(IVCurve, self).reset()
+        super(SynapseTest, self).reset()
 
     def run(self, cell, synapse, temp=34.0):
         """ 
@@ -36,6 +36,8 @@ class SynapseTest(Protocol):
         synapse.connect(pre_cell.soma, cell.soma)
         psd = synapse.psd
         terminal = synapse.terminal
+        self.synapse = synapse
+        self.pre_cell = pre_cell
 
         VCLAMP = True
         glyPlot = False
@@ -70,64 +72,67 @@ class SynapseTest(Protocol):
         stim['PT'] = 0.0
         stim['dt'] = h.dt
         (secmd, maxt, tstims) = util.make_pulse(stim)
+        self.stim = stim
         
         istim.delay = 0
         istim.dur = 1e9 # these actually do not matter...
         istim.iMax = 0.0
 
+        # istim current pulse train
+        i_stim_vec = h.Vector(secmd)
+        i_stim_vec.play(istim._ref_i, h.dt, 0)
+
+
         #
         # set up recordings
         #
-        vec = {}
-        for var in ['v_pre', 'v_soma', 'i_soma', 'v_calyx', 'coh', 't', 'C0', 'C1', 'i_stim',
-                    'C2', 'C3', 'D', 'O1', 'O2', 'D1', 'D2', 'D3', 'Open', 'nmOpen', 'amOpen']:
-            vec[var] = h.Vector()
+        #self = {}
+        #for var in ['v_pre', 'v_soma', 'i_soma', 'v_calyx', 'coh', 't', 'C0', 'C1', 'i_stim',
+                    #'C2', 'C3', 'D', 'O1', 'O2', 'D1', 'D2', 'D3', 'Open', 'nmOpen', 'amOpen']:
+            #self[var] = h.Vector()
         
-        # istim current pulse train
-        vec['i_stim'] = h.Vector(secmd)
 
         #for i in range(0, nANTerminals_ReleaseZones): 
-            #vec['isyn%03d' % i] = h.Vector(nANTerminals_ReleaseZones, 1000)
+            #self['isyn%03d' % i] = h.Vector(nANTerminals_ReleaseZones, 1000)
         
         # create hoc vectors for each parameter we wish to monitor and display
-        vec['v_pre'].record(pre_cell.soma(0.5)._ref_v)
-        vec['v_calyx'].record(terminal[0](0.5)._ref_v)
-        vec['t'].record(h._ref_t)
-        vec['v_soma'].record(pre_cell.soma(0.5)._ref_v)
-        vec['coh'].record(synapse.coh[0]._ref_XMTR[0])
-        vec['i_stim'].play(istim._ref_i, h.dt, 0)
+        self['v_pre'] = pre_cell.soma(0.5)._ref_v
+        self['v_calyx'] = terminal[0](0.5)._ref_v
+        self['t'] = h._ref_t
+        self['v_soma'] = pre_cell.soma(0.5)._ref_v
+        self['coh'] = synapse.coh[0]._ref_XMTR[0]
 
         # make a synapse monitor for each release zone
         k = 0
         for p in psd:
-            vec['isyn%03d' % k] = h.Vector(len(psd), 1000)
-            vec['isyn%03d' % k].record(psd[k]._ref_i)
+            #self['isyn%03d' % k] = h.Vector(len(psd), 1000)
+            self['isyn%03d' % k] = psd[k]._ref_i
             k = k + 1
         
-        vec['Open'].record(psd[0]._ref_Open)
+        self['Open'] = psd[0]._ref_Open
         if synapse.kNMDA >= 0:
-            vec['nmOpen'].record(psd[synapse.kNMDA]._ref_Open)
+            self['nmOpen'] = psd[synapse.kNMDA]._ref_Open
         if synapse.kAMPA >= 0:
-            vec['amOpen'].record(psd[synapse.kAMPA]._ref_Open)
+            self['amOpen'] = psd[synapse.kAMPA]._ref_Open
         
         if synapse.psdType == 'glyslow':
             nstate = 7
-            vec['C0'].record(psd[0]._ref_C0)
-            vec['C1'].record(psd[0]._ref_C1)
-            vec['C2'].record(psd[0]._ref_C2)
-            vec['O1'].record(psd[0]._ref_O1)
-            vec['O2'].record(psd[0]._ref_O2)
-            vec['D1'].record(psd[0]._ref_D1)
-            #vec['D3'].record(psd[0]._ref_D3)
-            #vec['O1'].record(psd[0]._ref_O1)
+            self['C0'] = psd[0]._ref_C0
+            self['C1'] = psd[0]._ref_C1
+            self['C2'] = psd[0]._ref_C2
+            self['O1'] = psd[0]._ref_O1
+            self['O2'] = psd[0]._ref_O2
+            self['D1'] = psd[0]._ref_D1
+            #self['D3'] = psd[0]._ref_D3
+            #self['O1'] = psd[0]._ref_O1
         if synapse.psdType == 'glyfast':
             nstate = 7
-            vec['C0'].record(psd[0]._ref_C0)
-            vec['C1'].record(psd[0]._ref_C1)
-            vec['C2'].record(psd[0]._ref_C2)
-            vec['C3'].record(psd[0]._ref_C3)
-            vec['O1'].record(psd[0]._ref_O1)
-            vec['O2'].record(psd[0]._ref_O2)
+            self['C0'] = psd[0]._ref_C0
+            self['C1'] = psd[0]._ref_C1
+            self['C2'] = psd[0]._ref_C2
+            self['C3'] = psd[0]._ref_C3
+            self['O1'] = psd[0]._ref_O1
+            self['O2'] = psd[0]._ref_O2
 
         #
         # Run simulation
@@ -140,12 +145,14 @@ class SynapseTest(Protocol):
             h.run()
             k = 0
             if nrep is 0: # save the soma current
-                isoma = np.zeros_like(vec['isyn000'].to_python())
+                isoma = np.zeros_like(self['isyn000'])
             for p in psd:
                 thissyn = 'isyn%03d' % k
-                if thissyn in vec.keys():
-                    isoma = isoma + vec[thissyn].to_python()
+                if thissyn in self._vectors.keys():
+                    isoma = isoma + self[thissyn]
                     k = k + 1
+        self.isoma = isoma
+        
         print 'Synapse.py: all runs done'
     
     def analyze(self):
@@ -154,14 +161,25 @@ class SynapseTest(Protocol):
         #
         nreq = 0
         nrel = 0
+        nANTerminals = len(self.synapse.terminal)
+        coh = self.synapse.coh
         ntrel = np.zeros(nANTerminals)
+        nANTerminals_ReleaseZones = self.synapse.zones_per_terminal
+        
+        print "Topology:"
+        h.topology()
+        
+        #
         # compute some parameters
+        #
         for j in range(0, nANTerminals):
             nreq = nreq + coh[j].nRequests # number of release requests during the for a terminal
             nrel = nrel + coh[j].nReleases # number of actual release events
             ntrel[j] = ntrel[j] + coh[j].nReleases # cumulative release events. (seems redundant)
             print 'Spikes: T%3d: = %3d ' % (j, coh[j].nRequests),
             print ' Releases = %4d from %d zones' % (coh[j].nReleases, nANTerminals_ReleaseZones)
+
+        t = self['t']
 
         for i in range(0, nANTerminals):
             print 'ntrel[%d] = %d' % (i, ntrel[i])
@@ -170,53 +188,59 @@ class SynapseTest(Protocol):
         print 'nreq: %d\n' % nreq
         if nreq > 0:
             print 'Rel Prob: %8.3f\n' % (float(nrel) / nreq)
-        if kNMDA >= 0:
-            nmOmax = np.asarray(vec['nmOpen']).max()
-            amOmax = np.asarray(vec['amOpen']).max()
+        if self.synapse.kNMDA >= 0:
+            nmOmax = self['nmOpen'].max()
+            amOmax = self['amOpen'].max()
             print 'Synapse.py: Max NMDAR Open Prob: %f   AMPA Open Prob: %f\n' % (nmOmax, amOmax)
-            nmImax = np.asarray(vec['isyn%03d' % kNMDA]).max()
-            amImax = np.asarray(vec['isyn%03d' % kAMPA]).max()
+            nmImax = self['isyn%03d' % self.synapse.kNMDA].max()
+            amImax = self['isyn%03d' % self.synapse.kAMPA].max()
             if nmImax + amImax > 0.0:
                 print 'Synapse.py: Max NMDAR I: %f   AMPA I: %f, N/(N+A): %f\n' % (
                     nmImax, amImax, nmImax / (nmImax + amImax))
             else:
                 print "Synapse.py: release might have failed"
 
+        #
         # plot the results for comparison
+        #
         mpl.figure(1)
         g1 = mpl.subplot2grid((5, 1), (0, 0))
-        p1 = g1.plot(vec['t'], vec['v_pre'], color='black')
+        p1 = g1.plot(t, self['v_pre'], color='black')
         g1.axes.set_ylabel('V pre')
+        
+        plotFocus = 'EPSC'
+        
         if plotFocus == 'EPSC':
             g2 = mpl.subplot2grid((5, 1), (1, 0), rowspan=4)
-            g2.plot(vec['t'].to_python(), isoma, color='red')
+            g2.plot(t, self.isoma, color='red')
             g2.axes.set_ylabel('I post')
             g2.axes.set_xlabel('Time (ms)')
         else:
             g2 = mpl.subplot2grid((5, 1), (1, 0), rowspan=1)
-            g2.plot(vec['t'].to_python(), isoma, color='cyan')
+            g2.plot(t, self.isoma, color='cyan')
             g3 = mpl.subplot2grid((5, 1), (2, 0))
-            g3.plot(vec['t'], vec['v_calyx'], color='blue')
-            g3.plot(vec['t'], vec['v_soma'], color='red')
+            g3.plot(t, self['v_calyx'], color='blue')
+            g3.plot(t, self['v_soma'], color='red')
             g4 = mpl.subplot2grid((5, 1), (3, 0))
-            p4 = g4.plot(vec['t'], vec['coh']) # glutamate
+            p4 = g4.plot(t, self['coh']) # glutamate
             g4.axes.set_ylabel('coh')
             g5 = mpl.subplot2grid((5, 1), (4, 0))
             k = 0
-            for p in psd:
+            for p in self.synapse.psd:
                 if p.hname().find('NMDA', 0, 6) >= 0:
-                    g5.plot(vec['t'], vec['isyn%03d' % kNMDA]) # current through nmdar
+                    g5.plot(t, self['isyn%03d' % self.synapse.kNMDA]) # current through nmdar
                 k = k + 1
             g5.axes.set_ylabel('inmda')
             g6 = mpl.subplot2grid((5, 1), (5, 0))
             k = 0
-            for p in psd:
+            for p in self.synapse.psd:
                 if p.hname().find('NMDA', 0, 6) < 0:
-                    g6.plot(vec['t'], vec['isyn%03d' % kAMPA]) # glutamate
+                    g6.plot(t, self['isyn%03d' % self.synapse.kAMPA]) # glutamate
                 k = k + 1
             g6.axes.set_ylabel('iAMPA')
 
         # Analyze the individual events. EPSCs get rise time, latency, half-width, and decay tau estimates.
+        stim = self.stim
         ipi = 1000.0 / stim['Sfreq'] # convert from Hz (seconds) to msec.
         textend = 0.25 # allow response detection into the next frame
         pscpts = int((ipi + textend) / h.dt)
@@ -224,7 +248,6 @@ class SynapseTest(Protocol):
         ipsc = np.zeros((stim['NP'], pscpts))
         mpl.figure(num=220, facecolor='w')
         gpsc = mpl.subplot2grid((5, 2), (0, 0), rowspan=2, colspan=2)
-        ti = np.asarray(vec['t'])
         psc_20_lat = np.zeros((stim['NP'], 1)) # latency to 20% of rising amplitude
         psc_80_lat = np.zeros((stim['NP'], 1)) # latency to 80% of rising amplitude
         psc_hw = np.zeros((stim['NP'], 1)) # width at half-height
@@ -239,7 +262,7 @@ class SynapseTest(Protocol):
             tp[i] = tstart - stim['delay']
             iend = int(istart + ((ipi + textend) / h.dt))
             #        print 'istart: %d iend: %d, len(isoma): %d\n' % (istart, iend, len(isoma))
-            ipsc[i, :] = -isoma[istart:iend]
+            ipsc[i, :] = -self.isoma[istart:iend]
             psc_pk = np.argmax(ipsc[i, minStart:]) # position of the peak
             psc_pk = psc_pk + minStart - 1
             print 'i, pscpk, ipsc[i,pscpk]: ', i, psc_pk, ipsc[i, psc_pk]
@@ -282,7 +305,8 @@ class SynapseTest(Protocol):
         ghw.axes.set_ylabel('Half-width (ms)')
         ghw.axes.set_xlabel('Time (ms)')
 
-        mpl.show()
+        #mpl.show()
+        
         #
         # now print some average values
         #
@@ -346,14 +370,14 @@ class SynapseTest(Protocol):
                 mpl.figure(2)
                 for var in ['C0', 'C1', 'C2', 'O1', 'O1', 'D1', 'Open']:
                     mpl.subplot(nstate, 1, i + 1)
-                    mpl.plot(vec['t'], vec[var])
+                    mpl.plot(t, self[var])
                     mpl.ylabel(var)
                     i = i + 1
             if psdType == 'glyfast':
                 mpl.figure(2)
                 for var in ['C0', 'C1', 'C2', 'C3', 'O1', 'O2', 'Open']:
                     mpl.subplot(7, 1, i + 1)
-                    mpl.plot(vec['t'], vec[var])
+                    mpl.plot(t, self[var])
                     mpl.ylabel(var)
                     i = i + 1
         mpl.draw()
