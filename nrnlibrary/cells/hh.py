@@ -39,3 +39,5 @@ class HH(Cell):
                 print message
         
         self.add_section(soma, 'soma')
+        
+        self.vm0 = -67.536

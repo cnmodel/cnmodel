@@ -51,8 +51,8 @@ class TStellate(Cell):
         soma.ek = self.e_k
         soma().leak.e = -65.0
         self.mechanisms = ['kht', 'ka', 'ihvcn', 'leak', nach]
-        self.species_scaling()  # set the default type II cell parameters
         self.add_section(soma, 'soma')
+        self.species_scaling()  # set the default type II cell parameters
         if debug:
                 print "<< T-stellate: JSR Stellate Type 1 cell model created >>"
 
@@ -190,6 +190,7 @@ class TStellateNav11(Cell):
     for use in simulating MOUSE stellate cells.
     """
     def __init__(self, debug=False, ttx=False, cs = False, message=None, dend=False):
+        super(TStellateNav11, self).__init__()
         print ("T-STELLATE ROTHMAN",
             "\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         soma = h.Section() # one compartment of about 29000 um2
@@ -267,8 +268,8 @@ class TStellateNav11(Cell):
             else:
                 print message
     # print dendrites
-        self.soma = soma
-        self.dendrites = dendrites
+        self.add_section(soma, 'soma')
+        self.add_section(dendrites, 'dendrite')
 
 class TStellateFast(Cell):
     """ 
@@ -276,6 +277,7 @@ class TStellateFast(Cell):
     channel 
     """
     def __init__(self, debug=False, ttx=False, message=None, dend=False):
+        super(TStellateFast, self).__init__()
         soma = h.Section() # one compartment of about 29000 um2
         v_potassium = -80       # potassium reversal potential
         v_sodium = 50           # sodium reversal potential
@@ -334,4 +336,5 @@ class TStellateFast(Cell):
             else:
                 print message
         
-        self.soma = soma
+        self.add_section(soma, 'soma')
+

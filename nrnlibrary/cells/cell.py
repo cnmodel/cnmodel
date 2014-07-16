@@ -29,6 +29,10 @@ class Cell(object):
         
         # Recommended threshold for detecting spikes from this cell
         self.spike_threshold = -40
+        
+        # Resting potential for this cell. Subclasses should modify this
+        # to ensure the cell is initialized properly before protocols.
+        self.vm0 = -62
 
     def add_section(self, sec, sec_type):
         """
@@ -75,8 +79,6 @@ class Cell(object):
         for part in self.all_sections.keys():
             for sec in self.all_sections[part]:
                 sec.v = self.vm0
-        h.finitialize()
-        h.fcurrent()
 
     def print_mechs(self, section):
         """

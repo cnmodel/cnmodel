@@ -657,6 +657,11 @@ def stochastic_synapses(h, parent_section=None, target_section=None, n_fibers=1,
                                                          stochastic_pars=stochastic_pars,
                                                          calcium_pars=calcium_pars,
                                                          identifier=identifier, debug=debug)
+        
+        print "Mechanisms after template_multisite:"
+        for m in terminal(0.5):
+            print m.name()
+        
         # and then make a set of postsynaptic zones on the postsynaptic side
         #        print 'PSDTYPE: ', psdtype
         if psdtype == 'ampa':

@@ -123,10 +123,13 @@ class IVCurve(Protocol):
             # h.init()
             # h.finitialize(cell.vm0)
             cell.initialize()
+            h.finitialize()
+            h.fcurrent()
+            
             h.frecord_init()
-            print 'After finitialize: \nvm0: ', cell.vm0
-            print 'soma v: ', cell.soma(0.5).v
-            print 'temp: ', temp
+            #print 'After finitialize: \nvm0: ', cell.vm0
+            #print 'soma v: ', cell.soma(0.5).v
+            #print 'temp: ', temp
             #h.run()
             while h.t < h.tstop:
                 h.fadvance()
@@ -261,6 +264,8 @@ class IVCurve(Protocol):
         #
         app = pg.mkQApp()
         win = pg.GraphicsWindow()
+        self.win = win
+        
         win.resize(1000, 800)
         Vplot = win.addPlot(labels={'left': 'Vm (mV)', 'bottom': 'Time (ms)'})
         rightGrid = win.addLayout(rowspan=2)
@@ -319,6 +324,5 @@ class IVCurve(Protocol):
         
         print "Resting membrane potential: %0.1f mV\n" % self.rest_vm()
         
-        self.win = win
 
     
