@@ -6,7 +6,7 @@ NEURON {
     THREADSAFE
     SUFFIX hcno
     NONSPECIFIC_CURRENT i
-    RANGE  gbar, eh
+    RANGE  gbar, eh, thegna
     GLOBAL hinf, tau1,tau2
 }
 

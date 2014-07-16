@@ -39,34 +39,6 @@ class Protocol(object):
         """
         return np.array(self._vectors[name])
 
-    def custom_init(self):
-        """
-        Perform careful initialization cell states, without forcing
-        a particular Vm.
-        """
-        initdur = -1e10
-        tdt = h.dt
-        dtstep = 1e9
-        h.finitialize()
-        h.t = initdur
-        tmp = h.cvode.active()
-        if tmp != 0:
-            h.cvode.active(0)
-        h.dt = dtstep
-        while h.t < -dtstep:
-            h.fadvance()
-        if tmp != 0:
-            h.cvode.active(1)
-        h.t = 0
-        if h.cvode.active():
-            h.cvode.re_init()
-        else:
-            h.fcurrent()
-        h.frecord_init()
-        h.dt = tdt
-        h.fcurrent()
-        h.frecord_init()
-
 class IVCurve(Protocol):
     def __init__(self):
         super(IVCurve, self).__init__()
@@ -171,25 +143,23 @@ class IVCurve(Protocol):
             vec['i_stim'].play(istim._ref_i, h.dt, 0, sec=cell.soma)
 
             # GO
-            h('secondorder=0')  # direct call fails; let hoc do the work
+            #h('secondorder=0')  # direct call fails; let hoc do the work
             h.dt = dt
             h.celsius = temp
             h.tstop = tend
-            # h.init()
-            # h.finitialize(cell.vm0)
-            cell.initialize()
-            self.custom_init()
-            #h.finitialize(cell.vm0)
-            #h.fcurrent()
-            #h.frecord_init()
-            print('After initialization at {0:4.1f}: \n  vm0: {1:9.5f}  soma.v: {2:9.5f}'.format(
-                temp, cell.vm0, cell.soma(0.5).v))
-            #h.run()
+            cell.cell_initialize()  # initialize the cell to it's rmp
+            if i == 0:
+                Rin, tau, v = cell.measure_rintau(auto_initialize=False)
+                print '    *** Rin: %9.0f  tau: %9.1f   v: %6.1f' % (Rin, tau, v)
+            h.frecord_init()
+            #print('After initialization at {0:4.1f}: \n  vm0: {1:9.5f}  soma.v: {2:9.5f}'.format(
+            #    temp, cell.vm0, cell.soma(0.5).v))
+            #h.run()  # this seems to reset vm to -65 mV (a default), need to use fadvance
             while h.t < h.tstop:
                 h.fadvance()
 
             k1 = int(stim['delay']/h.dt - 1)
-            print ('   V before step: {0:9.5f}'.format(self['v_soma'][k1]))
+#            print ('   V before step: {0:9.5f}'.format(self['v_soma'][k1]))
             self.voltage_traces.append(self['v_soma'])
             self.current_traces.append(self['i_inj'])
             self.time_values = np.array(self['time'])
@@ -363,7 +333,7 @@ class IVCurve(Protocol):
         
         # Print Rm, Vrest 
         (s, i) = self.input_resistance()
-        print "\nMembrane resistance: %0.1f MOhm" % s
+        print "\nMembrane resistance (chord): %0.1f MOhm" % s
         ivals = np.array([Icmd.min(), Icmd.max()])
         vvals = s * ivals + i
         line = pg.QtGui.QGraphicsLineItem(ivals[0], vvals[0], ivals[1], vvals[1])

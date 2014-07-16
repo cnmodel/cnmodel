@@ -1,6 +1,8 @@
 from neuron import h
 from ..pynrnutilities import nstomho
 from ..pynrnutilities import mho2ns
+import scipy.optimize
+import numpy as np
 
 class Cell(object):
     """
@@ -24,6 +26,13 @@ class Cell(object):
         self.maindend = None  # hold main dendrite sections
         self.secdend = None  # hold secondary dendrite sections
         self.axonsf = None  # axon diameter scale factor
+        # define defaults for these parameters (RM03 model defaults)
+        self.e_k = -70  # potassium reversal potential, mV
+        self.e_na = 55
+        self.e_h = -43
+        self.c_m = 0.9  # specific membrane capacitance,  uf/cm^2
+        self.R_a = 150  # axial resistivity of cytoplasm/axoplasm, ohm.cm
+        self.e_leak = -65
 
     def print_status(self):
         print("\nCell model: %s" % self.__class__.__name__)
@@ -34,18 +43,37 @@ class Cell(object):
             print('{0:>12s} : {1:<12s}'.format(s, repr(self.status[s])))
         print '-'*32
 
-    def initialize(self):
+    def cell_initialize(self, showinfo=False):
         """
         Initialize this cell to it's "rmp" under current conditions
         All sections in the cell are set to the same value
         """
-        self.find_i0()
+        self.vm0 = self.find_i0(showinfo=showinfo)
         for part in self.all_sections.keys():
             for sec in self.all_sections[part]:
                 sec.v = self.vm0
-#        h.finitialize()  # do these once for the whole model
-#        h.fcurrent()
+        h.finitialize()  # do these once for the whole model
+        h.fcurrent()
 
+    def get_mechs(self, section):
+        """
+        return a list of the mechanisms that are present in a section
+        a mechanism is required to have a gbar variable.
+        """
+        u=dir(section())
+        mechs = []
+        for m in u:
+            if m[0:2] == '__':
+                continue
+            if m in ['cm', 'diam', 'k_ion', 'na_ion', 'next', 'point_processes', 'sec', 'v', 'x']:
+                continue  # skip non-mechanisms known to us
+            try:
+                gx=eval('section().'+m+'.gbar')
+                mechs.append(m)
+            except:
+                pass
+        self.mechs = mechs
+        return mechs
 
     def print_mechs(self, section):
         """
@@ -53,12 +81,8 @@ class Cell(object):
         and their densities (in uS/cm^2)
         """
         print '\n    Installed mechanisms:'
-        u=dir(section())
-        for m in u:
-            if m[0:2] == '__':
-                continue
-            if m in ['cm', 'diam', 'k_ion', 'na_ion', 'next', 'point_processes', 'sec', 'v', 'x']:
-                continue  # skip non-mechanisms known to us
+        self.get_mechs(section)
+        for m in self.mechs:
             try:
                 gx=eval('section().'+m+'.gbar')
                 print gx
@@ -67,7 +91,108 @@ class Cell(object):
                 print('{0:>12s} : <no gbar> '.format(m))
         print '-'*32
 
-    def measure_rintau(self):
+    def custom_init(self, vinit):
+        """
+        perform a custom initialization of the current section to vinit
+        """
+        initdur = 1e-9
+        tdt = h.dt
+        dtstep = 1e7
+        h.finitialize(vinit)
+        h.t = -initdur
+        tmp = h.cvode.active()
+        if tmp != 0:
+            h.cvode.active(0)
+        h.dt = dtstep
+        while h.t < 0:
+            h.fadvance()
+        if tmp != 0:
+            h.cvode.active(1)
+        h.t = 0
+        if h.cvode.active():
+            h.cvode.re_init()
+        else:
+            h.fcurrent()
+        h.frecord_init()
+        h.dt = tdt
+        h.fcurrent()
+
+    def i_currents(self, V):
+        """
+        For the steady-state case, return the total current at voltage V
+        Used to find the zero current point
+        vrange brackets the interval
+
+        """
+        self.ix = {}
+
+        # klt
+        if 'klt' in self.mechanisms:
+            zss = 0.5   # <0,1>   : steady state inactivation of glt
+            q10g = 2.0
+            qg = q10g**((h.celsius-22.)/10.)
+            winf = (1.0 / (1.0 + np.exp(-(V + 48.) / 6 )))**0.25
+            zinf = zss + ((1.0-zss) / (1.0 + np.exp((V + 71.) / 10 )))
+            gklt = qg*self.soma().klt.gbar*(winf**4.)*zinf
+            self.ix['klt'] = gklt*(V - self.soma().ek)
+
+        # ihvcn
+        if 'ihvcn' in self.mechanisms:
+            q10g = 2.0
+            qg = q10g**((h.celsius-22.)/10.)
+            rinf = 1. / (1+np.exp((V + 76.) / 7.))
+            gh = qg*self.soma().ihvcn.gbar*rinf
+            self.ix['ihvcn'] = gh*(V - self.soma().ihvcn.eh)
+
+        # kht
+        if 'kht' in self.mechanisms:
+            q10g = 2.0
+            qg = q10g**((h.celsius-22)/10)
+            nf = 0.85  # proportion of n vs p kinetics
+            ninf =   (1 + np.exp(-(V + 15.) / 5.))**(-0.5)
+            pinf =  1 / (1 + np.exp(-(V + 23.) / 6.))
+            gkht = qg*self.soma().kht.gbar*(nf*(ninf**2) + (1.-nf)*pinf)
+            self.ix['kht'] = gkht*(V - self.soma().ek)
+
+        # ka
+        if 'ka' in self.mechanisms:
+            q10g = 2.0
+            qg = q10g**((h.celsius-22)/10)
+            ainf = (1. / (1 + np.exp(-1*(V + 31.) / 6 )))**0.25
+            binf = 1 / (1 + np.exp((V + 66.) / 7))**0.5
+            cinf = 1 / (1 + np.exp((V + 66.) / 7))**0.5
+            gka = self.soma().ka.gbar*(ainf**4)*binf*cinf
+            self.ix['ka'] = gka*(V - self.soma().ek)
+
+        # na
+        if 'na' in self.mechanisms:
+            q10g = 2.0
+            qg = q10g**((h.celsius-22.)/10.)
+            minf = 1 / (1+np.exp(-(V + 38.) / 7.))
+            hinf = 1 / (1+np.exp((V + 65.) / 6.))
+            gna = qg*self.soma().na.gbar*(minf**3.0)*hinf
+            self.ix['na'] = gna*(V - self.soma.ena)
+
+        # leak
+        if 'leak' in self.mechanisms:
+            self.ix['leak'] = self.soma().leak.gbar*(V - self.soma().leak.erev)
+    #    print ix
+        return np.sum([self.ix[i] for i in self.ix])
+
+    def find_i0(self, vrange=[-70., -55.], showinfo=False):
+        """
+        find the root of the system of equations in vrange.
+        Finds RMP fairly accurately as zero current level for current conductances.
+        """
+        v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1])
+        if showinfo:
+            print '    Species: %s  cell type: %s' % (self.status['species'], self.status['type'])
+            print '    *** found V0 = %f' % v0
+            print '    *** using conductances: ', self.ix.keys()
+            print '    *** and cell has mechanisms: ', self.mechanisms
+        return v0
+
+    def measure_rintau(self, auto_initialize = True):
         """
         Run the model for 2 msec after initialization - then
         compute the inverse of the sum of the conductances to get Rin at rest
@@ -75,34 +200,33 @@ class Cell(object):
         :param none:
         :return Rin (Mohm), tau (ms) and Vm (mV):
         """
-        u=dir(self.soma())
-        h.tstop = 2.0
-        h.init()
-        h.finitialize(self.vm0)
-        h.run()
-        gnames = {'nacn': 'gna', 'leak': 'gbar',
+        if auto_initialize:
+            self.cell_initialize()
+        gnames = {'nacn': 'gna', 'na': 'gna',
+                  'leak': 'gbar',
                   'klt': 'gklt', 'kht': 'gkht',
-                  'ka': 'gka','ihvcn': 'gh',
+                  'ka': 'gka',
+                  'ihvcn': 'gh', 'hcno': 'thegna'
                   }
         gsum = 0.
+        section = self.soma
+        u = self.get_mechs(section)
         for m in u:
-            if m[0:2] == '__':
-                continue
-            if m in ['cm', 'diam', 'k_ion', 'na_ion', 'next', 'point_processes', 'sec', 'v', 'x']:
-                continue  # skip non-mechanisms known to us
             gx = 'section().'+m+'.'+gnames[m]
-            try:
-                gsum += eval(gx)
-            except:
-                pass
-                #print('{0:>12s} : <no g> '.format(m))
+            gsum += eval(gx)
+           # print('{0:>12s} : gx '.format(m))
         # convert gsum from us/cm2 to nS using cell area
         gs = mho2ns(gsum, self.somaarea)
         Rin = 1e3/gs  # convert to megohms
         tau = Rin*self.totcap*1e-3  # convert to msec
-       # print('Vm0: {0:8.1f} mV     Vmeas: {1:8.2f} mV'.format(self.vm0, self.soma(0.5).v))
-       # print('Rin: {0:8.1f} Mohm   tau: {1:8.2f} ms  cap: {2:8.1f}'.format(Rin, tau, self.totcap))
-        return Rin, tau, self.som(0.5).v
+        return Rin, tau, self.soma(0.5).v
+
+    def set_soma_size_from_Cm(self, cap):
+        self.totcap = cap
+        self.somaarea = self.totcap * 1E-6 / self.c_m  # pf -> uF, cm = 1uf/cm^2 nominal
+        lstd = 1E4 * ((self.somaarea / np.pi) ** 0.5)  # convert from cm to um
+        self.soma.diam = lstd
+        self.soma.L = lstd
 
     def add_axon(self, c_m=1.0, R_a=150, axonsf=1.0, nodes=5, debug=False):
         """

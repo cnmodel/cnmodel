@@ -15,7 +15,7 @@ class Bushy(Cell):
     Rothman and Manis, 2003abc (Type II)    
     """
 
-    def __init__(self, nach='nacn', ttx=False, debug=False):
+    def __init__(self, nach='na', ttx=False, debug=False):
         """
         initialize the bushy cell, using the default parameters for guinea pig from
         R&M2003, as a type II cell.
@@ -24,15 +24,9 @@ class Bushy(Cell):
         super(Bushy, self).__init__()
 
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': 'guineapig-bushy-II', 'ttx': ttx}
-        self.e_k = -70  # potassium reversal potential, mV
-        self.e_na = 55
-        self.e_h = -43
-        self.c_m = 0.9  # specific membrane capacitance,  uf/cm^2
-        self.R_a = 150  # axial resistivity of cytoplasm/axoplasm, ohm.cm
+                       'na': nach, 'species': 'guineapig', 'type': 'II', 'ttx': ttx}
         self.vm0 = -63.6467358   # nominal for type II
         self.i_test_range=(-0.5, 0.5, 0.05)
-        self.e_leak = -65
 
         soma = h.Section()  # one compartment of about 29000 um2
         soma.nseg = 1
@@ -55,78 +49,21 @@ class Bushy(Cell):
             raise ValueError('Sodium channel %s not available for Bushy cells' % nach)
 
         soma.ena = self.e_na
+        self.mechanisms = ['klt', 'kht', 'ihvcn', 'leak', nach]
         self.soma = soma
-        self.species_scaling()  # set the default type II cell parameters
+        self.species_scaling(silent=True)  # set the default type II cell parameters
+        self.get_mechs(soma)
         self.all_sections['soma'].append(soma)
         self.add_section(soma)
         if debug:
             print "<< bushy: JSR bushy cell model created >>"
 
-    def find_i0(self, vrange=[-70., -55.]):
-        v0 = scipy.optimize.brentq(self.i_bushy, vrange[0], vrange[1])
-        #print 'found V0 = %f' % v0
-        return v0
-
-    def i_bushy(self, V):
-        """
-        For the steady-state case, return the total current at voltage V
-        Used to find the zero current point
-        vrange brackets the interval
-
-        """
-        ix = {}
-
-        # klt
-        zss = 0.5   # <0,1>   : steady state inactivation of glt
-        q10g = 2.0
-        qg = q10g**((h.celsius-22.)/10.)
-        winf = (1.0 / (1.0 + np.exp(-(V + 48.) / 6 )))**0.25
-        zinf = zss + ((1.0-zss) / (1.0 + np.exp((V + 71.) / 10 )))
-        gklt = qg*self.soma().klt.gbar*(winf**4.)*zinf
-        ix['klt'] = gklt*(V - self.e_k)
-
-        # ihvcn
-        q10g = 2.0
-        qg = q10g**((h.celsius-22.)/10.)
-        rinf = 1. / (1+np.exp((V + 76.) / 7.))
-        gh = qg*self.soma().ihvcn.gbar*rinf
-        ix['ih'] = gh*(V - self.e_h)
-
-        # kht
-        q10g = 2.0
-        qg = q10g**((h.celsius-22)/10)
-        nf = 0.85  # proportion of n vs p kinetics
-        ninf =   (1 + np.exp(-(V + 15.) / 5.))**(-0.5)
-        pinf =  1 / (1 + np.exp(-(V + 23.) / 6.))
-        gkht = qg*self.soma().kht.gbar*(nf*(ninf**2) + (1.-nf)*pinf)
-        ix['kht'] = gkht*(V - self.e_k)
-
-        # nacn
-        q10g = 2.0
-        qg = q10g**((h.celsius-22.)/10.)
-        minf = 1 / (1+np.exp(-(V + 38.) / 7.))
-        hinf = 1 / (1+np.exp((V + 65.) / 6.))
-        gna = qg*self.soma().na.gbar*(minf**3.0)*hinf
-        ix['na'] = gna*(V - self.e_na)
-
-        # leak
-        ix['leak'] = self.soma().leak.gbar*(V - self.e_leak)
-#        print ix
-        return np.sum([ix[i] for i in ix])
-
-    def set_soma_size_from_Cm(self, cap):
-        self.totcap = cap
-        self.somaarea = self.totcap * 1E-6 / self.c_m  # pf -> uF, cm = 1uf/cm^2 nominal
-        lstd = 1E4 * ((self.somaarea / np.pi) ** 0.5)  # convert from cm to um
-        self.soma.diam = lstd
-        self.soma.L = lstd
-
-    def species_scaling(self, species='guineapig-bushy-II'):
+    def species_scaling(self, species='guineapig', type='II', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
         """
         soma = self.soma
-        if species == 'mouse':
+        if species == 'mouse' and type == 'II':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
             #print 'Mouse bushy cell'
             self.set_soma_size_from_Cm(26.0)
@@ -135,41 +72,44 @@ class Bushy(Cell):
             soma().klt.gbar = nstomho(80.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(30.0, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
-            self.vm0 = -63.6
+            self.vm0 = self.find_i0()
             self.axonsf = 0.57
-        elif species == 'guineapig-bushy-II':
+        elif species == 'guineapig' and type =='II':
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
             soma().klt.gbar = nstomho(200.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(20.0, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
-            self.vm0 = self.find_i0() # -63.6467358  # "-63.6"
             self.axonsf = 0.57
-            print 'set cell as: ', species
-        elif species == 'guineapig-bushy-II-I':
+        elif species == 'guineapig' and type =='II-I':
             # guinea pig data from Rothman and Manis, 2003, type II=I
+            self.i_test_range=(-0.4, 0.4, 0.02)
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
             soma().klt.gbar = nstomho(35.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(3.5, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
-            self.vm0 = -63.648175
             self.axonsf = 0.57
-        elif species == 'cat':  # a cat is a big guinea pig
+        elif species == 'cat' and type == 'II':  # a cat is a big guinea pig
             self.set_soma_size_from_Cm(35.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
             soma().klt.gbar = nstomho(200.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(20.0, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
-            self.vm0 = -63.6
             self.axonsf = 1.0
         else:
-            raise ValueError('Species %s is not recognized for Bushy cells', species)
+            raise ValueError('Species %s or species-type %s is not recognized for Bushy cells' %  (species, type))
+        self.cell_initialize(showinfo=True)
+        self.vm0 = self.find_i0()
+        if not silent:
+            print 'set cell as: ', species
+            print ' with Vm rest = %6.3f' % self.vm0
 
         self.status['species'] = species
+        self.status['type'] = type
 
     def adjust_na_chans(self, soma, debug=False):
         """
