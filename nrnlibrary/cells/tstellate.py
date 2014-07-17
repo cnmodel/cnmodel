@@ -1,7 +1,7 @@
 from neuron import h
 import numpy as np
 import neuron as nrn
-from ..pynrnutilities import nstomho
+from ..util import nstomho
 
 from .cell import Cell
 
@@ -23,7 +23,7 @@ class TStellate(Cell):
         super(TStellate, self).__init__()
 
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': 'guineapig', 'type': '1-c', 'ttx': ttx}
+                       'na': nach, 'species': 'guineapig', 'type': '1-c', 'ttx': ttx, 'name': 'TStellate'}
         self.e_k = -70  # potassium reversal potential, mV
         self.e_na = 55
         self.e_h = -43
@@ -143,11 +143,19 @@ class TStellate(Cell):
             if debug:
                 print "bushy using inva11"
             print 'nav11 gbar: ', soma().nav11.gbar
-        else:
+        elif nach == 'na':
             soma().na.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'nacn gbar: ', soma().na.gbar
+                print 'na gbar: ', soma().na.gbar
+        elif  nach == 'nacn':
+            soma().nacn.gbar = gnabar
+            soma.ena = self.e_na
+            if debug:
+                print 'nacn gbar: ', soma().nacn.gbar
+        else:
+            raise ValueError("Dstellate setting Na channels: channel %s not known" % nach)
+
 
     def add_axon(self):
         Cell.add_axon(self, self.soma, self.somaarea, self.c_m, self.R_a, self.axonsf)

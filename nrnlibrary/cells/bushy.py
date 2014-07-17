@@ -1,6 +1,6 @@
 from neuron import h
 import neuron as nrn
-from ..pynrnutilities import nstomho
+from ..util import nstomho
 import numpy as np
 import scipy.optimize
 
@@ -24,7 +24,7 @@ class Bushy(Cell):
         super(Bushy, self).__init__()
 
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': 'guineapig', 'type': 'II', 'ttx': ttx}
+                       'na': nach, 'species': 'guineapig', 'type': 'II', 'ttx': ttx, 'name': 'Bushy'}
         self.vm0 = -63.6467358   # nominal for type II
         self.i_test_range=(-0.5, 0.5, 0.05)
 
@@ -135,11 +135,16 @@ class Bushy(Cell):
             if debug:
                 print "bushy using inva11"
             print 'nav11 gbar: ', soma().nav11.gbar
-        elif nach in ['nacn', 'na']:
+        elif nach == 'na':
             soma().na.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'nacn gbar: ', soma().na.gbar
+                print 'nn gbar: ', soma().na.gbar
+        elif nach == 'nacn':
+            soma().nacn.gbar = gnabar
+            soma.ena = self.e_na
+            if debug:
+                print 'nacn gbar: ', soma().nacn.gbar
         else:
             raise ValueError('Sodium channel %s is not recognized for Bushy cells', nach)
 

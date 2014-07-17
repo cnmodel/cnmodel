@@ -1,6 +1,6 @@
 from neuron import h
 import neuron as nrn
-from ..pynrnutilities import nstomho
+from ..util import nstomho
 
 from .cell import Cell
 
@@ -9,6 +9,7 @@ __all__ = ['Hasenstaub']
 
 class Hasenstaub(Cell):
     def __init__(self, debug=False, ttx=False, message=None, pump=False):
+        super(Hasenstaub, self).__init__()
         v_potassium = -70       # potassium reversal potential
         v_sodium = 50           # sodium reversal potential
         v_chloride = -20
@@ -70,4 +71,4 @@ class Hasenstaub(Cell):
             else:
                 print message
                 
-        self.soma = soma
+        self.add_section(soma, 'soma')

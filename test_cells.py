@@ -4,7 +4,7 @@ from neuron import h
 
 import nrnlibrary
 import nrnlibrary.cells as cells
-from nrnlibrary.protocols import IVCurve, run_vc, run_democlamp
+from nrnlibrary.protocols import IVCurve, VCCurve
 
 debugFlag = True
 parser = argparse.ArgumentParser(description=('test_cells.py:',
@@ -136,6 +136,10 @@ else:
 
 print("Cell model: %s" % cell.__class__.__name__)
 print(cell.__doc__)
+
+import pyqtgraph as pg
+app = pg.mkQApp()
+
 #
 # define the current clamp electrode and default settings
 #
@@ -146,10 +150,14 @@ if args.cc is True:
     iv.run(ccivrange[args.celltype], cell, sites=sites, reppulse=ptype)
     iv.show()
 elif args.vc is True:
-    run_vc(-120, -40, 5, cell)
+    vc = VCCurve()
+    vc.run((-120, -40, 5), cell)
+    vc.show()
+elif args.demo is True:
+    run_democlamp(cell, dendrites)
 else:
-    if args.demo is True:
-        run_democlamp(cell, dendrites)
+    print("Nothing to run. Specify one of --cc, --vc, --democlamp.")
+    sys.exit(1)
 #-----------------------------------------------------------------------------
 #
 # If we call this directly, provide a test with the IV function
@@ -157,3 +165,5 @@ else:
 #
 
 
+if sys.flags.interactive == 0:
+    pg.QtGui.QApplication.exec_()
