@@ -12,14 +12,29 @@ from nrnlibrary.protocols import IVCurve
 
 def test_bushy():
     cell = cells.Bushy()
-    cell.species_scaling(species='guineapig-bushy-II')
-    assert_cell_info(cell, 'bushy_guineapig-bushy-II')
-    
+    cell.species_scaling(species='guineapig', type='II')
+    assert_cell_info(cell, 'bushy_guineapig-typeII')
 
-def test_stellate():
+def test_bushy21():
+    cell = cells.Bushy()
+    cell.species_scaling(species='guineapig', type='II-I')
+    assert_cell_info(cell, 'bushy_guineapig-typeII-I')
+
+
+def test_tstellate():
     cell = cells.TStellate()
-    cell.species_scaling(species='guineapig')
-    assert_cell_info(cell, 'tstellate_guineapig')
+    cell.species_scaling(species='guineapig', type='I-c')
+    assert_cell_info(cell, 'tstellate_guineapig-typeI-c')
+
+def test_tstellatet():
+    cell = cells.TStellate()
+    cell.species_scaling(species='guineapig', type='I-t')
+    assert_cell_info(cell, 'tstellate_guineapig-typeI-t')
+
+def test_dstellate():
+    cell = cells.DStellate()
+    cell.species_scaling(species='guineapig', type='I-II')
+    assert_cell_info(cell, 'dstellate_guineapig-typeI-II')
 
 
 
@@ -66,7 +81,7 @@ def assert_cell_info(cell, key):
     # run I/V test on cell
     iv = IVCurve()
     iv.run(cell.i_test_range, cell)
-    iv.show()
+    iv.show(cell)
     info = dict(
         icmd=iv.current_cmd,
         spikes=iv.spike_times(),

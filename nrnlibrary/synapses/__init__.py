@@ -417,8 +417,8 @@ def stellate_epsc(synapse):
 def stellate_ipsc(synapse):
     """ data is average of 3 cells studied with recovery curves and individually fit, 100 Hz """
     synapse.F = 0.23047
-    synapse.k0 = 1.23636 / 1000.0
-    synapse.kmax = 45.34474 / 1000.0
+    synapse.k0 = 1.23636 #/ 1000.0
+    synapse.kmax = 45.34474 #/ 1000.0
     synapse.taud = 98.09
     synapse.kd = 0.01183
     synapse.taus = 17614.50
@@ -693,7 +693,7 @@ def stochastic_synapses(h, parent_section=None, target_section=None, n_fibers=1,
         if terminal != parent_section:
             terminal.connect(parent_section, 1, 0) # 1. connect the terminal to the parent section
         terminal.push()
-        
+
         netcons.append(h.NetCon(terminal(0.5)._ref_v, relzone, thresh, stochastic_pars.delay, 1.0))
         netcons[-1].weight[0] = 1
         netcons[-1].threshold = -30.0
@@ -789,10 +789,9 @@ class Synapse(object):
             AN_gMax = 1700.0 / (self.AMPA_Max_Po)
 
         else:
-            raise ValueError("Unknown cell type '%s'" % cellType)
+            raise ValueError("Unknown cell type '%s'" % self.post_cell)
 
         self.zones_per_terminal = nANTerminals_ReleaseZones
-
         #
         # make a multisite synapse (consists of an axon section and a coh point process)
         # synapse is like a calyx or end bulb of Held
@@ -839,6 +838,7 @@ class Synapse(object):
                                     nmda_ratio=0.0, identifier=1,
                                     stochastic_pars=vPars) # set gVar to 0 for testing
         self.synapse_objs = ret  # MUST store these (NetCons are deleted if refcount drops to 0)
+
         (calyx, coh, psd, cleft, nc2, par) = ret
         self.terminal = calyx
         self.coh = coh

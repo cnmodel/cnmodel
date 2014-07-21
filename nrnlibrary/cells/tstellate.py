@@ -12,7 +12,7 @@ class TStellate(Cell):
     VCN T-stellate base model.
     Rothman and Manis, 2003abc (Type I)    
     """
-    def __init__(self, nach='nacn', ttx=False, debug=False):
+    def __init__(self, nach='na', ttx=False, debug=False):
         """
         initialize a planar stellate (T-stellate) cell, using the default parameters for guinea pig from
         R&M2003, as a type I cell.
@@ -23,20 +23,20 @@ class TStellate(Cell):
         super(TStellate, self).__init__()
 
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': 'guineapig-TypeI', 'ttx': ttx}
+                       'na': nach, 'species': 'guineapig', 'type': '1-c', 'ttx': ttx, 'name': 'TStellate'}
         self.e_k = -70  # potassium reversal potential, mV
         self.e_na = 55
+        self.e_h = -43
         self.c_m = 0.9  # specific membrane capacitance,  uf/cm^2
         self.R_a = 150  # axial resistivity of cytoplasm/axoplasm, ohm.cm
-        self.vm0 = -60.
         self.i_test_range=(-0.15, 0.15, 0.01)
 
         soma = h.Section(name="TStellate_Soma_%x" % id(self)) # one compartment of about 29000 um2
 
         soma.nseg = 1
 
-        if nach == 'nacn':
-            soma.insert('nacn')
+        if nach in ['nacn', 'na']:
+            soma.insert('na')
         elif nach == 'nav11':
             soma.insert('nav11')
         elif nach == 'jsrna':
@@ -49,28 +49,25 @@ class TStellate(Cell):
         soma.insert('ihvcn')
         soma.insert('leak')
         soma.ek = self.e_k
-        soma().leak.e = -65.0
+        soma.ena = self.e_na
+        soma().ihvcn.eh = self.e_h
+        soma().leak.erev = -65.0
         self.mechanisms = ['kht', 'ka', 'ihvcn', 'leak', nach]
         self.add_section(soma, 'soma')
-        self.species_scaling()  # set the default type II cell parameters
+        self.species_scaling(silent=False)  # set the default type II cell parameters
+        self.get_mechs(soma)
+        self.cell_initialize()
         if debug:
                 print "<< T-stellate: JSR Stellate Type 1 cell model created >>"
 
-    def set_soma_size_from_Cm(self, cap):
-        self.totcap = cap
-        self.somaarea = self.totcap * 1E-6 / self.c_m  # pf -> uF, cm = 1uf/cm^2 nominal
-        lstd = 1E4 * ((self.somaarea / np.pi) ** 0.5)  # convert from cm to um
-        self.soma.diam = lstd
-        self.soma.L = lstd
-
-    def species_scaling(self, species='guineapig'):
+    def species_scaling(self, species='guineapig', type='I-c', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
         """
         soma = self.soma
-        if species == 'mouse':
+        if species == 'mouse' and type == 'Ic':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
-            print 'Mouse Tstellate cell'
+            #print 'Mouse Tstellate cell'
             self.set_soma_size_from_Cm(25.0)
             self.adjust_na_chans(soma, gbar=800.)
             soma().kht.gbar = nstomho(250.0, self.somaarea)
@@ -78,20 +75,18 @@ class TStellate(Cell):
             soma().ihvcn.gbar = nstomho(18.0, self.somaarea)
             soma().ihvcn.eh = -43 # Rodrigues and Oertel, 2006
             soma().leak.gbar = nstomho(2.0, self.somaarea)
-            soma().leak.e = -65.0
-            self.vm0 = -63.9
+            soma().leak.erev = -65.0
             self.axonsf = 0.5
-        if species == 'guineapig':  # values from R&M 2003, Type I
+        elif species == 'guineapig' and type == 'I-c':  # values from R&M 2003, Type I
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
             soma().ka.gbar = nstomho(0.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(0.5, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
-            soma().leak.e = -65.0
-            self.vm0 = -63.9
+            soma().leak.erev = -65.0
             self.axonsf = 0.5
-        if species == 'guineapig-typeI-t':
+        elif species == 'guineapig' and type =='I-t':
             # guinea pig data from Rothman and Manis, 2003, type It
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma)
@@ -99,20 +94,27 @@ class TStellate(Cell):
             soma().ka.gbar = nstomho(65.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(0.5, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
-            soma().leak.e = -65.0
-            self.vm0 = -64.2
+            soma().leak.erev = -65.0
             self.axonsf = 0.5
-        if species == 'cat':  # a cat is a big guinea pig Type I
+        elif species == 'cat' and type == 'I-c':  # a cat is a big guinea pig Type I
             self.set_soma_size_from_Cm(30.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
             soma().ka.gbar = nstomho(0.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(0.5, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
-            soma().leak.e = -65.0
-            self.vm0 = -63.92
+            soma().leak.erev = -65.0
             self.axonsf = 1.0
+        else:
+            raise ValueError('Species %s or species-type %s is not recognized for T-stellate cells' % (species, type))
+
+        #self.cell_initialize(showinfo=True)
+        self.vm0 = self.find_i0()
+        if not silent:
+            print 'set cell as: ', species
+            print ' with Vm rest = %6.3f' % self.vm0
         self.status['species'] = species
+        self.status['type'] = type
 
     def adjust_na_chans(self, soma, gbar=1000., debug=False):
         """
@@ -138,11 +140,19 @@ class TStellate(Cell):
             if debug:
                 print "bushy using inva11"
             print 'nav11 gbar: ', soma().nav11.gbar
-        else:
+        elif nach == 'na':
+            soma().na.gbar = gnabar
+            soma.ena = self.e_na
+            if debug:
+                print 'na gbar: ', soma().na.gbar
+        elif  nach == 'nacn':
             soma().nacn.gbar = gnabar
             soma.ena = self.e_na
             if debug:
                 print 'nacn gbar: ', soma().nacn.gbar
+        else:
+            raise ValueError("Dstellate setting Na channels: channel %s not known" % nach)
+
 
     def add_axon(self):
         Cell.add_axon(self, self.soma, self.somaarea, self.c_m, self.R_a, self.axonsf)

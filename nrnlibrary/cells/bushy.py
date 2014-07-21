@@ -2,6 +2,7 @@ from neuron import h
 import neuron as nrn
 from ..util import nstomho
 import numpy as np
+import scipy.optimize
 
 from .cell import Cell
 
@@ -14,7 +15,7 @@ class Bushy(Cell):
     Rothman and Manis, 2003abc (Type II)    
     """
 
-    def __init__(self, nach='jsrna', ttx=False, debug=False):
+    def __init__(self, nach='na', ttx=False, debug=False):
         """
         initialize the bushy cell, using the default parameters for guinea pig from
         R&M2003, as a type II cell.
@@ -23,12 +24,8 @@ class Bushy(Cell):
         super(Bushy, self).__init__()
 
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': 'guineapig-bushy-II', 'ttx': ttx}
-        self.e_k = -70  # potassium reversal potential, mV
-        self.e_na = 55
-        self.c_m = 0.9  # specific membrane capacitance,  uf/cm^2
-        self.R_a = 150  # axial resistivity of cytoplasm/axoplasm, ohm.cm
-        self.vm0 = -63.6   # nominal for type II; will be reset below
+                       'na': nach, 'species': 'guineapig', 'type': 'II', 'ttx': ttx, 'name': 'Bushy'}
+        self.vm0 = None  # computed in species_scaling
         self.i_test_range=(-0.5, 0.5, 0.05)
         self.spike_threshold = -50
 
@@ -39,33 +36,33 @@ class Bushy(Cell):
         soma.insert('ihvcn')
         soma.insert('leak')
         soma.ek = self.e_k
-        soma().leak.e = -65.0
+        soma().ihvcn.eh = self.e_h
+        soma().leak.erev = self.e_leak
 
         # insert the requested sodium channel
         if nach == 'jsrna':
             soma.insert('jsrna')
         elif nach == 'nav11':
             soma.insert('nav11')
+        elif nach in ['na', 'nacn']:
+            soma.insert('na')
         else:
-            soma.insert('nacn')
+            raise ValueError('Sodium channel %s not available for Bushy cells' % nach)
+
+        soma.ena = self.e_na
         self.add_section(soma, 'soma')
-        self.species_scaling()  # set the default type II cell parameters
+        self.mechanisms = ['klt', 'kht', 'ihvcn', 'leak', nach]
+        self.species_scaling(silent=True)  # set the default type II cell parameters
+        self.get_mechs(soma)
         if debug:
             print "<< bushy: JSR bushy cell model created >>"
 
-    def set_soma_size_from_Cm(self, cap):
-        self.totcap = cap
-        self.somaarea = self.totcap * 1E-6 / self.c_m  # pf -> uF, cm = 1uf/cm^2 nominal
-        lstd = 1E4 * ((self.somaarea / np.pi) ** 0.5)  # convert from cm to um
-        self.soma.diam = lstd
-        self.soma.L = lstd
-
-    def species_scaling(self, species='guineapig-bushy-II'):
+    def species_scaling(self, species='guineapig', type='II', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
         """
         soma = self.soma
-        if species == 'mouse':
+        if species == 'mouse' and type == 'II':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
             #print 'Mouse bushy cell'
             self.set_soma_size_from_Cm(26.0)
@@ -74,44 +71,44 @@ class Bushy(Cell):
             soma().klt.gbar = nstomho(80.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(30.0, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
-            soma().leak.e = -65.0
-            self.vm0 = -63.6
+            self.vm0 = self.find_i0()
             self.axonsf = 0.57
-        elif species == 'guineapig-bushy-II':
+        elif species == 'guineapig' and type =='II':
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
             soma().klt.gbar = nstomho(200.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(20.0, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
-            soma().leak.e = -65.0
-            self.vm0 = -63.6
             self.axonsf = 0.57
-        elif species == 'guineapig-bushy-II-I':
+        elif species == 'guineapig' and type =='II-I':
             # guinea pig data from Rothman and Manis, 2003, type II=I
+            self.i_test_range=(-0.4, 0.4, 0.02)
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
             soma().klt.gbar = nstomho(35.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(3.5, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
-            soma().leak.e = -65.0
-            self.vm0 = -63.655
             self.axonsf = 0.57
-        elif species == 'cat':  # a cat is a big guinea pig
+        elif species == 'cat' and type == 'II':  # a cat is a big guinea pig
             self.set_soma_size_from_Cm(35.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
             soma().klt.gbar = nstomho(200.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(20.0, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
-            soma().leak.e = -65.0
-            self.vm0 = -63.6
             self.axonsf = 1.0
         else:
-            raise ValueError('Species %s is not recognized for Bushy cells', species)
+            raise ValueError('Species %s or species-type %s is not recognized for Bushy cells' %  (species, type))
+        #self.cell_initialize(showinfo=True)
+        self.vm0 = self.find_i0()
+        if not silent:
+            print 'set cell as: ', species
+            print ' with Vm rest = %6.3f' % self.vm0
 
         self.status['species'] = species
+        self.status['type'] = type
 
     def adjust_na_chans(self, soma, debug=False):
         """
@@ -137,15 +134,16 @@ class Bushy(Cell):
             if debug:
                 print "bushy using inva11"
             print 'nav11 gbar: ', soma().nav11.gbar
-        else:
-            soma().nacn.gbar = gnabar
+        elif nach in ['na', 'nacn']:
+            soma().na.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'nacn gbar: ', soma().nacn.gbar
+                print 'na gbar: ', soma().na.gbar
+        else:
+            raise ValueError('Sodium channel %s is not recognized for Bushy cells', nach)
 
     def add_axon(self):
         Cell.add_axon(self, self.c_m, self.R_a, self.axonsf)
-
 
     def add_pumps(self):
         """

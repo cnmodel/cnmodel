@@ -12,7 +12,7 @@ class DStellate(Cell):
     VCN D-stellate model:
     as a type I-II from Rothman and Manis, 2003
     """
-    def __init__(self, nach='nacn', ttx=False, debug=False):
+    def __init__(self, nach='na', ttx=False, debug=False):
         """
         initialize a radial stellate (D-stellate) cell, using the default parameters for guinea pig from
         R&M2003, as a type I-II cell.
@@ -24,7 +24,7 @@ class DStellate(Cell):
         super(DStellate, self).__init__()
 
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': 'guineapig', 'ttx': ttx}
+                       'na': nach, 'species': 'guineapig', 'type': 'I-II', 'ttx': ttx, 'name': 'DStellate'}
         self.e_k = -70  # potassium reversal potential, mV
         self.e_na = 50
         self.c_m = 0.9  # specific membrane capacitance,  uf/cm^2
@@ -36,8 +36,8 @@ class DStellate(Cell):
 
         soma.nseg = 1
 
-        if nach == 'nacn':
-            soma.insert('nacn')
+        if nach in ['nacn', 'na']:
+            soma.insert('na')
         elif nach == 'nav11':
             soma.insert('nav11')
         elif nach == 'jsrna':
@@ -50,10 +50,12 @@ class DStellate(Cell):
         soma.insert('ihvcn')
         soma.insert('leak')
         soma.ek = self.e_k
-        soma().leak.e = -65
+        soma().leak.erev = -65
         self.mechanisms = ['kht', 'klt', 'ihvcn', 'leak', nach]
-        self.species_scaling()  # set the default type II cell parameters
         self.add_section(soma, 'soma')
+        self.get_mechs(soma)
+        self.cell_initialize(showinfo=True)
+        self.species_scaling(silent=False)  # set the default type II cell parameters
         if debug:
                 print "<< D-stellate: JSR Stellate Type I-II cell model created >>"
 
@@ -64,14 +66,13 @@ class DStellate(Cell):
         self.soma.diam = lstd
         self.soma.L = lstd
 
-    def species_scaling(self, species='guineapig'):
+    def species_scaling(self, species='guineapig', type='I-II', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
         """
         soma = self.soma
-        if species == 'mouse':
+        if species == 'mouse' and type == 'I-II':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
-            #print 'Mouse Dstellate cell'
             self.set_soma_size_from_Cm(25.0)
             self.adjust_na_chans(soma, gbar=800.)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
@@ -79,27 +80,33 @@ class DStellate(Cell):
             soma().ihvcn.gbar = nstomho(2.0, self.somaarea)
             soma().ihvcn.eh = -43 # Rodrigues and Oertel, 2006
             soma().leak.gbar = nstomho(2.0, self.somaarea)
-            self.vm0 = -64.1
             self.axonsf = 0.5
-        if species == 'guineapig':  # values from R&M 2003, Type II-I
+        elif species == 'guineapig' and type == 'I-II':  # values from R&M 2003, Type II-I
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma, gbar=1000.)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
             soma().klt.gbar = nstomho(20.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(2.0, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
-            self.vm0 = -64.1
             self.axonsf = 0.5
-        if species == 'cat':  # a cat is a big guinea pig Type I
+        elif species == 'cat' and type == 'I=II':  # a cat is a big guinea pig Type I
             self.set_soma_size_from_Cm(35.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
             soma().klt.gbar = nstomho(20.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(2.0, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
-            self.vm0 = -64.1
             self.axonsf = 1.0
+        else:
+            raise ValueError('Species %s or species-type %s is not recognized for D-Stellate cells' %  (species, type))
+        #self.cell_initialize(showinfo=True)
+        self.vm0 = self.find_i0()
+        if not silent:
+            print 'set cell as: ', species
+            print ' with Vm rest = %6.3f' % self.vm0
+
         self.status['species'] = species
+        self.status['type'] = type
 
     def adjust_na_chans(self, soma, gbar=1000., debug=False):
         """
@@ -125,11 +132,18 @@ class DStellate(Cell):
             if debug:
                 print "bushy using inva11"
             print 'nav11 gbar: ', soma().nav11.gbar
-        else:
-            soma().nacn.gbar = gnabar
+        elif nach == 'na':
+            soma().na.gbar = gnabar
+            soma.ena = self.e_na
+            if debug:
+                print 'na gbar: ', soma().na.gbar
+        elif nach == 'nach':
+            soma().nach.gbar = gnabar
             soma.ena = self.e_na
             if debug:
                 print 'nacn gbar: ', soma().nacn.gbar
+        else:
+            raise ValueError("Dstellate setting Na channels: channel %s not known" % nach)
 
     def add_axon(self):
         Cell.add_axon(self, self.soma, self.somaarea, self.c_m, self.R_a, self.axonsf)

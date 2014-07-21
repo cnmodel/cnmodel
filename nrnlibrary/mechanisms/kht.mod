@@ -39,108 +39,73 @@ UNITS {
 }
 
 NEURON {
-THREADSAFE
+        THREADSAFE
         SUFFIX kht
         USEION k READ ek WRITE ik
         RANGE gbar, gkht, ik
         GLOBAL ninf, pinf, ntau, ptau
 }
 
-INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}
-
+:INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}
+ASSIGNED {
+    celsius (degC)  : model is defined on measurements made at room temp in Baltimore: 22 degC
+    ik (mA/cm2)
+    ek (mV)
+    gkht (mho/cm2)
+    pinf ninf
+    ptau (ms)
+    ntau (ms)
+    qg ()  : computed q10 for gnabar based on q10g
+    q10 ()
+}
+    
 PARAMETER {
         v (mV)
-:        celsius = 22 (degC)  : model is defined on measurements made at room temp in Baltimore
         dt (ms)
-:        ek = -77 (mV)
         gbar = 0.01592 (mho/cm2) <0,1e9>
-		nf = 0.85 <0,1> : proportion of n vs p kinetics
-        celsius (degC)
-        q10 = 3.0 (1)
-        ek (mV)
+        nf = 0.85 <0,1> :proportion of n vs p kinetics
+        q10tau = 3.0
+        q10g = 2.0
 }
 
 STATE {
         n p
 }
 
-ASSIGNED {
-    ik (mA/cm2) 
-    gkht (mho/cm2)
-    pinf ninf
-    ptau (ms) ntau (ms)
-
-
-
-        }
-
 LOCAL nexp, pexp
 
 BREAKPOINT {
-	SOLVE states METHOD cnexp
+    SOLVE states METHOD cnexp
     
-	gkht = gbar*(nf*(n^2) + (1-nf)*p)
+    gkht = qg*gbar*(nf*(n^2) + (1-nf)*p)
     ik = gkht*(v - ek)
-
 }
 
-UNITSOFF
-
 INITIAL {
-    trates(v)
+    qg = q10g^((celsius-22)/10 (degC))
+    q10 = q10tau^((celsius - 22)/10 (degC)) : if you don't like room temp, it can be changed!
+    rates(v)
     p = pinf
     n = ninf
 }
 
 DERIVATIVE states {  :Computes state variables m, h, and n
-	rates(v)      :             at the current v and dt.
-	n' = (ninf - n)/ntau
-	p' = (pinf - p)/ptau
-
-:        n = n + nexp*(ninf-n)
-:	p = p + pexp*(pinf-p)
-:VERBATIM
-:	return 0;
-:ENDVERBATIM
+    rates(v)      :             at the current v and dt.
+    n' = (ninf - n)/ntau
+    p' = (pinf - p)/ptau
 }
 
-LOCAL qt
-
-PROCEDURE rates(v) {  :Computes rate and other constants at current v.
+PROCEDURE rates(v (mV)) {  :Computes rate and other constants at current v.
                       :Call once from HOC to initialize inf at resting v.
 
-	qt = q10^((celsius - 22)/10) : if you don't like room temp, it can be changed!
+    ninf =   (1 + exp(-(v + 15) / 5 (mV)))^-0.5
+    pinf =  1 / (1 + exp(-(v + 23) / 6 (mV)))
 
-    ninf =   (1 + exp(-(v + 15) / 5))^-0.5
-    pinf =  1 / (1 + exp(-(v + 23) / 6))
-
-	ntau =  (100 / (11*exp((v+60) / 24) + 21*exp(-(v+60) / 23))) + 0.7
-	ntau = ntau/qt
-    ptau = (100 / (4*exp((v+60) / 32) + 5*exp(-(v+60) / 22))) + 5
-    ptau = ptau/qt
+    ntau =  (100 (ms)/ (11*exp((v+60) / 24 (mV)) + 21*exp(-(v+60) / 23 (mV)))) + 0.7
+    ntau = ntau/q10
+    ptau = (100 (ms)/ (4*exp((v+60) / 32 (mV)) + 5*exp(-(v+60) / 22 (mV)))) + 5
+    ptau = ptau/q10
+    
 }
 
-PROCEDURE trates(v) {  :Computes rate and other constants at current v.
-                      :Call once from HOC to initialize inf at resting v.
-	LOCAL tinc
-	TABLE ninf, nexp, pinf, pexp
-	DEPEND dt, celsius FROM -150 TO 150 WITH 300
 
-    rates(v)    : not consistently executed from here if usetable_hh == 1
-        : so don't expect the tau values to be tracking along with
-        : the inf values in hoc
-
-	tinc = -dt : note that ntau and ptau have q10 included above
-	nexp = 1 - exp(tinc/ntau)
-	pexp = 1 - exp(tinc/ptau)
-}
-
-FUNCTION vtrap(x,y) {  :Traps for 0 in denominator of rate eqns.
-        if (fabs(x/y) < 1e-6) {
-                vtrap = y*(1 - x/y/2)
-        }else{
-                vtrap = x/(exp(x/y) - 1)
-        }
-}
-
-UNITSON
