@@ -844,6 +844,7 @@ class Synapse(object):
                                     thresh=thresh, psdtype=self.psdType, gmax=AN_gMax, gvar=0.3,
                                     nmda_ratio=0.0, identifier=1,
                                     stochastic_pars=vPars) # set gVar to 0 for testing
+        self.synapse_objs = ret  # MUST store these (NetCons are deleted if refcount drops to 0)
         (calyx, coh, psd, cleft, nc2, par) = ret
         self.terminal = calyx
         self.coh = coh

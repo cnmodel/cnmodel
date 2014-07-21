@@ -20,7 +20,7 @@ class SynapseTest(Protocol):
 
     def run(self, cell, synapse, temp=34.0):
         """ 
-        Test the synapse function. 
+        Basic synapse test.
         Creates a presynaptic HH neuron and connects it to *cell* via *synapse*.
         
         v_pre is the presynaptic voltage
@@ -55,9 +55,6 @@ class SynapseTest(Protocol):
             vccontrol.amp[1] = clampV
             vccontrol.dur[2] = 20.0
             vccontrol.amp[2] = clampV
-
-
-        
         
         #
         # set up stimulation of the presynaptic axon/terminal
