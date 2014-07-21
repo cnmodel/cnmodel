@@ -1,6 +1,6 @@
 from neuron import h
 import neuron as nrn
-from ..pynrnutilities import nstomho
+from ..util import nstomho
 import numpy as np
 from .cell import Cell
 
@@ -33,7 +33,7 @@ class DStellate(Cell):
         self.vm0 = -64.1
         self.i_test_range=(-0.2, 0.2, 0.01)  # set range for ic command test
 
-        soma = h.Section() # one compartment
+        soma = h.Section(name="DStellate_Soma_%x" % id(self)) # one compartment
 
         soma.nseg = 1
 
@@ -55,12 +55,10 @@ class DStellate(Cell):
         soma().ihvcn.eh = self.e_h
         soma().leak.erev = -65
         self.mechanisms = ['kht', 'klt', 'ihvcn', 'leak', nach]
-        self.soma = soma
+        self.add_section(soma, 'soma')
         self.get_mechs(soma)
         self.cell_initialize(showinfo=True)
         self.species_scaling(silent=False)  # set the default type II cell parameters
-        self.all_sections['soma'].extend(soma)
-        self.add_section(soma)
         if debug:
                 print "<< D-stellate: JSR Stellate Type I-II cell model created >>"
 
@@ -176,7 +174,7 @@ class DStellate(Cell):
             dendrites[i]().ihvcn.eh = -43.0
         self.maindend = dendrites
         self.status['dendrites'] = True
-        self.all_sections.extend(self.maindend)
+        self.add_section(self.maindend, 'maindend')
 
 
 class DStellateIF(Cell):

@@ -1,6 +1,6 @@
 from neuron import h
 import neuron as nrn
-from ..pynrnutilities import nstomho
+from ..util import nstomho
 import numpy as np
 import scipy.optimize
 
@@ -27,8 +27,9 @@ class Bushy(Cell):
                        'na': nach, 'species': 'guineapig', 'type': 'II', 'ttx': ttx}
         self.vm0 = -63.6467358   # nominal for type II
         self.i_test_range=(-0.5, 0.5, 0.05)
+        self.spike_threshold = -50
 
-        soma = h.Section()  # one compartment of about 29000 um2
+        soma = h.Section(name="Bushy_Soma_%x" % id(self))  # one compartment of about 29000 um2
         soma.nseg = 1
         soma.insert('klt')
         soma.insert('kht')
@@ -49,12 +50,10 @@ class Bushy(Cell):
             raise ValueError('Sodium channel %s not available for Bushy cells' % nach)
 
         soma.ena = self.e_na
+        self.add_section(soma, 'soma')
         self.mechanisms = ['klt', 'kht', 'ihvcn', 'leak', nach]
-        self.soma = soma
         self.species_scaling(silent=True)  # set the default type II cell parameters
         self.get_mechs(soma)
-        self.all_sections['soma'].append(soma)
-        self.add_section(soma)
         if debug:
             print "<< bushy: JSR bushy cell model created >>"
 
@@ -139,7 +138,7 @@ class Bushy(Cell):
             soma().na.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'nacn gbar: ', soma().na.gbar
+                print 'na gbar: ', soma().na.gbar
         else:
             raise ValueError('Sodium channel %s is not recognized for Bushy cells', nach)
 
@@ -209,6 +208,6 @@ class Bushy(Cell):
         if debug:
             print 'Bushy: added dendrite'
             h.topology()
-        self.all_sections['maindend'].extend(maindend)
-        self.all_sections['secdend'].extend(secdend)
+        self.add_section(maindend, 'maindend')
+        self.add_section(secdend, 'secdend')
 

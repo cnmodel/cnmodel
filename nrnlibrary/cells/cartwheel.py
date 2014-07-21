@@ -1,6 +1,6 @@
 from neuron import h
 import neuron as nrn
-from ..pynrnutilities import nstomho
+from ..util import nstomho
 
 from .cell import Cell
 
@@ -13,6 +13,7 @@ class Cartwheel(Cell):
     
     """
     def __init__(self, debug=False):
+        super(Cartwheel, self).__init__()
         soma = h.Section() # one compartment of about 29000 um2
         soma.nseg = 1
         soma.diam = 96
@@ -39,4 +40,4 @@ class Cartwheel(Cell):
         if debug:
             print "<< cartwheel: Raman Purkinje cell model (modified) created >>"
             
-        self.soma = soma
+        self.add_section(soma, 'soma')

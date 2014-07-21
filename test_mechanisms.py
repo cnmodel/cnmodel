@@ -72,14 +72,8 @@ class ChannelKinetics():
             self.win2.resize(800, 600)
             self.kp1 = self.win.addPlot(title="htau")
             self.computeKinetics('nav11')
-
-        self.show()
-        print 'after show'
-
-    def show(self):
+            
         self.win.show()
-        QtGui.QApplication.instance().exec_()
-
 
     def run(self, modfile='CaPCalyx', color='r'):
         if isinstance(modfile, list):
@@ -89,14 +83,14 @@ class ChannelKinetics():
         else:
             tstep = [200., 50.]
         tdelay = 5.0
-        Channel = nrnlibrary.nrnutils.Mechanism(modfile)
-        leak = nrnlibrary.nrnutils.Mechanism('leak')
+        Channel = nrnlibrary.util.Mechanism(modfile)
+        leak = nrnlibrary.util.Mechanism('leak')
         Channel.set_parameters({'gbar': 1})
         leak.set_parameters({'gbar': 1e-12})
        # print 'modfile: ', modfile
        # if modfile == 'ichanWT2005':
        #     Channel.set_parameters({'ena': 50})
-        self.soma = nrnlibrary.nrnutils.Section(L=10, diam=10, mechanisms=[Channel, leak])
+        self.soma = nrnlibrary.util.Section(L=10, diam=10, mechanisms=[Channel, leak])
 #        Channel.insert_into(soma)
 #        leak.insert_into(soma)
 #        print dir(self.soma)
@@ -163,6 +157,17 @@ class ChannelKinetics():
         pass
 
 if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print "\n\nUsage: python test_mechanisms.py <mechname>"
+        print "  Available mechanisms:"
+        for n in dir(nrn):
+            o = getattr(nrn, n)
+            if str(o) == str(nrn.Mechanism):
+                print "    ", n
+        sys.exit(1)
+    ck = ChannelKinetics(sys.argv[1:])
 
-    ChannelKinetics(sys.argv[1:])
-    print 'at last'
+    if sys.flags.interactive == 0:
+        import pyqtgraph as pg
+        pg.QtGui.QApplication.exec_()
+

@@ -1,6 +1,6 @@
 from neuron import h
 import neuron as nrn
-from ..pynrnutilities import nstomho
+from ..util import nstomho
 
 from .cell import Cell
 
@@ -13,6 +13,8 @@ class SGC(Cell):
     """
     def __init__(self, debug=False, ttx=False, message=None, nach='jsrna',
             species='mouse', chlist=None):
+        super(SGC, self).__init__()
+        
         if chlist is None:
             chlist = ['ih', 'klt', 'kht', 'na']
         v_potassium = -84       # potassium reversal potential
@@ -109,4 +111,4 @@ class SGC(Cell):
             else:
                 print message
                 
-        self.soma = soma
+        self.add_section(soma, 'soma')
