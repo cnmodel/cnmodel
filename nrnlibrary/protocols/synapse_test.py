@@ -152,7 +152,7 @@ class SynapseTest(Protocol):
         
         print 'Synapse.py: all runs done'
     
-    def analyze(self):
+    def analyze(self, releasePlot=True, glyPlot=False):
         #
         # Analysis
         #
