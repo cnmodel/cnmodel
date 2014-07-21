@@ -45,13 +45,13 @@ from pyqtgraph.Qt import QtCore, QtGui
 
 class Table():
     def __init__(self):
-        self.dkr_constant = False
+        self.dkr_constant = False  # If True, kf / dF is constant
         self.F_flag = 1.0  # compute facilitation (if 0, F is set to 1; see Yang and Xu-Friedman)
-        self.dense = False  # include desensitization (True to emulate Yang and Xu-Friedman)
+        self.desense = False  # include desensitization (True to emulate Yang and Xu-Friedman)
                             # (generally should be in incorporated into a receptor model, but may be useful
                             # for fits to systems with desensitizing receptors)
         self.F = None  # F1 in dkr. resting release probability (constant) after long period, no stim
-        self.rho = None
+        self.rho = None  # Not in original model
         self.k0 = None  # /s, baseline recovery rate from depletion (slow rate)
         self.kmax = None  # /s, maximal recovery rate from depletion (fast rate)
         self.td = None  #  time constant for calcium-dependent recovery

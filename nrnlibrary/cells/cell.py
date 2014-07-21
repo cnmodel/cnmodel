@@ -85,7 +85,8 @@ class Cell(object):
         Initialize this cell to it's "rmp" under current conditions
         All sections in the cell are set to the same value
         """
-        self.vm0 = self.find_i0(showinfo=showinfo)
+        if self.vm0 is None:
+            self.vm0 = self.find_i0(showinfo=showinfo)
         for part in self.all_sections.keys():
             for sec in self.all_sections[part]:
                 sec.v = self.vm0
