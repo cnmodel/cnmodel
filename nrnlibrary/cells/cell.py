@@ -41,7 +41,7 @@ class Cell(object):
         
         # Resting potential for this cell. Subclasses should modify this
         # to ensure the cell is initialized properly before protocols.
-        self.vm0 = -62
+        self.vm0 = None
 
     def add_section(self, sec, sec_type):
         """
@@ -85,7 +85,8 @@ class Cell(object):
         Initialize this cell to it's "rmp" under current conditions
         All sections in the cell are set to the same value
         """
-        self.vm0 = self.find_i0(showinfo=showinfo)
+        if self.vm0 == None:
+            self.vm0 = self.find_i0(showinfo=showinfo)
         for part in self.all_sections.keys():
             for sec in self.all_sections[part]:
                 sec.v = self.vm0
@@ -221,7 +222,7 @@ class Cell(object):
         """
         v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1])
         if showinfo:
-            print '    Species: %s  cell type: %s' % (self.status['species'], self.status['type'])
+            print '\n  find_i0  Species: %s  cell type: %s' % (self.status['species'], self.status['type'])
             print '    *** found V0 = %f' % v0
             print '    *** using conductances: ', self.ix.keys()
             print '    *** and cell has mechanisms: ', self.mechanisms

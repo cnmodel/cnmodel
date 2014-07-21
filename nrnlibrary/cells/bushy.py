@@ -15,17 +15,16 @@ class Bushy(Cell):
     Rothman and Manis, 2003abc (Type II)    
     """
 
-    def __init__(self, nach='na', ttx=False, debug=False):
+    def __init__(self, nach='na', ttx=False, debug=False, species='guineapig', type='II'):
         """
         initialize the bushy cell, using the default parameters for guinea pig from
         R&M2003, as a type II cell.
         Modifications to the cell can be made by calling methods below.
         """
         super(Bushy, self).__init__()
-
+        print "\n>>>>Creating Bushy Cell"
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': 'guineapig', 'type': 'II', 'ttx': ttx, 'name': 'Bushy'}
-        self.vm0 = -63.6467358   # nominal for type II
+                       'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'Bushy'}
         self.i_test_range=(-0.5, 0.5, 0.05)
         self.spike_threshold = -50
 
@@ -52,15 +51,17 @@ class Bushy(Cell):
         soma.ena = self.e_na
         self.add_section(soma, 'soma')
         self.mechanisms = ['klt', 'kht', 'ihvcn', 'leak', nach]
-        self.species_scaling(silent=True)  # set the default type II cell parameters
+        self.species_scaling(silent=True, species=species, type=type)  # set the default type II cell parameters
         self.get_mechs(soma)
         if debug:
             print "<< bushy: JSR bushy cell model created >>"
+        #print 'Cell created: ', self.status
 
     def species_scaling(self, species='guineapig', type='II', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
         """
+        #print '\nSpecies scaling: %s   %s' % (species, type)
         soma = self.soma
         if species == 'mouse' and type == 'II':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
@@ -101,14 +102,15 @@ class Bushy(Cell):
             self.axonsf = 1.0
         else:
             raise ValueError('Species %s or species-type %s is not recognized for Bushy cells' %  (species, type))
+        self.status['species'] = species
+        self.status['type'] = type
         self.cell_initialize(showinfo=True)
-        self.vm0 = self.find_i0()
         if not silent:
             print 'set cell as: ', species
             print ' with Vm rest = %6.3f' % self.vm0
 
-        self.status['species'] = species
-        self.status['type'] = type
+
+       # print 'Rescaled, status: ', self.status
 
     def adjust_na_chans(self, soma, debug=False):
         """

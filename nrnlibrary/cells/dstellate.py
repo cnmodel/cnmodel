@@ -12,7 +12,7 @@ class DStellate(Cell):
     VCN D-stellate model:
     as a type I-II from Rothman and Manis, 2003
     """
-    def __init__(self, nach='na', ttx=False, debug=False):
+    def __init__(self, nach='na', ttx=False, debug=False, species='guineapig', type='I-II'):
         """
         initialize a radial stellate (D-stellate) cell, using the default parameters for guinea pig from
         R&M2003, as a type I-II cell.
@@ -24,12 +24,7 @@ class DStellate(Cell):
         super(DStellate, self).__init__()
 
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': 'guineapig', 'type': 'I-II', 'ttx': ttx, 'name': 'DStellate'}
-        self.e_k = -70  # potassium reversal potential, mV
-        self.e_na = 50
-        self.c_m = 0.9  # specific membrane capacitance,  uf/cm^2
-        self.R_a = 150  # axial resistivity of cytoplasm/axoplasm, ohm.cm
-        self.vm0 = -64.1
+                       'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'DStellate'}
         self.i_test_range=(-0.25, 0.25, 0.025)  # set range for ic command test
 
         soma = h.Section(name="DStellate_Soma_%x" % id(self)) # one compartment
@@ -50,12 +45,12 @@ class DStellate(Cell):
         soma.insert('ihvcn')
         soma.insert('leak')
         soma.ek = self.e_k
-        soma().leak.erev = -65
+        soma().leak.erev = self.e_leak
         self.mechanisms = ['kht', 'klt', 'ihvcn', 'leak', nach]
         self.add_section(soma, 'soma')
         self.get_mechs(soma)
         self.cell_initialize(showinfo=True)
-        self.species_scaling(silent=False)  # set the default type II cell parameters
+        self.species_scaling(silent=False, species=species, type=type)  # set the default type II cell parameters
         if debug:
                 print "<< D-stellate: JSR Stellate Type I-II cell model created >>"
 
@@ -99,14 +94,13 @@ class DStellate(Cell):
             self.axonsf = 1.0
         else:
             raise ValueError('Species %s or species-type %s is not recognized for D-Stellate cells' %  (species, type))
+        self.status['species'] = species
+        self.status['type'] = type
         self.cell_initialize(showinfo=True)
-        self.vm0 = self.find_i0()
         if not silent:
             print 'set cell as: ', species
             print ' with Vm rest = %6.3f' % self.vm0
 
-        self.status['species'] = species
-        self.status['type'] = type
 
     def adjust_na_chans(self, soma, gbar=1000., debug=False):
         """

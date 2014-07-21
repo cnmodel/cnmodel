@@ -12,7 +12,7 @@ class TStellate(Cell):
     VCN T-stellate base model.
     Rothman and Manis, 2003abc (Type I)    
     """
-    def __init__(self, nach='na', ttx=False, debug=False):
+    def __init__(self, nach='na', ttx=False, debug=False, species='guineapig', type='I-c'):
         """
         initialize a planar stellate (T-stellate) cell, using the default parameters for guinea pig from
         R&M2003, as a type I cell.
@@ -23,13 +23,8 @@ class TStellate(Cell):
         super(TStellate, self).__init__()
 
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': 'guineapig', 'type': '1-c', 'ttx': ttx, 'name': 'TStellate'}
-        self.e_k = -70  # potassium reversal potential, mV
-        self.e_na = 55
-        self.e_h = -43
-        self.c_m = 0.9  # specific membrane capacitance,  uf/cm^2
-        self.R_a = 150  # axial resistivity of cytoplasm/axoplasm, ohm.cm
-        self.vm0 = -63.92868
+                       'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'TStellate'}
+
         self.i_test_range=(-0.15, 0.15, 0.01)
 
         soma = h.Section(name="TStellate_Soma_%x" % id(self)) # one compartment of about 29000 um2
@@ -52,10 +47,10 @@ class TStellate(Cell):
         soma.ek = self.e_k
         soma.ena = self.e_na
         soma().ihvcn.eh = self.e_h
-        soma().leak.erev = -65.0
+        soma().leak.erev = self.e_leak
         self.mechanisms = ['kht', 'ka', 'ihvcn', 'leak', nach]
         self.add_section(soma, 'soma')
-        self.species_scaling(silent=False)  # set the default type II cell parameters
+        self.species_scaling(silent=True, species=species, type=type)  # set the default type I-c  cell parameters
         self.get_mechs(soma)
         self.cell_initialize()
         if debug:
@@ -66,7 +61,7 @@ class TStellate(Cell):
         Adjust all of the conductances and the cell size according to the species requested.
         """
         soma = self.soma
-        if species == 'mouse' and type == 'Ic':
+        if species == 'mouse' and type == 'I-c':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
             #print 'Mouse Tstellate cell'
             self.set_soma_size_from_Cm(25.0)
@@ -109,13 +104,12 @@ class TStellate(Cell):
         else:
             raise ValueError('Species %s or species-type %s is not recognized for T-stellate cells' % (species, type))
 
-        self.cell_initialize(showinfo=True)
-        self.vm0 = self.find_i0()
-        if not silent:
-            print 'set cell as: ', species
-            print ' with Vm rest = %6.3f' % self.vm0
         self.status['species'] = species
         self.status['type'] = type
+        self.cell_initialize(showinfo=True)
+        if not silent:
+            print 'set cell as: ', species
+            print ' with Vm rest = %f' % self.vm0
 
     def adjust_na_chans(self, soma, gbar=1000., debug=False):
         """
