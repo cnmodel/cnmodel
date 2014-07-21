@@ -418,8 +418,8 @@ def stellate_epsc(synapse):
 def stellate_ipsc(synapse):
     """ data is average of 3 cells studied with recovery curves and individually fit, 100 Hz """
     synapse.F = 0.23047
-    synapse.k0 = 1.23636 / 1000.0
-    synapse.kmax = 45.34474 / 1000.0
+    synapse.k0 = 1.23636 #/ 1000.0
+    synapse.kmax = 45.34474 #/ 1000.0
     synapse.taud = 98.09
     synapse.kd = 0.01183
     synapse.taus = 17614.50
