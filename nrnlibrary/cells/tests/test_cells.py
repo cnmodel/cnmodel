@@ -11,29 +11,24 @@ from nrnlibrary.protocols import IVCurve
 #
 
 def test_bushy():
-    cell = cells.Bushy()
-    cell.species_scaling(species='guineapig', type='II')
+    cell = cells.Bushy(species='guineapig', type='II')
     assert_cell_info(cell, 'bushy_guineapig-typeII')
 
 def test_bushy21():
-    cell = cells.Bushy()
-    cell.species_scaling(species='guineapig', type='II-I')
+    cell = cells.Bushy(species='guineapig', type='II-I')
     assert_cell_info(cell, 'bushy_guineapig-typeII-I')
 
 
 def test_tstellate():
-    cell = cells.TStellate()
-    cell.species_scaling(species='guineapig', type='I-c')
+    cell = cells.TStellate(species='guineapig', type='I-c')
     assert_cell_info(cell, 'tstellate_guineapig-typeI-c')
 
 def test_tstellatet():
-    cell = cells.TStellate()
-    cell.species_scaling(species='guineapig', type='I-t')
+    cell = cells.TStellate(species='guineapig', type='I-t')
     assert_cell_info(cell, 'tstellate_guineapig-typeI-t')
 
 def test_dstellate():
-    cell = cells.DStellate()
-    cell.species_scaling(species='guineapig', type='I-II')
+    cell = cells.DStellate(species='guineapig', type='I-II')
     assert_cell_info(cell, 'dstellate_guineapig-typeI-II')
 
 
@@ -107,9 +102,9 @@ def assert_cell_info(cell, key):
                 if isinstance(info[k], list):
                     assert len(info[k]) == len(expect[k])
                     for i in range(len(info[k])):
-                        assert np.all(info[k][i] == expect[k][i])
+                        assert np.allclose(info[k][i], expect[k][i])
                 else:
-                    assert np.all(info[k] == expect[k])
+                    assert np.allclose(info[k], expect[k])
         else:
             if not audit:
                 raise Exception("No prior test results for cell type '%s'. "

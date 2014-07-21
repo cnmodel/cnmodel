@@ -197,7 +197,7 @@ class Cell(object):
         """
         v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1])
         if showinfo:
-            print '    Species: %s  cell type: %s' % (self.status['species'], self.status['type'])
+            print '\n  find_i0  Species: %s  cell type: %s' % (self.status['species'], self.status['type'])
             print '    *** found V0 = %f' % v0
             print '    *** using conductances: ', self.ix.keys()
             print '    *** and cell has mechanisms: ', self.mechanisms
