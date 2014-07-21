@@ -1,5 +1,43 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+DKRmodel computes synaptic release dynamics for arbitrary input trains using the model
+ of Dittman, J.S., Krieger, A.C. and Regehr, W.G.  "Interplay between Facilitation,
+ Depression, and Residual Calcium at Three Presynaptic Terminals",
 
+ The Journal of Neuroscience, February 15, 2000, 20(4):1374–1385
+
+ The model is modified to include the receptor desensitization term from
+
+ H Yang and MA Xu-Friedman, Relative roles of different mechanisms of
+ depression at the mouse endbulb of Held.
+ J Neurophysiol 2008, 99: 2510-2521.
+ The desensitization term is controlled by a flag and normally should be False unless attempting
+ to replicate the Yang and Xu-Friedman results. (Desensitization is a function of receptors, and
+ should be part of the receptor model.)
+
+There are 2 classes in this file:
+    Class Table sets the kinetic parameters of the model. A variety of parameters are provided
+    corresonding to both average and individual measurements from bushy and planar multipolar
+    cells of the CBA mouse VCN, collected by Ruili Xie in 2008-2009, measured in 2.5 mM Ca,
+    1.5 mM Mg (see Xie and Manis, J. Neurosci. "Target-Specific IPSC Kinetics Promote Temporal
+    Processing in Auditory Parallel Pathways" The Journal of Neuroscience, January 23, 2013 • 33(4):1598 –1614
+    These are from simultaneous fits of the kinetic model to a range of stimulus
+    frequencies from 50 to 400 Hz.
+
+    Class DKR solves the differential equations based on the event times. It assumes a stimulus
+    train of 20 pulses, with recovery measurements (should be generalized).
+
+TODO:
+    1. generalize DKR to accept arbitrary input stimulus train (partially implemented, not tested)
+    2. Allow better access of stimulus parameters for regular trains by user.
+    3. Incorporate fitting algorithm (new class here) to fit raw data to model and return parameters.
+        This is already done in the original matlab code, just need to incorporate here.
+
+Author: Paul B. Manis, Ph.D., UNC Chapel Hill
+
+
+"""
 import numpy as np
 from optparse import OptionParser
 import pyqtgraph as pg
@@ -7,47 +45,60 @@ from pyqtgraph.Qt import QtCore, QtGui
 
 class Table():
     def __init__(self):
-        self.F_flag = 1.0  # compute facilitation
-        self.dense = False  # include desensitization ? (not appropriate for some models)
-        self.F = 0.4  # release probability (constant; no facilitation)
-        self.k0 = 1/1.75  # /s, baseline recovery rate from depletion (slow rate)
-        self.kmax = 1/0.025  # /s, maximal recovery rate from depletion (fast rate)
-        self.td = 0.05  #  time constant for calcium-dependent recovery
-        self.kd =  0.7  # affinity of fast recovery process for calcium sensor
+        self.dkr_constant = False
+        self.F_flag = 1.0  # compute facilitation (if 0, F is set to 1; see Yang and Xu-Friedman)
+        self.dense = False  # include desensitization (True to emulate Yang and Xu-Friedman)
+                            # (generally should be in incorporated into a receptor model, but may be useful
+                            # for fits to systems with desensitizing receptors)
+        self.F = None  # F1 in dkr. resting release probability (constant) after long period, no stim
+        self.rho = None
+        self.k0 = None  # /s, baseline recovery rate from depletion (slow rate)
+        self.kmax = None  # /s, maximal recovery rate from depletion (fast rate)
+        self.td = None  #  time constant for calcium-dependent recovery
+        self.kd = None  # affinity of fast recovery process for calcium sensor
 
-        self.ts = 0.015  # decay time constant of glutamate clearance
-        self.ks = 1000  # affinity of receptor desensitization for glutamate
+        self.ts = None  # decay time constant of glutamate clearance
+        self.ks =  None  # affinity of receptor desensitization for glutamate
         # The large value means no desensitization occurs (otherwise, ks should be about
         # 0.6)
 
-        self.kf = 0.6  # affinity of facilitation process
-        self.tf = 0.01  # make facilitation VERY slow
+        self.kf = None  # affinity of facilitation process
+        self.tf = None  # make facilitation VERY slow
 
-        self.dD = 0.02  # sets Ca that drives recovery(Ca influx per AP)
+        self.dD = None  # sets Ca that drives recovery(Ca influx per AP)
         # 0.02 yields rate-dep recovery in 100-300 Hz
-        self.dF = 0.02  # sets Ca that drives facilitation
+        self.dF = None  # sets Ca that drives facilitation
 
         self.glu = 0.3  # glutamate concentration in cleft (estimated from model)
         return
 
-    def celltype(self, celltype):
+    def celltype(self, celltype, select='average'):
         """
-        Return the table that corresponds to the particular cell type
+        Return the table that corresponds to the particular cell type and
+        selected cell or average
         """
         if celltype == 'bushy_epsc':
-            table = self.bushy_epsc()
+            table = self.bushy_epsc(select)
         elif celltype == 'bushy_ipsc':
-            table = self.bushy_ipsc()
+            table = self.bushy_ipsc(select)
         elif celltype == 'stellate_epsc':
-            table = self.stellate_epsc()
+            table = self.stellate_epsc(select)
         elif celltype == 'stellate_ipsc':
-            table = self.stellate_ipsc()
+            table = self.stellate_ipsc(select)
         elif celltype == 'XuF_epsc':
             table = self.XuF_epsc()
+        elif celltype == 'DKRSC':
+            table = self.DKR_SC()
         elif celltype == 'default':
             table = self
         else:
             raise ValueError('Table: Celltype %s not implemented', celltype)
+        # print check for consistentcy in table. In X&M2013, we fitted dD and dF,
+        # but they are actually constrained as follows,
+        # "Kf/dF is entirely determined by experimentally observed value of facilitation
+        #  and the initial release probability"
+        # (restate Eq 7 DKR00):
+
         return table
 
     def bushy_epsc(self, select = "average"):
@@ -98,8 +149,8 @@ class Table():
             self.dF = 1.38095
             self.glu = 0.903
 
-        elif select == '19Sep08a':
-            # # 19Sep08a  (Exempler in figure 8 of Xie and Manis, 2013).
+        elif select in ['19Sep08a', 'exemplar']:
+            # # 19Sep08a  (Exemplar in figure 8 of Xie and Manis, 2013).
             self.F = 0.26686
             self.k0 = 0.22446  #/ 1000.
             self.kmax = 18.87  #/ 1000.
@@ -118,25 +169,6 @@ class Table():
 
         return(self)
 
-    def XuF_epsc(self):
-        """ data is from XuFriedman  """
-        self.F = 0.3
-        self.F_flag = .00  # did not compute facilitation
-        self.desense = True  # include desensitization ? (not appropriate for some models)
-        self.k0 = 0.45
-        self.kmax = 18.
-        self.td = 0.035
-        self.kd = 0.07
-        self.ts = 0.015
-        self.ks = 0.6
-        self.kf = 17.78
-        self.tf = 0.00975
-        self.dD = 0.57771
-        self.dF = 0.60364
-        self.glu = 1.0
-
-        return(self)
-
     def stellate_epsc(self, select='average'):
         """ data is from Xie and Manis, 2013 """
 #        self.F = 0.434
@@ -150,12 +182,12 @@ class Table():
             self.F = 0.43435
             self.k0 = 0.672  # / 1000.0
             self.kmax = 52.82713  #/ 1000.0
-            self.taud = 3.98
+            self.td = 3.98
             self.kd = 0.08209
-            self.taus = 16917.120
+            self.ts = 16917.120
             self.ks = 14.24460
             self.kf = 18.16292
-            self.tauf = 11.38
+            self.tf = 11.38
             self.dD = 2.46535
             self.dF = 1.44543
             self.glu = 5.86564
@@ -264,12 +296,12 @@ class Table():
             self.F = 0.23047
             self.k0 = 1.23636 #/ 1000.0
             self.kmax = 45.34474 #/ 1000.0
-            self.taud = 98.09
+            self.td = 98.09
             self.kd = 0.01183
-            self.taus = 17614.50
+            self.ts = 17614.50
             self.ks = 17.88618
             self.kf = 19.11424
-            self.tauf = 32.28
+            self.tf = 32.28
             self.dD = 2.52072
             self.dF = 2.33317
             self.glu = 3.06948
@@ -278,26 +310,66 @@ class Table():
             raise ValueError ("Stellate cell IPSC selection %s not known", select)
         return(self)
 
+    # Test cases of other published data:
+    def XuF_epsc(self):
+        """ Parameters from from Yang and XuFriedman  """
+        self.F_flag = .0  # did not compute facilitation
+        self.desense = True  # include desensitization ? (not appropriate for some models)
+        self.F = 0.3
+        self.k0 = 0.45
+        self.kmax = 18.
+        self.td = 0.035
+        self.kd = 0.07
+        self.ts = 0.015
+        self.ks = 0.6
+        self.kf = 17.78
+        self.tf = 0.00975
+        self.dD = 0.57771
+        self.dF = 0.60364
+        self.glu = 1.0
+
+        return(self)
+
+    def DKR_SC(self):
+        """ Parameters from DKR Schaffer collateral (Table 2)  """
+        self.dkr_constant = True
+        self.rho = 2.2
+        self.F_flag = 1.0  #
+        self.desense = False  # include desensitization ? (not appropriate for some models)
+        self.F = 0.24
+        self.k0 = 2.0
+        self.kmax = 30.0
+        self.td = 0.050  # in seconds, not ms
+        self.kd = 2.0
+       # self.ts = 0.015  # not used
+       # self.ks = 0.6  # not used
+       # self.kf = 17.78
+        self.tf = 0.100  # in seconds, not ms
+       # self.dF = 0.6  # overridden by dkr_constant = True and rho
+       # self.dD = 0.5 # they never give the values in the paper...
+        self.glu = 1.0   # arbitrary here
+        return(self)
+
+
 class DKR():
 
-    def __init__(self, callmode=None, table=None, stim=None, recovery=None, plot=False, celltype='bushy_epsc'):
+    def __init__(self, callmode=None, table=None, stim=None, recovery=None,
+                 plot=False, celltype='bushy_epsc', select='average'):
         """
-        # implementation eqs 1-4 of xu-f 2008///
-        # or you could say, of Dittman et al, 2000
-        # or Dittman and Regehr, 1998....
-        #
-        # call:
-        # DKR no arguments just runs with some default parameters
-        # DKR (mode, varargs):
-        # if mode = 1, the table is passed in the second argument, and the plot is
-        # generated.
-        # if mode = 2, the table is in the second, the train in the third and the
-        # recovery times in the 4th. For modeling/fitting
-        # if mode = 3, the table is in the second, the train in the third and we
-        # assume that there is no recovery data.
-        # P. Manis 6/2008.
-        # converted to Python 11/2009, 7/2014
-        #
+        implementation eqs of Dittman et al, 2000
+        with modification by Yang and Xu-Friedman for desensitization parameter.
+
+        call:
+        DKR no arguments just runs with some default parameters
+        DKR (mode, varargs):
+        if mode = 1, the table is passed in the second argument, and the plot is
+        generated.
+        if mode = 2, the table is in the second, the train in the third and the
+        recovery times in the 4th. For modeling/fitting
+        if mode = 3, the table is in the second, the train in the third and we
+        assume that there is no recovery data.
+        P. Manis 6/2008.
+        converted to Python 11/2009, 7/2014
         """
         xout = []
         yout = []
@@ -306,7 +378,7 @@ class DKR():
         xtr = []
         if callmode == None:
             theTable = Table()
-            table = theTable.celltype(celltype)
+            table = theTable.celltype(celltype, select=select)
             #print table.kf, table.F
             freqlist = [50, 100, 200, 400] # in Hz
             modelist = 0 # if 0, use regular; otherwise use exponential.
@@ -440,16 +512,18 @@ class DKR():
         if table.desense:  # do we include desensitization in this calculation or not?
             S[0] = table.ks/(table.ks + glu[0])
         else:
-            S[0] = 1.0
+            S[0] = 1.0  # assume no desensitization in measured response.
         E[0] = Fn[0] * D[0]*S[0]  # initial EPSC variable
         # now for each stimulus pulse/release event
         for i in range(1, n_ptt):
             dt = pulse_train[i]-pulse_train[i-1]  # get time since last release
             [D[i], CaDi[i], Fn[i], CaFi[i]] = self.dstep(dt, table, D[i-1], CaDi[i-1], Fn[i-1], CaFi[i-1])
-            glu[i] = (glu[i-1] + table.F * D[i] )* np.exp(-dt/table.ts)  # compute updated glutamate
+            # handle difference between the 2 models:
             if table.desense:
+                glu[i] = (glu[i-1] + table.F * D[i] )* np.exp(-dt/table.ts)  # compute updated glutamate
                 S[i] = table.ks/(table.ks + glu[i])
             else:
+                glu[i] = (glu[i-1] + table.F * D[i] )  # assumes clearance is very fast
                 S[i] = 1.0
             E[i] = Fn[i] * D[i] * S[i]  # Total release and desensitization.
         return D, S, E, Fn, glu, CaDi, CaFi
@@ -460,7 +534,8 @@ class DKR():
         This is the discreet solver for each time step for the analytical equations as
         described in the papers.
         This version, including F, is from Dittman et al. 2000.
-        calculate next D from Equations 15/16, Dittman et al. 2000
+        Calculate next D from Equations 15/16, Dittman et al. 2000
+        Handles two cases: known dD and dF, or the case where these are constant.
         Parameters:
         dt is time since last step
         Di is D at last time step
@@ -473,8 +548,15 @@ class DKR():
         D, CaD, F, and CaF for the step advance
         """
 
-        CaDi = CaDi + T.dD
-        CaFi = CaFi + T.dF
+        if T.dkr_constant:
+            # set dD and dF based on rho
+            #rho = (1.0 - self.F)*self.F2/self.F  # need a value for rho...
+            xdF = 1.0/((((1-T.F)/((T.F/(1-T.F)*T.rho-T.F)))-1)/T.kf)
+            CaFi = CaFi + xdF
+            CaDi = CaFi  # assume equal, then test it.
+        else:
+            CaDi = CaDi + T.dD
+            CaFi = CaFi + T.dF
         CaDn = CaDi*np.exp(-dt/T.td) # change with next step
         CaFn = CaFi*np.exp(-dt/T.tf)
         # r = 1/dt # convert to hz (units are SECONDS).
@@ -560,6 +642,7 @@ class DKR():
         win.show()
         QtGui.QApplication.instance().exec_()
 
+
 def test():
     DKR(plot=True, celltype = 'bushy_epsc')
 
@@ -576,6 +659,10 @@ if __name__ == "__main__":
                       help="test bushy_epsc", default=False)
     parser.add_option("-F", "--XuF", dest="xuf", action='store_true',
                       help="test XuF measurements", default=False)
+    parser.add_option("--DKRSC", dest="dkrsc", action='store_true',
+                      help="test DKR Schaffer Collateral measurements", default=False)
+    parser.add_option("-c", "--select", action="store", type="string", dest="select",
+                      help='select cells or average', default='average')
 
     (options, args) = parser.parse_args()
     model = 'bushy_epsc'
@@ -589,6 +676,9 @@ if __name__ == "__main__":
         model = 'stellate_ipsc'
     if options.xuf:
         model = 'XuF_epsc'
+    if options.dkrsc:
+        model = 'DKRSC'
+
     plot = True
-    DKR(plot=plot, celltype = model)
+    DKR(plot=plot, celltype=model, select=options.select)
 

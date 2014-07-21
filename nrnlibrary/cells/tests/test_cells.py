@@ -81,7 +81,7 @@ def assert_cell_info(cell, key):
     # run I/V test on cell
     iv = IVCurve()
     iv.run(cell.i_test_range, cell)
-    iv.show()
+    iv.show(cell)
     info = dict(
         icmd=iv.current_cmd,
         spikes=iv.spike_times(),

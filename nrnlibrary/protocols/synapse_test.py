@@ -55,7 +55,7 @@ class SynapseTest(Protocol):
             vccontrol.amp[1] = clampV
             vccontrol.dur[2] = 20.0
             vccontrol.amp[2] = clampV
-        
+
         #
         # set up stimulation of the presynaptic axon/terminal
         #
@@ -152,6 +152,7 @@ class SynapseTest(Protocol):
         
         print 'Synapse.py: all runs done'
     
+
     def analyze(self, releasePlot=True, glyPlot=False):
         #
         # Analysis
@@ -162,7 +163,7 @@ class SynapseTest(Protocol):
         coh = self.synapse.coh
         ntrel = np.zeros(nANTerminals)
         nANTerminals_ReleaseZones = self.synapse.zones_per_terminal
-        
+
         #
         # compute some parameters
         #

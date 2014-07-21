@@ -24,7 +24,7 @@ class Bushy(Cell):
         super(Bushy, self).__init__()
 
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': 'guineapig', 'type': 'II', 'ttx': ttx}
+                       'na': nach, 'species': 'guineapig', 'type': 'II', 'ttx': ttx, 'name': 'Bushy'}
         self.vm0 = -63.6467358   # nominal for type II
         self.i_test_range=(-0.5, 0.5, 0.05)
         self.spike_threshold = -50
@@ -134,7 +134,7 @@ class Bushy(Cell):
             if debug:
                 print "bushy using inva11"
             print 'nav11 gbar: ', soma().nav11.gbar
-        elif nach in ['nacn', 'na']:
+        elif nach in ['na', 'nacn']:
             soma().na.gbar = gnabar
             soma.ena = self.e_na
             if debug:

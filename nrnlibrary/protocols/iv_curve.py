@@ -13,6 +13,7 @@ except ImportError:
 from ..util.stim import make_pulse
 from .protocol import Protocol
 
+
 class IVCurve(Protocol):
     def __init__(self):
         super(IVCurve, self).__init__()
@@ -255,7 +256,7 @@ class IVCurve(Protocol):
         
         return slope, intercept
 
-    def show(self):
+    def show(self, cell=None):
         """
         Plot results from run_iv()
         """
@@ -266,9 +267,8 @@ class IVCurve(Protocol):
         # Generate figure with subplots
         #
         app = pg.mkQApp()
-        win = pg.GraphicsWindow()
+        win = pg.GraphicsWindow('%s  %s (%s)' % (cell.status['name'], cell.status['type'], cell.status['species']))
         self.win = win
-        
         win.resize(1000, 800)
         Vplot = win.addPlot(labels={'left': 'Vm (mV)', 'bottom': 'Time (ms)'})
         rightGrid = win.addLayout(rowspan=2)
@@ -326,6 +326,3 @@ class IVCurve(Protocol):
         IVplot.addItem(line, ignoreBounds=True)
         
         print "Resting membrane potential: %0.1f mV\n" % self.rest_vm()
-        
-
-    
