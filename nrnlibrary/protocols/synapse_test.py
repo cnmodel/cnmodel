@@ -20,7 +20,7 @@ class SynapseTest(Protocol):
 
     def run(self, cell, synapse, temp=34.0):
         """ 
-        Test the synapse function. 
+        Basic synapse test.
         Creates a presynaptic HH neuron and connects it to *cell* via *synapse*.
         
         v_pre is the presynaptic voltage
@@ -56,9 +56,6 @@ class SynapseTest(Protocol):
             vccontrol.dur[2] = 20.0
             vccontrol.amp[2] = clampV
 
-
-        
-        
         #
         # set up stimulation of the presynaptic axon/terminal
         #
@@ -97,7 +94,6 @@ class SynapseTest(Protocol):
         
         # create hoc vectors for each parameter we wish to monitor and display
         self['v_pre'] = pre_cell.soma(0.5)._ref_v
-        print "Recording v_pre from %s" % pre_cell.soma.name()
         self['v_calyx'] = terminal[0](0.5)._ref_v
         self['t'] = h._ref_t
         self['v_soma'] = pre_cell.soma(0.5)._ref_v
@@ -156,7 +152,8 @@ class SynapseTest(Protocol):
         
         print 'Synapse.py: all runs done'
     
-    def analyze(self):
+
+    def analyze(self, releasePlot=True, glyPlot=False):
         #
         # Analysis
         #
@@ -166,10 +163,7 @@ class SynapseTest(Protocol):
         coh = self.synapse.coh
         ntrel = np.zeros(nANTerminals)
         nANTerminals_ReleaseZones = self.synapse.zones_per_terminal
-        
-        print "Topology:"
-        h.topology()
-        
+
         #
         # compute some parameters
         #

@@ -99,7 +99,6 @@ def template_multisite(debug=False, parent_section = None, nzones=1, celltype='b
         
     # Create COH4 point process to simulate multiple independent release zones.
     relsite = h.COH4(0.5, sec=terminal)
-    print "Add PP %s to section %s" % (relsite.hname(), terminal.name())
     relsite.nZones = nzones
     relsite.rseed = 2 # int(np.random.random_integers(1,1024))
     relsite.latency = stochastic_pars.latency
@@ -418,8 +417,8 @@ def stellate_epsc(synapse):
 def stellate_ipsc(synapse):
     """ data is average of 3 cells studied with recovery curves and individually fit, 100 Hz """
     synapse.F = 0.23047
-    synapse.k0 = 1.23636 / 1000.0
-    synapse.kmax = 45.34474 / 1000.0
+    synapse.k0 = 1.23636 #/ 1000.0
+    synapse.kmax = 45.34474 #/ 1000.0
     synapse.taud = 98.09
     synapse.kd = 0.01183
     synapse.taus = 17614.50
@@ -658,10 +657,6 @@ def stochastic_synapses(h, parent_section=None, target_section=None, n_fibers=1,
                                                          calcium_pars=calcium_pars,
                                                          identifier=identifier, debug=debug)
         
-        print "Mechanisms after template_multisite:"
-        for m in terminal(0.5):
-            print m.name()
-        
         # and then make a set of postsynaptic zones on the postsynaptic side
         #        print 'PSDTYPE: ', psdtype
         if psdtype == 'ampa':
@@ -698,8 +693,7 @@ def stochastic_synapses(h, parent_section=None, target_section=None, n_fibers=1,
         if terminal != parent_section:
             terminal.connect(parent_section, 1, 0) # 1. connect the terminal to the parent section
         terminal.push()
-        
-        print "NetCon %s => %s  thresh=%s delay=%s" % (terminal.name(), relzone.hname(), thresh, stochastic_pars.delay)
+
         netcons.append(h.NetCon(terminal(0.5)._ref_v, relzone, thresh, stochastic_pars.delay, 1.0))
         netcons[-1].weight[0] = 1
         netcons[-1].threshold = -30.0
@@ -795,10 +789,9 @@ class Synapse(object):
             AN_gMax = 1700.0 / (self.AMPA_Max_Po)
 
         else:
-            raise ValueError("Unknown cell type '%s'" % cellType)
+            raise ValueError("Unknown cell type '%s'" % self.post_cell)
 
         self.zones_per_terminal = nANTerminals_ReleaseZones
-
         #
         # make a multisite synapse (consists of an axon section and a coh point process)
         # synapse is like a calyx or end bulb of Held
@@ -844,6 +837,8 @@ class Synapse(object):
                                     thresh=thresh, psdtype=self.psdType, gmax=AN_gMax, gvar=0.3,
                                     nmda_ratio=0.0, identifier=1,
                                     stochastic_pars=vPars) # set gVar to 0 for testing
+        self.synapse_objs = ret  # MUST store these (NetCons are deleted if refcount drops to 0)
+
         (calyx, coh, psd, cleft, nc2, par) = ret
         self.terminal = calyx
         self.coh = coh

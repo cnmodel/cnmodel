@@ -1,22 +1,21 @@
 from neuron import h
-from ..pynrnutilities import nstomho
-from ..pynrnutilities import mho2ns
 import scipy.optimize
 import numpy as np
+from ..util import nstomho, mho2ns
 
 class Cell(object):
     """
     Base class for all cell types.
     """
     sec_lookup = {}  # create a lookup table to map sections to their parent cell
-    def add_section(self, sec):
-        Cell.sec_lookup[sec.name()] = self
-
+    
     def __init__(self):
-        self.all_sections = {}  # dictionary of all sections associated with this cell
+        # dictionary of all sections associated with this cell
+        self.all_sections = {}
         # the following section types (parts) are known to us:
         for k in ['soma', 'maindend', 'secdend', 'internode', 'initialsegment', 'axonnode']:
             self.all_sections[k] = []  # initialize to an empty list
+        
         # each cell has the following parameters:
         self.totcap = None  # total membrane capacitance (somatic)
         self.somaarea = None  # total soma area
@@ -34,6 +33,44 @@ class Cell(object):
         self.R_a = 150  # axial resistivity of cytoplasm/axoplasm, ohm.cm
         self.e_leak = -65
 
+        # Recommended current (min, max, step) for testing this cell
+        self.i_test_range=(-0.5, 0.5, 0.05)
+        
+        # Recommended threshold for detecting spikes from this cell
+        self.spike_threshold = -40
+        
+        # Resting potential for this cell. Subclasses should modify this
+        # to ensure the cell is initialized properly before protocols.
+        self.vm0 = None
+
+    def add_section(self, sec, sec_type):
+        """
+        Add a section (or list of sections) to this cell. 
+        This adds the section to self.all_sections[sec_type] and also allows 
+        the cell to be accessed from the section using 
+        cells.cell_from_section().
+        
+        Notes:
+        
+        *sec_type* must be one of the keys already in self.all_sections.
+        
+        This method does not connect sections together; that must be 
+        done manually.
+        
+        """
+        if not isinstance(sec, list):
+            sec = [sec]
+        self.all_sections[sec_type].extend(sec)
+        for s in sec:
+            Cell.sec_lookup[s.name()] = self
+    
+    @property
+    def soma(self):
+        """
+        First (or only) section in the "soma" section group.
+        """
+        return self.all_sections['soma'][0]
+
     def print_status(self):
         print("\nCell model: %s" % self.__class__.__name__)
         print(self.__doc__)
@@ -48,12 +85,11 @@ class Cell(object):
         Initialize this cell to it's "rmp" under current conditions
         All sections in the cell are set to the same value
         """
-        self.vm0 = self.find_i0(showinfo=showinfo)
+        if self.vm0 == None:
+            self.vm0 = self.find_i0(showinfo=showinfo)
         for part in self.all_sections.keys():
             for sec in self.all_sections[part]:
                 sec.v = self.vm0
-        h.finitialize()  # do these once for the whole model
-        h.fcurrent()
 
     def get_mechs(self, section):
         """
@@ -186,7 +222,7 @@ class Cell(object):
         """
         v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1])
         if showinfo:
-            print '    Species: %s  cell type: %s' % (self.status['species'], self.status['type'])
+            print '\n  find_i0  Species: %s  cell type: %s' % (self.status['species'], self.status['type'])
             print '    *** found V0 = %f' % v0
             print '    *** using conductances: ', self.ix.keys()
             print '    *** and cell has mechanisms: ', self.mechanisms
@@ -284,9 +320,9 @@ class Cell(object):
         if debug:
             print("<< {:s} Axon Added >>".format(self.__class__.__name__))
             h.topology()
-        self.all_sections['initsegment'].extend(initsegment)
-        self.all_sections['axonnode'].extend(axnode)
-        self.all_sections['internode'].extend(internode)
+        self.add_section(initsegment, 'initsegment')
+        self.add_section(axnode, 'axonnode')
+        self.add_section(internode, 'internode')
 
     @staticmethod
     def loadaxnodes(axnode, somaarea, nodeLength=2.5, nodeDiameter=2.0):
