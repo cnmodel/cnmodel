@@ -99,7 +99,6 @@ def template_multisite(debug=False, parent_section = None, nzones=1, celltype='b
         
     # Create COH4 point process to simulate multiple independent release zones.
     relsite = h.COH4(0.5, sec=terminal)
-    print "Add PP %s to section %s" % (relsite.hname(), terminal.name())
     relsite.nZones = nzones
     relsite.rseed = 2 # int(np.random.random_integers(1,1024))
     relsite.latency = stochastic_pars.latency
@@ -658,10 +657,6 @@ def stochastic_synapses(h, parent_section=None, target_section=None, n_fibers=1,
                                                          calcium_pars=calcium_pars,
                                                          identifier=identifier, debug=debug)
         
-        print "Mechanisms after template_multisite:"
-        for m in terminal(0.5):
-            print m.name()
-        
         # and then make a set of postsynaptic zones on the postsynaptic side
         #        print 'PSDTYPE: ', psdtype
         if psdtype == 'ampa':
@@ -699,7 +694,6 @@ def stochastic_synapses(h, parent_section=None, target_section=None, n_fibers=1,
             terminal.connect(parent_section, 1, 0) # 1. connect the terminal to the parent section
         terminal.push()
         
-        print "NetCon %s => %s  thresh=%s delay=%s" % (terminal.name(), relzone.hname(), thresh, stochastic_pars.delay)
         netcons.append(h.NetCon(terminal(0.5)._ref_v, relzone, thresh, stochastic_pars.delay, 1.0))
         netcons[-1].weight[0] = 1
         netcons[-1].threshold = -30.0

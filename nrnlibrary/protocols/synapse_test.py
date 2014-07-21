@@ -94,7 +94,6 @@ class SynapseTest(Protocol):
         
         # create hoc vectors for each parameter we wish to monitor and display
         self['v_pre'] = pre_cell.soma(0.5)._ref_v
-        print "Recording v_pre from %s" % pre_cell.soma.name()
         self['v_calyx'] = terminal[0](0.5)._ref_v
         self['t'] = h._ref_t
         self['v_soma'] = pre_cell.soma(0.5)._ref_v
@@ -163,9 +162,6 @@ class SynapseTest(Protocol):
         coh = self.synapse.coh
         ntrel = np.zeros(nANTerminals)
         nANTerminals_ReleaseZones = self.synapse.zones_per_terminal
-        
-        print "Topology:"
-        h.topology()
         
         #
         # compute some parameters
