@@ -243,152 +243,6 @@ def template_Gly_PSD_State_GC(sec, debug=False, nReceptors=2, psdtype=None, mess
 
 
 
-"""
-stochastic_synapses routine has a problem: it takes on too many actions,
-preventing it from being more generally useful.
-1. n_fibers should be done through a separate routine
-2. Call to template_multisite should accept a section for insertion, but should
-not create it's own hh type section (that should be provided by the caller).
-
-Proper usage:
-If the goal is to model a single stochastic site, set the section with axon, set
-n_fibers to 1 and n_rzones to 1.
-If the goal os to model multiple stochastic sites from a single presynaptic axon,
-then set n_fibers to 1 and n_rzones to the number of desired sites.
-If the goal is to model all converging inputs, then increase n_fibers.
-Not changing at present, as setting n_fibers to 1 works just fine.
-
-"""
-
-# make the calyx synapses (or just endings on stellate cells)
-# This routine is maintained because it is used in EIModelX.py.
-# This routine is deprecated, in favor of
-# converging_synapses_stochastic() uses n_fibers, calls single site inserts)
-# insert_multisite_stochastic(): inserts nzones associated with a single presynaptic section
-#
-
-def stochastic_synapses(h, parent_section, target_section, terminal,
-                        psdtype='ampa', message=None, debug=False,
-                        thresh=0.0, gmax=1.0, gvar=0, eRev=0,
-                        delay=0,
-                        nmda_ratio=1.0, identifier=0):
-    """ This routine generates the synaptic connections from one presynaptic
-        input onto a postsynaptic cell.
-        Each connection is a stochastic presynaptic synapse ("presynaptic") with
-        depression and facilitation.
-        Each synapse can have  multiple releasesites "releasesites" on the
-        target cell, as set by "NRZones".
-        Each release site releases transmitter using "cleftXmtr"
-        Each release site's transmitter is in turn attached to a PSD at each ending ("psd")
-        Each psd can have a different conductance centered about the mean of
-        gmax, according to a gaussian distribution set by gvar.
-    """
-    parent_cell = cells.cell_from_section(parent_section)
-    target_cell = cells.cell_from_section(target_section)
-    
-    #if cellname not in ['bushy', 'MNTB', 'stellate']:
-        #raise TypeError
-        #exit()
-    #if debug:
-        #print "\nTarget cell  = %s, psdtype = %s" % (cellname, psdtype)
-    #printParams(stochastic_pars)
-    glyslowPoMax = 0.162297  # thse were measured from the kinetic models in Synapses.py, as peak open P for the glycine receptors
-    glyfastPoMax = 0.038475  # also later verified, same numbers...
-    if psdtype == 'glyfast':
-        gmax /= glyfastPoMax  # normalized to maximum open probability for this receptor
-    if psdtype == 'glyslow':
-        gmax /= glyslowPoMax  # normalized to max open prob for the slow receptor.
-    
-    netcons = [] # build list of connections from individual release sites to the mother calyx
-    #        print "Stochastic syn: j = %d of n_fibers = %d n_rzones = %d\n" % (j, n_fibers, n_rzones)
-    relzone = terminal.relsite
-    n_rzones = terminal.n_rzones
-    
-    #
-    # Create cleft mechanisms
-    # 
-    clefts = []
-    if not runQuiet:
-        print "adding %d clefts to terminal " % n_rzones, parent_section
-    for k in range(0, n_rzones):
-        cl = h.cleftXmtr(0.5, sec=target_section)
-        clefts.append(cl) # cleft
-    
-    # and then make a set of postsynaptic zones on the postsynaptic side
-    #        print 'PSDTYPE: ', psdtype
-    if psdtype == 'ampa':
-        (psd, psdn, par, parn) = template_iGluR_PSD(target_section, nReceptors=n_rzones,
-                                                    nmda_ratio=nmda_ratio)
-    elif psdtype == 'glyslow':
-        (psd, par) = template_Gly_PSD_State_Gly6S(target_section, nReceptors=n_rzones,
-                                                    psdtype=psdtype)
-    elif psdtype == 'glyfast':
-        (psd, par) = template_Gly_PSD_State_PL(target_section, nReceptors=n_rzones,
-                                                psdtype=psdtype)
-    elif psdtype == 'glyGC':
-        (psd, par) = template_Gly_PSD_State_GC(target_section, nReceptors=n_rzones,
-                                                psdtype=psdtype)
-    elif psdtype == 'glya5':
-        (psd, par) = template_Gly_PSD_State_Glya5(target_section, nReceptors=n_rzones,
-                                                    psdtype=psdtype)
-    elif psdtype == 'glyexp':
-        (psd, par) = template_Gly_PSD_exp(target_section, nReceptors=n_rzones,
-                                            psdtype=psdtype)
-    else:
-        print "**PSDTYPE IS NOT RECOGNIZED: [%s]\n" % (psdtype)
-        exit()
-        # connect the mechanisms on the presynaptic side together
-    if debug:
-        print 'parent_section: ', parent_section
-    
-    parent_section.push()
-
-    netcons.append(h.NetCon(parent_section(0.5)._ref_v, relzone, thresh, delay, 1.0))
-    netcons[-1].weight[0] = 1
-    netcons[-1].threshold = -30.0
-
-    for k in range(0, n_rzones): # 2. connect each release site to the mother axon
-        if psdtype == 'ampa': # direct connection, no "cleft"
-            relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', psd[k])
-            relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', psdn[k]) # include NMDAR's as well at same release site
-        elif psdtype == 'glyslow' or psdtype == 'glyfast' or psdtype == 'glyexp' or psdtype == 'glya5' or psdtype == 'glyGC':
-            relzone.setpointer(relzone._ref_XMTR[k], 'pre',
-                                clefts[k]) # connect the cleft to the release of transmitter
-            clefts[k].preThresh = 0.1
-            if isinstance(target_cell, cells.TStellate):
-                clefts[k].KV = 531.0 # set cleft transmitter kinetic parameters
-                clefts[k].KU = 4.17
-                clefts[k].XMax = 0.731
-            elif isinstance(target_cell, cells.Bushy):
-                clefts[k].KV = 1e9 # really fast for bushy cells.
-                clefts[k].KU = 4.46
-                clefts[k].XMax = 0.733
-            else:
-                print('Error in cell name, dying:   '), cellname
-                exit()
-            clefts[k].setpointer(clefts[k]._ref_CXmtr, 'XMTR', psd[k]) #connect transmitter release to the PSD
-        else:
-            print "PSDTYPE IS NOT RECOGNIZED: [%s]\n" % (psdtype)
-            exit()
-        v = 1.0 + gvar * np.random.standard_normal()
-        psd[k].gmax = gmax * v # add a little variability - gvar is CV of amplitudes
-        psd[k].Erev = eRev # set the reversal potential
-        if psdtype == 'ampa': # also adjust the nmda receptors at the same synapse
-            psdn[k].gmax = gmax * v
-            psdn[k].Erev = eRev
-    h.pop_section()
-    par = list(par)
-    if psdtype == 'ampa': # include nmda receptors in psd
-        psd.extend(psdn)
-        par.extend(parn)
-    if not runQuiet:
-        if message is not None:
-            print message
-            
-            
-    return (relzone, psd, clefts, netcons, par)
-
-
 
 
 class Synapse(object):
@@ -407,22 +261,18 @@ class Synapse(object):
         # set parameters according to the target cell type
         #
         if isinstance(self.post_cell, cells.TStellate):
-            nANTerminals = 6
             nANTerminals_ReleaseZones = 1
             AN_gMax = 4600.0 / self.AMPA_Max_Po # correct because Po in model is not 1.0
 
         elif isinstance(self.post_cell, cells.DStellateEager):
-            nANTerminals = 12
             nANTerminals_ReleaseZones = 1
             AN_gMax = 4600.0 / self.AMPA_Max_Po # correct because Po in model is not 1.0
 
         elif isinstance(self.post_cell, cells.DStellate):
-            nANTerminals = 12
             nANTerminals_ReleaseZones = 1
             AN_gMax = 4600.0 / self.AMPA_Max_Po # correct because Po in model is not 1.0
 
         elif isinstance(self.post_cell, cells.Bushy):
-            nANTerminals = 3
             nANTerminals_ReleaseZones = 100
             # normally an_gmax would be about 22 nS (22000) total
             # However, if we do this as a "per release site" conductance, we have ~100 pA / 60 mV = 1.7 nS
@@ -468,50 +318,39 @@ class Synapse(object):
             #SOMA = post_cell.soma
 
 
-        #
-        # stochastic_synapses builds the multisite synapse.     
-        #
-        self.synapse_objs = []
-        self.terminal = []
-        self.coh = []
-        self.psd = []
-        for j in range(nANTerminals):
-            # for each fiber, create a presynaptic ending with nzones release sites
-            #NOTE: stochastic_pars must define parameters used by multisite, including:
-                #.delay is the netcon delay between the presynaptic AP and the start of release events
-                #.Latency is the latency to the mean release event... this could be confusing.
-            term = StochasticTerminal(parent_section=pre_sec,
-                                      target_cell=self.post_cell,
-                                        nzones=nANTerminals_ReleaseZones,
-                                        stochastic_pars=vPars,
-                                        calcium_pars=None,
-                                        identifier=1, debug=debug,
-                                        psdtype=self.psdType)
-            
-            # ****************
-            # delay CV is about 0.3 (Sakaba and Takahashi, 2001), assuming delay is about 0.75
-            # This only adjusts the delay to each "terminal" from a single an - so is path length,
-            # but is not the individual site release latency. That is handled in COH4
-            #        if cellname == 'bushy':
-            #            delcv = 0.3*(delay/0.75) # scale by specified delay
-            #            newdelay = delay+delcv*np.random.standard_normal()
-            #            print "delay: %f   newdelay: %f   delcv: %f" % (delay, newdelay, delcv)
-            #            netcons[-1].delay = newdelay # assign a delay to EACH zone that is different...
-            #*****************
-            ret = stochastic_synapses(h, parent_section=pre_sec,
-                                    target_section=post_sec,
-                                    terminal=term,
-                                    eRev=0, debug=debug,
-                                    delay=ANTerminals_Delay,
-                                    thresh=thresh, psdtype=self.psdType, gmax=AN_gMax, gvar=0.3,
-                                    nmda_ratio=0.0, identifier=1,
-                                    ) # set gVar to 0 for testing
-            
-            self.synapse_objs.append(ret)  # MUST store these (NetCons are deleted if refcount drops to 0)
-            (coh, psd, cleft, nc2, par) = ret
-            self.terminal.append(term)
-            self.coh.append(coh)
-            self.psd.extend(psd)
+        # create a presynaptic ending with nzones release sites
+        #NOTE: stochastic_pars must define parameters used by multisite, including:
+            #.delay is the netcon delay between the presynaptic AP and the start of release events
+            #.Latency is the latency to the mean release event... this could be confusing.
+        term = StochasticTerminal(parent_section=pre_sec,
+                                    target_cell=self.post_cell,
+                                    nzones=nANTerminals_ReleaseZones,
+                                    stochastic_pars=vPars,
+                                    calcium_pars=None,
+                                    identifier=1, debug=debug,
+                                    psdtype=self.psdType)
+        
+        # ****************
+        # delay CV is about 0.3 (Sakaba and Takahashi, 2001), assuming delay is about 0.75
+        # This only adjusts the delay to each "terminal" from a single an - so is path length,
+        # but is not the individual site release latency. That is handled in COH4
+        #        if cellname == 'bushy':
+        #            delcv = 0.3*(delay/0.75) # scale by specified delay
+        #            newdelay = delay+delcv*np.random.standard_normal()
+        #            print "delay: %f   newdelay: %f   delcv: %f" % (delay, newdelay, delcv)
+        #            netcons[-1].delay = newdelay # assign a delay to EACH zone that is different...
+        #*****************
+        psd = PSD(parent_section=pre_sec,
+                    target_section=post_sec,
+                    terminal=term,
+                    eRev=0, debug=debug,
+                    delay=ANTerminals_Delay,
+                    thresh=thresh, psdtype=self.psdType, gmax=AN_gMax, gvar=0.3,
+                    nmda_ratio=0.0, identifier=1,
+                    ) # set gVar to 0 for testing
+        
+        self.terminal = term
+        self.psd = psd
         
         # adjust NMDA receptors to match postsynaptic cell
         self.adjust_nmda()
@@ -521,7 +360,7 @@ class Synapse(object):
         k = 0
         kNMDA = -1
         kAMPA = -1
-        for p in self.psd:
+        for p in self.psd.psd:
             if p.hname().find('NMDA', 0, 6) >= 0:
                 if isinstance(self.post_cell, cells.TStellate):
                     p.gNAR = 1.28 * self.AN_Po_Ratio * self.NMDARatio # for T-stellate cells, this yields correct AMPA, NMDA ratio of 1.13 at +40 mV
@@ -895,8 +734,130 @@ class PSD(object):
     May accept either NetCon or pointer inputs from a Terminal, and directly
     modifies the membrane potential and/or ion concentrations of the 
     postsynaptic cell.    
+    
     """
 
+    def __init__(self, parent_section, target_section, terminal,
+                    psdtype='ampa', message=None, debug=False,
+                    thresh=0.0, gmax=1.0, gvar=0, eRev=0,
+                    delay=0,
+                    nmda_ratio=1.0, identifier=0):
+        """ This routine generates the synaptic connections from one presynaptic
+            input onto a postsynaptic cell.
+            Each connection is a stochastic presynaptic synapse ("presynaptic") with
+            depression and facilitation.
+            Each synapse can have  multiple releasesites "releasesites" on the
+            target cell, as set by "NRZones".
+            Each release site releases transmitter using "cleftXmtr"
+            Each release site's transmitter is in turn attached to a PSD at each ending ("psd")
+            Each psd can have a different conductance centered about the mean of
+            gmax, according to a gaussian distribution set by gvar.
+        """
+        parent_cell = cells.cell_from_section(parent_section)
+        target_cell = cells.cell_from_section(target_section)
+        
+        #if cellname not in ['bushy', 'MNTB', 'stellate']:
+            #raise TypeError
+            #exit()
+        #if debug:
+            #print "\nTarget cell  = %s, psdtype = %s" % (cellname, psdtype)
+        #printParams(stochastic_pars)
+        glyslowPoMax = 0.162297  # thse were measured from the kinetic models in Synapses.py, as peak open P for the glycine receptors
+        glyfastPoMax = 0.038475  # also later verified, same numbers...
+        if psdtype == 'glyfast':
+            gmax /= glyfastPoMax  # normalized to maximum open probability for this receptor
+        if psdtype == 'glyslow':
+            gmax /= glyslowPoMax  # normalized to max open prob for the slow receptor.
+        
+        self.netcons = [] # build list of connections from individual release sites to the mother calyx
+        #        print "Stochastic syn: j = %d of n_fibers = %d n_rzones = %d\n" % (j, n_fibers, n_rzones)
+        relzone = terminal.relsite
+        n_rzones = terminal.n_rzones
+        
+        #
+        # Create cleft mechanisms
+        # 
+        clefts = []
+        if not runQuiet:
+            print "adding %d clefts to terminal " % n_rzones, parent_section
+        for k in range(0, n_rzones):
+            cl = h.cleftXmtr(0.5, sec=target_section)
+            clefts.append(cl) # cleft
+        
+        # and then make a set of postsynaptic zones on the postsynaptic side
+        #        print 'PSDTYPE: ', psdtype
+        if psdtype == 'ampa':
+            (psd, psdn, par, parn) = template_iGluR_PSD(target_section, nReceptors=n_rzones,
+                                                        nmda_ratio=nmda_ratio)
+        elif psdtype == 'glyslow':
+            (psd, par) = template_Gly_PSD_State_Gly6S(target_section, nReceptors=n_rzones,
+                                                        psdtype=psdtype)
+        elif psdtype == 'glyfast':
+            (psd, par) = template_Gly_PSD_State_PL(target_section, nReceptors=n_rzones,
+                                                    psdtype=psdtype)
+        elif psdtype == 'glyGC':
+            (psd, par) = template_Gly_PSD_State_GC(target_section, nReceptors=n_rzones,
+                                                    psdtype=psdtype)
+        elif psdtype == 'glya5':
+            (psd, par) = template_Gly_PSD_State_Glya5(target_section, nReceptors=n_rzones,
+                                                        psdtype=psdtype)
+        elif psdtype == 'glyexp':
+            (psd, par) = template_Gly_PSD_exp(target_section, nReceptors=n_rzones,
+                                                psdtype=psdtype)
+        else:
+            print "**PSDTYPE IS NOT RECOGNIZED: [%s]\n" % (psdtype)
+            exit()
+            # connect the mechanisms on the presynaptic side together
+        if debug:
+            print 'parent_section: ', parent_section
+        
+        parent_section.push()
+
+        self.netcons.append(h.NetCon(parent_section(0.5)._ref_v, relzone, thresh, delay, 1.0))
+        self.netcons[-1].weight[0] = 1
+        self.netcons[-1].threshold = -30.0
+
+        for k in range(0, n_rzones): # 2. connect each release site to the mother axon
+            if psdtype == 'ampa': # direct connection, no "cleft"
+                relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', psd[k])
+                relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', psdn[k]) # include NMDAR's as well at same release site
+            elif psdtype == 'glyslow' or psdtype == 'glyfast' or psdtype == 'glyexp' or psdtype == 'glya5' or psdtype == 'glyGC':
+                relzone.setpointer(relzone._ref_XMTR[k], 'pre',
+                                    clefts[k]) # connect the cleft to the release of transmitter
+                clefts[k].preThresh = 0.1
+                if isinstance(target_cell, cells.TStellate):
+                    clefts[k].KV = 531.0 # set cleft transmitter kinetic parameters
+                    clefts[k].KU = 4.17
+                    clefts[k].XMax = 0.731
+                elif isinstance(target_cell, cells.Bushy):
+                    clefts[k].KV = 1e9 # really fast for bushy cells.
+                    clefts[k].KU = 4.46
+                    clefts[k].XMax = 0.733
+                else:
+                    print('Error in cell name, dying:   '), cellname
+                    exit()
+                clefts[k].setpointer(clefts[k]._ref_CXmtr, 'XMTR', psd[k]) #connect transmitter release to the PSD
+            else:
+                print "PSDTYPE IS NOT RECOGNIZED: [%s]\n" % (psdtype)
+                exit()
+            v = 1.0 + gvar * np.random.standard_normal()
+            psd[k].gmax = gmax * v # add a little variability - gvar is CV of amplitudes
+            psd[k].Erev = eRev # set the reversal potential
+            if psdtype == 'ampa': # also adjust the nmda receptors at the same synapse
+                psdn[k].gmax = gmax * v
+                psdn[k].Erev = eRev
+        h.pop_section()
+        par = list(par)
+        if psdtype == 'ampa': # include nmda receptors in psd
+            psd.extend(psdn)
+            par.extend(parn)
+        if not runQuiet:
+            if message is not None:
+                print message
+                
+        self.psd = psd
+        self.clefts = clefts
+        self.par = par
 
 
 

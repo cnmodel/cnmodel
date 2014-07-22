@@ -5,7 +5,6 @@ import pyqtgraph as pg
 
 from neuron import h
 
-from nrnlibrary.synapses import (Params, stochastic_synapses)
 import nrnlibrary.util as util
 from .protocol import Protocol
 from .. import cells
@@ -18,10 +17,10 @@ class SynapseTest(Protocol):
     def reset(self):
         super(SynapseTest, self).reset()
 
-    def run(self, cell, synapse, temp=34.0):
+    def run(self, cell, synapses, temp=34.0):
         """ 
         Basic synapse test.
-        Creates a presynaptic HH neuron and connects it to *cell* via *synapse*.
+        Creates a presynaptic HH neuron and connects it to *cell* via *synapses*.
         
         v_pre is the presynaptic voltage
             v_soma is the postsynaptic voltage
@@ -32,11 +31,17 @@ class SynapseTest(Protocol):
         # create presynaptic cell and wire up network
         #
         pre_cell = cells.HH()
-        synapse.connect(pre_cell.soma, cell.soma, debug=True)
-        psd = synapse.psd
-        terminal = synapse.terminal
-        self.synapse = synapse
+        
+        if not isinstance(synapses, list):
+            synapses = [synapses]
+        
+        for synapse in synapses:
+            synapse.connect(pre_cell.soma, cell.soma, debug=True)
+        self.synapses = synapses
         self.pre_cell = pre_cell
+        self.allpsd = []
+        for syn in synapses:
+            self.allpsd.extend(syn.psd.psd)
 
         VCLAMP = True
         glyPlot = False
@@ -95,10 +100,11 @@ class SynapseTest(Protocol):
         self['v_pre'] = pre_cell.soma(0.5)._ref_v
         self['t'] = h._ref_t
         self['v_soma'] = pre_cell.soma(0.5)._ref_v
-        self['coh'] = synapse.coh[0]._ref_XMTR[0]
+        self['coh'] = synapse.terminal.relsite._ref_XMTR[0]
 
         # make a synapse monitor for each release zone
         k = 0
+        psd = self.allpsd
         for p in psd:
             #self['isyn%03d' % k] = h.Vector(len(psd), 1000)
             self['isyn%03d' % k] = psd[k]._ref_i
@@ -157,11 +163,12 @@ class SynapseTest(Protocol):
         #
         nreq = 0
         nrel = 0
-        nANTerminals = len(self.synapse.terminal)
-        coh = self.synapse.coh
+        nANTerminals = len(self.synapses)
+        coh = [syn.terminal.relsite for syn in self.synapses]
         ntrel = np.zeros(nANTerminals)
-        nANTerminals_ReleaseZones = self.synapse.zones_per_terminal
-
+        nANTerminals_ReleaseZones = self.synapses[0].zones_per_terminal
+        psd = self.allpsd
+        
         #
         # compute some parameters
         #
@@ -181,12 +188,12 @@ class SynapseTest(Protocol):
         print 'nreq: %d\n' % nreq
         if nreq > 0:
             print 'Rel Prob: %8.3f\n' % (float(nrel) / nreq)
-        if self.synapse.kNMDA >= 0:
+        if self.synapses[0].kNMDA >= 0:
             nmOmax = self['nmOpen'].max()
             amOmax = self['amOpen'].max()
             print 'Synapse.py: Max NMDAR Open Prob: %f   AMPA Open Prob: %f\n' % (nmOmax, amOmax)
-            nmImax = self['isyn%03d' % self.synapse.kNMDA].max()
-            amImax = self['isyn%03d' % self.synapse.kAMPA].max()
+            nmImax = self['isyn%03d' % self.synapses[0].kNMDA].max()
+            amImax = self['isyn%03d' % self.synapses[0].kAMPA].max()
             if nmImax + amImax > 0.0:
                 print 'Synapse.py: Max NMDAR I: %f   AMPA I: %f, N/(N+A): %f\n' % (
                     nmImax, amImax, nmImax / (nmImax + amImax))
@@ -221,14 +228,14 @@ class SynapseTest(Protocol):
             k = 0
             for p in self.synapse.psd:
                 if p.hname().find('NMDA', 0, 6) >= 0:
-                    g5.plot(t, self['isyn%03d' % self.synapse.kNMDA]) # current through nmdar
+                    g5.plot(t, self['isyn%03d' % self.synapses[0].kNMDA]) # current through nmdar
                 k = k + 1
             g5.axes.set_ylabel('inmda')
             g6 = mpl.subplot2grid((5, 1), (5, 0))
             k = 0
             for p in self.synapse.psd:
                 if p.hname().find('NMDA', 0, 6) < 0:
-                    g6.plot(t, self['isyn%03d' % self.synapse.kAMPA]) # glutamate
+                    g6.plot(t, self['isyn%03d' % self.synapses[0].kAMPA]) # glutamate
                 k = k + 1
             g6.axes.set_ylabel('iAMPA')
 
