@@ -242,234 +242,6 @@ def template_Gly_PSD_State_GC(sec, debug=False, nReceptors=2, psdtype=None, mess
     return (psd, par)
 
 
-################################################################################
-# The following routines set the synapse dynamics, based on measurements and fit
-# to the Dittman-Regehr model.
-################################################################################
-
-def setDF(coh, target_cell, synapsetype, select=None):
-    """ set the parameters for the calyx release model ...
-        These paramteres were obtained from an optimized fit of the Dittman-Regehr
-        model to stimulus and recovery data for the synapses at 100, 200 and 300 Hz,
-        for times out to about 0.5 - 1.0 second. Data from Ruili Xie and Yong Wang.
-        Fitting by Paul Manis
-    """
-    if isinstance(target_cell, cells.Bushy):
-        if synapsetype == 'epsc':
-            coh = bushy_epsc(coh)
-        if synapsetype == 'ipsc':
-            if select is None:
-                coh = bushy_ipsc_average(coh)
-            else:
-                coh = bushy_ipsc_single(coh, select=select)
-    elif isinstance(target_cell, cells.TStellate):
-        if synapsetype == 'epsc':
-            coh = stellate_epsc(coh)
-        if synapsetype == 'ipsc':
-            coh = stellate_ipsc(coh)
-    return (coh)
-
-
-def bushy_epsc(synapse):
-    """ data is average of 3 cells studied with recovery curves and individually fit """
-    synapse.F = 0.29366
-    synapse.k0 = 0.52313 / 1000.0
-    synapse.kmax = 19.33805 / 1000.0
-    synapse.taud = 15.16
-    synapse.kd = 0.11283
-    synapse.taus = 17912.2
-    synapse.ks = 11.531
-    synapse.kf = 17.78
-    synapse.tauf = 9.75
-    synapse.dD = 0.57771
-    synapse.dF = 0.60364
-    synapse.glu = 2.12827
-    return (synapse)
-
-
-def stellate_epsc(synapse):
-    """ data is average of 3 cells studied with recovery curves and individually fit """
-    synapse.F = 0.43435
-    synapse.k0 = 0.06717 / 1000.0
-    synapse.kmax = 52.82713 / 1000.0
-    synapse.taud = 3.98
-    synapse.kd = 0.08209
-    synapse.taus = 16917.120
-    synapse.ks = 14.24460
-    synapse.kf = 18.16292
-    synapse.tauf = 11.38
-    synapse.dD = 2.46535
-    synapse.dF = 1.44543
-    synapse.glu = 5.86564
-    return (synapse)
-
-
-def stellate_ipsc(synapse):
-    """ data is average of 3 cells studied with recovery curves and individually fit, 100 Hz """
-    synapse.F = 0.23047
-    synapse.k0 = 1.23636 #/ 1000.0
-    synapse.kmax = 45.34474 #/ 1000.0
-    synapse.taud = 98.09
-    synapse.kd = 0.01183
-    synapse.taus = 17614.50
-    synapse.ks = 17.88618
-    synapse.kf = 19.11424
-    synapse.tauf = 32.28
-    synapse.dD = 2.52072
-    synapse.dF = 2.33317
-    synapse.glu = 3.06948
-    return (synapse)
-
-
-def bushy_ipsc_average(synapse):
-    """average of 16 Bushy cells. Done differently than other averages.
-    The individual fits were compiled, and an average computed for just the 100 Hz data
-    across the individual fits. This average was then fit to the function of Dittman and Regeher
-    (also in Xu-Friedman's papers). 
-    The individual cells show a great deal of variability, from straight depression, to 
-    depression/facilitaiton mixed, to facilation alone. This set of parameters generates
-    a weak facilitaiton followed by depression back to baseline.
-    """
-    print "USING average kinetics for Bushy IPSCs"
-
-    # average of 16cells for 100 Hz (to model); no recovery.
-    synapse.F = 0.18521
-    synapse.k0 = 2.29700
-    synapse.kmax = 27.6667
-    synapse.taud = 0.12366
-    synapse.kd = 0.12272
-    synapse.taus = 9.59624
-    synapse.ks = 8.854469
-    synapse.kf = 5.70771
-    synapse.tauf = 0.37752
-    synapse.dD = 4.00335
-    synapse.dF = 0.72605
-    synapse.glu = 5.61985
-
-    # estimates for 400 Hz
-    # synapse.F = 0.09
-    # synapse.k0 = 1.2;
-    # synapse.kmax = 30.;
-    # synapse.taud = 0.01
-    # synapse.kd = 0.75
-    # synapse.taus = 0.015
-    # synapse.ks = 1000.0
-    # synapse.kf = 5.0
-    # synapse.tauf = 0.3
-    # synapse.dD = 1.0
-    # synapse.dF = 0.025
-    # synapse.glu = 4
-
-    # synapse.F = 0.085426
-    # synapse.k0 = 1.199372
-    # synapse.kmax = 24.204277
-    # synapse.taud = 0.300000
-    # synapse.kd = 1.965292
-    # synapse.taus = 2.596443
-    # synapse.ks = 0.056385
-    # synapse.kf = 0.721157
-    # synapse.tauf = 0.034560
-    # synapse.dD = 0.733980
-    # synapse.dF = 0.025101
-    # synapse.glu = 3.877192
-
-    # average of 8 cells, all at 100 Hz with no recovery
-    # synapse.F =    0.2450
-    # synapse.k0 =   1.6206/1000.0
-    # synapse.kmax = 26.0607/1000.0
-    # synapse.taud = 0.0798
-    # synapse.kd =   0.9679
-    # synapse.taus = 9.3612
-    # synapse.ks =   14.3474
-    # synapse.kf =    4.2168
-    # synapse.tauf =  0.1250
-    # synapse.dD =    4.2715
-    # synapse.dF =    0.6322
-    # synapse.glu =   8.6160
-
-    # average of 5 cells, mostly 100 Hz, but some 50, 200 and 400
-    # synapse.F =    0.15573
-    # synapse.k0 =   2.32272/1000.
-    # synapse.kmax = 28.98878/1000.
-    # synapse.taud = 0.16284
-    # synapse.kd =   2.52092
-    # synapse.taus = 17.97092
-    # synapse.ks =   19.63906
-    # synapse.kf =   7.44154
-    # synapse.tauf = 0.10193
-    # synapse.dD =   2.36659
-    # synapse.dF =   0.38516
-    # synapse.glu =  8.82600
-
-    #original average - probably skewed.
-    # synapse.F = 0.23382
-    # synapse.k0 = 0.67554/1000.0
-    # synapse.kmax = 52.93832/1000.0
-    # synapse.taud = 8.195
-    # synapse.kd = 0.28734
-    # synapse.taus = 17.500
-    # synapse.ks = 4.57098
-    # synapse.kf = 16.21564
-    # synapse.tauf = 123.36
-    # synapse.dD = 2.21580
-    # synapse.dF = 1.17146
-    # synapse.glu = 1.90428
-    return (synapse)
-
-
-def bushy_ipsc_single(synapse, select=None):
-    """ data is from 31aug08b (single cell, clean dataset)"""
-    print "Using bushy ipsc"
-
-    if select is None or select > 4 or select <= 0:
-        return (bushy_ipsc_average(synapse))
-
-    if select is 1: # 30aug08f
-        print "using 30aug08f ipsc"
-        synapse.F = 0.221818
-        synapse.k0 = 0.003636364
-        synapse.kmax = 0.077562107
-        synapse.taud = 0.300000
-        synapse.kd = 1.112554
-        synapse.taus = 3.500000
-        synapse.ks = 0.600000
-        synapse.kf = 3.730452
-        synapse.tauf = 0.592129
-        synapse.dD = 0.755537
-        synapse.dF = 2.931578
-        synapse.glu = 1.000000
-
-    if select is 2: #30aug08h
-        print "using 30aug08H ipsc"
-        synapse.F = 0.239404
-        synapse.k0 = 3.636364 / 1000.
-        synapse.kmax = 16.725479 / 1000.
-        synapse.taud = 0.137832
-        synapse.kd = 0.000900
-        synapse.taus = 3.500000
-        synapse.ks = 0.600000
-        synapse.kf = 4.311995
-        synapse.tauf = 0.014630
-        synapse.dD = 3.326148
-        synapse.dF = 0.725512
-        synapse.glu = 1.000000
-
-    if select is 3:
-        print "using IPSC#3 "
-        synapse.F = 0.29594
-        synapse.k0 = 0.44388 / 1000.0
-        synapse.kmax = 15.11385 / 1000.0
-        synapse.taud = 0.00260
-        synapse.kd = 0.00090
-        synapse.taus = 11.40577
-        synapse.ks = 27.98783
-        synapse.kf = 30.00000
-        synapse.tauf = 0.29853
-        synapse.dD = 3.70000
-        synapse.dF = 2.71163
-        synapse.glu = 4.97494
-
-    return (synapse)
 
 """
 stochastic_synapses routine has a problem: it takes on too many actions,
@@ -558,9 +330,9 @@ def stochastic_synapses(h, parent_section=None, target_section=None, n_rzones=1,
     # and then make a set of postsynaptic zones on the postsynaptic side
     #        print 'PSDTYPE: ', psdtype
     if psdtype == 'ampa':
-        relzone = setDF(relzone, target_cell, 'epsc') # set the parameters for release
+        terminal.setDF(target_cell, 'epsc') # set the parameters for release
     elif psdtype == 'glyslow' or psdtype == 'glyfast' or psdtype == 'glyexp' or psdtype == 'glya5' or psdtype == 'glyGC':
-        relzone = setDF(relzone, target_cell, 'ipsc', select) # set the parameters for release
+        terminal.setDF(target_cell, 'ipsc', select) # set the parameters for release
     
     
     if psdtype == 'ampa':
@@ -586,7 +358,6 @@ def stochastic_synapses(h, parent_section=None, target_section=None, n_rzones=1,
         exit()
         # connect the mechanisms on the presynaptic side together
     if debug:
-        print 'terminal: ', terminal
         print 'parent_section: ', parent_section
     
     parent_section.push()
@@ -890,6 +661,227 @@ class StochasticTerminal(object):
             relsite.TAmp = 1.56625
         h.pop_section()
         self.relsite = relsite
+
+    ################################################################################
+    # The following routines set the synapse dynamics, based on measurements and fit
+    # to the Dittman-Regehr model.
+    ################################################################################
+
+    def setDF(self, target_cell, synapsetype, select=None):
+        """ set the parameters for the calyx release model ...
+            These paramteres were obtained from an optimized fit of the Dittman-Regehr
+            model to stimulus and recovery data for the synapses at 100, 200 and 300 Hz,
+            for times out to about 0.5 - 1.0 second. Data from Ruili Xie and Yong Wang.
+            Fitting by Paul Manis
+        """
+        if isinstance(target_cell, cells.Bushy):
+            if synapsetype == 'epsc':
+                self.bushy_epsc()
+            if synapsetype == 'ipsc':
+                if select is None:
+                    self.bushy_ipsc_average()
+                else:
+                    self.bushy_ipsc_single(select=select)
+        elif isinstance(target_cell, cells.TStellate):
+            if synapsetype == 'epsc':
+                self.stellate_epsc()
+            if synapsetype == 'ipsc':
+                self.stellate_ipsc()
+
+    def bushy_epsc(self):
+        """ data is average of 3 cells studied with recovery curves and individually fit """
+        self.relsite.F = 0.29366
+        self.relsite.k0 = 0.52313 / 1000.0
+        self.relsite.kmax = 19.33805 / 1000.0
+        self.relsite.taud = 15.16
+        self.relsite.kd = 0.11283
+        self.relsite.taus = 17912.2
+        self.relsite.ks = 11.531
+        self.relsite.kf = 17.78
+        self.relsite.tauf = 9.75
+        self.relsite.dD = 0.57771
+        self.relsite.dF = 0.60364
+        self.relsite.glu = 2.12827
+
+    def stellate_epsc(self):
+        """ data is average of 3 cells studied with recovery curves and individually fit """
+        self.relsite.F = 0.43435
+        self.relsite.k0 = 0.06717 / 1000.0
+        self.relsite.kmax = 52.82713 / 1000.0
+        self.relsite.taud = 3.98
+        self.relsite.kd = 0.08209
+        self.relsite.taus = 16917.120
+        self.relsite.ks = 14.24460
+        self.relsite.kf = 18.16292
+        self.relsite.tauf = 11.38
+        self.relsite.dD = 2.46535
+        self.relsite.dF = 1.44543
+        self.relsite.glu = 5.86564
+
+
+    def stellate_ipsc(self):
+        """ data is average of 3 cells studied with recovery curves and individually fit, 100 Hz """
+        self.relsite.F = 0.23047
+        self.relsite.k0 = 1.23636 #/ 1000.0
+        self.relsite.kmax = 45.34474 #/ 1000.0
+        self.relsite.taud = 98.09
+        self.relsite.kd = 0.01183
+        self.relsite.taus = 17614.50
+        self.relsite.ks = 17.88618
+        self.relsite.kf = 19.11424
+        self.relsite.tauf = 32.28
+        self.relsite.dD = 2.52072
+        self.relsite.dF = 2.33317
+        self.relsite.glu = 3.06948
+
+    def bushy_ipsc_average(self):
+        """average of 16 Bushy cells. Done differently than other averages.
+        The individual fits were compiled, and an average computed for just the 100 Hz data
+        across the individual fits. This average was then fit to the function of Dittman and Regeher
+        (also in Xu-Friedman's papers). 
+        The individual cells show a great deal of variability, from straight depression, to 
+        depression/facilitaiton mixed, to facilation alone. This set of parameters generates
+        a weak facilitaiton followed by depression back to baseline.
+        """
+        print "USING average kinetics for Bushy IPSCs"
+
+        # average of 16cells for 100 Hz (to model); no recovery.
+        self.relsite.F = 0.18521
+        self.relsite.k0 = 2.29700
+        self.relsite.kmax = 27.6667
+        self.relsite.taud = 0.12366
+        self.relsite.kd = 0.12272
+        self.relsite.taus = 9.59624
+        self.relsite.ks = 8.854469
+        self.relsite.kf = 5.70771
+        self.relsite.tauf = 0.37752
+        self.relsite.dD = 4.00335
+        self.relsite.dF = 0.72605
+        self.relsite.glu = 5.61985
+
+        # estimates for 400 Hz
+        # self.relsite.F = 0.09
+        # self.relsite.k0 = 1.2;
+        # self.relsite.kmax = 30.;
+        # self.relsite.taud = 0.01
+        # self.relsite.kd = 0.75
+        # self.relsite.taus = 0.015
+        # self.relsite.ks = 1000.0
+        # self.relsite.kf = 5.0
+        # self.relsite.tauf = 0.3
+        # self.relsite.dD = 1.0
+        # self.relsite.dF = 0.025
+        # self.relsite.glu = 4
+
+        # self.relsite.F = 0.085426
+        # self.relsite.k0 = 1.199372
+        # self.relsite.kmax = 24.204277
+        # self.relsite.taud = 0.300000
+        # self.relsite.kd = 1.965292
+        # self.relsite.taus = 2.596443
+        # self.relsite.ks = 0.056385
+        # self.relsite.kf = 0.721157
+        # self.relsite.tauf = 0.034560
+        # self.relsite.dD = 0.733980
+        # self.relsite.dF = 0.025101
+        # self.relsite.glu = 3.877192
+
+        # average of 8 cells, all at 100 Hz with no recovery
+        # self.relsite.F =    0.2450
+        # self.relsite.k0 =   1.6206/1000.0
+        # self.relsite.kmax = 26.0607/1000.0
+        # self.relsite.taud = 0.0798
+        # self.relsite.kd =   0.9679
+        # self.relsite.taus = 9.3612
+        # self.relsite.ks =   14.3474
+        # self.relsite.kf =    4.2168
+        # self.relsite.tauf =  0.1250
+        # self.relsite.dD =    4.2715
+        # self.relsite.dF =    0.6322
+        # self.relsite.glu =   8.6160
+
+        # average of 5 cells, mostly 100 Hz, but some 50, 200 and 400
+        # self.relsite.F =    0.15573
+        # self.relsite.k0 =   2.32272/1000.
+        # self.relsite.kmax = 28.98878/1000.
+        # self.relsite.taud = 0.16284
+        # self.relsite.kd =   2.52092
+        # self.relsite.taus = 17.97092
+        # self.relsite.ks =   19.63906
+        # self.relsite.kf =   7.44154
+        # self.relsite.tauf = 0.10193
+        # self.relsite.dD =   2.36659
+        # self.relsite.dF =   0.38516
+        # self.relsite.glu =  8.82600
+
+        #original average - probably skewed.
+        # self.relsite.F = 0.23382
+        # self.relsite.k0 = 0.67554/1000.0
+        # self.relsite.kmax = 52.93832/1000.0
+        # self.relsite.taud = 8.195
+        # self.relsite.kd = 0.28734
+        # self.relsite.taus = 17.500
+        # self.relsite.ks = 4.57098
+        # self.relsite.kf = 16.21564
+        # self.relsite.tauf = 123.36
+        # self.relsite.dD = 2.21580
+        # self.relsite.dF = 1.17146
+        # self.relsite.glu = 1.90428
+
+
+    def bushy_ipsc_single(self, select=None):
+        """ data is from 31aug08b (single cell, clean dataset)"""
+        print "Using bushy ipsc"
+
+        if select is None or select > 4 or select <= 0:
+            bushy_ipsc_average()
+            return
+
+        if select is 1: # 30aug08f
+            print "using 30aug08f ipsc"
+            self.relsite.F = 0.221818
+            self.relsite.k0 = 0.003636364
+            self.relsite.kmax = 0.077562107
+            self.relsite.taud = 0.300000
+            self.relsite.kd = 1.112554
+            self.relsite.taus = 3.500000
+            self.relsite.ks = 0.600000
+            self.relsite.kf = 3.730452
+            self.relsite.tauf = 0.592129
+            self.relsite.dD = 0.755537
+            self.relsite.dF = 2.931578
+            self.relsite.glu = 1.000000
+
+        if select is 2: #30aug08h
+            print "using 30aug08H ipsc"
+            self.relsite.F = 0.239404
+            self.relsite.k0 = 3.636364 / 1000.
+            self.relsite.kmax = 16.725479 / 1000.
+            self.relsite.taud = 0.137832
+            self.relsite.kd = 0.000900
+            self.relsite.taus = 3.500000
+            self.relsite.ks = 0.600000
+            self.relsite.kf = 4.311995
+            self.relsite.tauf = 0.014630
+            self.relsite.dD = 3.326148
+            self.relsite.dF = 0.725512
+            self.relsite.glu = 1.000000
+
+        if select is 3:
+            print "using IPSC#3 "
+            self.relsite.F = 0.29594
+            self.relsite.k0 = 0.44388 / 1000.0
+            self.relsite.kmax = 15.11385 / 1000.0
+            self.relsite.taud = 0.00260
+            self.relsite.kd = 0.00090
+            self.relsite.taus = 11.40577
+            self.relsite.ks = 27.98783
+            self.relsite.kf = 30.00000
+            self.relsite.tauf = 0.29853
+            self.relsite.dD = 3.70000
+            self.relsite.dF = 2.71163
+            self.relsite.glu = 4.97494
+
 
 
 class PSD(object):
