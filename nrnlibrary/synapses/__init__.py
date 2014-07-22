@@ -267,11 +267,11 @@ Not changing at present, as setting n_fibers to 1 works just fine.
 # insert_multisite_stochastic(): inserts nzones associated with a single presynaptic section
 #
 
-def stochastic_synapses(h, parent_section=None, target_section=None, n_rzones=1,
+def stochastic_synapses(h, parent_section, target_section, terminal,
                         psdtype='ampa', message=None, debug=False,
                         thresh=0.0, gmax=1.0, gvar=0, eRev=0,
-                        stochastic_pars=None, calcium_pars=None,
-                        nmda_ratio=1.0, select=None, identifier=0):
+                        delay=0,
+                        nmda_ratio=1.0, identifier=0):
     """ This routine generates the synaptic connections from one presynaptic
         input onto a postsynaptic cell.
         Each connection is a stochastic presynaptic synapse ("presynaptic") with
@@ -282,16 +282,10 @@ def stochastic_synapses(h, parent_section=None, target_section=None, n_rzones=1,
         Each release site's transmitter is in turn attached to a PSD at each ending ("psd")
         Each psd can have a different conductance centered about the mean of
         gmax, according to a gaussian distribution set by gvar.
-        NOTE: stochastic_pars must define parameters used by multisite, including:
-            .delay is the netcon delay between the presynaptic AP and the start of release events
-            .Latency is the latency to the mean release event... this could be confusing.
     """
     parent_cell = cells.cell_from_section(parent_section)
     target_cell = cells.cell_from_section(target_section)
     
-    if stochastic_pars is None:
-        raise TypeError
-        exit()
     #if cellname not in ['bushy', 'MNTB', 'stellate']:
         #raise TypeError
         #exit()
@@ -307,13 +301,8 @@ def stochastic_synapses(h, parent_section=None, target_section=None, n_rzones=1,
     
     netcons = [] # build list of connections from individual release sites to the mother calyx
     #        print "Stochastic syn: j = %d of n_fibers = %d n_rzones = %d\n" % (j, n_fibers, n_rzones)
-    # for each fiber, create a presynaptic ending with nzones release sites
-    terminal = StochasticTerminal(parent_section=parent_section,
-                                    nzones=n_rzones,
-                                    stochastic_pars=stochastic_pars,
-                                    calcium_pars=calcium_pars,
-                                    identifier=identifier, debug=debug)
     relzone = terminal.relsite
+    n_rzones = terminal.n_rzones
     
     #
     # Create cleft mechanisms
@@ -322,19 +311,11 @@ def stochastic_synapses(h, parent_section=None, target_section=None, n_rzones=1,
     if not runQuiet:
         print "adding %d clefts to terminal " % n_rzones, parent_section
     for k in range(0, n_rzones):
-        parent_section.push()
-        cl = h.cleftXmtr(0.5, sec=parent_section)
-        h.pop_section()
+        cl = h.cleftXmtr(0.5, sec=target_section)
         clefts.append(cl) # cleft
     
     # and then make a set of postsynaptic zones on the postsynaptic side
     #        print 'PSDTYPE: ', psdtype
-    if psdtype == 'ampa':
-        terminal.setDF(target_cell, 'epsc') # set the parameters for release
-    elif psdtype == 'glyslow' or psdtype == 'glyfast' or psdtype == 'glyexp' or psdtype == 'glya5' or psdtype == 'glyGC':
-        terminal.setDF(target_cell, 'ipsc', select) # set the parameters for release
-    
-    
     if psdtype == 'ampa':
         (psd, psdn, par, parn) = template_iGluR_PSD(target_section, nReceptors=n_rzones,
                                                     nmda_ratio=nmda_ratio)
@@ -362,19 +343,9 @@ def stochastic_synapses(h, parent_section=None, target_section=None, n_rzones=1,
     
     parent_section.push()
 
-    netcons.append(h.NetCon(parent_section(0.5)._ref_v, relzone, thresh, stochastic_pars.delay, 1.0))
+    netcons.append(h.NetCon(parent_section(0.5)._ref_v, relzone, thresh, delay, 1.0))
     netcons[-1].weight[0] = 1
     netcons[-1].threshold = -30.0
-    # ****************
-    # delay CV is about 0.3 (Sakaba and Takahashi, 2001), assuming delay is about 0.75
-    # This only adjusts the delay to each "terminal" from a single an - so is path length,
-    # but is not the individual site release latency. That is handled in COH4
-    #        if cellname == 'bushy':
-    #            delcv = 0.3*(delay/0.75) # scale by specified delay
-    #            newdelay = delay+delcv*np.random.standard_normal()
-    #            print "delay: %f   newdelay: %f   delcv: %f" % (delay, newdelay, delcv)
-    #            netcons[-1].delay = newdelay # assign a delay to EACH zone that is different...
-    #*****************
 
     for k in range(0, n_rzones): # 2. connect each release site to the mother axon
         if psdtype == 'ampa': # direct connection, no "cleft"
@@ -415,7 +386,7 @@ def stochastic_synapses(h, parent_section=None, target_section=None, n_rzones=1,
             print message
             
             
-    return (terminal, relzone, psd, clefts, netcons, par)
+    return (relzone, psd, clefts, netcons, par)
 
 
 
@@ -481,7 +452,7 @@ class Synapse(object):
         # that were previously defined in the call to that function.
         vPars = Params(LN_Flag=1, LN_t0=10.0, LN_A0=0.05, LN_tau=35, LN_std=0.05,
                     Lat_Flag=1, Lat_t0=10.0, Lat_A0=0.140, Lat_tau=21.5,
-                    delay=ANTerminals_Delay, latency=ANTerminals_Latency)
+                    latency=ANTerminals_Latency)
 
         #printParams(vPars)
         # LC: disabled this -- let the user decide which sections to connect.
@@ -505,16 +476,39 @@ class Synapse(object):
         self.coh = []
         self.psd = []
         for j in range(nANTerminals):
+            # for each fiber, create a presynaptic ending with nzones release sites
+            #NOTE: stochastic_pars must define parameters used by multisite, including:
+                #.delay is the netcon delay between the presynaptic AP and the start of release events
+                #.Latency is the latency to the mean release event... this could be confusing.
+            term = StochasticTerminal(parent_section=pre_sec,
+                                      target_cell=self.post_cell,
+                                        nzones=nANTerminals_ReleaseZones,
+                                        stochastic_pars=vPars,
+                                        calcium_pars=None,
+                                        identifier=1, debug=debug,
+                                        psdtype=self.psdType)
+            
+            # ****************
+            # delay CV is about 0.3 (Sakaba and Takahashi, 2001), assuming delay is about 0.75
+            # This only adjusts the delay to each "terminal" from a single an - so is path length,
+            # but is not the individual site release latency. That is handled in COH4
+            #        if cellname == 'bushy':
+            #            delcv = 0.3*(delay/0.75) # scale by specified delay
+            #            newdelay = delay+delcv*np.random.standard_normal()
+            #            print "delay: %f   newdelay: %f   delcv: %f" % (delay, newdelay, delcv)
+            #            netcons[-1].delay = newdelay # assign a delay to EACH zone that is different...
+            #*****************
             ret = stochastic_synapses(h, parent_section=pre_sec,
                                     target_section=post_sec,
-                                    n_rzones=nANTerminals_ReleaseZones,
+                                    terminal=term,
                                     eRev=0, debug=debug,
+                                    delay=ANTerminals_Delay,
                                     thresh=thresh, psdtype=self.psdType, gmax=AN_gMax, gvar=0.3,
                                     nmda_ratio=0.0, identifier=1,
-                                    stochastic_pars=vPars) # set gVar to 0 for testing
+                                    ) # set gVar to 0 for testing
             
             self.synapse_objs.append(ret)  # MUST store these (NetCons are deleted if refcount drops to 0)
-            (term, coh, psd, cleft, nc2, par) = ret
+            (coh, psd, cleft, nc2, par) = ret
             self.terminal.append(term)
             self.coh.append(coh)
             self.psd.extend(psd)
@@ -564,9 +558,9 @@ class StochasticTerminal(object):
     """
     Axon terminal with multi-site sctochastic release mechanism.    
     """
-    def __init__(self, parent_section, nzones=1, celltype='bushy', message=None,
+    def __init__(self, parent_section, target_cell, nzones=1, celltype='bushy', message=None,
                 type='lognormal', identifier=0, stochastic_pars=None, calcium_pars=None,
-                debug=False):
+                debug=False, psdtype=None, select=None):
         """
         This routine creates a (potentially) multisite synapse with:
             A MultiSiteSynapse release mechanism that includes stochastic release, with a lognormal
@@ -661,6 +655,17 @@ class StochasticTerminal(object):
             relsite.TAmp = 1.56625
         h.pop_section()
         self.relsite = relsite
+        self.n_rzones = nzones
+
+        if psdtype is not None:
+            self.setPsdType(psdtype, target_cell, select)
+
+    def setPsdType(self, psdtype, target_cell, select=None):
+        if psdtype == 'ampa':
+            self.setDF(target_cell, 'epsc') # set the parameters for release
+        elif psdtype.startswith('gly'):
+            self.setDF(target_cell, 'ipsc', select) # set the parameters for release
+        
 
     ################################################################################
     # The following routines set the synapse dynamics, based on measurements and fit
