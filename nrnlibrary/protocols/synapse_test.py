@@ -25,7 +25,6 @@ class SynapseTest(Protocol):
         
         v_pre is the presynaptic voltage
             v_soma is the postsynaptic voltage
-            v_calyx is the calyx voltage
             coh is the calyx of held state
             isyn is the synaptic current
         """
@@ -84,7 +83,7 @@ class SynapseTest(Protocol):
         # set up recordings
         #
         #self = {}
-        #for var in ['v_pre', 'v_soma', 'i_soma', 'v_calyx', 'coh', 't', 'C0', 'C1', 'i_stim',
+        #for var in ['v_pre', 'v_soma', 'i_soma', 'coh', 't', 'C0', 'C1', 'i_stim',
                     #'C2', 'C3', 'D', 'O1', 'O2', 'D1', 'D2', 'D3', 'Open', 'nmOpen', 'amOpen']:
             #self[var] = h.Vector()
         
@@ -94,7 +93,6 @@ class SynapseTest(Protocol):
         
         # create hoc vectors for each parameter we wish to monitor and display
         self['v_pre'] = pre_cell.soma(0.5)._ref_v
-        self['v_calyx'] = terminal[0](0.5)._ref_v
         self['t'] = h._ref_t
         self['v_soma'] = pre_cell.soma(0.5)._ref_v
         self['coh'] = synapse.coh[0]._ref_XMTR[0]
@@ -214,7 +212,7 @@ class SynapseTest(Protocol):
             g2 = mpl.subplot2grid((5, 1), (1, 0), rowspan=1)
             g2.plot(t, self.isoma, color='cyan')
             g3 = mpl.subplot2grid((5, 1), (2, 0))
-            g3.plot(t, self['v_calyx'], color='blue')
+            g3.plot(t, self['v_pre'], color='blue')
             g3.plot(t, self['v_soma'], color='red')
             g4 = mpl.subplot2grid((5, 1), (3, 0))
             p4 = g4.plot(t, self['coh']) # glutamate
