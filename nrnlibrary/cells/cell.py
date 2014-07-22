@@ -39,8 +39,8 @@ class Cell(object):
         # Recommended threshold for detecting spikes from this cell
         self.spike_threshold = -40
         
-        # Resting potential for this cell. Subclasses should modify this
-        # to ensure the cell is initialized properly before protocols.
+        # Resting potential for this cell, determined by calling
+        # self.find_i0()
         self.vm0 = None
 
     def add_section(self, sec, sec_type):
@@ -85,7 +85,7 @@ class Cell(object):
         Initialize this cell to it's "rmp" under current conditions
         All sections in the cell are set to the same value
         """
-        if self.vm0 == None:
+        if self.vm0 is None:
             self.vm0 = self.find_i0(showinfo=showinfo)
         for part in self.all_sections.keys():
             for sec in self.all_sections[part]:
@@ -127,31 +127,6 @@ class Cell(object):
                 print('{0:>12s} : <no gbar> '.format(m))
         print '-'*32
 
-    def custom_init(self, vinit):
-        """
-        perform a custom initialization of the current section to vinit
-        """
-        initdur = 1e-9
-        tdt = h.dt
-        dtstep = 1e7
-        h.finitialize(vinit)
-        h.t = -initdur
-        tmp = h.cvode.active()
-        if tmp != 0:
-            h.cvode.active(0)
-        h.dt = dtstep
-        while h.t < 0:
-            h.fadvance()
-        if tmp != 0:
-            h.cvode.active(1)
-        h.t = 0
-        if h.cvode.active():
-            h.cvode.re_init()
-        else:
-            h.fcurrent()
-        h.frecord_init()
-        h.dt = tdt
-        h.fcurrent()
 
     def i_currents(self, V):
         """

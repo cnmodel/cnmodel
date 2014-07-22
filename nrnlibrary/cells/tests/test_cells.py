@@ -77,44 +77,47 @@ def assert_cell_info(cell, key):
     iv = IVCurve()
     iv.run(cell.i_test_range, cell)
     iv.show(cell)
-    info = dict(
-        icmd=iv.current_cmd,
-        spikes=iv.spike_times(),
-        rmp=iv.rest_vm(),
-        rm=iv.input_resistance(),
-        vpeak=iv.peak_vm(),
-        vss=iv.steady_vm(),
-        )
-
-    expect = load_cell_info(key)
     
-    if expect is not None:
-        
-        # Check test structures are the same
-        assert len(info) == len(expect)
-        for k in info:
-            assert k in expect
-            
-        # Check data matches
-        for k in info:
-            if isinstance(info[k], list):
-                assert len(info[k]) == len(expect[k])
-                for i in range(len(info[k])):
-                    assert np.allclose(info[k][i], expect[k][i])
-            else:
-                assert np.allclose(info[k], expect[k])
-    else:
-        if not audit:
-            raise Exception("No prior test results for cell type '%s'. "
-                            "Run test.py --audit store new test data." % key)
-        
-        print "\n=== New test results for %s: ===\n" % key
-        pprint.pprint(info)
-        print "Store new test results? [y/n]",
-        yn = raw_input()
-        if yn.lower().startswith('y'):
-            save_cell_info(info, key)
-        else:
-            raise Exception("Rejected test results for '%s'" % key)
+    try:
+        info = dict(
+            icmd=iv.current_cmd,
+            spikes=iv.spike_times(),
+            rmp=iv.rest_vm(),
+            rm=iv.input_resistance(),
+            vpeak=iv.peak_vm(),
+            vss=iv.steady_vm(),
+            )
 
+        expect = load_cell_info(key)
+        
+        if expect is not None:
+            
+            # Check test structures are the same
+            assert len(info) == len(expect)
+            for k in info:
+                assert k in expect
+                
+            # Check data matches
+            for k in info:
+                if isinstance(info[k], list):
+                    assert len(info[k]) == len(expect[k])
+                    for i in range(len(info[k])):
+                        assert np.allclose(info[k][i], expect[k][i])
+                else:
+                    assert np.allclose(info[k], expect[k])
+        else:
+            if not audit:
+                raise Exception("No prior test results for cell type '%s'. "
+                                "Run test.py --audit store new test data." % key)
+            
+            print "\n=== New test results for %s: ===\n" % key
+            pprint.pprint(info)
+            print "Store new test results? [y/n]",
+            yn = raw_input()
+            if yn.lower().startswith('y'):
+                save_cell_info(info, key)
+            else:
+                raise Exception("Rejected test results for '%s'" % key)
+    finally:
+        iv.win.hide()
     

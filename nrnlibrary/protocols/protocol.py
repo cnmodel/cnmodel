@@ -27,3 +27,30 @@ class Protocol(object):
         return np.array(self._vectors[name])
 
 
+
+    def custom_init(self, vinit):
+        """
+        perform a custom initialization of the current section to vinit
+        """
+        initdur = 1e-9
+        tdt = h.dt
+        dtstep = 1e7
+        # todo: could this reset other cells that were already initialized?
+        h.finitialize(vinit)
+        h.t = -initdur
+        tmp = h.cvode.active()
+        if tmp != 0:
+            h.cvode.active(0)
+        h.dt = dtstep
+        while h.t < 0:
+            h.fadvance()
+        if tmp != 0:
+            h.cvode.active(1)
+        h.t = 0
+        if h.cvode.active():
+            h.cvode.re_init()
+        else:
+            h.fcurrent()
+        h.frecord_init()
+        h.dt = tdt
+        h.fcurrent()
