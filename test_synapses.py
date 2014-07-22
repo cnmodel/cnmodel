@@ -14,8 +14,10 @@ cellType = sys.argv[1]
 
 if cellType == 'tstellate':
     TargetCell = cells.TStellate(debug=True, ttx=False) # make a postsynaptic cell
-elif cellType == 'dstellate': # similar to t-stellate in abasence of other data
+elif cellType == 'dstellate': # Type I-II Rothman model, similiar excitability (Xie/Manis, unpublished)
     TargetCell = cells.DStellate(debug=True, ttx=False) # make a postsynaptic cell
+elif cellType == 'dstellate_eager': # From Eager et al.
+    TargetCell = cells.DStellateEager(debug=True, ttx=False) # make a postsynaptic cell
 elif cellType == 'bushy':
     TargetCell = cells.Bushy(debug=True, ttx=True) # make a postsynaptic cell
 else:
