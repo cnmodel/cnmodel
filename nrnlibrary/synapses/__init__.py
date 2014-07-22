@@ -51,7 +51,7 @@ def template_multisite(debug=False, parent_section = None, nzones=1, celltype='b
                        ):
     """
     This routine creates a (potentially) multisite synapse with:
-        A COH4 release mechanism that includes stochastic release, with a lognormal
+        A MultiSiteSynapse release mechanism that includes stochastic release, with a lognormal
             release latency distribution.
         A "cleft" mechanism (models diffusion of transmitter). Note that the cleft is inserted as part of the
             presynaptic section, but is not connected to the postsynaptic side yet.
@@ -91,8 +91,8 @@ def template_multisite(debug=False, parent_section = None, nzones=1, celltype='b
         terminal().cap.pcabar = calcium_pars.Ca_gbar
         terminal.insert('cad')
         
-    # Create COH4 point process to simulate multiple independent release zones.
-    relsite = h.COH4(0.5, sec=terminal)
+    # Create point process to simulate multiple independent release zones.
+    relsite = h.MultiSiteSynapse(0.5, sec=terminal)
     relsite.nZones = nzones
     relsite.rseed = 2 # int(np.random.random_integers(1,1024))
     relsite.latency = stochastic_pars.latency

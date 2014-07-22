@@ -1,14 +1,13 @@
-TITLE Calyx of Held Version 4
+TITLE Multisite synapse
 
 COMMENT
 -----------------------------------------------------------------------------
-Mechanism to create a "calyx of Held" or an "endbulb of Held". The mechanism
-is a multi-site synapse with independent release sites. Each site operates independently
+Multi-site synapse with independent release sites. Each site operates independently
 and releases a vesicle upon presynaptic depolarization with a probability 
 determined by the history of activity, using the Dittman and Regehr (1998, 2000)
 model.
 
-Revised from coh2.mod and coh3.mod.
+Revised from coh2.mod, coh3.mod, and coh4.mod.
 The Dittman and Regeher (1998, 2000) release model with
 facilitation closely fits  Auditory Nerve data from mouse over
 a wide range of frequencies.
@@ -53,7 +52,7 @@ INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}
 
 NEURON {
 THREADSAFE
-	POINT_PROCESS COH4
+	POINT_PROCESS MultiSiteSynapse
 	RANGE F, k0, kmax, taud, kd, tauf, kf, taus, ks
 	RANGE nZones, nVesicles, rseed, latency, latstd, debug
 	RANGE dD, dF, XMTR, glu
@@ -173,7 +172,7 @@ INITIAL {
 	nReleases = 0
 	set_seed(rseed)
 :	VERBATIM
-:		fprintf(stdout, "COH4: Calyx #%d Initialized with Random Seed: %d\n", (int)Identifier, (int)rseed);
+:		fprintf(stdout, "MultiSiteSynapse: Calyx #%d Initialized with Random Seed: %d\n", (int)Identifier, (int)rseed);
 :	ENDVERBATIM
 	nVesicles[0] = n0
 	XMTR[0] = 0
