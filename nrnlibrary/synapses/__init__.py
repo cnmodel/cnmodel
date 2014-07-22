@@ -780,6 +780,11 @@ class Synapse(object):
             nANTerminals_ReleaseZones = 1
             AN_gMax = 4600.0 / self.AMPA_Max_Po # correct because Po in model is not 1.0
 
+        elif isinstance(self.post_cell, cells.DStellate):
+            nANTerminals = 12
+            nANTerminals_ReleaseZones = 1
+            AN_gMax = 4600.0 / self.AMPA_Max_Po # correct because Po in model is not 1.0
+
         elif isinstance(self.post_cell, cells.Bushy):
             nANTerminals = 3
             nANTerminals_ReleaseZones = 100
