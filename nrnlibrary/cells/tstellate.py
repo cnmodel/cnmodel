@@ -10,9 +10,9 @@ __all__ = ['TStellate', 'TStellateNav11', 'TStellateFast']
 class TStellate(Cell):
     """
     VCN T-stellate base model.
-    Rothman and Manis, 2003abc (Type I)    
+    Rothman and Manis, 2003abc (Type I-c, Type I-t)
     """
-    def __init__(self, nach='na', ttx=False, debug=False, species='guineapig', type='I-c'):
+    def __init__(self, nach='na', ttx=False, debug=False, species='guineapig', type=None):
         """
         initialize a planar stellate (T-stellate) cell, using the default parameters for guinea pig from
         R&M2003, as a type I cell.
@@ -21,7 +21,8 @@ class TStellate(Cell):
             Changing "species" to mouse or cat (scales conductances)
         """
         super(TStellate, self).__init__()
-
+        if type == None:
+            type = 'I-c'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'TStellate'}
 

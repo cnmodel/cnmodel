@@ -12,7 +12,7 @@ class DStellate(Cell):
     VCN D-stellate model:
     as a type I-II from Rothman and Manis, 2003
     """
-    def __init__(self, nach='na', ttx=False, debug=False, species='guineapig', type='I-II'):
+    def __init__(self, nach='na', ttx=False, debug=False, species='guineapig', type=None):
         """
         initialize a radial stellate (D-stellate) cell, using the default parameters for guinea pig from
         R&M2003, as a type I-II cell.
@@ -23,6 +23,8 @@ class DStellate(Cell):
         """
         super(DStellate, self).__init__()
 
+        if type == None:  # allow us to pass None to get the default
+            'I-II'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'DStellate'}
         self.i_test_range=(-0.25, 0.25, 0.025)  # set range for ic command test
