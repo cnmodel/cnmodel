@@ -40,6 +40,7 @@ class SynapseTest(Protocol):
         self.synapses = synapses
         self.pre_cell = pre_cell
         self.allpsd = []
+        # collect all PSDs across all synapses
         for syn in synapses:
             self.allpsd.extend(syn.psd.psd)
 
