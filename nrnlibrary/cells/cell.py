@@ -13,7 +13,7 @@ class Cell(object):
         # dictionary of all sections associated with this cell
         self.all_sections = {}
         # the following section types (parts) are known to us:
-        for k in ['soma', 'maindend', 'secdend', 'internode', 'initialsegment', 'axonnode']:
+        for k in ['soma', 'maindend', 'secdend', 'internode', 'initialsegment', 'axonnode', 'axon']:
             self.all_sections[k] = []  # initialize to an empty list
         
         # each cell has the following parameters:
@@ -233,13 +233,30 @@ class Cell(object):
         return Rin, tau, self.soma(0.5).v
 
     def set_soma_size_from_Cm(self, cap):
+        """
+        Use soma capacitance to set the cell size. Area of the open cylinder is same as a sphere of
+        the same diameter.
+        Compute area and save total capacitance as well
+        """
         self.totcap = cap
         self.somaarea = self.totcap * 1E-6 / self.c_m  # pf -> uF, cm = 1uf/cm^2 nominal
         lstd = 1E4 * ((self.somaarea / np.pi) ** 0.5)  # convert from cm to um
         self.soma.diam = lstd
         self.soma.L = lstd
 
-    def add_axon(self, c_m=1.0, R_a=150, axonsf=1.0, nodes=5, debug=False):
+    def set_soma_size_from_Diam(self, diam):
+        """
+        Use diameter to set the cell size. Area of the open cylinder is same as a sphere of
+        the same diameter.
+        Compute area and total capacitance as well
+        """
+        self.somaarea = 1e-8*4.*np.pi*(diam/2.)**2  # in microns^2
+        self.totcap = self.c_m * self.somaarea * 1e6
+    #    lstd = diam # 1E4 * ((self.somaarea / np.pi) ** 0.5)  # convert from cm to um
+        self.soma.diam = diam
+        self.soma.L = diam
+
+    def add_axon(self, c_m=1.0, R_a=150, axonsf=1.0, nodes=5, debug=False, dia=None, len=None, seg=None):
         """
         Add an axon to the soma with an initial segment (tapered), and multiple nodes of Ranvier
         The size of the axon is determined by self.axonsf, which in turn is set by the species
@@ -265,8 +282,8 @@ class Cell(object):
         initsegment.nseg = ninitseg
         initsegment.diam = 4.0 * axonsf
         initsegment.L = 36.0 * axonsf
-        initsegment.cm = c_m
-        initsegment.Ra = R_a
+        initsegment.cm = c_m # c_m
+        initsegment.Ra = R_a # R_a
         initsegment.insert('nacn')  # uses a standard Rothman sodium channel
         initsegment.insert('kht')
         initsegment.insert('klt')
@@ -287,20 +304,21 @@ class Cell(object):
             inseg.leak.gbar = nstomho(2.0, self.somaarea)
             inseg.ena = self.e_na
             inseg.ek = self.e_k
+            inseg.leak.erev = self.e_leak
 
         for i in nnodes:
-            axnode[i] = self.loadaxnodes(axnode[i], self.somaarea)
-            internode[i] = self.loadinternodes(internode[i], self.somaarea)
+            axnode[i] = self.loadaxnodes(axnode[i], self.somaarea, eleak=self.e_leak)
+            internode[i] = self.loadinternodes(internode[i], self.somaarea, eleak=self.e_leak)
 
         if debug:
             print("<< {:s} Axon Added >>".format(self.__class__.__name__))
             h.topology()
-        self.add_section(initsegment, 'initsegment')
+        self.add_section(initsegment, 'initialsegment')
         self.add_section(axnode, 'axonnode')
         self.add_section(internode, 'internode')
 
     @staticmethod
-    def loadaxnodes(axnode, somaarea, nodeLength=2.5, nodeDiameter=2.0):
+    def loadaxnodes(axnode, somaarea, nodeLength=2.5, nodeDiameter=2.0, eleak=-65):
         v_potassium = -80  # potassium reversal potential
         v_sodium = 50  # sodium reversal potential
         Ra = 150
@@ -323,10 +341,11 @@ class Cell(object):
             ax.leak.gbar = nstomho(2.0, somaarea)
             ax.ena = v_sodium
             ax.ek = v_potassium
+            ax.leak.erev = eleak
         return axnode
 
     @staticmethod
-    def loadinternodes(internode, somaarea, internodeLength=1000, internodeDiameter=10):
+    def loadinternodes(internode, somaarea, internodeLength=1000, internodeDiameter=10, eleak=-65):
         v_potassium = -80  # potassium reversal potential
         v_sodium = 50  # sodium reversal potential
         Ra = 150
@@ -346,5 +365,5 @@ class Cell(object):
             inno.kht.gbar = 0 * nstomho(150.0, somaarea)
             inno.ek = v_potassium
             inno.ena = v_sodium
-            inno.leak.e = -80
+            inno.leak.erev = eleak
         return internode
