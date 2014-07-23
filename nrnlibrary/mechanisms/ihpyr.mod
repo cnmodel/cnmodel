@@ -1,10 +1,10 @@
-TITLE pyr.mod   DCN pyramidal cell model  
+TITLE ihpyr.mod   DCN pyramidal cell model
  
 COMMENT
 
 Revised version of DCN Pyramidal cell model based on new hh.hoc file in NEURON
 
-This model implements a Dorsal Cochlear Nucleus Pyramidal point cell
+This model is part a Dorsal Cochlear Nucleus Pyramidal point cell
 based on kinetic data from Kanold and Manis (1999) and Kanold's dissertation (1999)
 
 -- 15 Jan 1999 P. Manis
@@ -17,16 +17,12 @@ Note also that it is possible to set the initial values > 1 but this is meaningl
 the present equations. 
 -- 5 Feb 1999 P. Manis
 
-Removed slow Ih current 30 Jan 2000. P. Manis
-- also renamed variables to saner forms
-Added Patrick's version of ih as ihd
-
-Added persistent sodium current from deSchutter and Bower, J. Neurophys.
-71:375, 1994.
-Changed to Nap current from Quadroni and Knopfel, 1994
+Added Patrick's version of ih as ihpyr
+Model is from Destexhe and Babloyantz 1993; Destexhe et al. 1993
 
 
 2/10/02. P. Manis.
+7/23/2014 P. Manis - separated from pyr.mod.
 
 ENDCOMMENT
  

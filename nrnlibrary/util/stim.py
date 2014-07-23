@@ -26,7 +26,7 @@ def make_pulse(stim):
         'delay': 10,
         'Sfreq': 50,
         'dur': 50,
-        'post': 50.
+        'post': 50.,
         'amp': None,
         'PT': 0,
         'NP': 1,

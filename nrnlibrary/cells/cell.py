@@ -213,14 +213,22 @@ class Cell(object):
         """
         if auto_initialize:
             self.cell_initialize()
-        gnames = {'nacn': 'gna', 'na': 'gna',
+        gnames = {# R&M03:
+                  'nacn': 'gna', 'na': 'gna',
                   'leak': 'gbar',
                   'klt': 'gklt', 'kht': 'gkht',
                   'ka': 'gka',
                   'ihvcn': 'gh', 'hcno': 'thegna',
+                # pyramidal cell specific:
                   'napyr': 'gna', 'kdpyr': 'gk',
-                    'kif': 'gkif', 'kis': 'gkis',
-                    'ihpyr': 'gh'
+                  'kif': 'gkif', 'kis': 'gkis',
+                  'ihpyr': 'gh',
+                # cartwheel cell specific:
+                    'bkpkj': 'gbkpkj', 'hpkj': 'gh',
+                    'kpkj': 'gk', 'kpkj2': 'gk', 'kpkjslow': 'gk',
+                    'kpksk': 'gk', 'lkpkj': 'gbar',
+                    'naRsg': 'gna',
+
                   }
         gsum = 0.
         section = self.soma

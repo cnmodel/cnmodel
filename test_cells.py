@@ -23,7 +23,7 @@ ccivrange = {'bushy': (-0.5, 0.5, 0.05),
             'dstellate': (-0.2, 0.2, 0.0125),
             'dstellateeager': (-0.6, 1.0, 0.025),
             'sgc:': (-0.5, 0.5, 0.05),
-            'cartwheel': (-0.5, 0.5, 0.05),
+            'cartwheel': (-0.25, 0.25, 0.01),
             'pyramidal': (-0.3, 0.3, 0.03),
             'octopus': (-2., 2., 0.2)}
 # scales holds some default scaling to use in the cciv plots
@@ -53,6 +53,8 @@ h.celsius = 22
 parser.add_argument('celltype', action='store')
 parser.add_argument('species', action='store', default='guineapig')
 parser.add_argument('--type', action='store', default=None)
+parser.add_argument('--temp', action='store', default=22.0,
+                    help=("Temp DegC (22 default)"))
     # species is an optional option....
 parser.add_argument('-c', action="store", dest="configuration",
     default='std', help=("Set axon config: %s " %
@@ -125,6 +127,9 @@ elif args.celltype == 'dstellateeager':
 elif args.celltype == 'pyramidal':
     cell = cells.Pyramidal(debug=debugFlag, ttx=args.ttx)
 
+elif args.celltype == 'cartwheel':
+    cell = cells.Cartwheel(debug=debugFlag, ttx=args.ttx)
+
 else:
     print ("Cell Type %s and configurations nav=%s or config=%s are not available" % (args.celltype, args.nav, args.configuration))
     sys.exit(1)
@@ -143,7 +148,8 @@ if args.cc is True:
     #run_iv(ccivrange[args.celltype], cell,
         #sites=sites, reppulse=ptype)
     iv = IVCurve()
-    iv.run(ccivrange[args.celltype],  cell, durs=[10., 100., 250.], sites=sites, reppulse=ptype)
+    iv.run(ccivrange[args.celltype],  cell, durs=[10., 100., 20.],
+           sites=sites, reppulse=ptype, temp=float(args.temp))
     iv.show(cell=cell)
 elif args.vc is True:
     vc = VCCurve()

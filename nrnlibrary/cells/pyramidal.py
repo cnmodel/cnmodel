@@ -52,7 +52,7 @@ class Pyramidal(Cell):
         self.add_section(soma, 'soma')
         self.species_scaling(silent=True, species=species, type=type)  # set the default type I-c  cell parameters
         self.get_mechs(soma)
-        self.cell_initialize()
+#        self.cell_initialize()
         if debug:
             print "<< PYR: POK Pyramidal Cell created >>"
 
