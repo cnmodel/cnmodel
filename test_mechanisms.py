@@ -60,6 +60,8 @@ class ChannelKinetics():
                      'nav11': [10., 5.], 'jsrna': [10., 5.], 'ichanWT2005': [10., 5.], 'kht':[200., 20.], 'klt': [200., 20.], 'nacn': [10., 5.],
                      'ihsgcApical': [1000., 200.],
                      'ihsgcBasalMiddle': [1000., 200.],
+                     'kif': [100., 10.], 'kis': [100., 10.], 'napyr': [10, 5.], 'ihpyr': [1000., 200.],
+                     'kdpyr': [200., 20.]
                      }
         for i, mfile in enumerate(modfile):
             self.run(modfile=mfile, color=colors[i])
