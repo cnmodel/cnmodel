@@ -71,6 +71,38 @@ class Cell(object):
         """
         return self.all_sections['soma'][0]
 
+
+    def connect(self, pre_sec, post_sec, 
+                pre_opts=None, post_opts=None):
+        """
+        Create a new synapse connecting pre_sec on this cell to post_sec
+        on another cell. The synapse is automatically created using 
+        pre_cell.make_terminal(pre_sec, post_sec, **pre_opts) and  
+        post_cell.make_psd(pre_sec, post_sec, **post_opts).
+        """
+        if pre_opts is None:
+            pre_opts = {}
+        if post_opts is None:
+            post_opts = {}
+        
+        synapse = Synapse()
+        synapse.terminal = pre_cell.make_terminal(pre_sec, post_sec, **pre_opts)
+        synapse.psd = post_cell.make_psd(pre_sec, post_sec, **post_opts)
+        synapse.connect(pre_sec, post_sec)
+
+    def make_terminal(self, pre_sec, post_sec, **kwds):
+        """
+        Create a synaptic terminal release mechanism suitable for output
+        from this cell to post_sec
+        """
+        return Terminal()
+    
+    def make_psd(self, pre_sec, post_sec, **kwds):
+        """
+        Make a PSD suitable for synaptic input from pre_sec.
+        """
+        return PSD()
+
     def print_status(self):
         print("\nCell model: %s" % self.__class__.__name__)
         print(self.__doc__)
