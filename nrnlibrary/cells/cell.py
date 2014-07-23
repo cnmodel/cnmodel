@@ -217,7 +217,10 @@ class Cell(object):
                   'leak': 'gbar',
                   'klt': 'gklt', 'kht': 'gkht',
                   'ka': 'gka',
-                  'ihvcn': 'gh', 'hcno': 'thegna'
+                  'ihvcn': 'gh', 'hcno': 'thegna',
+                  'napyr': 'gna', 'kdpyr': 'gk',
+                    'kif': 'gkif', 'kis': 'gkis',
+                    'ihpyr': 'gh'
                   }
         gsum = 0.
         section = self.soma

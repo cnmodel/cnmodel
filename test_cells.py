@@ -24,7 +24,7 @@ ccivrange = {'bushy': (-0.5, 0.5, 0.05),
             'dstellateeager': (-0.6, 1.0, 0.025),
             'sgc:': (-0.5, 0.5, 0.05),
             'cartwheel': (-0.5, 0.5, 0.05),
-            'pyramidal': (-1., 1., 0.1),
+            'pyramidal': (-0.3, 0.3, 0.03),
             'octopus': (-2., 2., 0.2)}
 # scales holds some default scaling to use in the cciv plots
 # argument is {cellname: (xmin, xmax, IVymin, IVymax, FIspikemax,
@@ -52,6 +52,7 @@ ax = None
 h.celsius = 22
 parser.add_argument('celltype', action='store')
 parser.add_argument('species', action='store', default='guineapig')
+parser.add_argument('--type', action='store', default=None)
     # species is an optional option....
 parser.add_argument('-c', action="store", dest="configuration",
     default='std', help=("Set axon config: %s " %
@@ -101,16 +102,16 @@ if args.celltype == 'sgc':
 # T-stellate tests
 #
 elif args.celltype == 'stellate':
-    cell = cells.TStellate(debug=debugFlag, species=args.species, nach=args.nav, type='I-c', ttx=args.ttx)
+    cell = cells.TStellate(debug=debugFlag, species=args.species, nach=args.nav, type=args.type, ttx=args.ttx)
 #
 # Bushy tests
 #
 elif args.celltype == 'bushy' and args.configuration == 'waxon':
-    cell = cells.Bushy(debug=debugFlag, species=args.species, nach=args.nav, type='II', ttx=args.ttx)
+    cell = cells.Bushy(debug=debugFlag, species=args.species, nach=args.nav, type=args.type, ttx=args.ttx)
     cell.add_axon()
 
 elif args.celltype == 'bushy' and args.configuration == 'std':
-    cell = cells.Bushy(debug=debugFlag, species=args.species, nach=args.nav, type='II', ttx=args.ttx)
+    cell = cells.Bushy(debug=debugFlag, species=args.species, nach=args.nav, type=args.type, ttx=args.ttx)
 
 #
 # D-stellate tests
@@ -120,7 +121,10 @@ elif args.celltype == 'dstellate':
 
 elif args.celltype == 'dstellateeager':
     cell = cells.DStellateEager(debug=debugFlag, ttx=args.ttx)
-    
+
+elif args.celltype == 'pyramidal':
+    cell = cells.Pyramidal(debug=debugFlag, ttx=args.ttx)
+
 else:
     print ("Cell Type %s and configurations nav=%s or config=%s are not available" % (args.celltype, args.nav, args.configuration))
     sys.exit(1)
@@ -139,7 +143,7 @@ if args.cc is True:
     #run_iv(ccivrange[args.celltype], cell,
         #sites=sites, reppulse=ptype)
     iv = IVCurve()
-    iv.run(ccivrange[args.celltype], cell, sites=sites, reppulse=ptype)
+    iv.run(ccivrange[args.celltype],  cell, durs=[10., 100., 250.], sites=sites, reppulse=ptype)
     iv.show(cell=cell)
 elif args.vc is True:
     vc = VCCurve()
