@@ -58,6 +58,8 @@ parser.add_argument('-c', action="store", dest="configuration",
         [cfg for cfg in cellinfo['configs']]))
 parser.add_argument('--nav', action="store", dest="nav", default="na",
     help=("Choose sodium channel: %s " % [ch for ch in cellinfo['nav']]))
+parser.add_argument('--ttx', action="store_true", dest="ttx", default=False,
+    help=("Use TTX (no sodium current"))
 parser.add_argument('-p', action="store", dest="pulsetype", default="step",
     help=("Set CCIV pulse to step or repeated pulse"))
 clampgroup = parser.add_mutually_exclusive_group()
@@ -93,31 +95,31 @@ if args.configuration in cellinfo['configs']:
 
 if args.celltype == 'sgc':
     (cell, sgcaxon) = cells.SGC(debug=debugFlag, species='mouse',
-    nach = 'nav11', chlist = ['ih'])
+    nach='nav11', chlist=['ih'], ttx=args.ttx)
 
 #
 # T-stellate tests
 #
 elif args.celltype == 'stellate':
-    cell = cells.TStellate(debug=debugFlag, species=args.species, nach=args.nav, type='I-c')
+    cell = cells.TStellate(debug=debugFlag, species=args.species, nach=args.nav, type='I-c', ttx=args.ttx)
 #
 # Bushy tests
 #
 elif args.celltype == 'bushy' and args.configuration == 'waxon':
-    cell = cells.Bushy(debug=debugFlag, species=args.species, nach=args.nav, type='II')
+    cell = cells.Bushy(debug=debugFlag, species=args.species, nach=args.nav, type='II', ttx=args.ttx)
     cell.add_axon()
 
 elif args.celltype == 'bushy' and args.configuration == 'std':
-    cell = cells.Bushy(debug=debugFlag, species=args.species, nach=args.nav, type='II')
+    cell = cells.Bushy(debug=debugFlag, species=args.species, nach=args.nav, type='II', ttx=args.ttx)
 
 #
 # D-stellate tests
 #
 elif args.celltype == 'dstellate':
-    cell = cells.DStellate(debug=debugFlag)
+    cell = cells.DStellate(debug=debugFlag, ttx=args.ttx)
 
 elif args.celltype == 'dstellateeager':
-    cell = cells.DStellateEager(debug=debugFlag)
+    cell = cells.DStellateEager(debug=debugFlag, ttx=args.ttx)
     
 else:
     print ("Cell Type %s and configurations nav=%s or config=%s are not available" % (args.celltype, args.nav, args.configuration))
@@ -141,8 +143,8 @@ if args.cc is True:
     iv.show(cell=cell)
 elif args.vc is True:
     vc = VCCurve()
-    vc.run((-120, -40, 5), cell)
-    vc.show()
+    vc.run((-120, 40, 5), cell)
+    vc.show(cell=cell)
 elif args.demo is True:
     run_democlamp(cell, dendrites)
 else:
@@ -151,7 +153,6 @@ else:
 #-----------------------------------------------------------------------------
 #
 # If we call this directly, provide a test with the IV function
-# - see below to switch cells
 #
 
 
