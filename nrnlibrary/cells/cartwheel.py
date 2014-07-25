@@ -1,7 +1,7 @@
 from neuron import h
 import neuron as nrn
 from ..util import nstomho
-
+import numpy as np
 from .cell import Cell
 
 __all__ = ['Cartwheel']
@@ -19,28 +19,21 @@ class Cartwheel(Cell):
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'Cartwheel'}
 
-        self.i_test_range=(-0.15, 0.15, 0.01)
+        self.i_test_range=(-0.2, 0.2, 0.02)
 
         soma = h.Section(name="Cartwheel_Soma_%x" % id(self)) # one compartment of about 29000 um2
         cm = 1
         v_potassium = -80       # potassium reversal potential
         v_sodium = 50           # sodium reversal potential
 
-        soma.insert('naRsg')
-        soma.insert('kpkj')
-        soma.insert('kpkj2')
-        soma.insert('kpkjslow')
-        soma.insert('bkpkj')
-        soma.insert('kpksk')
-        soma.insert('cadiff')
-        soma.insert('cap')
-        soma.insert('lkpkj')
-        soma.insert('hpkj')
-        soma.ena = v_sodium
-        soma.ek = v_potassium
-        soma().kpksk.gbar = 0.002
         self.mechanisms = ['naRsg', 'bkpkj', 'hpkj', 'kpkj', 'kpkj2',
-                           'kpkjslow', 'kpksk', 'pkjlk',]
+                           'kpkjslow', 'kpksk', 'lkpkj', 'cap']
+        for mech in self.mechanisms:
+            soma.insert(mech)
+        soma.insert('cadiff')
+
+       # soma().kpksk.gbar = 0.002
+       # soma().lkpkj.gbar = 3e-4
         self.add_section(soma, 'soma')
         self.species_scaling(silent=True, species=species, type=type)  # set the default type I-c  cell parameters
         self.get_mechs(soma)
@@ -49,26 +42,77 @@ class Cartwheel(Cell):
 
     def species_scaling(self, silent=True, species='rat', type='I'):
         soma = self.soma
-        self.set_soma_size_from_Diam(50.0)# if species == 'rat' and type == 'I':
+        dia = 18.
+        self.set_soma_size_from_Diam(dia)# if species == 'rat' and type == 'I':
+        self.print_mechs(self.soma)
         #     self.set_soma_size_from_Cm(12.0)
-        #     soma().napyr.gbar = nstomho(350, self.somaarea)
-        #     #soma().pyr.gnapbar = 0.0
-        #     soma().kdpyr.gbar = nstomho(80, self.somaarea) # used to be 20?
-        #     soma().kif.gbar = nstomho(150, self.somaarea)
-        #     soma().kis.gbar = nstomho(40, self.somaarea)
-        #     soma().ihpyr.gbar = nstomho(3, self.somaarea)
-        #     soma().leak.gbar = nstomho(2.8, self.somaarea)
-        #     soma().leak.erev = -57.7  # override default values in cell.py
-        #     soma().ena = 50.0
-        #     soma().ek = -81.5
-        #     soma().eh = -43
-
+        self.soma().bkpkj.gbar = nstomho(2., self.somaarea) # 2030
+        self.soma().hpkj.gbar = nstomho(5, self.somaarea) # 29
+        self.soma().kpkj.gbar = nstomho(100, self.somaarea) # 1160
+        self.soma().kpkj2.gbar = nstomho(50, self.somaarea) #579
+        self.soma().kpkjslow.gbar = nstomho(150, self.somaarea) # 1160
+        self.soma().kpksk.gbar = nstomho(25, self.somaarea) # 2900
+        self.soma().lkpkj.gbar = nstomho(5, self.somaarea) # 14.5
+        self.soma().naRsg.gbar = nstomho(500, self.somaarea)  # 4340
+        self.soma().cap.pcabar = 0.00015 # * (dia/2.)**2/(21./2.)**2 # 0.00005
+        self.soma().ena = 50
+        self.soma().ek = -80
+        self.soma().lkpkj.e = -65
+        self.soma().hpkj.eh = -43
+        self.soma().eca = 50
         # else:
         #     raise ValueError('Species %s or species-type %s is not recognized for T-stellate cells' % (species, type))
 
         self.status['species'] = species
         self.status['type'] = type
-        self.cell_initialize(showinfo=True)
+        self.cell_initialize(showinfo=False)
         if not silent:
             print 'set cell as: ', species
             print ' with Vm rest = %f' % self.vm0
+
+    def i_currents(self, V):
+        """
+        For the steady-state case, return the total current at voltage V
+        Used to find the zero current point
+        vrange brackets the interval
+        Overrides i_currents in cells.py
+        """
+        for part in self.all_sections.keys():
+            for sec in self.all_sections[part]:
+                sec.v = V
+        #h.finitialize()
+        self.ix = {}
+
+        if 'naRsg' in self.mechanisms:
+             self.ix['naRsg'] = self.soma().naRsg.gna*(V - self.soma().ena)
+        if 'cap' in self.mechanisms:
+            a = self.soma().cap.pcabar*self.soma().cap.minf
+            self.ix['cap'] = a * self.ghk(V, self.soma().cao, self.soma().cai, 2)
+        if 'kpkj' in self.mechanisms:
+             self.ix['kpkj'] = self.soma().kpkj.gk*(V - self.soma().ek)
+        if 'kpkj2' in self.mechanisms:
+             self.ix['kpkj2'] = self.soma().kpkj2.gk*(V - self.soma().ek)
+        if 'kpkjslow' in self.mechanisms:
+             self.ix['kpkjslow'] = self.soma().kpkjslow.gk*(V - self.soma().ek)
+        if 'kpksk' in self.mechanisms:
+             self.ix['kdpyr'] = self.soma().kpksk.gk*(V - self.soma().ek)
+        if 'bkpkj' in self.mechanisms:
+             self.ix['bkpkj'] = self.soma().bkpkj.gbkpkj*(V - self.soma().ek)
+        if 'hpkj' in self.mechanisms:
+             self.ix['hpkj'] = self.soma().hpkj.gh*(V - self.soma().hpkj.eh)
+        # leak
+        if 'lkpkj' in self.mechanisms:
+            self.ix['lkpkj'] = self.soma().lkpkj.gbar*(V - self.soma().lkpkj.e)
+        return np.sum([self.ix[i] for i in self.ix])
+
+    def ghk(self, v, ci, co, z):
+        F = 9.6485e4  # (coul)
+        R = 8.3145 # (joule/degC)
+        T = h.celsius + 273.19  # Kelvin
+        E = (1e-3) * v
+        Ci = ci + (self.soma().cap.monovalPerm) * (self.soma().cap.monovalConc)  #       : Monovalent permeability
+        if (np.fabs(1-np.exp(-z*(F*E)/(R*T))) < 1e-6):  #denominator is small -> Taylor series
+            ghk = (1e-6) * z * F * (Ci-co*np.exp(-z*(F*E)/(R*T)))*(1-(z*(F*E)/(R*T)))
+        else:
+            ghk = (1e-6) * z**2.*(E*F**2.)/(R*T)*(Ci-co*np.exp(-z*(F*E)/(R*T)))/(1-np.exp(-z*(F*E)/(R*T)))
+        return ghk

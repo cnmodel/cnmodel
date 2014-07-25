@@ -28,7 +28,8 @@ TITLE Slow Ca-dependent potassium current
 INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}
 
 NEURON {
-	SUFFIX kpksk
+	THREADSAFE
+    SUFFIX kpksk
 	USEION k READ ek WRITE ik
 	USEION ca READ cai
     RANGE  m_inf, tau_m, gbar, gk
@@ -48,7 +49,7 @@ UNITS {
 PARAMETER {
 	v		(mV)
 	celsius		(degC)
-    dt              (ms)
+    dt      (ms)
 	ek		(mV)
 	cai		(mM)	
 	gbar	= .01	(mho/cm2)
@@ -64,10 +65,10 @@ STATE {
 
 ASSIGNED {
 	ik	(mA/cm2)
-    gk
+    gk  (mho/cm2)
 	m_inf
 	tau_m	(ms)
-	tadj
+	tadj ()
 }
 
 BREAKPOINT { 
@@ -88,13 +89,12 @@ PROCEDURE states() {
         m= m + (1-exp(-dt/tau_m))*(m_inf-m)
 }
 
-UNITSOFF
 INITIAL {
 :
 :  activation kinetics are assumed to be at 22 deg. C
 :  Q10 is assumed to be 3
 :
-	tadj = 3 ^ ((celsius-22.0)/10)
+	tadj = 3 ^ ((celsius-22.0)/10 (degC))
 
 	evaluate_fct(v,cai)
 	m = m_inf
@@ -109,4 +109,3 @@ PROCEDURE evaluate_fct(v(mV),cai(mM)) {  LOCAL car
 
     if(tau_m < taumin) { tau_m = taumin } 	: min value of time cst
 }
-UNITSON

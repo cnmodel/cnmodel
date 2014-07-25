@@ -2,6 +2,7 @@
 : Created 8/19/02 - nwg
 
 NEURON {
+       THREADSAFE
        SUFFIX bkpkj
        USEION k READ ek WRITE ik
        USEION ca READ cai
@@ -22,10 +23,10 @@ PARAMETER {
           v            (mV)
           gbar = 0.007 (mho/cm2)
 
-          m1 (mV)
+          m1 (ms)
           m_vh = -28.9           (mV)
           m_k = 6.2            (mV)
-          mtau_y0 = 0.000505     (s)
+          mtau_y0 = 0.505 (ms) : 0.000505     (s)
           mtau_vh1 = -33.3     (mV)
           mtau_k1 = -10         (mV)
           mtau_vh2 = 86.4       (mV)
@@ -37,7 +38,7 @@ PARAMETER {
           h_y0 = 0.085
           h_vh = -32          (mV)
           h_k = 5.8             (mV)
-          htau_y0 = 0.0019      (s)
+          htau_y0 = 1.9 (ms) : 0.0019      (s)
           htau_vh1 = -54.2       (mV)
           htau_k1 = -12.9       (mV)
           htau_vh2 = 48.5      (mV)
@@ -48,7 +49,7 @@ PARAMETER {
 }
 
 ASSIGNED {
-         gbkpkj
+         gbkpkj (mho/cm2)
          minf
          mtau          (ms)
          hinf
@@ -82,11 +83,11 @@ PROCEDURE rates(Vm (mV)) {
           LOCAL v
           v = Vm + 5
           minf = 1 / (1 + exp(-(v - (m_vh)) / m_k))
-          m1 = mtau_y0 + (1 (s))/(exp((v+ mtau_vh1)/mtau_k1))
-          mtau = (1e0) * (m1 + exp((v+mtau_vh2)/mtau_k2))
+          m1 = mtau_y0 + (1. (ms)/(exp((v+ mtau_vh1)/mtau_k1)))
+          mtau =  m1 + (1. (ms)) * exp((v+mtau_vh2)/mtau_k2)
           zinf = 1/(1 + z_coef / cai)
           hinf = h_y0 + (1-h_y0) / (1+exp((v - h_vh)/h_k))
-          htau = (1e3) * (htau_y0 + 1/(exp((v + htau_vh1)/htau_k1)+exp((v+htau_vh2)/htau_k2)))
+          htau =  (htau_y0 + (1 (ms))/(exp((v + htau_vh1)/htau_k1)+exp((v+htau_vh2)/htau_k2)))
 }
 
 INITIAL {

@@ -2,7 +2,8 @@
 : Created 8/7/02 - nwg
 
 NEURON {
-	SUFFIX kpkjslow
+	THREADSAFE
+    SUFFIX kpkjslow
 	USEION k READ ek WRITE ik
 	RANGE gbar, ik, gk
 	GLOBAL ninf, ntau
@@ -24,7 +25,7 @@ PARAMETER {
 }
 
 ASSIGNED {
-    gk
+    gk (mho/cm2)
 	ik (mA/cm2)
 	ninf
 	ntau		(ms)

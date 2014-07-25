@@ -24,7 +24,7 @@ class DStellate(Cell):
         super(DStellate, self).__init__()
 
         if type == None:  # allow us to pass None to get the default
-            'I-II'
+            type = 'I-II'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'DStellate'}
         self.i_test_range=(-0.25, 0.25, 0.025)  # set range for ic command test
@@ -52,7 +52,7 @@ class DStellate(Cell):
         self.set_soma_size_from_Cm(12.0)
         self.mechanisms = ['kht', 'klt', 'ihvcn', 'leak', nach]
         self.get_mechs(soma)
-        self.species_scaling(silent=False, species=species, type=type)  # set the default type II cell parameters
+        self.species_scaling(species=species, type=type)  # set the default type II cell parameters
         if debug:
                 print "<< D-stellate: JSR Stellate Type I-II cell model created >>"
 

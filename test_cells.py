@@ -23,7 +23,7 @@ ccivrange = {'bushy': (-0.5, 0.5, 0.05),
             'dstellate': (-0.2, 0.2, 0.0125),
             'dstellateeager': (-0.6, 1.0, 0.025),
             'sgc:': (-0.5, 0.5, 0.05),
-            'cartwheel': (-0.25, 0.25, 0.01),
+            'cartwheel': (-0.2, 0.1, 0.02),
             'pyramidal': (-0.3, 0.3, 0.03),
             'octopus': (-2., 2., 0.2)}
 # scales holds some default scaling to use in the cciv plots

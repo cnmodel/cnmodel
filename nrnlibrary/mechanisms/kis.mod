@@ -1,4 +1,4 @@
-TITLE kis.mod   DCN pyramidal cell model 
+TITLE kis.mod   DCN pyramidal cell model Slow transient K current
 
 COMMENT
 
@@ -21,14 +21,13 @@ UNITS {
 
 
 NEURON {
+    THREADSAFE
     SUFFIX kis
     USEION k READ ek WRITE ik
-
     RANGE gkis, kis_a_inf, kis_i_inf	: fast inactivating potassium current
     RANGE akis, gbar
     RANGE kis_a_tau, kis_i_tau	
     RANGE kis_a_start, kis_i_start
-
 }
 
 INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}
@@ -41,8 +40,8 @@ PARAMETER {
     ena (mV) : = 50.0 (mV)
     gbar = 0.0033333  (mho/cm2) <0,1e9>
 
-    kis_ivh = -40.9
-    kis_avh = -38.4
+    kis_ivh = -40.9 (mV)
+    kis_avh = -38.4 (mV)
     kis_a_start = -1
     kis_i_start = -1
 }
@@ -55,24 +54,21 @@ ASSIGNED {
 	gkis (mho/cm2)
 	ik (mA/cm2)
 	kis_a_inf kis_i_inf
-	kis_a_tau kis_i_tau
+	kis_a_tau (ms)
+    kis_i_tau (ms)
 	akis
+    q10 ()
 }
 
-LOCAL kis_a_exp, kis_i_exp
-
-? currents
 BREAKPOINT {
 	SOLVE states METHOD cnexp
 	akis = kisa*kisa*kisa*kisa*kisi
 	gkis = gbar*akis
 	ik = gkis*(v - ek)
 }
-? currents
-
-UNITSOFF
 
 INITIAL {
+	q10 = 3^((celsius - 22)/10 (degC))
 	rates(v)
 	if(kis_a_start < 0) {		: if xx_(i/a)_start is > 0, then perturbation is done at onset of computations.
 		kisa = kis_a_inf
@@ -87,25 +83,14 @@ INITIAL {
 }
 
 
-? states
-DERIVATIVE states { 
+DERIVATIVE states {
 	rates(v)
-
 	kisa' = (kis_a_inf - kisa) / kis_a_tau
 	kisi' = (kis_i_inf - kisi) / kis_i_tau
 }
 
-LOCAL q10
-
-
-? rates
-PROCEDURE rates(v(mV)) {  :Computes rate and other constants at current v.
+PROCEDURE rates(v (mV)) {  :Computes rate and other constants at current v.
 	                      :Call once from HOC to initialize inf at resting v.
-	LOCAL  alpha, beta, sum
-	TABLE kis_a_inf, kis_a_tau, kis_i_inf, kis_i_tau DEPEND celsius, kis_avh, kis_ivh  FROM -200 TO 100 WITH 400
-
-UNITSOFF
-	q10 = 3^((celsius - 22)/10)
 
 	: "kis" fast inactivation potassium channel - activation and inactivation
 	kis_a_inf = kis_m(v)
@@ -117,22 +102,22 @@ UNITSOFF
 : Make these as functions so we can view them from hoc, although this
 : may slow things down a bit
 
-FUNCTION kis_m(x) { : ikis activation
-	kis_m = 1/(1+exp(-(x-kis_avh)/23.7))
+FUNCTION kis_m(v (mV)) { : ikis activation
+	kis_m = 1/(1+exp(-(v-kis_avh)/23.7 (mV)))
 }
 
-FUNCTION kis_h(x) { : ikis inactivation
-	kis_h = 1/(1+exp((x-kis_ivh)/9))
+FUNCTION kis_h(v (mV)) { : ikis inactivation
+	kis_h = 1/(1+exp((v-kis_ivh)/9 (mV)))
 }
 
-FUNCTION kis_mt(x) { : ikis activation tau
-	kis_mt = 0.15*exp((x-kis_avh)/10) + 0.3*exp(-(x-kis_avh)/10)
-	kis_mt = 0.5 + 1/kis_mt
+FUNCTION kis_mt(v (mV)) (ms) { : ikis activation tau
+	LOCAL x
+    x = 0.15*exp((v-kis_avh)/10 (mV)) + 0.3*exp(-(v-kis_avh)/10 (mV))
+    x = 0.5 + (1.0 /x)
+    kis_mt = (x  * 1.0 (ms))/q10
 }
 
-FUNCTION kis_ht(x) { : ikis inactivation tau
-	kis_ht = 200
+FUNCTION kis_ht(v (mV)) (ms) { : ikis inactivation tau
+	kis_ht = 200 (ms)
 }
-
-UNITSON
 

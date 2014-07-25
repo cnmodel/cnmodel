@@ -28,15 +28,14 @@ class Protocol(object):
 
 
 
-    def custom_init(self, vinit):
+    def custom_init(self, vinit=-60.):
         """
         perform a custom initialization of the current section to vinit
         """
-        initdur = 1e-9
+        initdur = 1e6
         tdt = h.dt
-        dtstep = 1e7
-        # todo: could this reset other cells that were already initialized?
-        h.finitialize(vinit)
+        dtstep = 1e3
+        h.finitialize()
         h.t = -initdur
         tmp = h.cvode.active()
         if tmp != 0:

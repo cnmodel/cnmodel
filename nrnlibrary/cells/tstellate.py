@@ -40,16 +40,17 @@ class TStellate(Cell):
             soma.insert('jsrna')
         else:
             raise ValueError('Sodium channel %s in type 1 cell not known' % nach)
-
-        soma.insert("kht")
-        soma.insert('ka')
-        soma.insert('ihvcn')
-        soma.insert('leak')
+        self.mechanisms = ['kht', 'ka', 'ihvcn', 'leak', nach]
+        for mech in self.mechanisms:
+            soma.insert(mech)
+        # soma.insert("kht")
+        # soma.insert('ka')
+        # soma.insert('ihvcn')
+        # soma.insert('leak')
         soma.ek = self.e_k
         soma.ena = self.e_na
         soma().ihvcn.eh = self.e_h
         soma().leak.erev = self.e_leak
-        self.mechanisms = ['kht', 'ka', 'ihvcn', 'leak', nach]
         self.add_section(soma, 'soma')
         self.species_scaling(silent=True, species=species, type=type)  # set the default type I-c  cell parameters
         self.get_mechs(soma)

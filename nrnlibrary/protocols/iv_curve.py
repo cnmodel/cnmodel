@@ -60,7 +60,6 @@ class IVCurve(Protocol):
             durs = [10.0, 100.0, 50.0]
             
         self.durs = durs
-        print durs
         icur = []
         # set up stimulation with a pulse train
         if reppulse is None:

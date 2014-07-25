@@ -2,7 +2,8 @@
 : Created 8/6/02 - nwg
 
 NEURON {
-	SUFFIX hpkj
+	THREADSAFE
+    SUFFIX hpkj
 	NONSPECIFIC_CURRENT i
 	RANGE gbar, gh, eh
 	GLOBAL ninf, ntau
@@ -23,7 +24,7 @@ PARAMETER {
 }
 
 ASSIGNED {
-	gh
+	gh (mho/cm2)
     i (mA/cm2)
 	ninf
 	ntau (ms)

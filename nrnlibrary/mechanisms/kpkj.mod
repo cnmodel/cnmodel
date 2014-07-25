@@ -2,7 +2,8 @@
 : Created 8/5/02 - nwg
 
 NEURON {
-	SUFFIX kpkj
+	THREADSAFE
+    SUFFIX kpkj
 	USEION k READ ek WRITE ik
 	RANGE gbar, ik, gk
 	GLOBAL minf, hinf, mtau, htau
@@ -35,7 +36,7 @@ PARAMETER {
 }
 
 ASSIGNED {
-	gk
+	gk    (mho/cm2)
     ik		(mA/cm2)
 	minf
 	mtau		(ms)

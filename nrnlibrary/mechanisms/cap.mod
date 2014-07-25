@@ -2,11 +2,12 @@
 : Created 8/13/02 - nwg
 
 NEURON {
-	SUFFIX cap
+	THREADSAFE
+    SUFFIX cap
 	USEION ca READ cai, cao WRITE ica
 	RANGE pcabar, ica
-	GLOBAL minf, mtau
-	GLOBAL monovalConc, monovalPerm
+	RANGE minf, mtau
+	RANGE monovalConc, monovalPerm
 }
 
 UNITS {

@@ -1,8 +1,6 @@
-TITLE ihpyr.mod   DCN pyramidal cell model
+TITLE ihpyr.mod   DCN pyramidal cell model H-current
  
 COMMENT
-
-Revised version of DCN Pyramidal cell model based on new hh.hoc file in NEURON
 
 This model is part a Dorsal Cochlear Nucleus Pyramidal point cell
 based on kinetic data from Kanold and Manis (1999) and Kanold's dissertation (1999)
@@ -34,6 +32,7 @@ UNITS {
  
 
 NEURON {
+ THREADSAFE
  SUFFIX ihpyr
  USEION na READ ena WRITE ina
  USEION k READ ek WRITE ik
@@ -59,7 +58,7 @@ PARAMETER {
  
 STATE {
        khm khn
-        }
+}
  
 ASSIGNED {
 	gh (mho/cm2)
@@ -71,16 +70,12 @@ ASSIGNED {
 	aih
 }
 
-LOCAL kh_m_exp, kh_n_exp
- 
-? currents
 BREAKPOINT {
 	SOLVE states METHOD cnexp
 	aih = khm*khn
 	gh = gbar*aih
  	ih = gh*(v - eh)
 }
-? currents
 
 UNITSOFF 
  
@@ -91,24 +86,18 @@ INITIAL {
 }
 
 
-? states
 DERIVATIVE states {  
 	rates(v)
 	khm' = (kh_m_inf - khm) / kh_m_tau
 	khn' = (kh_n_inf - khn) / kh_n_tau
 }
- 
+
+
 LOCAL q10
 
-
-? rates
 PROCEDURE rates(v(mV)) {  :Computes rate and other constants at current v.
 	                      :Call once from HOC to initialize inf at resting v.
-	LOCAL  alpha, beta, sum
-	TABLE kh_m_inf, kh_n_inf, kh_m_tau, kh_n_tau DEPEND celsius FROM -200 TO 100 WITH 400
-
-UNITSOFF
-	q10 = 3^((celsius - 22)/10)
+	q10 = 3^((celsius - 22)/10 (degC))
 
 	:"kh" adaptation of Destexhe hyp-activated cation current by Patrick Kanold
 	kh_m_inf = kh_m(v) 
@@ -121,34 +110,21 @@ UNITSOFF
 : may slow things down a bit
 
 
-FUNCTION kh_m(x) {
+FUNCTION kh_m(x (mV)) {
 	kh_m = 1/(1+exp((x+68.9+ghvshift)/6.5))
 }
 
-FUNCTION kh_n(x) {
+FUNCTION kh_n(x (mV)) {
 	kh_n = 1/(1+exp((x+68.9+ghvshift)/6.5)) : same as kh_m, but for completeness, compute this
 }
 
-FUNCTION kh_mt(v) {
+FUNCTION kh_mt(v (mV)) {
 	kh_mt = exp((v+183.6+ghvshift)/15.24)
 }
 
-FUNCTION kh_nt(v) {
+FUNCTION kh_nt(v (mV)) {
 	kh_nt = exp((v+158.6+ghvshift)/11.2)/(1+exp((v+75+ghvshift)/5.5))
 }
 
-FUNCTION vtrap(x,y) {  :Traps for 0 in denominator of rate eqns.
-        if (fabs(x/y) < 1e-6) {
-                vtrap = y*(1 - x/y/2)
-        }else{
-                vtrap = x/(exp(x/y) - 1)
-        }
-}
 
-FUNCTION alphbet(x,A,B,C,D) { 	: alpha/beta general functions for
-				: transcrbing GENESIS models
-alphbet = A/(B+exp((x+C)/D))
-}
-
-UNITSON
 

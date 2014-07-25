@@ -1,6 +1,7 @@
 from neuron import h
 import neuron as nrn
 from ..util import nstomho
+import numpy as np
 
 from .cell import Cell
 
@@ -22,7 +23,7 @@ class Pyramidal(Cell):
         """
         super(Pyramidal, self).__init__()
         if type == None:
-            type = 'I'
+            type = 'Pyramidal'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'Pyramidal'}
 
@@ -41,14 +42,10 @@ class Pyramidal(Cell):
         # else:
         #     raise ValueError('Sodium channel %s in type 1 cell not known' % nach)
 
-        soma.insert("napyr")
-        soma.insert("kdpyr")
-        soma.insert("kif")
-        soma.insert("kis")
-        soma.insert("ihpyr")
-        soma.insert("leak")
-        soma().kif.kif_ivh = -89.6
         self.mechanisms = ['napyr', 'kdpyr', 'kif', 'kis', 'ihpyr', 'leak']
+        for mech in self.mechanisms:
+            soma.insert(mech)
+        soma().kif.kif_ivh = -89.6
         self.add_section(soma, 'soma')
         self.species_scaling(silent=True, species=species, type=type)  # set the default type I-c  cell parameters
         self.get_mechs(soma)
@@ -56,9 +53,9 @@ class Pyramidal(Cell):
         if debug:
             print "<< PYR: POK Pyramidal Cell created >>"
 
-    def species_scaling(self, silent=True, species='rat', type='I'):
+    def species_scaling(self, silent=True, species='rat', type='Pyramidal'):
         soma = self.soma
-        if species == 'rat' and type == 'I':
+        if species == 'rat' and type == 'Pyramidal':
             self.set_soma_size_from_Cm(12.0)
             soma().napyr.gbar = nstomho(350, self.somaarea)
             #soma().pyr.gnapbar = 0.0
@@ -113,3 +110,32 @@ class Pyramidal(Cell):
     # # seg.pyr.gbar = gkir
     #     seg.pyr.kif_ivh = -89.6
     #
+
+    def i_currents(self, V):
+        """
+        For the steady-state case, return the total current at voltage V
+        Used to find the zero current point
+        vrange brackets the interval
+        Overrides i_currents in cells.py
+        """
+        for part in self.all_sections.keys():
+            for sec in self.all_sections[part]:
+                sec.v = V
+        #h.finitialize()
+        self.ix = {}
+
+        if 'kif' in self.mechanisms:
+             self.ix['kif'] = self.soma().kif.gkif*(V - self.soma().ek)
+        if 'kis' in self.mechanisms:
+             self.ix['kis'] = self.soma().kis.gkis*(V - self.soma().ek)
+        if 'ihpyr' in self.mechanisms:
+             self.ix['ihpyr'] = self.soma().ihpyr.gh*(V - self.soma().eh)
+        if 'napyr' in self.mechanisms:
+             self.ix['napyr'] = self.soma().napyr.gna*(V - self.soma().ena)
+        if 'kdpyr' in self.mechanisms:
+             self.ix['kdpyr'] = self.soma().kdpyr.gk*(V - self.soma().ek)
+
+        # leak
+        if 'leak' in self.mechanisms:
+            self.ix['leak'] = self.soma().leak.gbar*(V - self.soma().leak.erev)
+        return np.sum([self.ix[i] for i in self.ix])

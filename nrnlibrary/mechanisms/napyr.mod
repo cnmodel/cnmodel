@@ -1,47 +1,36 @@
-TITLE pyrna.mod   DCN pyramidal cell model  
+TITLE pyrna.mod   DCN pyramidal cell model sodium channel
  
 COMMENT
 
-Revised version of DCN Pyramidal cell model based on new hh.hoc file in NEURON
+Revised version of DCN Pyramidal cell model sodium channel
 
-This model implements a Dorsal Cochlear Nucleus Pyramidal point cell
+This model implements part of a Dorsal Cochlear Nucleus Pyramidal point cell
 based on kinetic data from Kanold and Manis (1999) and Kanold's dissertation (1999)
 
 -- 15 Jan 1999 P. Manis
 
-Added export of start states for some variables to do perturbation tests
-These start values replace the "inf" values used in the initialization procedure
-Note that if the start variable is set to a value less than 0, 
-then the default initialization will be done. Typically I use a value of -1 for this flagging
-Note also that it is possible to set the initial values > 1 but this is meaningless in terms of
-the present equations. 
--- 5 Feb 1999 P. Manis
-
-Removed slow Ih current 30 Jan 2000. P. Manis
-- also renamed variables to saner forms
-Added Patrick's version of ih as ihd
-
-Added persistent sodium current from deSchutter and Bower, J. Neurophys.
-71:375, 1994.
-Changed to Nap current from Quadroni and Knopfel, 1994
+This mechanism is the fast sodium channel portion of the model.
 
 
-2/10/02. P. Manis.
+Orignal: 2/10/02. P. Manis.
+
+Extraced from Pyr.mod, 7/24/2014.
 
 ENDCOMMENT
  
  
 UNITS {
- (mA) = (milliamp)
- (mV) = (millivolt)
+    (mA) = (milliamp)
+    (mV) = (millivolt)
 }
  
 
 NEURON {
- SUFFIX napyr
- USEION na READ ena WRITE ina
- RANGE gna, minf, hinf, ninf, gbar	: sodium channels and delayed rectifier
- RANGE mtau, htau, ntau: time constants for sodium channels and delayed rectifier
+    THREADSAFE
+    SUFFIX napyr
+    USEION na READ ena WRITE ina
+    RANGE gna, minf, hinf, ninf, gbar	: sodium channels and delayed rectifier
+    RANGE mtau, htau, ntau    : time constants for sodium channels and delayed rectifier
 }
  
 INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}
@@ -69,14 +58,12 @@ ASSIGNED {
 }
 
 LOCAL mexp, hexp
- 
-? currents
+
 BREAKPOINT {
 	SOLVE states METHOD cnexp
 	gna = gbar*m*m*h
 	ina = gna*(v - ena)
 }
-? currents
 
 UNITSOFF 
  
@@ -86,9 +73,7 @@ INITIAL {
 	h = hinf
 }
 
-
-? states
-DERIVATIVE states {  
+DERIVATIVE states {
 	rates(v)
 	m' = (minf - m) / mtau
 	h' = (hinf - h) / htau
@@ -97,7 +82,6 @@ DERIVATIVE states {
 LOCAL q10
 
 
-? rates
 PROCEDURE rates(v(mV)) {  :Computes rate and other constants at current v.
 	                      :Call once from HOC to initialize inf at resting v.
 	LOCAL  alpha, beta, sum
