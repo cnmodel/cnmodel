@@ -195,7 +195,7 @@ class Cell(object):
                   'leak': 'gbar',
                   'klt': 'gklt', 'kht': 'gkht',
                   'ka': 'gka',
-                  'ihvcn': 'gh', 'hcno': 'thegna',
+                  'ihvcn': 'gh', 'hcno': 'gh',
                 # pyramidal cell specific:
                   'napyr': 'gna', 'kdpyr': 'gk',
                   'kif': 'gkif', 'kis': 'gkis',

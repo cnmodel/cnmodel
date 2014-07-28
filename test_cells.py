@@ -96,10 +96,13 @@ else:
 if args.configuration in cellinfo['configs']:
     print 'Configuration %s is ok' % args.configuration
 
+#
+# Spiral Ganglion cell tests
+#
+
 if args.celltype == 'sgc':
     (cell, sgcaxon) = cells.SGC(debug=debugFlag, species='mouse',
     nach='nav11', chlist=['ih'], ttx=args.ttx)
-
 #
 # T-stellate tests
 #
@@ -114,7 +117,11 @@ elif args.celltype == 'bushy' and args.configuration == 'waxon':
 
 elif args.celltype == 'bushy' and args.configuration == 'std':
     cell = cells.Bushy(debug=debugFlag, species=args.species, nach=args.nav, type=args.type, ttx=args.ttx)
-
+#
+# Ocotpus tests
+#
+elif args.celltype == 'octopus' and args.configuration == 'std':
+    cell = cells.Octopus(debug=debugFlag, species=args.species, nach=args.nav, type=args.type, ttx=args.ttx)
 #
 # D-stellate tests
 #
@@ -124,9 +131,15 @@ elif args.celltype == 'dstellate':
 elif args.celltype == 'dstellateeager':
     cell = cells.DStellateEager(debug=debugFlag, ttx=args.ttx)
 
+#
+# DCN pyramidal cell tests
+#
 elif args.celltype == 'pyramidal':
     cell = cells.Pyramidal(debug=debugFlag, ttx=args.ttx)
 
+#
+# DCN cartwheel cell tests
+#
 elif args.celltype == 'cartwheel':
     cell = cells.Cartwheel(debug=debugFlag, ttx=args.ttx)
 
