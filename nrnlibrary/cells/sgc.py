@@ -16,7 +16,7 @@ class SGC(Cell):
         super(SGC, self).__init__()
         
         if chlist is None:
-            chlist = ['ih', 'klt', 'kht', 'na']
+            chlist = ['klt', 'kht', 'na']
         v_potassium = -84       # potassium reversal potential
         v_sodium = 55           # sodium reversal potential
         v_chloride = -20

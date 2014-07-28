@@ -17,7 +17,7 @@ class SynapseTest(Protocol):
     def reset(self):
         super(SynapseTest, self).reset()
 
-    def run(self, cell, synapses, temp=34.0):
+    def run(self, pre_cell, cell, synapses, temp=34.0):
         """ 
         Basic synapse test.
         Creates a presynaptic HH neuron and connects it to *cell* via *synapses*.
@@ -27,10 +27,6 @@ class SynapseTest(Protocol):
             coh is the calyx of held state
             isyn is the synaptic current
         """
-        #
-        # create presynaptic cell and wire up network
-        #
-        pre_cell = cells.HH()
         
         if not isinstance(synapses, list):
             synapses = [synapses]
