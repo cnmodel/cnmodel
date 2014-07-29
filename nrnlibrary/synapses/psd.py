@@ -12,9 +12,9 @@ class PSD(object):
     
     """
 
-    def __init__(self, parent_section, target_section, terminal,
-                    psdtype='ampa', message=None, debug=False,
-                    thresh=0.0, gmax=1.0, gvar=0, eRev=0,
+    def __init__(self, pre_sec, post_sec, terminal,
+                    message=None, debug=False,
+                    thresh=0.0, gvar=0, eRev=0,
                     delay=0,
                     nmda_ratio=1.0, identifier=0):
         """ This routine generates the synaptic connections from one presynaptic
@@ -28,8 +28,37 @@ class PSD(object):
             Each psd can have a different conductance centered about the mean of
             gmax, according to a gaussian distribution set by gvar.
         """
-        parent_cell = cells.cell_from_section(parent_section)
-        target_cell = cells.cell_from_section(target_section)
+        self.AN_Po_Ratio = 23.2917 # ratio of open probabilities for AMPA and NMDAR's at peak currents
+        self.AMPA_Max_Po = 0.44727
+        self.NMDARatio = 0.0
+        
+        self.pre_cell = cells.cell_from_section(pre_sec)
+        self.post_cell = cells.cell_from_section(post_sec)
+
+        #
+        # set parameters according to the target cell type
+        #
+        if isinstance(self.post_cell, cells.TStellate):
+            AN_gMax = 4600.0 / self.AMPA_Max_Po # correct because Po in model is not 1.0
+
+        elif isinstance(self.post_cell, cells.DStellateEager):
+            AN_gMax = 4600.0 / self.AMPA_Max_Po # correct because Po in model is not 1.0
+
+        elif isinstance(self.post_cell, cells.DStellate):
+            AN_gMax = 4600.0 / self.AMPA_Max_Po # correct because Po in model is not 1.0
+
+        elif isinstance(self.post_cell, cells.Bushy):
+            # normally an_gmax would be about 22 nS (22000) total
+            # However, if we do this as a "per release site" conductance, we have ~100 pA / 60 mV = 1.7 nS
+            #AN_gMax = 22000.0/(AMPA_Max_Po) # correct because Po in model is not 1.0
+            AN_gMax = 1700.0 / (self.AMPA_Max_Po)
+
+        else:
+            raise ValueError("Unknown cell type '%s'" % self.post_cell)
+
+        gmax = AN_gMax
+
+        self.psdType = 'ampa'
         
         #if cellname not in ['bushy', 'MNTB', 'stellate']:
             #raise TypeError
@@ -39,9 +68,9 @@ class PSD(object):
         #printParams(stochastic_pars)
         glyslowPoMax = 0.162297  # thse were measured from the kinetic models in Synapses.py, as peak open P for the glycine receptors
         glyfastPoMax = 0.038475  # also later verified, same numbers...
-        if psdtype == 'glyfast':
+        if self.psdType == 'glyfast':
             gmax /= glyfastPoMax  # normalized to maximum open probability for this receptor
-        if psdtype == 'glyslow':
+        if self.psdType == 'glyslow':
             gmax /= glyslowPoMax  # normalized to max open prob for the slow receptor.
         
         self.netcons = [] # build list of connections from individual release sites to the mother calyx
@@ -54,55 +83,55 @@ class PSD(object):
         # 
         clefts = []
         for k in range(0, n_rzones):
-            cl = h.cleftXmtr(0.5, sec=target_section)
+            cl = h.cleftXmtr(0.5, sec=post_sec)
             clefts.append(cl) # cleft
         
         # and then make a set of postsynaptic zones on the postsynaptic side
         #        print 'PSDTYPE: ', psdtype
-        if psdtype == 'ampa':
-            (psd, psdn, par, parn) = template_iGluR_PSD(target_section, nReceptors=n_rzones,
+        if self.psdType == 'ampa':
+            (psd, psdn, par, parn) = template_iGluR_PSD(post_sec, nReceptors=n_rzones,
                                                         nmda_ratio=nmda_ratio)
-        elif psdtype == 'glyslow':
-            (psd, par) = template_Gly_PSD_State_Gly6S(target_section, nReceptors=n_rzones,
-                                                        psdtype=psdtype)
-        elif psdtype == 'glyfast':
-            (psd, par) = template_Gly_PSD_State_PL(target_section, nReceptors=n_rzones,
-                                                    psdtype=psdtype)
-        elif psdtype == 'glyGC':
-            (psd, par) = template_Gly_PSD_State_GC(target_section, nReceptors=n_rzones,
-                                                    psdtype=psdtype)
-        elif psdtype == 'glya5':
-            (psd, par) = template_Gly_PSD_State_Glya5(target_section, nReceptors=n_rzones,
-                                                        psdtype=psdtype)
-        elif psdtype == 'glyexp':
-            (psd, par) = template_Gly_PSD_exp(target_section, nReceptors=n_rzones,
-                                                psdtype=psdtype)
+        elif self.psdType == 'glyslow':
+            (psd, par) = template_Gly_PSD_State_Gly6S(post_sec, nReceptors=n_rzones,
+                                                        psdtype=self.psdType)
+        elif self.psdType == 'glyfast':
+            (psd, par) = template_Gly_PSD_State_PL(post_sec, nReceptors=n_rzones,
+                                                    psdtype=self.psdType)
+        elif self.psdType == 'glyGC':
+            (psd, par) = template_Gly_PSD_State_GC(post_sec, nReceptors=n_rzones,
+                                                    psdtype=self.psdType)
+        elif self.psdType == 'glya5':
+            (psd, par) = template_Gly_PSD_State_Glya5(post_sec, nReceptors=n_rzones,
+                                                        psdtype=self.psdType)
+        elif self.psdType == 'glyexp':
+            (psd, par) = template_Gly_PSD_exp(post_sec, nReceptors=n_rzones,
+                                                psdtype=self.psdType)
         else:
             print "**PSDTYPE IS NOT RECOGNIZED: [%s]\n" % (psdtype)
             exit()
             # connect the mechanisms on the presynaptic side together
         if debug:
-            print 'parent_section: ', parent_section
+            print 'pre_sec: ', pre_sec
         
-        parent_section.push()
+        pre_sec.push()
 
-        self.netcons.append(h.NetCon(parent_section(0.5)._ref_v, relzone, thresh, delay, 1.0))
+        self.netcons.append(h.NetCon(pre_sec(0.5)._ref_v, relzone, thresh, delay, 1.0))
         self.netcons[-1].weight[0] = 1
         self.netcons[-1].threshold = -30.0
 
         for k in range(0, n_rzones): # 2. connect each release site to the mother axon
-            if psdtype == 'ampa': # direct connection, no "cleft"
+            if self.psdType == 'ampa': # direct connection, no "cleft"
                 relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', psd[k])
                 relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', psdn[k]) # include NMDAR's as well at same release site
-            elif psdtype == 'glyslow' or psdtype == 'glyfast' or psdtype == 'glyexp' or psdtype == 'glya5' or psdtype == 'glyGC':
+            elif self.psdType in ['glyslow', 'glyfast', 'glyexp', 'glya5', 'glyGC']:
                 relzone.setpointer(relzone._ref_XMTR[k], 'pre',
                                     clefts[k]) # connect the cleft to the release of transmitter
                 clefts[k].preThresh = 0.1
-                if isinstance(target_cell, cells.TStellate):
+                if isinstance(self.post_cell, cells.TStellate):
                     clefts[k].KV = 531.0 # set cleft transmitter kinetic parameters
                     clefts[k].KU = 4.17
                     clefts[k].XMax = 0.731
-                elif isinstance(target_cell, cells.Bushy):
+                elif isinstance(self.post_cell, cells.Bushy):
                     clefts[k].KV = 1e9 # really fast for bushy cells.
                     clefts[k].KU = 4.46
                     clefts[k].XMax = 0.733
@@ -111,17 +140,17 @@ class PSD(object):
                     exit()
                 clefts[k].setpointer(clefts[k]._ref_CXmtr, 'XMTR', psd[k]) #connect transmitter release to the PSD
             else:
-                print "PSDTYPE IS NOT RECOGNIZED: [%s]\n" % (psdtype)
+                print "PSDTYPE IS NOT RECOGNIZED: [%s]\n" % (self.psdType)
                 exit()
             v = 1.0 + gvar * np.random.standard_normal()
             psd[k].gmax = gmax * v # add a little variability - gvar is CV of amplitudes
             psd[k].Erev = eRev # set the reversal potential
-            if psdtype == 'ampa': # also adjust the nmda receptors at the same synapse
+            if self.psdType == 'ampa': # also adjust the nmda receptors at the same synapse
                 psdn[k].gmax = gmax * v
                 psdn[k].Erev = eRev
         h.pop_section()
         par = list(par)
-        if psdtype == 'ampa': # include nmda receptors in psd
+        if self.psdType == 'ampa': # include nmda receptors in psd
             psd.extend(psdn)
             par.extend(parn)
         if message is not None:
@@ -131,6 +160,33 @@ class PSD(object):
         self.clefts = clefts
         self.par = par
 
+        # adjust NMDA receptors to match postsynaptic cell
+        self.adjust_nmda()
+
+    def adjust_nmda(self):
+        k = 0
+        kNMDA = -1
+        kAMPA = -1
+        for p in self.psd:
+            if p.hname().find('NMDA', 0, 6) >= 0:
+                if isinstance(self.post_cell, cells.TStellate):
+                    p.gNAR = 1.28 * self.AN_Po_Ratio * self.NMDARatio # for T-stellate cells, this yields correct AMPA, NMDA ratio of 1.13 at +40 mV
+                elif isinstance(self.post_cell, cells.Bushy):
+                    p.gNAR = 0.36 * self.AN_Po_Ratio * self.NMDARatio # for bushy cells, this yields correct AMPA, NMDA ratio of 0.429 at +40 mV
+                    #if p is psd[0]:
+                    #    print "NMDAR's for bushy cells set to %8.3f" % p.gNAR
+                elif isinstance(self.post_cell, cells.DStellate):
+                    p.gNAR = 1.28 * self.AN_Po_Ratio * self.NMDARatio # same as for T-stellate (no other data)
+                p.vshift = 0
+                if kNMDA == -1:
+                    kNMDA = k # save the first instance where we have an NMDA receptor
+            else:
+                if kAMPA == -1: # not NMDA, so get AMPA 
+                    kAMPA = k
+            k = k + 1
+
+        self.kNMDA = kNMDA
+        self.kAMPA = kAMPA
 
 # define the "Calyx" template.
 # Each axon ends in (and thus includes) a calyx; therefore we make a list of axons

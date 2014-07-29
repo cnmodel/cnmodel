@@ -105,13 +105,13 @@ class StochasticTerminal(Terminal):
         self.n_rzones = nzones
 
         if psdtype is not None:
-            self.setPsdType(psdtype, target_cell, select)
+            self.setPsdType(target_cell, select)
 
-    def setPsdType(self, psdtype, target_cell, select=None):
-        if psdtype == 'ampa':
-            self.setDF(target_cell, 'epsc') # set the parameters for release
-        elif psdtype.startswith('gly'):
-            self.setDF(target_cell, 'ipsc', select) # set the parameters for release
+    def setPsdType(self, target_cell, select=None):
+        # TODO: must resurrect this for inhibitory synapses.
+        #elif psdtype.startswith('gly'):
+            #self.setDF(target_cell, 'ipsc', select) # set the parameters for release
+        self.setDF(target_cell, 'epsc') # set the parameters for release
         
 
     ################################################################################

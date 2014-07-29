@@ -108,12 +108,12 @@ class SynapseTest(Protocol):
             k = k + 1
         
         self['Open'] = psd[0]._ref_Open
-        if synapse.kNMDA >= 0:
-            self['nmOpen'] = psd[synapse.kNMDA]._ref_Open
-        if synapse.kAMPA >= 0:
-            self['amOpen'] = psd[synapse.kAMPA]._ref_Open
+        if synapse.psd.kNMDA >= 0:
+            self['nmOpen'] = psd[synapse.psd.kNMDA]._ref_Open
+        if synapse.psd.kAMPA >= 0:
+            self['amOpen'] = psd[synapse.psd.kAMPA]._ref_Open
         
-        if synapse.psdType == 'glyslow':
+        if synapse.psd.psdType == 'glyslow':
             nstate = 7
             self['C0'] = psd[0]._ref_C0
             self['C1'] = psd[0]._ref_C1
@@ -123,7 +123,7 @@ class SynapseTest(Protocol):
             self['D1'] = psd[0]._ref_D1
             #self['D3'] = psd[0]._ref_D3
             #self['O1'] = psd[0]._ref_O1
-        if synapse.psdType == 'glyfast':
+        if synapse.psd.psdType == 'glyfast':
             nstate = 7
             self['C0'] = psd[0]._ref_C0
             self['C1'] = psd[0]._ref_C1
@@ -185,12 +185,12 @@ class SynapseTest(Protocol):
         print 'nreq: %d\n' % nreq
         if nreq > 0:
             print 'Rel Prob: %8.3f\n' % (float(nrel) / nreq)
-        if self.synapses[0].kNMDA >= 0:
+        if self.synapses[0].psd.kNMDA >= 0:
             nmOmax = self['nmOpen'].max()
             amOmax = self['amOpen'].max()
             print 'Synapse.py: Max NMDAR Open Prob: %f   AMPA Open Prob: %f\n' % (nmOmax, amOmax)
-            nmImax = self['isyn%03d' % self.synapses[0].kNMDA].max()
-            amImax = self['isyn%03d' % self.synapses[0].kAMPA].max()
+            nmImax = self['isyn%03d' % self.synapses[0].psd.kNMDA].max()
+            amImax = self['isyn%03d' % self.synapses[0].psd.kAMPA].max()
             if nmImax + amImax > 0.0:
                 print 'Synapse.py: Max NMDAR I: %f   AMPA I: %f, N/(N+A): %f\n' % (
                     nmImax, amImax, nmImax / (nmImax + amImax))

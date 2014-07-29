@@ -112,3 +112,20 @@ class SGC(Cell):
                 print message
                 
         self.add_section(soma, 'soma')
+        
+    def make_terminal(self, pre_sec, post_sec, **kwds):
+        post_cell = cells.cell_from_section(post_sec)
+        if isinstance(post_cell, cells.Bushy):
+            pass
+        elif isinstance(post_cell, cells.TStellate):
+            pass
+        elif isinstance(post_cell, cells.DStellate):
+            pass
+        else:
+            raise NotImplementedError("Cannot connect SGC to cell type %s" % 
+                                      type(post_cell))
+        
+    def make_psd(self, pre_sec, post_sec, **kwds):
+        raise NotImplementedError()
+        
+        
