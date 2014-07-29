@@ -3,6 +3,12 @@ from neuron import h
 from .terminal import Terminal
 from .. import cells
 
+# utility class to create parameter lists... 
+# create like: p = Params(abc=2.0, defg = 3.0, lunch='sandwich')
+# reference like p.abc, p.defg, etc.
+class Params(object):
+    def __init__(self, **kwds):
+        self.__dict__.update(kwds)
 
 class StochasticTerminal(Terminal):
     """
@@ -38,8 +44,21 @@ class StochasticTerminal(Terminal):
             relsite: a list of the nzones release sites that were created
             cleft: a list of the nzones cleft mechanisms that were created.
         """
+        # set parameter control for the stochastic release of vesicles...
+        # this structure is passed to stochastic synapses, and replaces several variables 
+        # that were previously defined in the call to that function.
+        ANTerminals_Latency = 0.5 # latency 
+        vPars = Params(LN_Flag=1, LN_t0=10.0, LN_A0=0.05, LN_tau=35, LN_std=0.05,
+                    Lat_Flag=1, Lat_t0=10.0, Lat_A0=0.140, Lat_tau=21.5,
+                    latency=ANTerminals_Latency)
+        #NOTE: stochastic_pars must define parameters used by multisite, including:
+            #.delay is the netcon delay between the presynaptic AP and the start of release events
+            #.Latency is the latency to the mean release event... this could be confusing.
+        
         if stochastic_pars is None:
-            raise TypeError
+            stochastic_pars = vPars
+            
+            
         mu = u'\u03bc'
         sigma = u'\u03c3'
         message='  >> creating terminal with %d release zones using lognormal release latencies (coh4)' % nzones
