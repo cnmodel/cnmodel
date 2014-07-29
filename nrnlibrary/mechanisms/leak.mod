@@ -14,7 +14,7 @@ NEURON {
 
 PARAMETER {
 	v (mV)
-	gbar = .001	(mho/cm2)
+	gbar = 0.001	(mho/cm2)
 	erev = -65	(mV)
 }
 

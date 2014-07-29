@@ -23,7 +23,7 @@ class Pyramidal(Cell):
         """
         super(Pyramidal, self).__init__()
         if type == None:
-            type = 'Pyramidal'
+            type = 'I'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'Pyramidal'}
 
@@ -53,9 +53,9 @@ class Pyramidal(Cell):
         if debug:
             print "<< PYR: POK Pyramidal Cell created >>"
 
-    def species_scaling(self, silent=True, species='rat', type='Pyramidal'):
+    def species_scaling(self, silent=True, species='rat', type='I'):
         soma = self.soma
-        if species == 'rat' and type == 'Pyramidal':
+        if species == 'rat' and type == 'I':
             self.set_soma_size_from_Cm(12.0)
             soma().napyr.gbar = nstomho(350, self.somaarea)
             #soma().pyr.gnapbar = 0.0

@@ -146,6 +146,9 @@ class Cell(object):
         if 'na' in self.mechanisms:
             #print dir(self.soma().na)
             self.ix['na'] = self.soma().na.gna*(V - self.soma().ena)
+        if 'jsrna' in self.mechanisms:
+            #print dir(self.soma().na)
+            self.ix['jsrna'] = self.soma().jsrna.gna*(V - self.soma().ena)
         if 'klt' in self.mechanisms:
             self.ix['klt'] = self.soma().klt.gklt*(V - self.soma().ek)
         if 'kht' in self.mechanisms:
@@ -154,6 +157,8 @@ class Cell(object):
             self.ix['ka'] = self.soma().ka.gka*(V - self.soma().ek)
         if 'ihvcn' in self.mechanisms:
             self.ix['ihvcn'] = self.soma().ihvcn.gh*(V - self.soma().ihvcn.eh)
+        if 'hcno' in self.mechanisms:
+            self.ix['hcno'] = self.soma().hcno.gh*(V - self.soma().hcno.eh)
         if 'leak' in self.mechanisms:
             self.ix['leak'] = self.soma().leak.gbar*(V - self.soma().leak.erev)
 #        print self.status['name'], self.status['type'], V, self.ix
@@ -191,7 +196,7 @@ class Cell(object):
         if auto_initialize:
             self.cell_initialize()
         gnames = {# R&M03:
-                  'nacn': 'gna', 'na': 'gna',
+                  'nacn': 'gna', 'na': 'gna', 'jsrna': 'gna',
                   'leak': 'gbar',
                   'klt': 'gklt', 'kht': 'gkht',
                   'ka': 'gka',

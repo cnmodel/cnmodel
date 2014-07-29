@@ -27,10 +27,10 @@ __all__ = ['Octopus']
 class Octopus(Cell):
     """
     VCN octopus cell model (point cell).
-    Rothman and Manis, 2003abc (Type II, with high gklt and hcno -octopus cell h current).
+    Rothman and Manis, 2003abc (Type II, with high gklt and hcno - octopus cell h current).
     """
 
-    def __init__(self, nach='na', ttx=False, debug=False, species='guineapig', type=None):
+    def __init__(self, nach='jsrna', ttx=False, debug=False, species='guineapig', type=None):
         """
         initialize the octopus cell, using the default parameters for guinea pig from
         R&M2003, as a type II cell with modified conductances.
@@ -41,31 +41,37 @@ class Octopus(Cell):
         if type == None:
             type = 'II-o'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'octopus'}
-        self.i_test_range=(-0.5, 0.5, 0.05)
+                       'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'Octopus'}
+        self.i_test_range=(-2, 2, 0.05)
         self.spike_threshold = -50
-
+        # overrides:
+        self.e_leak = -62
+        self.e_h = -38
+        self.R_a = 100
         soma = h.Section(name="octopus_Soma_%x" % id(self))  # one compartment of about 29000 um2
         soma.nseg = 1
-        soma.insert('klt')
-        soma.insert('kht')
-        soma.insert('hcno')
-        soma.insert('leak')
+        self.mechanisms = ['klt', 'kht', 'hcno', 'leak', nach]
+        for mech in self.mechanisms:
+            soma.insert(mech)
+        # soma.insert('klt')
+        # soma.insert('kht')
+        # soma.insert('hcno')
+        # soma.insert('leak')
         soma.ek = self.e_k
+        soma.ena = self.e_na
         soma().hcno.eh = self.e_h
         soma().leak.erev = self.e_leak
 
         # insert the requested sodium channel
-        if nach == 'jsrna':
-            soma.insert('jsrna')
-        elif nach == 'nav11':
-            soma.insert('nav11')
-        elif nach in ['na', 'nacn']:
-            soma.insert('na')
-        else:
-            raise ValueError('Sodium channel %s not available for octopus cells' % nach)
+        # if nach == 'jsrna':
+        #     soma.insert('jsrna')
+        # elif nach == 'nav11':
+        #     soma.insert('nav11')
+        # elif nach in ['na', 'nacn']:
+        #     soma.insert('na')
+        # else:
+        #     raise ValueError('Sodium channel %s not available for octopus cells' % nach)
 
-        soma.ena = self.e_na
         self.add_section(soma, 'soma')
         self.mechanisms = ['klt', 'kht', 'hcno', 'leak', nach]
         self.species_scaling(silent=True, species=species, type=type)  # set the default type II cell parameters
@@ -74,7 +80,7 @@ class Octopus(Cell):
             print "<< octopus: octopus cell model created >>"
         #print 'Cell created: ', self.status
 
-    def species_scaling(self, species='guineapig', type='II', silent=True):
+    def species_scaling(self, species='guineapig', type='II-o', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
         """
@@ -92,13 +98,13 @@ class Octopus(Cell):
         #     self.vm0 = self.find_i0()
         #     self.axonsf = 0.57
         if species == 'guineapig' and type =='II-o':
-            self.set_soma_size_from_Cm(12.0)
+            self.set_soma_size_from_Cm(25.0)
             self.adjust_na_chans(soma)
-            soma().kht.gbar = nstomho(150.0, self.somaarea)
-            soma().klt.gbar = nstomho(600.0, self.somaarea)
-            soma().hcno.gbar = nstomho(40.0, self.somaarea)
-            soma().leak.gbar = nstomho(2.0, self.somaarea)
-            self.axonsf = 0.57
+            soma().kht.gbar = 0.0061  # nstomho(150.0, self.somaarea)  # 6.1 mmho/cm2
+            soma().klt.gbar = 0.0407  # nstomho(3196.0, self.somaarea)  #  40.7 mmho/cm2
+            soma().hcno.gbar = 0.0076  #nstomho(40.0, self.somaarea)  # 7.6 mmho/cm2, cf. Bal and Oertel, Spencer et al. 25 u dia cell
+            soma().leak.gbar = 0.0005  # nstomho(2.0, self.somaarea)
+            self.axonsf = 1.0
         # elif species == 'guineapig' and type =='II-I':
         #     # guinea pig data from Rothman and Manis, 2003, type II=I
         #     self.i_test_range=(-0.4, 0.4, 0.02)
@@ -126,9 +132,6 @@ class Octopus(Cell):
             print 'set cell as: ', species
             print ' with Vm rest = %6.3f' % self.vm0
 
-
-       # print 'Rescaled, status: ', self.status
-
     def adjust_na_chans(self, soma, debug=False):
         """
         adjust the sodium channel conductance
@@ -139,7 +142,7 @@ class Octopus(Cell):
         if self.status['ttx']:
             gnabar = 0.0
         else:
-            gnabar = nstomho(1000.0, self.somaarea)
+            gnabar = 0.04244 # 4.2441  # nstomho(1000.0, self.somaarea)  # mmho/cm2 - 4244.1 moh - 4.2441
         nach = self.status['na']
         if nach == 'jsrna':
             soma().jsrna.gbar = gnabar
@@ -179,6 +182,9 @@ class Octopus(Cell):
         if 'na' in self.mechanisms:
             #print dir(self.soma().na)
             self.ix['na'] = self.soma().na.gna*(V - self.soma().ena)
+        if 'jsrna' in self.mechanisms:
+            #print dir(self.soma().na)
+            self.ix['jsrna'] = self.soma().jsrna.gna*(V - self.soma().ena)
         if 'klt' in self.mechanisms:
             self.ix['klt'] = self.soma().klt.gklt*(V - self.soma().ek)
         if 'kht' in self.mechanisms:

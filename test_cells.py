@@ -25,7 +25,7 @@ ccivrange = {'bushy': (-0.5, 0.5, 0.05),
             'sgc:': (-0.5, 0.5, 0.05),
             'cartwheel': (-0.2, 0.1, 0.02),
             'pyramidal': (-0.3, 0.3, 0.03),
-            'octopus': (-2., 2., 0.2)}
+            'octopus': (-3., 3., 0.2)}
 # scales holds some default scaling to use in the cciv plots
 # argument is {cellname: (xmin, xmax, IVymin, IVymax, FIspikemax,
 # offset(for spikes), crossing (for IV) )}
@@ -121,7 +121,7 @@ elif args.celltype == 'bushy' and args.configuration == 'std':
 # Ocotpus tests
 #
 elif args.celltype == 'octopus' and args.configuration == 'std':
-    cell = cells.Octopus(debug=debugFlag, species=args.species, nach=args.nav, type=args.type, ttx=args.ttx)
+    cell = cells.Octopus(debug=debugFlag, species=args.species, nach='jsrna', type=args.type, ttx=args.ttx)
 #
 # D-stellate tests
 #
