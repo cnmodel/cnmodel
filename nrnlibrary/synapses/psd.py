@@ -146,17 +146,17 @@ class GlyPSD(PSD):
         *nmda_ampa_ratio* should be the ratio nmda/ampa contuctance measured at +40 mV.
         """
         from .. import cells
-        self.AN_Po_Ratio = 23.2917 # ratio of open probabilities for AMPA and NMDAR's at peak currents
-        self.AMPA_Max_Po = 0.44727
-        self.NMDARatio = 0.0
+        #self.AN_Po_Ratio = 23.2917 # ratio of open probabilities for AMPA and NMDAR's at peak currents
+        #self.AMPA_Max_Po = 0.44727
+        #self.NMDARatio = 0.0
         
         self.pre_cell = cells.cell_from_section(pre_sec)
         self.post_cell = cells.cell_from_section(post_sec)
 
         # get AMPA gmax corrected for max open probability
-        gmax = ampa_gmax / self.AMPA_Max_Po
+        #gmax = ampa_gmax / self.AMPA_Max_Po
 
-        self.psdType = 'ampa'
+        self.psdType = None
         
         #if cellname not in ['bushy', 'MNTB', 'stellate']:
             #raise TypeError
@@ -185,10 +185,7 @@ class GlyPSD(PSD):
         
         # and then make a set of postsynaptic receptor mechanisms
         #        print 'PSDTYPE: ', psdtype
-        if self.psdType == 'ampa':
-            (psd, psdn, par, parn) = template_iGluR_PSD(post_sec, nReceptors=n_rzones,
-                                                        nmda_ratio=nmda_ratio)
-        elif self.psdType == 'glyslow':
+        if self.psdType == 'glyslow':
             (psd, par) = template_Gly_PSD_State_Gly6S(post_sec, nReceptors=n_rzones,
                                                         psdtype=self.psdType)
         elif self.psdType == 'glyfast':
@@ -212,10 +209,7 @@ class GlyPSD(PSD):
         
         # Connect terminal to psd (or cleft)
         for k in range(0, n_rzones):
-            if self.psdType == 'ampa': # direct connection, no "cleft"
-                relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', psd[k])
-                relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', psdn[k]) # include NMDAR's as well at same release site
-            elif self.psdType in ['glyslow', 'glyfast', 'glyexp', 'glya5', 'glyGC']:
+            if self.psdType in ['glyslow', 'glyfast', 'glyexp', 'glya5', 'glyGC']:
                 relzone.setpointer(relzone._ref_XMTR[k], 'pre',
                                     clefts[k]) # connect the cleft to the release of transmitter
                 clefts[k].preThresh = 0.1
@@ -237,15 +231,11 @@ class GlyPSD(PSD):
             v = 1.0 + gvar * np.random.standard_normal()
             psd[k].gmax = gmax * v # add a little variability - gvar is CV of amplitudes
             psd[k].Erev = eRev # set the reversal potential
-            if self.psdType == 'ampa': # also adjust the nmda receptors at the same synapse
-                psdn[k].gmax = gmax * v
-                psdn[k].Erev = eRev
-        h.pop_section()
         
         par = list(par)
-        if self.psdType == 'ampa': # include nmda receptors in psd
-            psd.extend(psdn)
-            par.extend(parn)
+        #if self.psdType == 'ampa': # include nmda receptors in psd
+            #psd.extend(psdn)
+            #par.extend(parn)
         if message is not None:
             print message
                 
@@ -253,23 +243,23 @@ class GlyPSD(PSD):
         self.clefts = clefts
         self.par = par
 
-        # adjust NMDA receptors to match postsynaptic cell
-        k = 0
-        kNMDA = -1
-        kAMPA = -1
-        for p in self.psd:
-            if p.hname().find('NMDA', 0, 6) >= 0:
-                p.gNAR = nmda_ampa_ratio * self.AN_Po_Ratio * self.NMDARatio
-                p.vshift = 0
-                if kNMDA == -1:
-                    kNMDA = k # save the first instance where we have an NMDA receptor
-            else:
-                if kAMPA == -1: # not NMDA, so get AMPA 
-                    kAMPA = k
-            k = k + 1
+        ## adjust NMDA receptors to match postsynaptic cell
+        #k = 0
+        #kNMDA = -1
+        #kAMPA = -1
+        #for p in self.psd:
+            #if p.hname().find('NMDA', 0, 6) >= 0:
+                #p.gNAR = nmda_ampa_ratio * self.AN_Po_Ratio * self.NMDARatio
+                #p.vshift = 0
+                #if kNMDA == -1:
+                    #kNMDA = k # save the first instance where we have an NMDA receptor
+            #else:
+                #if kAMPA == -1: # not NMDA, so get AMPA 
+                    #kAMPA = k
+            #k = k + 1
 
-        self.kNMDA = kNMDA
-        self.kAMPA = kAMPA
+        #self.kNMDA = kNMDA
+        #self.kAMPA = kAMPA
 
 
 
