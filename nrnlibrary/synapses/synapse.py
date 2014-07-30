@@ -37,13 +37,13 @@ class Synapse(object):
         #ipscdynamics = 1
 
         ANTerminals_Delay = 0.0 # latency between AP and mode of release distribution, in milliseconds.    
-        thresh = -30 # mV - AP detection on the presynaptic side.
 
 
         # create a presynaptic ending with nzones release sites
-        term = StochasticTerminal(parent_section=pre_sec,
+        term = StochasticTerminal(pre_sec=pre_sec,
                                   target_cell=self.post_cell,
                                   nzones=nANTerminals_ReleaseZones,
+                                  delay=ANTerminals_Delay,
                                   identifier=1, debug=debug)
         
         # ****************
@@ -60,8 +60,7 @@ class Synapse(object):
                   post_sec=post_sec,
                   terminal=term,
                   eRev=0, debug=debug,
-                  delay=ANTerminals_Delay,
-                  thresh=thresh, gvar=0.3,
+                  gvar=0.3,
                   nmda_ratio=0.0, identifier=1,
                   ) # set gVar to 0 for testing
         

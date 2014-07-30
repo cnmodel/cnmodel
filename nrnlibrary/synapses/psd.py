@@ -14,8 +14,7 @@ class PSD(object):
 
     def __init__(self, pre_sec, post_sec, terminal,
                     message=None, debug=False,
-                    thresh=0.0, gvar=0, eRev=0,
-                    delay=0,
+                    gvar=0, eRev=0,
                     nmda_ratio=1.0, identifier=0):
         """ This routine generates the synaptic connections from one presynaptic
             input onto a postsynaptic cell.
@@ -73,7 +72,6 @@ class PSD(object):
         if self.psdType == 'glyslow':
             gmax /= glyslowPoMax  # normalized to max open prob for the slow receptor.
         
-        self.netcons = [] # build list of connections from individual release sites to the mother calyx
         #        print "Stochastic syn: j = %d of n_fibers = %d n_rzones = %d\n" % (j, n_fibers, n_rzones)
         relzone = terminal.relsite
         n_rzones = terminal.n_rzones
@@ -114,11 +112,7 @@ class PSD(object):
             print 'pre_sec: ', pre_sec
         
         pre_sec.push()
-
-        self.netcons.append(h.NetCon(pre_sec(0.5)._ref_v, relzone, thresh, delay, 1.0))
-        self.netcons[-1].weight[0] = 1
-        self.netcons[-1].threshold = -30.0
-
+        
         for k in range(0, n_rzones): # 2. connect each release site to the mother axon
             if self.psdType == 'ampa': # direct connection, no "cleft"
                 relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', psd[k])

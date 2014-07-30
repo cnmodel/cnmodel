@@ -89,19 +89,20 @@ class Cell(object):
         synapse.terminal = pre_cell.make_terminal(pre_sec, post_sec, **pre_opts)
         synapse.psd = post_cell.make_psd(pre_sec, post_sec, **post_opts)
         synapse.connect(pre_sec, post_sec)
+        return synapse
 
     def make_terminal(self, pre_sec, post_sec, **kwds):
         """
         Create a synaptic terminal release mechanism suitable for output
         from this cell to post_sec
         """
-        return Terminal()
+        raise NotImplementedError()
     
     def make_psd(self, pre_sec, post_sec, **kwds):
         """
-        Make a PSD suitable for synaptic input from pre_sec.
+        Create a PSD suitable for synaptic input from pre_sec.
         """
-        return PSD()
+        raise NotImplementedError()
 
     def print_status(self):
         print("\nCell model: %s" % self.__class__.__name__)
