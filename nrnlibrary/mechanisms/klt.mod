@@ -50,7 +50,6 @@ INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}
 PARAMETER {
     v (mV)
     dt (ms)
-
     gbar = 0.01592 (mho/cm2) <0,1e9>
     zss = 0.5   <0,1>   : steady state inactivation of glt
     q10tau = 3.0

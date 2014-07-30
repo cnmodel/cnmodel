@@ -60,7 +60,6 @@ class IVCurve(Protocol):
             durs = [10.0, 100.0, 50.0]
             
         self.durs = durs
-        
         icur = []
         # set up stimulation with a pulse train
         if reppulse is None:
@@ -86,7 +85,12 @@ class IVCurve(Protocol):
         istim.dur = 1e9 # these actually do not matter...
         istim.iMax = 0.0
         (secmd, maxt, tstims) = make_pulse(stim)
-        tend = maxt
+
+        iextend = []
+        if self.durs[2] > 50.:
+            iextend = np.ones(int((self.durs[2]-50)/stim['dt']))
+            secmd = np.append(secmd, secmd[-1]*iextend)
+        tend = maxt + len(iextend)*stim['dt']
 
 
         # Calculate current pulse levels
@@ -124,14 +128,12 @@ class IVCurve(Protocol):
             h.tstop = tend
             cell.cell_initialize()  # initialize the cell to it's rmp
             if i == 0:
-                h.finitialize()
-                h.fcurrent()
+                self.custom_init()
                 Rin, tau, v = cell.measure_rintau(auto_initialize=False)
                 print '    *** Rin: %9.0f  tau: %9.1f   v: %6.1f' % (Rin, tau, v)
 
-            h.finitialize()
-            h.fcurrent()
-            h.frecord_init()
+            cell.cell_initialize()  # initialize the cell to it's rmp
+            self.custom_init()
             while h.t < h.tstop:
                 h.fadvance()
 
@@ -150,8 +152,8 @@ class IVCurve(Protocol):
         Vm = self.voltage_traces
         Icmd = self.current_cmd
         steps = len(Icmd)
-        peakStart = self.durs[0] / self.dt
-        peakStop = peakStart + (self.durs[1]*window) / self.dt # peak can be in first half
+        peakStart = int(self.durs[0] / self.dt)
+        peakStop = int(peakStart + (self.durs[1]*window) / self.dt) # peak can be in first half
         Vpeak = []
         for i in range(steps):
             if Icmd[i] > 0:
@@ -168,8 +170,8 @@ class IVCurve(Protocol):
         """
         Vm = self.voltage_traces
         steps = len(Vm)
-        steadyStop = (self.durs[0] + self.durs[1]) / self.dt
-        steadyStart = steadyStop - (self.durs[1]*window) / self.dt  # measure last 10% of trace
+        steadyStop = int((self.durs[0] + self.durs[1]) / self.dt)
+        steadyStart = int(steadyStop - (self.durs[1]*window) / self.dt)  # measure last 10% of trace
         Vsteady = [Vm[i][steadyStart:steadyStop].mean() for i in range(steps)]
         return np.array(Vsteady)
 
@@ -248,7 +250,8 @@ class IVCurve(Protocol):
             print('{0:<15s}: {1:s}'.format('vmask', repr(vmask.astype(int))))
             print('{0:<15s}: {1:s} '.format('imask', repr(imask.astype(int))))
             print('{0:<15s}: {1:s}'.format('spikemask', repr(smask.astype(int))))
-            raise Exception("Not enough traces to do linear regression.")
+            return 0., 0.
+            #raise Exception("Not enough traces to do linear regression.")
         
         # Use these to measure input resistance by linear regression.
         reg = scipy.stats.linregress(Icmd[mask], Vss[mask])

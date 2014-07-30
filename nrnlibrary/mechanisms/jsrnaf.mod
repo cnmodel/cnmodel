@@ -28,7 +28,6 @@ INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}
 
 PARAMETER {
 	v (mV)
-:	celsius = 22 (degC)
 	dt (ms)
     ena = 55 (mV)
 	gbar = 0.25 (mho/cm2)    <0,1e9>
@@ -46,7 +45,6 @@ ASSIGNED {
     minf hinf 
     mtau (ms) htau (ms)
     celsius (degC)
-:    ena (mV)
 }
 
 LOCAL mexp, hexp 
@@ -66,26 +64,19 @@ INITIAL {
     h = hinf
 }
 
-? states
 DERIVATIVE states {  :Computes state variables m, h, and n
 	trates(v)      :             at the current v and dt.
 	m' = (minf - m)/mtau
     h' = (hinf - h)/htau
-       :m = m + mexp*(minf-m)
-:	h = h + hexp*(hinf-h)
-:VERBATIM
-:	return 0;
-:ENDVERBATIM
 }
 
 LOCAL qt
 
-? rates
-PROCEDURE rates(v) {  :Computes rate and other constants at current v.
+PROCEDURE rates(v (mV)) {  :Computes rate and other constants at current v.
                       :Call once from HOC to initialize inf at resting v.
 LOCAL  alpha, beta, sum
 
-	qt = q10^((celsius - 22)/10) : R&M'03 used 3
+	qt = q10^((celsius - 22)/10 (degC)) : R&M'03 used 3
 
 : Note qt temperature here cancels in minf (a/(a+b))
 :"m" sodium activation system - JSR
@@ -96,8 +87,8 @@ LOCAL  alpha, beta, sum
         minf = alpha/sum
 
 :"h" sodium inactivation system - JSR
-        alpha = 2.4*qt/(1+exp((v+68-vsna)/3)) + 0.8*qt/(1+exp(v+61.3-vsna))
-        beta = 3.6*qt/(1+exp(-(v+21-vsna)/10))
+        alpha = 2.4*qt/(1+exp((v+68-vsna)/3 (mV))) + 0.8*qt/(1+exp(v+61.3-vsna))
+        beta = 3.6*qt/(1+exp(-(v+21-vsna)/10 (mV)))
         sum = alpha + beta
 		htau = 1/sum
         hinf = alpha/sum
@@ -121,10 +112,9 @@ LOCAL  alpha, beta, sum
 
 }
 
-PROCEDURE trates(v) {  :Computes rate and other constants at current v.
+PROCEDURE trates(v (mV)) {  :Computes rate and other constants at current v.
                       :Call once from HOC to initialize inf at resting v.
 	LOCAL tinc
-	TABLE minf, mexp, hinf, hexp DEPEND dt, celsius FROM -100 TO 100 WITH 200
 
     rates(v)    : not consistently executed from here if usetable_hh == 1
         : so don't expect the tau values to be tracking along with
@@ -143,4 +133,4 @@ FUNCTION vtrap(x,y) {  :Traps for 0 in denominator of rate eqns.
 	}
 }
 
-UNITSON
+

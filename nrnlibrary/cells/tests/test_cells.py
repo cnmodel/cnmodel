@@ -18,7 +18,6 @@ def test_bushy21():
     cell = cells.Bushy(species='guineapig', type='II-I')
     assert_cell_info(cell, 'bushy_guineapig-typeII-I')
 
-
 def test_tstellate():
     cell = cells.TStellate(species='guineapig', type='I-c')
     assert_cell_info(cell, 'tstellate_guineapig-typeI-c')
@@ -30,6 +29,22 @@ def test_tstellatet():
 def test_dstellate():
     cell = cells.DStellate(species='guineapig', type='I-II')
     assert_cell_info(cell, 'dstellate_guineapig-typeI-II')
+
+def test_pyramidal():
+    cell = cells.Pyramidal(species='rat', type='I')
+    assert_cell_info(cell, 'pyramidal_rat_I')
+
+def test_cartwheel():
+    cell = cells.Cartwheel(species='rat', type='I')
+    assert_cell_info(cell, 'cartwheel_rat_I')
+
+def test_sgc_basal_middle():
+    cell = cells.SGC(species='mouse', type='bm')
+    assert_cell_info(cell, 'SGC_rat_bm')
+
+def test_sgc_apical():
+    cell = cells.SGC(species='mouse', type='a')
+    assert_cell_info(cell, 'SGC_rat_a')
 
 
 

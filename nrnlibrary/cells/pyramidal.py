@@ -1,6 +1,7 @@
 from neuron import h
 import neuron as nrn
 from ..util import nstomho
+import numpy as np
 
 from .cell import Cell
 
@@ -12,66 +13,128 @@ class Pyramidal(Cell):
     DCN pyramidal cell
     Kanold and Manis, 1999, 2001, 2005
     """
-    def __init__(self, scalefactor=1.0, debug=False):
+    def __init__(self, nach='napyr', ttx=False, debug=False, species='rat', type=None):
+        """
+        initialize a planar stellate (T-stellate) cell, using the default parameters for guinea pig from
+        R&M2003, as a type I cell.
+        Modifications to the cell can be made by calling methods below. These include:
+            Converting to a type IA model (add transient K current) (species: guineapig-TypeIA).
+            Changing "species" to mouse or cat (scales conductances)
+        """
         super(Pyramidal, self).__init__()
-        ndend = 1
-        soma = h.Section()
-        dend = h.Section()
+        if type == None:
+            type = 'I'
+        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+                       'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'Pyramidal'}
 
-        cm = 1.0
-        scalefactor = 1.0 # This determines the relative size of the cell
-        rinsf = 1.0           # input resistance adjustment (also current...)
-        totcap = scalefactor * 12.0 # cap in pF for cell
-        effcap = totcap # sometimes we change capacitance - that's effcap
-        somaarea = totcap * 1E-6 / cm # pf -> uF, cm = 1uf/cm^2 nominal;
-        lstd = 1E4 * ((somaarea / 3.14159) ** 0.5) # convert from cm to um
+        self.i_test_range=(-0.15, 0.15, 0.01)
 
-        gnab = nstomho(350, somaarea) * scalefactor
-        gnap = 0.0
-        gkb = nstomho(80, somaarea) * scalefactor # used to be 20?
-        gkfb = nstomho(150, somaarea) * scalefactor
-        gksb = nstomho(40, somaarea) * scalefactor
-        glb = nstomho(2.8, somaarea) * scalefactor
-        ghb = nstomho(3, somaarea) * scalefactor
-        gkpksk = nstomho(0, somaarea) * scalefactor
-        gkir = nstomho(0, somaarea) * scalefactor # incude KIR here, but set to 0
-        stdrin = 300 * rinsf / scalefactor
-        stdrmp = -60
-        if debug:
-            print ("in Mhos: gna: %9.3g  gkb: %9.3g  gkab: %9.3g  gksb: %9.3g"
-                % (gnab, gkb, gkfb, gksb))
-            print ("glb: %9.3g  ghb: %9.3g gkpksk: %9.3g" %
-                (glb, ghb, gkpksk))
+        soma = h.Section(name="Pyramidal_Soma_%x" % id(self)) # one compartment of about 29000 um2
 
-    # set up soma like a pyramidal cell
         soma.nseg = 1
-        soma.diam = lstd
-        soma.L = lstd # these are expressed in microns...
-        soma.insert('pyr')
-        soma.insert('kpksk')
-        soma.insert('cadiff') # diffusion
-        soma.insert('cap') # p-type calcium current
-        #soma.insert('nacum') # sodium accumulation (yes!)
-        soma.insert('nakpump') # and of course a pump to handle it.
-        soma.insert('k_conc')
-        soma.insert('na_conc')
-        # soma.insert('kna')
 
-        seg = soma()
-        seg.kpksk.gbar = gkpksk
-        seg.cap.pcabar = 0.00002
-        seg.pyr.gbar = gnab
-        seg.pyr.gbar = gnap
-        seg.pyr.gbar = gkb
-        seg.pyr.gbar = gkfb
-        seg.pyr.gbar = gksb
-        seg.pyr.gl = glb
-        seg.pyr.gbar = ghb
-    # seg.pyr.gbar = gkir
-        seg.pyr.kif_ivh = -89.6
-        if debug:
-            print " "
-            print "<< PYR: POK Pyramidal Cell created >>"
-            print " "
-            
+        # if nach in ['nacn', 'na']:
+        #     soma.insert('na')
+        # elif nach == 'nav11':
+        #     soma.insert('nav11')
+        # elif nach == 'jsrna':
+        #     soma.insert('jsrna')
+        # else:
+        #     raise ValueError('Sodium channel %s in type 1 cell not known' % nach)
+
+        self.mechanisms = ['napyr', 'kdpyr', 'kif', 'kis', 'ihpyr', 'leak']
+        for mech in self.mechanisms:
+            soma.insert(mech)
+        soma().kif.kif_ivh = -89.6
         self.add_section(soma, 'soma')
+        self.species_scaling(silent=True, species=species, type=type)  # set the default type I-c  cell parameters
+        self.get_mechs(soma)
+#        self.cell_initialize()
+        if debug:
+            print "<< PYR: POK Pyramidal Cell created >>"
+
+    def species_scaling(self, silent=True, species='rat', type='I'):
+        soma = self.soma
+        if species == 'rat' and type == 'I':
+            self.set_soma_size_from_Cm(12.0)
+            soma().napyr.gbar = nstomho(350, self.somaarea)
+            #soma().pyr.gnapbar = 0.0
+            soma().kdpyr.gbar = nstomho(80, self.somaarea) # used to be 20?
+            soma().kif.gbar = nstomho(150, self.somaarea)
+            soma().kis.gbar = nstomho(40, self.somaarea)
+            soma().ihpyr.gbar = nstomho(3, self.somaarea)
+            soma().leak.gbar = nstomho(2.8, self.somaarea)
+            soma().leak.erev = -57.7  # override default values in cell.py
+            soma().ena = 50.0
+            soma().ek = -81.5
+            soma().ihpyr.eh = -43
+
+        else:
+            raise ValueError('Species %s or species-type %s is not recognized for T-stellate cells' % (species, type))
+
+        self.status['species'] = species
+        self.status['type'] = type
+        self.cell_initialize(showinfo=True)
+        if not silent:
+            print 'set cell as: ', species
+            print ' with Vm rest = %f' % self.vm0
+
+    # more complex cell type:
+    #        gkpksk = nstomho(0, self.somaarea)
+    #        gkir = nstomho(0, self.somaarea) # incude KIR here, but set to 0
+
+    # # set up soma like a pyramidal cell
+    #     soma.nseg = 1
+    #     soma.diam = lstd
+    #     soma.L = lstd # these are expressed in microns...
+    #     soma.insert('pyr')
+    #     soma.insert('kpksk')
+    #     soma.insert('cadiff') # diffusion
+    #     soma.insert('cap') # p-type calcium current
+    #     #soma.insert('nacum') # sodium accumulation (yes!)
+    #     soma.insert('nakpump') # and of course a pump to handle it.
+    #     soma.insert('k_conc')
+    #     soma.insert('na_conc')
+    #     # soma.insert('kna')
+    #
+    #     seg = soma()
+    #     seg.kpksk.gbar = gkpksk
+    #     seg.cap.pcabar = 0.00002
+    #     seg.pyr.gbar = gnab
+    #     seg.pyr.gbar = gnap
+    #     seg.pyr.gbar = gkb
+    #     seg.pyr.gbar = gkfb
+    #     seg.pyr.gbar = gksb
+    #     seg.pyr.gl = glb
+    #     seg.pyr.gbar = ghb
+    # # seg.pyr.gbar = gkir
+    #     seg.pyr.kif_ivh = -89.6
+    #
+
+    def i_currents(self, V):
+        """
+        For the steady-state case, return the total current at voltage V
+        Used to find the zero current point
+        vrange brackets the interval
+        Overrides i_currents in cells.py
+        """
+        for part in self.all_sections.keys():
+            for sec in self.all_sections[part]:
+                sec.v = V
+        h.finitialize()
+        self.ix = {}
+
+        if 'kif' in self.mechanisms:
+             self.ix['kif'] = self.soma().kif.gkif*(V - self.soma().ek)
+        if 'kis' in self.mechanisms:
+             self.ix['kis'] = self.soma().kis.gkis*(V - self.soma().ek)
+        if 'ihpyr' in self.mechanisms:
+             self.ix['ihpyr'] = self.soma().ihpyr.gh*(V - self.soma().ihpyr.eh)
+        if 'napyr' in self.mechanisms:
+             self.ix['napyr'] = self.soma().napyr.gna*(V - self.soma().ena)
+        if 'kdpyr' in self.mechanisms:
+             self.ix['kdpyr'] = self.soma().kdpyr.gk*(V - self.soma().ek)
+        # leak
+        if 'leak' in self.mechanisms:
+            self.ix['leak'] = self.soma().leak.gbar*(V - self.soma().leak.erev)
+        return np.sum([self.ix[i] for i in self.ix])

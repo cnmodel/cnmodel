@@ -121,8 +121,8 @@ class Cell(object):
         for m in self.mechs:
             try:
                 gx=eval('section().'+m+'.gbar')
-                print gx
-                print('{0:>12s} : {1:<7.3g} mho/cm2  {2:<7.3g} nS '.format(m, repr(gx), repr(mho2ns(gx))))
+                #print gx
+                print('{0:>12s} : {1:<7.3g} mho/cm2  {2:<7.3g} nS '.format(m, gx, mho2ns(gx, self.somaarea)))
             except:
                 print('{0:>12s} : <no gbar> '.format(m))
         print '-'*32
@@ -133,69 +133,51 @@ class Cell(object):
         For the steady-state case, return the total current at voltage V
         Used to find the zero current point
         vrange brackets the interval
-
+        Implemented here are the basic RM03 mechanisms
+        This function should be replaced for specific cell types.
         """
+        for part in self.all_sections.keys():
+            for sec in self.all_sections[part]:
+                sec.v = V
+
+        h.t = 0.
+        #h.finitialize()
         self.ix = {}
-
-        # klt
-        if 'klt' in self.mechanisms:
-            zss = 0.5   # <0,1>   : steady state inactivation of glt
-            q10g = 2.0
-            qg = q10g**((h.celsius-22.)/10.)
-            winf = (1.0 / (1.0 + np.exp(-(V + 48.) / 6 )))**0.25
-            zinf = zss + ((1.0-zss) / (1.0 + np.exp((V + 71.) / 10 )))
-            gklt = qg*self.soma().klt.gbar*(winf**4.)*zinf
-            self.ix['klt'] = gklt*(V - self.soma().ek)
-
-        # ihvcn
-        if 'ihvcn' in self.mechanisms:
-            q10g = 2.0
-            qg = q10g**((h.celsius-22.)/10.)
-            rinf = 1. / (1+np.exp((V + 76.) / 7.))
-            gh = qg*self.soma().ihvcn.gbar*rinf
-            self.ix['ihvcn'] = gh*(V - self.soma().ihvcn.eh)
-
-        # kht
-        if 'kht' in self.mechanisms:
-            q10g = 2.0
-            qg = q10g**((h.celsius-22)/10)
-            nf = 0.85  # proportion of n vs p kinetics
-            ninf =   (1 + np.exp(-(V + 15.) / 5.))**(-0.5)
-            pinf =  1 / (1 + np.exp(-(V + 23.) / 6.))
-            gkht = qg*self.soma().kht.gbar*(nf*(ninf**2) + (1.-nf)*pinf)
-            self.ix['kht'] = gkht*(V - self.soma().ek)
-
-        # ka
-        if 'ka' in self.mechanisms:
-            q10g = 2.0
-            qg = q10g**((h.celsius-22)/10)
-            ainf = (1. / (1 + np.exp(-1*(V + 31.) / 6 )))**0.25
-            binf = 1 / (1 + np.exp((V + 66.) / 7))**0.5
-            cinf = 1 / (1 + np.exp((V + 66.) / 7))**0.5
-            gka = self.soma().ka.gbar*(ainf**4)*binf*cinf
-            self.ix['ka'] = gka*(V - self.soma().ek)
-
-        # na
         if 'na' in self.mechanisms:
-            q10g = 2.0
-            qg = q10g**((h.celsius-22.)/10.)
-            minf = 1 / (1+np.exp(-(V + 38.) / 7.))
-            hinf = 1 / (1+np.exp((V + 65.) / 6.))
-            gna = qg*self.soma().na.gbar*(minf**3.0)*hinf
-            self.ix['na'] = gna*(V - self.soma.ena)
-
-        # leak
+            #print dir(self.soma().na)
+            self.ix['na'] = self.soma().na.gna*(V - self.soma().ena)
+        if 'jsrna' in self.mechanisms:
+            #print dir(self.soma().na)
+            self.ix['jsrna'] = self.soma().jsrna.gna*(V - self.soma().ena)
+        if 'klt' in self.mechanisms:
+            self.ix['klt'] = self.soma().klt.gklt*(V - self.soma().ek)
+        if 'kht' in self.mechanisms:
+            self.ix['kht'] = self.soma().kht.gkht*(V - self.soma().ek)
+        if 'ka' in self.mechanisms:
+            self.ix['ka'] = self.soma().ka.gka*(V - self.soma().ek)
+        if 'ihvcn' in self.mechanisms:
+            self.ix['ihvcn'] = self.soma().ihvcn.gh*(V - self.soma().ihvcn.eh)
+        if 'hcno' in self.mechanisms:
+            self.ix['hcno'] = self.soma().hcno.gh*(V - self.soma().hcno.eh)
         if 'leak' in self.mechanisms:
             self.ix['leak'] = self.soma().leak.gbar*(V - self.soma().leak.erev)
-    #    print ix
+#        print self.status['name'], self.status['type'], V, self.ix
         return np.sum([self.ix[i] for i in self.ix])
 
-    def find_i0(self, vrange=[-70., -55.], showinfo=False):
+    def find_i0(self, vrange=[-70., -57.], showinfo=False):
         """
         find the root of the system of equations in vrange.
         Finds RMP fairly accurately as zero current level for current conductances.
         """
-        v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1])
+        try:
+            v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1])
+        except:
+            print 'find i0 failed:'
+            print self.ix
+            i0 = self.i_currents(V=vrange[0])
+            i1 = self.i_currents(V=vrange[1])
+            raise ValueError('vrange not good for %s : %f at %6.1f, %f at %6.1f' %
+                             (self.status['name'], i0, vrange[0], i1, vrange[1]))
         if showinfo:
             print '\n  find_i0  Species: %s  cell type: %s' % (self.status['species'], self.status['type'])
             print '    *** found V0 = %f' % v0
@@ -213,11 +195,24 @@ class Cell(object):
         """
         if auto_initialize:
             self.cell_initialize()
-        gnames = {'nacn': 'gna', 'na': 'gna',
-                  'leak': 'gbar',
-                  'klt': 'gklt', 'kht': 'gkht',
-                  'ka': 'gka',
-                  'ihvcn': 'gh', 'hcno': 'thegna'
+        gnames = {# R&M03:
+                    'nacn': 'gna', 'na': 'gna', 'jsrna': 'gna',
+                    'leak': 'gbar',
+                    'klt': 'gklt', 'kht': 'gkht',
+                    'ka': 'gka',
+                    'ihvcn': 'gh', 'hcno': 'gh',
+                    # pyramidal cell specific:
+                    'napyr': 'gna', 'kdpyr': 'gk',
+                    'kif': 'gkif', 'kis': 'gkis',
+                    'ihpyr': 'gh',
+                    # cartwheel cell specific:
+                    'bkpkj': 'gbkpkj', 'hpkj': 'gh',
+                    'kpkj': 'gk', 'kpkj2': 'gk', 'kpkjslow': 'gk',
+                    'kpksk': 'gk', 'lkpkj': 'gbar',
+                    'naRsg': 'gna',
+                    # SGC Ih specific:
+                    'ihsgcApical': 'gh',  'ihsgcBasalMiddle': 'gh',
+
                   }
         gsum = 0.
         section = self.soma

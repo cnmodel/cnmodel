@@ -60,6 +60,8 @@ class ChannelKinetics():
                      'nav11': [10., 5.], 'jsrna': [10., 5.], 'ichanWT2005': [10., 5.], 'kht':[200., 20.], 'klt': [200., 20.], 'nacn': [10., 5.],
                      'ihsgcApical': [1000., 200.],
                      'ihsgcBasalMiddle': [1000., 200.],
+                     'kif': [100., 100.], 'kis': [100., 10.], 'napyr': [10, 5.], 'ihpyr': [1000., 200.],
+                     'kdpyr': [200., 20.]
                      }
         for i, mfile in enumerate(modfile):
             self.run(modfile=mfile, color=colors[i])
@@ -85,18 +87,18 @@ class ChannelKinetics():
         tdelay = 5.0
         Channel = nrnlibrary.util.Mechanism(modfile)
         leak = nrnlibrary.util.Mechanism('leak')
-        Channel.set_parameters({'gbar': 1})
+        if modfile != 'cap':
+            Channel.set_parameters({'gbar': 1})
+        else:
+            pass
         leak.set_parameters({'gbar': 1e-12})
-       # print 'modfile: ', modfile
-       # if modfile == 'ichanWT2005':
-       #     Channel.set_parameters({'ena': 50})
         self.soma = nrnlibrary.util.Section(L=10, diam=10, mechanisms=[Channel, leak])
-#        Channel.insert_into(soma)
-#        leak.insert_into(soma)
-#        print dir(self.soma)
+        if modfile == 'bkpjk':
+            ca_init = 100e-6
+            self.soma().cai = ca_init
+        else:
+            ca_init = 70e-6
         h.celsius = 22 # set the temperature.
-        ca_init = 70e-6
-
         self.vec={}
         for var in ['time', 'V', 'IChan', 'Vcmd']:
             self.vec[var] = h.Vector()
@@ -112,7 +114,7 @@ class ChannelKinetics():
         self.vcPost.amp2 = clampV-0.0 # just a tiny step to keep the system honest
         self.vcPost.dur3 = tstep[1]
         self.vcPost.amp3 = clampV
-        self.vcPost.rs = 1e-6
+        self.vcPost.rs = 1e-9
         print "soma: ", self.soma, 
         print ' vcpost sec: ', self.vcPost.Section()
 
