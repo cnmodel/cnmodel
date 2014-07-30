@@ -36,8 +36,10 @@ NEURON {
  SUFFIX ihpyr
  USEION na READ ena WRITE ina
  USEION k READ ek WRITE ik
- USEION h READ eh WRITE ih VALENCE 1
- 
+ NONSPECIFIC_CURRENT i
+: USEION h READ eh WRITE ih VALENCE 1
+ RANGE eh
+:
  RANGE gh, kh_m_inf, kh_n_inf, aih, gbar, ghvshift
  RANGE kh_m_tau, kh_n_tau
 
@@ -65,6 +67,7 @@ ASSIGNED {
 	ina (mA/cm2)
 	ik (mA/cm2)
 	ih (mA/cm2)
+    i (mA/cm2)
 	kh_m_inf kh_n_inf
 	kh_m_tau kh_n_tau	
 	aih
@@ -75,6 +78,7 @@ BREAKPOINT {
 	aih = khm*khn
 	gh = gbar*aih
  	ih = gh*(v - eh)
+    i = ih
 }
 
 UNITSOFF 

@@ -128,15 +128,12 @@ class IVCurve(Protocol):
             h.tstop = tend
             cell.cell_initialize()  # initialize the cell to it's rmp
             if i == 0:
-                h.finitialize()
-                h.fcurrent()
+                self.custom_init()
                 Rin, tau, v = cell.measure_rintau(auto_initialize=False)
                 print '    *** Rin: %9.0f  tau: %9.1f   v: %6.1f' % (Rin, tau, v)
 
             cell.cell_initialize()  # initialize the cell to it's rmp
-            h.finitialize()
-            h.fcurrent()
-            h.frecord_init()
+            self.custom_init()
             while h.t < h.tstop:
                 h.fadvance()
 
@@ -155,8 +152,8 @@ class IVCurve(Protocol):
         Vm = self.voltage_traces
         Icmd = self.current_cmd
         steps = len(Icmd)
-        peakStart = self.durs[0] / self.dt
-        peakStop = peakStart + (self.durs[1]*window) / self.dt # peak can be in first half
+        peakStart = int(self.durs[0] / self.dt)
+        peakStop = int(peakStart + (self.durs[1]*window) / self.dt) # peak can be in first half
         Vpeak = []
         for i in range(steps):
             if Icmd[i] > 0:
@@ -173,8 +170,8 @@ class IVCurve(Protocol):
         """
         Vm = self.voltage_traces
         steps = len(Vm)
-        steadyStop = (self.durs[0] + self.durs[1]) / self.dt
-        steadyStart = steadyStop - (self.durs[1]*window) / self.dt  # measure last 10% of trace
+        steadyStop = int((self.durs[0] + self.durs[1]) / self.dt)
+        steadyStart = int(steadyStop - (self.durs[1]*window) / self.dt)  # measure last 10% of trace
         Vsteady = [Vm[i][steadyStart:steadyStop].mean() for i in range(steps)]
         return np.array(Vsteady)
 
