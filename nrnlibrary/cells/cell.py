@@ -210,6 +210,8 @@ class Cell(object):
                     'kpkj': 'gk', 'kpkj2': 'gk', 'kpkjslow': 'gk',
                     'kpksk': 'gk', 'lkpkj': 'gbar',
                     'naRsg': 'gna',
+                # SGC Ih specific:
+                    'ihsgcApical': 'gh',  'ihsgcBasalMiddle': 'gh',
 
                   }
         gsum = 0.

@@ -22,7 +22,7 @@ ccivrange = {'bushy': (-0.5, 0.5, 0.05),
             'steldend': (-1.0, 1.0, 0.1),
             'dstellate': (-0.2, 0.2, 0.0125),
             'dstellateeager': (-0.6, 1.0, 0.025),
-            'sgc:': (-0.5, 0.5, 0.05),
+            'sgc': (-0.3, 0.3, 0.02),
             'cartwheel': (-0.2, 0.1, 0.02),
             'pyramidal': (-0.3, 0.3, 0.03),
             'octopus': (-3., 3., 0.2)}
@@ -101,8 +101,7 @@ if args.configuration in cellinfo['configs']:
 #
 
 if args.celltype == 'sgc':
-    (cell, sgcaxon) = cells.SGC(debug=debugFlag, species='mouse',
-    nach='nav11', chlist=['ih'], ttx=args.ttx)
+    cell = cells.SGC(debug=debugFlag, species=args.species, nach=args.nav, ttx=args.ttx, type=args.type)
 #
 # T-stellate tests
 #
