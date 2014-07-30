@@ -1,10 +1,11 @@
 from neuron import h
 import neuron as nrn
-from ..util import nstomho
 import numpy as np
 import scipy.optimize
 
 from .cell import Cell
+from .. import synapses
+from ..util import nstomho
 
 __all__ = ['Bushy']
 
@@ -214,4 +215,14 @@ class Bushy(Cell):
             h.topology()
         self.add_section(maindend, 'maindend')
         self.add_section(secdend, 'secdend')
+
+    def make_psd(self, pre_sec, post_sec, terminal, **kwds):
+        from .. import cells
+        pre_cell = cells.cell_from_section(pre_sec)
+        if isinstance(pre_cell, cells.SGC):
+            return synapses.PSD(pre_sec, post_sec, terminal)
+        else:
+            raise TypeError("Cannot make PSD for %s => %s" % 
+                            (pre_cell.__class__.__name__, 
+                             self.__class__.__name__))
 

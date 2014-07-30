@@ -108,7 +108,7 @@ class Cell(object):
                                   (pre_cell.__class__.__name__, 
                                    post_cell.__class__.__name__))
     
-    def make_psd(self, pre_sec, post_sec, **kwds):
+    def make_psd(self, pre_sec, post_sec, terminal, **kwds):
         """
         Create a PSD suitable for synaptic input from pre_sec.
         """
