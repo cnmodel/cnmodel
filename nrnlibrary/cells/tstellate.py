@@ -1,9 +1,10 @@
 from neuron import h
 import numpy as np
 import neuron as nrn
-from ..util import nstomho
 
 from .cell import Cell
+from .. import synapses
+from ..util import nstomho
 
 __all__ = ['TStellate', 'TStellateNav11', 'TStellateFast'] 
 
@@ -183,6 +184,18 @@ class TStellate(Cell):
         self.maindend = dendrites
         self.status['dendrites'] = True
         self.add_section(self.maindend, 'maindend')
+
+    def make_psd(self, pre_sec, post_sec, terminal, **kwds):
+        from .. import cells
+        pre_cell = cells.cell_from_section(pre_sec)
+        if isinstance(pre_cell, cells.SGC):
+            return synapses.PSD(pre_sec, post_sec, terminal)
+        else:
+            raise TypeError("Cannot make PSD for %s => %s" % 
+                            (pre_cell.__class__.__name__, 
+                             self.__class__.__name__))
+
+
 
 class TStellateNav11(Cell):
     """
