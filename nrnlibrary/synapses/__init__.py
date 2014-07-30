@@ -14,5 +14,5 @@ import numpy as np
 
 from .synapse import Synapse
 from .terminal import Terminal
-from .psd import PSD
+from .psd import PSD, GluPSD, GlyPSD
 from .stochastic_terminal import StochasticTerminal

@@ -220,10 +220,10 @@ class Bushy(Cell):
         from .. import cells
         pre_cell = cells.cell_from_section(pre_sec)
         if isinstance(pre_cell, cells.SGC):
-            return synapses.PSD(pre_sec, post_sec, terminal,
-                                ampa_gmax=1700.,
-                                nmda_ampa_ratio = 0.36,
-                                )
+            return synapses.GluPSD(pre_sec, post_sec, terminal,
+                                   ampa_gmax=1700.,
+                                   nmda_ampa_ratio = 0.36,
+                                   )
         else:
             raise TypeError("Cannot make PSD for %s => %s" % 
                             (pre_cell.__class__.__name__, 
