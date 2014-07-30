@@ -283,7 +283,8 @@ def template_iGluR_PSD(sec, nReceptors=1, debug=False, cellname=None, message=No
             psd[-1].Ro2 = 0.6193
             psd[-1].Rc1 = 3.678
             psd[-1].Rc2 = 0.3212
-            psdn[-1].gNAR = 0.036 * AN_Po_Ratio * nmda_ratio # 0.36*AN_Po_Ratio*nmda_ratio
+            gNAR = 0.036 * AN_Po_Ratio * nmda_ratio # 0.36*AN_Po_Ratio*nmda_ratio
+            psdn[-1].gmax = psdn[-1].gmax * gNAR
             #if k == 0:
             #    print "Bushy NMDAR set to %8.2f" % psdn[-1].gNAR
         if cellname == 'stellate':
@@ -292,15 +293,16 @@ def template_iGluR_PSD(sec, nReceptors=1, debug=False, cellname=None, message=No
             psd[-1].Rc1 = 0.667
             psd[-1].Rc2 = 0.237
             psd[-1].PA = 0.1
-            psdn[-1].gNAR = 1 * AN_Po_Ratio * nmda_ratio
+            gNAR = 1 * AN_Po_Ratio * nmda_ratio
+            psdn[-1].gmax = psdn[-1].gmax * gNAR
 
     h.pop_section()
     par = {'Ro1': ('r', psd[0].Ro1),
            'Ro2': ('r', psd[0].Ro2),
            'Rc1': ('r', psd[0].Rc1),
            'Rc2': ('r', psd[0].Rc2), }
-    parn = {'gNAR': ('4', psdn[0].gNAR), }
-    return (psd, psdn, par, parn)
+    #parn = {'gNAR': ('4', gNAR), }
+    return (psd, psdn, par, {})
 
 
 # the following templates are a bit more complicated.

@@ -63,7 +63,7 @@ THREADSAFE
 	POINT_PROCESS NMDA_Kampa
 	POINTER XMTR
 	RANGE U, Cl, D1, D2, Open, UMg, ClMg, D1Mg, D2Mg, OMg
-	RANGE g, gmax, gNAR, vshift, Erev, rb, rmb, rmu, rbMg,rmc1b,rmc1u,rmc2b,rmc2u
+	RANGE g, gmax, vshift, Erev, rb, rmb, rmu, rbMg,rmc1b,rmc1u,rmc2b,rmc2u
 	GLOBAL Erev, mg, Rb, Ru, Rd1, Rr1, Rd2, Rr2, Ro, Rc, Rmb, Rmu
 	GLOBAL RbMg, RuMg, Rd1Mg, Rr1Mg, Rd2Mg, Rr2Mg, RoMg, RcMg
 	GLOBAL Rmd1b,Rmd1u,Rmd2b,Rmd2u,rmd1b,rmd1u,rmd2b,rmd2u
@@ -91,7 +91,6 @@ PARAMETER {
 	vmax 	= 100	(mV)
 	valence = -2		: parameters of voltage-dependent Mg block
 	memb_fraction = 0.8
-	gNAR = 0.5 (1)
 	vshift = 0.0 (mV)
 	Q10 = 2.0 : temperature sensitivity (see above)
 
@@ -171,7 +170,7 @@ INITIAL {
 BREAKPOINT {
 	SOLVE kstates METHOD sparse
 
-	g = gNAR * gmax * Open
+	g = gmax * Open
 	i = (1e-6) * g * (v - Erev)
 }
 
