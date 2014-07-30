@@ -67,7 +67,7 @@ class Pyramidal(Cell):
             soma().leak.erev = -57.7  # override default values in cell.py
             soma().ena = 50.0
             soma().ek = -81.5
-            soma().eh = -43
+            soma().ihpyr.eh = -43
 
         else:
             raise ValueError('Species %s or species-type %s is not recognized for T-stellate cells' % (species, type))
@@ -121,7 +121,7 @@ class Pyramidal(Cell):
         for part in self.all_sections.keys():
             for sec in self.all_sections[part]:
                 sec.v = V
-        #h.finitialize()
+        h.finitialize()
         self.ix = {}
 
         if 'kif' in self.mechanisms:
@@ -129,12 +129,11 @@ class Pyramidal(Cell):
         if 'kis' in self.mechanisms:
              self.ix['kis'] = self.soma().kis.gkis*(V - self.soma().ek)
         if 'ihpyr' in self.mechanisms:
-             self.ix['ihpyr'] = self.soma().ihpyr.gh*(V - self.soma().eh)
+             self.ix['ihpyr'] = self.soma().ihpyr.gh*(V - self.soma().ihpyr.eh)
         if 'napyr' in self.mechanisms:
              self.ix['napyr'] = self.soma().napyr.gna*(V - self.soma().ena)
         if 'kdpyr' in self.mechanisms:
              self.ix['kdpyr'] = self.soma().kdpyr.gk*(V - self.soma().ek)
-
         # leak
         if 'leak' in self.mechanisms:
             self.ix['leak'] = self.soma().leak.gbar*(V - self.soma().leak.erev)

@@ -56,7 +56,7 @@ def make_pulse(stim):
     
     hold = stim.get('hold', None)
     
-    w = np.zeros(np.floor(maxt / dt))
+    w = np.zeros(int(np.floor(maxt / dt)))
     if hold is not None:
         w += hold
     

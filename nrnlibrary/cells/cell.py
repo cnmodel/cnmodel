@@ -188,7 +188,7 @@ class Cell(object):
                 sec.v = V
 
         h.t = 0.
-        h.finitialize()
+        #h.finitialize()
         self.ix = {}
         if 'na' in self.mechanisms:
             #print dir(self.soma().na)
@@ -243,21 +243,21 @@ class Cell(object):
         if auto_initialize:
             self.cell_initialize()
         gnames = {# R&M03:
-                  'nacn': 'gna', 'na': 'gna', 'jsrna': 'gna',
-                  'leak': 'gbar',
-                  'klt': 'gklt', 'kht': 'gkht',
-                  'ka': 'gka',
-                  'ihvcn': 'gh', 'hcno': 'gh',
-                # pyramidal cell specific:
-                  'napyr': 'gna', 'kdpyr': 'gk',
-                  'kif': 'gkif', 'kis': 'gkis',
-                  'ihpyr': 'gh',
-                # cartwheel cell specific:
+                    'nacn': 'gna', 'na': 'gna', 'jsrna': 'gna',
+                    'leak': 'gbar',
+                    'klt': 'gklt', 'kht': 'gkht',
+                    'ka': 'gka',
+                    'ihvcn': 'gh', 'hcno': 'gh',
+                    # pyramidal cell specific:
+                    'napyr': 'gna', 'kdpyr': 'gk',
+                    'kif': 'gkif', 'kis': 'gkis',
+                    'ihpyr': 'gh',
+                    # cartwheel cell specific:
                     'bkpkj': 'gbkpkj', 'hpkj': 'gh',
                     'kpkj': 'gk', 'kpkj2': 'gk', 'kpkjslow': 'gk',
                     'kpksk': 'gk', 'lkpkj': 'gbar',
                     'naRsg': 'gna',
-                # SGC Ih specific:
+                    # SGC Ih specific:
                     'ihsgcApical': 'gh',  'ihsgcBasalMiddle': 'gh',
 
                   }

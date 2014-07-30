@@ -44,7 +44,7 @@ class Cartwheel(Cell):
         soma = self.soma
         dia = 18.
         self.set_soma_size_from_Diam(dia)# if species == 'rat' and type == 'I':
-        self.print_mechs(self.soma)
+        #self.print_mechs(self.soma)
         #     self.set_soma_size_from_Cm(12.0)
         self.soma().bkpkj.gbar = nstomho(2., self.somaarea) # 2030
         self.soma().hpkj.gbar = nstomho(5, self.somaarea) # 29
@@ -80,7 +80,7 @@ class Cartwheel(Cell):
         for part in self.all_sections.keys():
             for sec in self.all_sections[part]:
                 sec.v = V
-        #h.finitialize()
+        h.finitialize()
         self.ix = {}
 
         if 'naRsg' in self.mechanisms:
