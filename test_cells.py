@@ -11,22 +11,22 @@ parser = argparse.ArgumentParser(description=('test_cells.py:',
 ' Biophysical representations of neurons (mostly auditory), test file'))
 
 cclamp = False
-cellinfo = {'types': ['bushy', 'stellate', 'steldend', 'dstellate', 'sgc',
+cellinfo = {'types': ['bushy', 'stellate', 'steldend', 'dstellate', 'dstellateeager', 'sgc',
                         'cartwheel', 'pyramidal', 'octopus'],
             'configs': ['std, ''waxon', 'dendrite'],
             'nav': ['std', 'jsrna', 'nav11'],
-            'species': ['guineapig', 'guineapig-bushy-II-I',
-                                'guineapig-bushy-II', 'rat', 'mouse'],
+            'species': ['guineapig', 'cat', 'rat', 'mouse'],
             'pulse': ['step', 'pulse']}
 ccivrange = {'bushy': (-0.5, 0.5, 0.05),
-            'stellate': (-.2, 0.2, 0.05),
+            'stellate': (-0.2, 0.2, 0.01),
             'steldend': (-1.0, 1.0, 0.1),
-            'dstellate': (-0.25, 1.0, 0.05),
-            'sgc:': (-0.5, 0.5, 0.05),
-            'cartwheel': (-0.5, 0.5, 0.05),
-            'pyramidal': (-1., 1., 0.1),
-            'octopus': (-2., 2., 0.2)}
-# scales holds some default scalint to use in the cciv plots
+            'dstellate': (-0.2, 0.2, 0.0125),
+            'dstellateeager': (-0.6, 1.0, 0.025),
+            'sgc': (-0.3, 0.3, 0.02),
+            'cartwheel': (-0.2, 0.1, 0.02),
+            'pyramidal': (-0.3, 0.3, 0.03),
+            'octopus': (-3., 3., 0.2)}
+# scales holds some default scaling to use in the cciv plots
 # argument is {cellname: (xmin, xmax, IVymin, IVymax, FIspikemax,
 # offset(for spikes), crossing (for IV) )}
 ## the "offset" refers to setting the axes back a bit
@@ -38,6 +38,8 @@ scale = {'bushy': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
                 'crossing', [0, -60]),
             'dstellate': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
                 'crossing', [0, -60]),
+            'dstellateeager': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
+                'crossing', [0, -60]),
             'sgc:': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
                 'crossing', [0, -60]),
             'cartwheel': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
@@ -47,15 +49,20 @@ scale = {'bushy': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
             'octopus': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
                 'crossing', [0, -60])}
 ax = None
-h.celsius = 32
+h.celsius = 22
 parser.add_argument('celltype', action='store')
 parser.add_argument('species', action='store', default='guineapig')
+parser.add_argument('--type', action='store', default=None)
+parser.add_argument('--temp', action='store', default=22.0,
+                    help=("Temp DegC (22 default)"))
     # species is an optional option....
 parser.add_argument('-c', action="store", dest="configuration",
     default='std', help=("Set axon config: %s " %
         [cfg for cfg in cellinfo['configs']]))
-parser.add_argument('--nav', action="store", dest="nav", default="std",
+parser.add_argument('--nav', action="store", dest="nav", default="na",
     help=("Choose sodium channel: %s " % [ch for ch in cellinfo['nav']]))
+parser.add_argument('--ttx', action="store_true", dest="ttx", default=False,
+    help=("Use TTX (no sodium current"))
 parser.add_argument('-p', action="store", dest="pulsetype", default="step",
     help=("Set CCIV pulse to step or repeated pulse"))
 clampgroup = parser.add_mutually_exclusive_group()
@@ -89,46 +96,52 @@ else:
 if args.configuration in cellinfo['configs']:
     print 'Configuration %s is ok' % args.configuration
 
+#
+# Spiral Ganglion cell tests
+#
 
 if args.celltype == 'sgc':
-    (cell, sgcaxon) = cells.SGC(debug=debugFlag, species='mouse',
-    nach = 'nav11', chlist = ['ih'])
-
+    cell = cells.SGC(debug=debugFlag, species=args.species, nach=args.nav, ttx=args.ttx, type=args.type)
 #
 # T-stellate tests
 #
-elif (args.celltype == 'stellate' and args.nav == 'nav11'
-        and args.species == 'guineapig'):
-    cell = cells.TStellateNav11(debug=debugFlag)
-elif (args.celltype == 'steldend'):
-    cell = cells.TStellateNav11(debug=debugFlag, dend=True,
-                                ttx=False, cs=False)
-elif (args.celltype == 'stellate' and args.nav == 'nav11'
-        and args.species == 'mouse'):
-    cell = cells.TStellate(species=args.species, nav11=True, 
-                            debug=debugFlag)
-elif args.celltype == 'stellate' and args.nav == 'std':
-    cell = cells.TStellateFast(debug=debugFlag)
-
+elif args.celltype == 'stellate':
+    cell = cells.TStellate(debug=debugFlag, species=args.species, nach=args.nav, type=args.type, ttx=args.ttx)
 #
 # Bushy tests
 #
-elif (args.celltype == 'bushy' and args.configuration == 'waxon'):
-    cell = cells.BushyWithAxon(debug=debugFlag)
+elif args.celltype == 'bushy' and args.configuration == 'waxon':
+    cell = cells.Bushy(debug=debugFlag, species=args.species, nach=args.nav, type=args.type, ttx=args.ttx)
+    cell.add_axon()
+
 elif args.celltype == 'bushy' and args.configuration == 'std':
-    cell = cells.Bushy(debug=debugFlag)
-    sites = [cell.soma, None, None, None]
-elif args.celltype == 'bushy' and args.configuration == 'dendrite':
-    dendriteFlag = True
-    cell = cells.Bushy(debug=debugFlag, dendrite=dendriteFlag)
-    sites = [cell.soma, cell.maindend, cell.secdend[0]]
-    
+    cell = cells.Bushy(debug=debugFlag, species=args.species, nach=args.nav, type=args.type, ttx=args.ttx)
+#
+# Ocotpus tests
+#
+elif args.celltype == 'octopus' and args.configuration == 'std':
+    cell = cells.Octopus(debug=debugFlag, species=args.species, nach='jsrna', type=args.type, ttx=args.ttx)
 #
 # D-stellate tests
 #
 elif args.celltype == 'dstellate':
-    cell = cells.DStellate(debug=debugFlag)
-    
+    cell = cells.DStellate(debug=debugFlag, ttx=args.ttx)
+
+elif args.celltype == 'dstellateeager':
+    cell = cells.DStellateEager(debug=debugFlag, ttx=args.ttx)
+
+#
+# DCN pyramidal cell tests
+#
+elif args.celltype == 'pyramidal':
+    cell = cells.Pyramidal(debug=debugFlag, ttx=args.ttx)
+
+#
+# DCN cartwheel cell tests
+#
+elif args.celltype == 'cartwheel':
+    cell = cells.Cartwheel(debug=debugFlag, ttx=args.ttx)
+
 else:
     print ("Cell Type %s and configurations nav=%s or config=%s are not available" % (args.celltype, args.nav, args.configuration))
     sys.exit(1)
@@ -147,12 +160,13 @@ if args.cc is True:
     #run_iv(ccivrange[args.celltype], cell,
         #sites=sites, reppulse=ptype)
     iv = IVCurve()
-    iv.run(ccivrange[args.celltype], cell, sites=sites, reppulse=ptype)
-    iv.show()
+    iv.run(ccivrange[args.celltype],  cell, durs=[10., 100., 20.],
+           sites=sites, reppulse=ptype, temp=float(args.temp))
+    iv.show(cell=cell)
 elif args.vc is True:
     vc = VCCurve()
-    vc.run((-120, -40, 5), cell)
-    vc.show()
+    vc.run((-120, 40, 5), cell)
+    vc.show(cell=cell)
 elif args.demo is True:
     run_democlamp(cell, dendrites)
 else:
@@ -161,7 +175,6 @@ else:
 #-----------------------------------------------------------------------------
 #
 # If we call this directly, provide a test with the IV function
-# - see below to switch cells
 #
 
 

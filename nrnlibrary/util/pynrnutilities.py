@@ -17,6 +17,13 @@ def nstomho(ns, somaarea):
 def mho2ns(mho, somaarea):
     return float(mho)*somaarea/1E-9
 
+def spherearea(dia):
+    """
+    given diameter in microns, return sphere area in cm2
+    """
+    r = dia*1e-4 # convert to cm
+    return(4*np.pi*r**2)
+
 def get_sections(h):
     """
     go through all the sections and find the names of the sections and all of their

@@ -60,7 +60,6 @@ class IVCurve(Protocol):
             durs = [10.0, 100.0, 50.0]
             
         self.durs = durs
-        
         icur = []
         # set up stimulation with a pulse train
         if reppulse is None:
@@ -86,7 +85,12 @@ class IVCurve(Protocol):
         istim.dur = 1e9 # these actually do not matter...
         istim.iMax = 0.0
         (secmd, maxt, tstims) = make_pulse(stim)
-        tend = maxt
+
+        iextend = []
+        if self.durs[2] > 50.:
+            iextend = np.ones(int((self.durs[2]-50)/stim['dt']))
+            secmd = np.append(secmd, secmd[-1]*iextend)
+        tend = maxt + len(iextend)*stim['dt']
 
 
         # Calculate current pulse levels
@@ -129,6 +133,7 @@ class IVCurve(Protocol):
                 Rin, tau, v = cell.measure_rintau(auto_initialize=False)
                 print '    *** Rin: %9.0f  tau: %9.1f   v: %6.1f' % (Rin, tau, v)
 
+            cell.cell_initialize()  # initialize the cell to it's rmp
             h.finitialize()
             h.fcurrent()
             h.frecord_init()
@@ -248,7 +253,8 @@ class IVCurve(Protocol):
             print('{0:<15s}: {1:s}'.format('vmask', repr(vmask.astype(int))))
             print('{0:<15s}: {1:s} '.format('imask', repr(imask.astype(int))))
             print('{0:<15s}: {1:s}'.format('spikemask', repr(smask.astype(int))))
-            raise Exception("Not enough traces to do linear regression.")
+            return 0., 0.
+            #raise Exception("Not enough traces to do linear regression.")
         
         # Use these to measure input resistance by linear regression.
         reg = scipy.stats.linregress(Icmd[mask], Vss[mask])

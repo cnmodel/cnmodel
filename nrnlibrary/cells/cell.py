@@ -13,7 +13,7 @@ class Cell(object):
         # dictionary of all sections associated with this cell
         self.all_sections = {}
         # the following section types (parts) are known to us:
-        for k in ['soma', 'maindend', 'secdend', 'internode', 'initialsegment', 'axonnode']:
+        for k in ['soma', 'maindend', 'secdend', 'internode', 'initialsegment', 'axonnode', 'axon']:
             self.all_sections[k] = []  # initialize to an empty list
         
         # each cell has the following parameters:
@@ -154,8 +154,8 @@ class Cell(object):
         for m in self.mechs:
             try:
                 gx=eval('section().'+m+'.gbar')
-                print gx
-                print('{0:>12s} : {1:<7.3g} mho/cm2  {2:<7.3g} nS '.format(m, repr(gx), repr(mho2ns(gx))))
+                #print gx
+                print('{0:>12s} : {1:<7.3g} mho/cm2  {2:<7.3g} nS '.format(m, gx, mho2ns(gx, self.somaarea)))
             except:
                 print('{0:>12s} : <no gbar> '.format(m))
         print '-'*32
@@ -166,69 +166,51 @@ class Cell(object):
         For the steady-state case, return the total current at voltage V
         Used to find the zero current point
         vrange brackets the interval
-
+        Implemented here are the basic RM03 mechanisms
+        This function should be replaced for specific cell types.
         """
+        for part in self.all_sections.keys():
+            for sec in self.all_sections[part]:
+                sec.v = V
+
+        h.t = 0.
+        h.finitialize()
         self.ix = {}
-
-        # klt
-        if 'klt' in self.mechanisms:
-            zss = 0.5   # <0,1>   : steady state inactivation of glt
-            q10g = 2.0
-            qg = q10g**((h.celsius-22.)/10.)
-            winf = (1.0 / (1.0 + np.exp(-(V + 48.) / 6 )))**0.25
-            zinf = zss + ((1.0-zss) / (1.0 + np.exp((V + 71.) / 10 )))
-            gklt = qg*self.soma().klt.gbar*(winf**4.)*zinf
-            self.ix['klt'] = gklt*(V - self.soma().ek)
-
-        # ihvcn
-        if 'ihvcn' in self.mechanisms:
-            q10g = 2.0
-            qg = q10g**((h.celsius-22.)/10.)
-            rinf = 1. / (1+np.exp((V + 76.) / 7.))
-            gh = qg*self.soma().ihvcn.gbar*rinf
-            self.ix['ihvcn'] = gh*(V - self.soma().ihvcn.eh)
-
-        # kht
-        if 'kht' in self.mechanisms:
-            q10g = 2.0
-            qg = q10g**((h.celsius-22)/10)
-            nf = 0.85  # proportion of n vs p kinetics
-            ninf =   (1 + np.exp(-(V + 15.) / 5.))**(-0.5)
-            pinf =  1 / (1 + np.exp(-(V + 23.) / 6.))
-            gkht = qg*self.soma().kht.gbar*(nf*(ninf**2) + (1.-nf)*pinf)
-            self.ix['kht'] = gkht*(V - self.soma().ek)
-
-        # ka
-        if 'ka' in self.mechanisms:
-            q10g = 2.0
-            qg = q10g**((h.celsius-22)/10)
-            ainf = (1. / (1 + np.exp(-1*(V + 31.) / 6 )))**0.25
-            binf = 1 / (1 + np.exp((V + 66.) / 7))**0.5
-            cinf = 1 / (1 + np.exp((V + 66.) / 7))**0.5
-            gka = self.soma().ka.gbar*(ainf**4)*binf*cinf
-            self.ix['ka'] = gka*(V - self.soma().ek)
-
-        # na
         if 'na' in self.mechanisms:
-            q10g = 2.0
-            qg = q10g**((h.celsius-22.)/10.)
-            minf = 1 / (1+np.exp(-(V + 38.) / 7.))
-            hinf = 1 / (1+np.exp((V + 65.) / 6.))
-            gna = qg*self.soma().na.gbar*(minf**3.0)*hinf
-            self.ix['na'] = gna*(V - self.soma.ena)
-
-        # leak
+            #print dir(self.soma().na)
+            self.ix['na'] = self.soma().na.gna*(V - self.soma().ena)
+        if 'jsrna' in self.mechanisms:
+            #print dir(self.soma().na)
+            self.ix['jsrna'] = self.soma().jsrna.gna*(V - self.soma().ena)
+        if 'klt' in self.mechanisms:
+            self.ix['klt'] = self.soma().klt.gklt*(V - self.soma().ek)
+        if 'kht' in self.mechanisms:
+            self.ix['kht'] = self.soma().kht.gkht*(V - self.soma().ek)
+        if 'ka' in self.mechanisms:
+            self.ix['ka'] = self.soma().ka.gka*(V - self.soma().ek)
+        if 'ihvcn' in self.mechanisms:
+            self.ix['ihvcn'] = self.soma().ihvcn.gh*(V - self.soma().ihvcn.eh)
+        if 'hcno' in self.mechanisms:
+            self.ix['hcno'] = self.soma().hcno.gh*(V - self.soma().hcno.eh)
         if 'leak' in self.mechanisms:
             self.ix['leak'] = self.soma().leak.gbar*(V - self.soma().leak.erev)
-    #    print ix
+#        print self.status['name'], self.status['type'], V, self.ix
         return np.sum([self.ix[i] for i in self.ix])
 
-    def find_i0(self, vrange=[-70., -55.], showinfo=False):
+    def find_i0(self, vrange=[-70., -57.], showinfo=False):
         """
         find the root of the system of equations in vrange.
         Finds RMP fairly accurately as zero current level for current conductances.
         """
-        v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1])
+        try:
+            v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1])
+        except:
+            print 'find i0 failed:'
+            print self.ix
+            i0 = self.i_currents(V=vrange[0])
+            i1 = self.i_currents(V=vrange[1])
+            raise ValueError('vrange not good for %s : %f at %6.1f, %f at %6.1f' %
+                             (self.status['name'], i0, vrange[0], i1, vrange[1]))
         if showinfo:
             print '\n  find_i0  Species: %s  cell type: %s' % (self.status['species'], self.status['type'])
             print '    *** found V0 = %f' % v0
@@ -246,11 +228,24 @@ class Cell(object):
         """
         if auto_initialize:
             self.cell_initialize()
-        gnames = {'nacn': 'gna', 'na': 'gna',
+        gnames = {# R&M03:
+                  'nacn': 'gna', 'na': 'gna', 'jsrna': 'gna',
                   'leak': 'gbar',
                   'klt': 'gklt', 'kht': 'gkht',
                   'ka': 'gka',
-                  'ihvcn': 'gh', 'hcno': 'thegna'
+                  'ihvcn': 'gh', 'hcno': 'gh',
+                # pyramidal cell specific:
+                  'napyr': 'gna', 'kdpyr': 'gk',
+                  'kif': 'gkif', 'kis': 'gkis',
+                  'ihpyr': 'gh',
+                # cartwheel cell specific:
+                    'bkpkj': 'gbkpkj', 'hpkj': 'gh',
+                    'kpkj': 'gk', 'kpkj2': 'gk', 'kpkjslow': 'gk',
+                    'kpksk': 'gk', 'lkpkj': 'gbar',
+                    'naRsg': 'gna',
+                # SGC Ih specific:
+                    'ihsgcApical': 'gh',  'ihsgcBasalMiddle': 'gh',
+
                   }
         gsum = 0.
         section = self.soma
@@ -266,13 +261,30 @@ class Cell(object):
         return Rin, tau, self.soma(0.5).v
 
     def set_soma_size_from_Cm(self, cap):
+        """
+        Use soma capacitance to set the cell size. Area of the open cylinder is same as a sphere of
+        the same diameter.
+        Compute area and save total capacitance as well
+        """
         self.totcap = cap
         self.somaarea = self.totcap * 1E-6 / self.c_m  # pf -> uF, cm = 1uf/cm^2 nominal
         lstd = 1E4 * ((self.somaarea / np.pi) ** 0.5)  # convert from cm to um
         self.soma.diam = lstd
         self.soma.L = lstd
 
-    def add_axon(self, c_m=1.0, R_a=150, axonsf=1.0, nodes=5, debug=False):
+    def set_soma_size_from_Diam(self, diam):
+        """
+        Use diameter to set the cell size. Area of the open cylinder is same as a sphere of
+        the same diameter.
+        Compute area and total capacitance as well
+        """
+        self.somaarea = 1e-8*4.*np.pi*(diam/2.)**2  # in microns^2
+        self.totcap = self.c_m * self.somaarea * 1e6
+    #    lstd = diam # 1E4 * ((self.somaarea / np.pi) ** 0.5)  # convert from cm to um
+        self.soma.diam = diam
+        self.soma.L = diam
+
+    def add_axon(self, c_m=1.0, R_a=150, axonsf=1.0, nodes=5, debug=False, dia=None, len=None, seg=None):
         """
         Add an axon to the soma with an initial segment (tapered), and multiple nodes of Ranvier
         The size of the axon is determined by self.axonsf, which in turn is set by the species
@@ -298,8 +310,8 @@ class Cell(object):
         initsegment.nseg = ninitseg
         initsegment.diam = 4.0 * axonsf
         initsegment.L = 36.0 * axonsf
-        initsegment.cm = c_m
-        initsegment.Ra = R_a
+        initsegment.cm = c_m # c_m
+        initsegment.Ra = R_a # R_a
         initsegment.insert('nacn')  # uses a standard Rothman sodium channel
         initsegment.insert('kht')
         initsegment.insert('klt')
@@ -320,20 +332,21 @@ class Cell(object):
             inseg.leak.gbar = nstomho(2.0, self.somaarea)
             inseg.ena = self.e_na
             inseg.ek = self.e_k
+            inseg.leak.erev = self.e_leak
 
         for i in nnodes:
-            axnode[i] = self.loadaxnodes(axnode[i], self.somaarea)
-            internode[i] = self.loadinternodes(internode[i], self.somaarea)
+            axnode[i] = self.loadaxnodes(axnode[i], self.somaarea, eleak=self.e_leak)
+            internode[i] = self.loadinternodes(internode[i], self.somaarea, eleak=self.e_leak)
 
         if debug:
             print("<< {:s} Axon Added >>".format(self.__class__.__name__))
             h.topology()
-        self.add_section(initsegment, 'initsegment')
+        self.add_section(initsegment, 'initialsegment')
         self.add_section(axnode, 'axonnode')
         self.add_section(internode, 'internode')
 
     @staticmethod
-    def loadaxnodes(axnode, somaarea, nodeLength=2.5, nodeDiameter=2.0):
+    def loadaxnodes(axnode, somaarea, nodeLength=2.5, nodeDiameter=2.0, eleak=-65):
         v_potassium = -80  # potassium reversal potential
         v_sodium = 50  # sodium reversal potential
         Ra = 150
@@ -356,10 +369,11 @@ class Cell(object):
             ax.leak.gbar = nstomho(2.0, somaarea)
             ax.ena = v_sodium
             ax.ek = v_potassium
+            ax.leak.erev = eleak
         return axnode
 
     @staticmethod
-    def loadinternodes(internode, somaarea, internodeLength=1000, internodeDiameter=10):
+    def loadinternodes(internode, somaarea, internodeLength=1000, internodeDiameter=10, eleak=-65):
         v_potassium = -80  # potassium reversal potential
         v_sodium = 50  # sodium reversal potential
         Ra = 150
@@ -379,5 +393,5 @@ class Cell(object):
             inno.kht.gbar = 0 * nstomho(150.0, somaarea)
             inno.ek = v_potassium
             inno.ena = v_sodium
-            inno.leak.e = -80
+            inno.leak.erev = eleak
         return internode

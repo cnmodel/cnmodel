@@ -12,10 +12,10 @@ __all__ = ['Bushy']
 class Bushy(Cell):
     """
     VCN bushy cell model.
-    Rothman and Manis, 2003abc (Type II)    
+    Rothman and Manis, 2003abc (Type II, Type II-I)
     """
 
-    def __init__(self, nach='na', ttx=False, debug=False, species='guineapig', type='II'):
+    def __init__(self, nach='na', ttx=False, debug=False, species='guineapig', type=None):
         """
         initialize the bushy cell, using the default parameters for guinea pig from
         R&M2003, as a type II cell.
@@ -23,6 +23,8 @@ class Bushy(Cell):
         """
         super(Bushy, self).__init__()
         print "\n>>>>Creating Bushy Cell"
+        if type == None:
+            type = 'II'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'Bushy'}
         self.i_test_range=(-0.5, 0.5, 0.05)
@@ -101,7 +103,7 @@ class Bushy(Cell):
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             self.axonsf = 1.0
         else:
-            raise ValueError('Species %s or species-type %s is not recognized for Bushy cells' %  (species, type))
+            raise ValueError('Species "%s" or species-type "%s" is not recognized for Bushy cells' %  (species, type))
         self.status['species'] = species
         self.status['type'] = type
         self.cell_initialize(showinfo=True)
