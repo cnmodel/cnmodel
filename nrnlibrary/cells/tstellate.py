@@ -8,6 +8,7 @@ from ..util import nstomho
 
 __all__ = ['TStellate', 'TStellateNav11', 'TStellateFast'] 
 
+
 class TStellate(Cell):
     """
     VCN T-stellate base model.
@@ -189,7 +190,8 @@ class TStellate(Cell):
         from .. import cells
         pre_cell = cells.cell_from_section(pre_sec)
         if isinstance(pre_cell, cells.SGC):
-            return synapses.PSD(pre_sec, post_sec, terminal)
+            return synapses.PSD(pre_sec, post_sec, terminal, 
+                                ampa_gmax=4600.)
         else:
             raise TypeError("Cannot make PSD for %s => %s" % 
                             (pre_cell.__class__.__name__, 

@@ -12,9 +12,10 @@ class PSD(object):
     """
 
     def __init__(self, pre_sec, post_sec, terminal,
-                    message=None, debug=False,
-                    gvar=0, eRev=0,
-                    nmda_ratio=1.0, identifier=0):
+                 ampa_gmax,
+                 message=None, debug=False,
+                 gvar=0, eRev=0,
+                 nmda_ratio=1.0, identifier=0):
         """ This routine generates the synaptic connections from one presynaptic
             input onto a postsynaptic cell.
             Each connection is a stochastic presynaptic synapse ("presynaptic") with
@@ -25,6 +26,13 @@ class PSD(object):
             Each release site's transmitter is in turn attached to a PSD at each ending ("psd")
             Each psd can have a different conductance centered about the mean of
             gmax, according to a gaussian distribution set by gvar.
+            
+            
+        Notes:
+        
+        *ampa_gmax* should be provided as the maximum *measured* AMPA conductance;
+        this will be automatically corrected for the maximum open probability of
+        the AMPA mechanism.
         """
         from .. import cells
         self.AN_Po_Ratio = 23.2917 # ratio of open probabilities for AMPA and NMDAR's at peak currents
@@ -34,28 +42,8 @@ class PSD(object):
         self.pre_cell = cells.cell_from_section(pre_sec)
         self.post_cell = cells.cell_from_section(post_sec)
 
-        #
-        # set parameters according to the target cell type
-        #
-        if isinstance(self.post_cell, cells.TStellate):
-            AN_gMax = 4600.0 / self.AMPA_Max_Po # correct because Po in model is not 1.0
-
-        elif isinstance(self.post_cell, cells.DStellateEager):
-            AN_gMax = 4600.0 / self.AMPA_Max_Po # correct because Po in model is not 1.0
-
-        elif isinstance(self.post_cell, cells.DStellate):
-            AN_gMax = 4600.0 / self.AMPA_Max_Po # correct because Po in model is not 1.0
-
-        elif isinstance(self.post_cell, cells.Bushy):
-            # normally an_gmax would be about 22 nS (22000) total
-            # However, if we do this as a "per release site" conductance, we have ~100 pA / 60 mV = 1.7 nS
-            #AN_gMax = 22000.0/(AMPA_Max_Po) # correct because Po in model is not 1.0
-            AN_gMax = 1700.0 / (self.AMPA_Max_Po)
-
-        else:
-            raise ValueError("Unknown cell type '%s'" % self.post_cell)
-
-        gmax = AN_gMax
+        # get AMPA gmax corrected for max open probability
+        gmax = ampa_gmax / self.AMPA_Max_Po
 
         self.psdType = 'ampa'
         
