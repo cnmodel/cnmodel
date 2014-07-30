@@ -11,10 +11,40 @@ class SGC(Cell):
     """
     Spiral ganglion cell model
     """
-    def __init__(self, debug=False, ttx=False, message=None, nach='jsrna',
-            species='mouse', chlist=None):
+    def __init__(self, nach='jsrna', ttx=False, debug=False, species='guineapig', type='I-b'):
         super(SGC, self).__init__()
-        
+
+        if type == None:
+            type = 'I-a'  # types are -a (apical), -b (basal middle)
+        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+                       'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'SGC'}
+
+        self.i_test_range=(-0.15, 0.15, 0.01)
+
+        soma = h.Section(name="SGC_Soma_%x" % id(self)) # one compartment of about 29000 um2
+
+        soma.nseg = 1
+
+        # if nach in ['nacn', 'na']:
+        #     soma.insert('na')
+        # elif nach == 'nav11':
+        #     soma.insert('nav11')
+        # elif nach == 'jsrna':
+        #     soma.insert('jsrna')
+        # else:
+        #     raise ValueError('Sodium channel %s in type 1 cell not known' % nach)
+
+        self.mechanisms = [nach, 'klt', 'kht', 'ihsgcapical', 'ihpyr', 'leak']
+        for mech in self.mechanisms:
+            soma.insert(mech)
+        soma().kif.kif_ivh = -89.6
+        self.add_section(soma, 'soma')
+        self.species_scaling(silent=True, species=species, type=type)  # set the default type I-c  cell parameters
+        self.get_mechs(soma)
+#        self.cell_initialize()
+        if debug:
+            print "<< PYR: POK Pyramidal Cell created >>"
+
         if chlist is None:
             chlist = ['ih', 'klt', 'kht', 'na']
         v_potassium = -84       # potassium reversal potential
