@@ -109,8 +109,9 @@ PARAMETER {
     vmax = 100  (mV)
 	Q10 = 1.5 : temperature sensitivity
     Mode = 0 : flag to control rectification calculation
-: polyamine block parameters
-	zd = 1.032
+
+: polyamine block parameters (Wang & Manis unpublished data)
+	zd = 1.032     
 	PA = 45
 	Kd0 = 31.e-6
 

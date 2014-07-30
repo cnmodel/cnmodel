@@ -23,5 +23,5 @@ from .hh import *
 from .cell import Cell
 
 def cell_from_section(sec):
-    return Cell.sec_lookup[sec.name()]
+    return Cell.from_section(sec)
 

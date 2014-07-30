@@ -11,20 +11,24 @@ if len(sys.argv) < 2:
 cellType = sys.argv[1]
 
 
-
 if cellType == 'tstellate':
-    TargetCell = cells.TStellate(debug=True, ttx=False) # make a postsynaptic cell
+    postCell = cells.TStellate(debug=True, ttx=False) # make a postsynaptic cell
+    nANTerminals = 6
 elif cellType == 'dstellate': # Type I-II Rothman model, similiar excitability (Xie/Manis, unpublished)
-    TargetCell = cells.DStellate(debug=True, ttx=False) # make a postsynaptic cell
+    postCell = cells.DStellate(debug=True, ttx=False) # make a postsynaptic cell
+    nANTerminals = 12
 elif cellType == 'dstellate_eager': # From Eager et al.
-    TargetCell = cells.DStellateEager(debug=True, ttx=False) # make a postsynaptic cell
+    postCell = cells.DStellateEager(debug=True, ttx=False) # make a postsynaptic cell
+    nANTerminals = 12
 elif cellType == 'bushy':
-    TargetCell = cells.Bushy(debug=True, ttx=True) # make a postsynaptic cell
+    postCell = cells.Bushy(debug=True, ttx=True) # make a postsynaptic cell
+    nANTerminals = 3
 else:
     raise ValueError("Unknown cell type '%s'" % cellType)
 
-synapse = Synapse()
+preCell = cells.SGC()
+#synapses = [Synapse() for i in range(nANTerminals)]
 st = SynapseTest()
-st.run(TargetCell, synapse)
+st.run(preCell, postCell, nANTerminals)
 st.analyze()
 

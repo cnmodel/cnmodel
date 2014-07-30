@@ -5,10 +5,10 @@ import pyqtgraph as pg
 
 from neuron import h
 
-from nrnlibrary.synapses import (Params, stochastic_synapses)
 import nrnlibrary.util as util
 from .protocol import Protocol
 from .. import cells
+from ..synapses import GluPSD, GlyPSD
 
 mpl.rcParams['interactive'] = False
 
@@ -18,26 +18,23 @@ class SynapseTest(Protocol):
     def reset(self):
         super(SynapseTest, self).reset()
 
-    def run(self, cell, synapse, temp=34.0):
+    def run(self, pre_cell, cell, n_synapses, temp=34.0):
         """ 
         Basic synapse test.
-        Creates a presynaptic HH neuron and connects it to *cell* via *synapse*.
+        Creates a presynaptic HH neuron and connects it to *cell* with 
+        *n_synapses*.
         
-        v_pre is the presynaptic voltage
-            v_soma is the postsynaptic voltage
-            v_calyx is the calyx voltage
-            coh is the calyx of held state
-            isyn is the synaptic current
         """
-        #
-        # create presynaptic cell and wire up network
-        #
-        pre_cell = cells.HH()
-        synapse.connect(pre_cell.soma, cell.soma, debug=True)
-        psd = synapse.psd
-        terminal = synapse.terminal
-        self.synapse = synapse
+        synapses = []
+        for i in range(n_synapses):
+            synapses.append(pre_cell.connect(pre_cell.soma, cell.soma))
+        
+        self.synapses = synapses
         self.pre_cell = pre_cell
+        self.allpsd = []
+        # collect all PSDs across all synapses
+        for syn in synapses:
+            self.allpsd.extend(syn.psd.psd)
 
         VCLAMP = True
         glyPlot = False
@@ -84,7 +81,7 @@ class SynapseTest(Protocol):
         # set up recordings
         #
         #self = {}
-        #for var in ['v_pre', 'v_soma', 'i_soma', 'v_calyx', 'coh', 't', 'C0', 'C1', 'i_stim',
+        #for var in ['v_pre', 'v_soma', 'i_soma', 'coh', 't', 'C0', 'C1', 'i_stim',
                     #'C2', 'C3', 'D', 'O1', 'O2', 'D1', 'D2', 'D3', 'Open', 'nmOpen', 'amOpen']:
             #self[var] = h.Vector()
         
@@ -93,43 +90,45 @@ class SynapseTest(Protocol):
             #self['isyn%03d' % i] = h.Vector(nANTerminals_ReleaseZones, 1000)
         
         # create hoc vectors for each parameter we wish to monitor and display
+        synapse = synapses[0]
         self['v_pre'] = pre_cell.soma(0.5)._ref_v
-        self['v_calyx'] = terminal[0](0.5)._ref_v
         self['t'] = h._ref_t
         self['v_soma'] = pre_cell.soma(0.5)._ref_v
-        self['coh'] = synapse.coh[0]._ref_XMTR[0]
+        self['coh'] = synapse.terminal.relsite._ref_XMTR[0]
 
         # make a synapse monitor for each release zone
         k = 0
+        psd = self.allpsd
         for p in psd:
             #self['isyn%03d' % k] = h.Vector(len(psd), 1000)
             self['isyn%03d' % k] = psd[k]._ref_i
             k = k + 1
         
         self['Open'] = psd[0]._ref_Open
-        if synapse.kNMDA >= 0:
-            self['nmOpen'] = psd[synapse.kNMDA]._ref_Open
-        if synapse.kAMPA >= 0:
-            self['amOpen'] = psd[synapse.kAMPA]._ref_Open
+        if synapse.psd.kNMDA >= 0:
+            self['nmOpen'] = psd[synapse.psd.kNMDA]._ref_Open
+        if synapse.psd.kAMPA >= 0:
+            self['amOpen'] = psd[synapse.psd.kAMPA]._ref_Open
         
-        if synapse.psdType == 'glyslow':
-            nstate = 7
-            self['C0'] = psd[0]._ref_C0
-            self['C1'] = psd[0]._ref_C1
-            self['C2'] = psd[0]._ref_C2
-            self['O1'] = psd[0]._ref_O1
-            self['O2'] = psd[0]._ref_O2
-            self['D1'] = psd[0]._ref_D1
-            #self['D3'] = psd[0]._ref_D3
-            #self['O1'] = psd[0]._ref_O1
-        if synapse.psdType == 'glyfast':
-            nstate = 7
-            self['C0'] = psd[0]._ref_C0
-            self['C1'] = psd[0]._ref_C1
-            self['C2'] = psd[0]._ref_C2
-            self['C3'] = psd[0]._ref_C3
-            self['O1'] = psd[0]._ref_O1
-            self['O2'] = psd[0]._ref_O2
+        if isinstance(synapse.psd, GlyPSD):
+            if synapse.psd.psdType == 'glyslow':
+                nstate = 7
+                self['C0'] = psd[0]._ref_C0
+                self['C1'] = psd[0]._ref_C1
+                self['C2'] = psd[0]._ref_C2
+                self['O1'] = psd[0]._ref_O1
+                self['O2'] = psd[0]._ref_O2
+                self['D1'] = psd[0]._ref_D1
+                #self['D3'] = psd[0]._ref_D3
+                #self['O1'] = psd[0]._ref_O1
+            elif synapse.psd.psdType == 'glyfast':
+                nstate = 7
+                self['C0'] = psd[0]._ref_C0
+                self['C1'] = psd[0]._ref_C1
+                self['C2'] = psd[0]._ref_C2
+                self['C3'] = psd[0]._ref_C3
+                self['O1'] = psd[0]._ref_O1
+                self['O2'] = psd[0]._ref_O2
 
         #
         # Run simulation
@@ -157,13 +156,15 @@ class SynapseTest(Protocol):
         #
         # Analysis
         #
+        synapse = self.synapses[0]
         nreq = 0
         nrel = 0
-        nANTerminals = len(self.synapse.terminal)
-        coh = self.synapse.coh
+        nANTerminals = len(self.synapses)
+        coh = [syn.terminal.relsite for syn in self.synapses]
         ntrel = np.zeros(nANTerminals)
-        nANTerminals_ReleaseZones = self.synapse.zones_per_terminal
-
+        nANTerminals_ReleaseZones = synapse.terminal.n_rzones
+        psd = self.allpsd
+        
         #
         # compute some parameters
         #
@@ -183,12 +184,12 @@ class SynapseTest(Protocol):
         print 'nreq: %d\n' % nreq
         if nreq > 0:
             print 'Rel Prob: %8.3f\n' % (float(nrel) / nreq)
-        if self.synapse.kNMDA >= 0:
+        if synapse.psd.kNMDA >= 0:
             nmOmax = self['nmOpen'].max()
             amOmax = self['amOpen'].max()
             print 'Synapse.py: Max NMDAR Open Prob: %f   AMPA Open Prob: %f\n' % (nmOmax, amOmax)
-            nmImax = self['isyn%03d' % self.synapse.kNMDA].max()
-            amImax = self['isyn%03d' % self.synapse.kAMPA].max()
+            nmImax = self['isyn%03d' % synapse.psd.kNMDA].max()
+            amImax = self['isyn%03d' % synapse.psd.kAMPA].max()
             if nmImax + amImax > 0.0:
                 print 'Synapse.py: Max NMDAR I: %f   AMPA I: %f, N/(N+A): %f\n' % (
                     nmImax, amImax, nmImax / (nmImax + amImax))
@@ -214,7 +215,7 @@ class SynapseTest(Protocol):
             g2 = mpl.subplot2grid((5, 1), (1, 0), rowspan=1)
             g2.plot(t, self.isoma, color='cyan')
             g3 = mpl.subplot2grid((5, 1), (2, 0))
-            g3.plot(t, self['v_calyx'], color='blue')
+            g3.plot(t, self['v_pre'], color='blue')
             g3.plot(t, self['v_soma'], color='red')
             g4 = mpl.subplot2grid((5, 1), (3, 0))
             p4 = g4.plot(t, self['coh']) # glutamate
@@ -223,14 +224,14 @@ class SynapseTest(Protocol):
             k = 0
             for p in self.synapse.psd:
                 if p.hname().find('NMDA', 0, 6) >= 0:
-                    g5.plot(t, self['isyn%03d' % self.synapse.kNMDA]) # current through nmdar
+                    g5.plot(t, self['isyn%03d' % synapse.kNMDA]) # current through nmdar
                 k = k + 1
             g5.axes.set_ylabel('inmda')
             g6 = mpl.subplot2grid((5, 1), (5, 0))
             k = 0
             for p in self.synapse.psd:
                 if p.hname().find('NMDA', 0, 6) < 0:
-                    g6.plot(t, self['isyn%03d' % self.synapse.kAMPA]) # glutamate
+                    g6.plot(t, self['isyn%03d' % synapse.kAMPA]) # glutamate
                 k = k + 1
             g6.axes.set_ylabel('iAMPA')
 
