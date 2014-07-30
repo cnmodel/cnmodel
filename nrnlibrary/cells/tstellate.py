@@ -191,7 +191,9 @@ class TStellate(Cell):
         pre_cell = cells.cell_from_section(pre_sec)
         if isinstance(pre_cell, cells.SGC):
             return synapses.PSD(pre_sec, post_sec, terminal, 
-                                ampa_gmax=4600.)
+                                ampa_gmax=4600.,
+                                nmda_ampa_ratio = 1.28,
+                                )
         else:
             raise TypeError("Cannot make PSD for %s => %s" % 
                             (pre_cell.__class__.__name__, 

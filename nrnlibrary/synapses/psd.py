@@ -13,6 +13,7 @@ class PSD(object):
 
     def __init__(self, pre_sec, post_sec, terminal,
                  ampa_gmax,
+                 nmda_ampa_ratio,
                  message=None, debug=False,
                  gvar=0, eRev=0,
                  nmda_ratio=1.0, identifier=0):
@@ -33,6 +34,8 @@ class PSD(object):
         *ampa_gmax* should be provided as the maximum *measured* AMPA conductance;
         this will be automatically corrected for the maximum open probability of
         the AMPA mechanism.
+        
+        *nmda_ampa_ratio* should be the ratio nmda/ampa contuctance measured at +40 mV.
         """
         from .. import cells
         self.AN_Po_Ratio = 23.2917 # ratio of open probabilities for AMPA and NMDAR's at peak currents
@@ -72,7 +75,7 @@ class PSD(object):
             cl = h.cleftXmtr(0.5, sec=post_sec)
             clefts.append(cl) # cleft
         
-        # and then make a set of postsynaptic zones on the postsynaptic side
+        # and then make a set of postsynaptic receptor mechanisms
         #        print 'PSDTYPE: ', psdtype
         if self.psdType == 'ampa':
             (psd, psdn, par, parn) = template_iGluR_PSD(post_sec, nReceptors=n_rzones,
@@ -95,11 +98,12 @@ class PSD(object):
         else:
             print "**PSDTYPE IS NOT RECOGNIZED: [%s]\n" % (psdtype)
             exit()
-            # connect the mechanisms on the presynaptic side together
         if debug:
             print 'pre_sec: ', pre_sec
         
-        for k in range(0, n_rzones): # 2. connect each release site to the mother axon
+        
+        # Connect terminal to psd (or cleft)
+        for k in range(0, n_rzones):
             if self.psdType == 'ampa': # direct connection, no "cleft"
                 relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', psd[k])
                 relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', psdn[k]) # include NMDAR's as well at same release site
@@ -129,6 +133,7 @@ class PSD(object):
                 psdn[k].gmax = gmax * v
                 psdn[k].Erev = eRev
         h.pop_section()
+        
         par = list(par)
         if self.psdType == 'ampa': # include nmda receptors in psd
             psd.extend(psdn)
@@ -141,23 +146,16 @@ class PSD(object):
         self.par = par
 
         # adjust NMDA receptors to match postsynaptic cell
-        self.adjust_nmda()
+        self.set_nmda_ampa_ratio(nmda_ampa_ratio)
 
-    def adjust_nmda(self):
+    def set_nmda_ampa_ratio(self, ratio):
         from .. import cells
         k = 0
         kNMDA = -1
         kAMPA = -1
         for p in self.psd:
             if p.hname().find('NMDA', 0, 6) >= 0:
-                if isinstance(self.post_cell, cells.TStellate):
-                    p.gNAR = 1.28 * self.AN_Po_Ratio * self.NMDARatio # for T-stellate cells, this yields correct AMPA, NMDA ratio of 1.13 at +40 mV
-                elif isinstance(self.post_cell, cells.Bushy):
-                    p.gNAR = 0.36 * self.AN_Po_Ratio * self.NMDARatio # for bushy cells, this yields correct AMPA, NMDA ratio of 0.429 at +40 mV
-                    #if p is psd[0]:
-                    #    print "NMDAR's for bushy cells set to %8.3f" % p.gNAR
-                elif isinstance(self.post_cell, cells.DStellate):
-                    p.gNAR = 1.28 * self.AN_Po_Ratio * self.NMDARatio # same as for T-stellate (no other data)
+                p.gNAR = ratio * self.AN_Po_Ratio * self.NMDARatio
                 p.vshift = 0
                 if kNMDA == -1:
                     kNMDA = k # save the first instance where we have an NMDA receptor
@@ -175,14 +173,14 @@ class PSD(object):
 # incoming argument: which axon (index) to address SGs
 # Technically, this isn't the axon, but the terminal....
 
-def template_Calyx_Billup(debug=False, nzones=1, message=None):
-    calyx = cells.HH(message='  >> creating calyx_Billup')
-    coh = []
-    calyx.push()
-    for k in range(0, nzones):
-        coh.append(h.COH2(0.5, calyx))
-    h.pop_section()
-    return (calyx, coh)
+#def template_Calyx_Billup(debug=False, nzones=1, message=None):
+    #calyx = cells.HH(message='  >> creating calyx_Billup')
+    #coh = []
+    #calyx.push()
+    #for k in range(0, nzones):
+        #coh.append(h.COH2(0.5, calyx))
+    #h.pop_section()
+    #return (calyx, coh)
 
 
 
