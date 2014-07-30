@@ -111,8 +111,6 @@ class PSD(object):
         if debug:
             print 'pre_sec: ', pre_sec
         
-        pre_sec.push()
-        
         for k in range(0, n_rzones): # 2. connect each release site to the mother axon
             if self.psdType == 'ampa': # direct connection, no "cleft"
                 relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', psd[k])
