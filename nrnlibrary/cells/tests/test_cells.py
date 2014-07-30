@@ -11,39 +11,43 @@ from nrnlibrary.protocols import IVCurve
 #
 
 def test_bushy():
-    cell = cells.Bushy(species='guineapig', type='II')
+    cell = cells.Bushy.create(species='guineapig', type='II')
     assert_cell_info(cell, 'bushy_guineapig-typeII')
 
 def test_bushy21():
-    cell = cells.Bushy(species='guineapig', type='II-I')
+    cell = cells.Bushy.create(species='guineapig', type='II-I')
     assert_cell_info(cell, 'bushy_guineapig-typeII-I')
 
 def test_tstellate():
-    cell = cells.TStellate(species='guineapig', type='I-c')
+    cell = cells.TStellate.create(species='guineapig', type='I-c')
     assert_cell_info(cell, 'tstellate_guineapig-typeI-c')
 
 def test_tstellatet():
-    cell = cells.TStellate(species='guineapig', type='I-t')
+    cell = cells.TStellate.create(species='guineapig', type='I-t')
     assert_cell_info(cell, 'tstellate_guineapig-typeI-t')
 
 def test_dstellate():
-    cell = cells.DStellate(species='guineapig', type='I-II')
+    cell = cells.DStellate.create(species='guineapig', type='I-II')
     assert_cell_info(cell, 'dstellate_guineapig-typeI-II')
 
+def test_octopus():
+    cell = cells.Octopus.create(species='guineapig', type='II-o')
+    assert_cell_info(cell, 'octopus_guineapig-typeII-o')
+
 def test_pyramidal():
-    cell = cells.Pyramidal(species='rat', type='I')
+    cell = cells.Pyramidal.create(species='rat', type='I')
     assert_cell_info(cell, 'pyramidal_rat_I')
 
 def test_cartwheel():
-    cell = cells.Cartwheel(species='rat', type='I')
+    cell = cells.Cartwheel.create(species='rat', type='I')
     assert_cell_info(cell, 'cartwheel_rat_I')
 
 def test_sgc_basal_middle():
-    cell = cells.SGC(species='mouse', type='bm')
+    cell = cells.SGC.create(species='mouse', type='bm')
     assert_cell_info(cell, 'SGC_rat_bm')
 
 def test_sgc_apical():
-    cell = cells.SGC(species='mouse', type='a')
+    cell = cells.SGC.create(species='mouse', type='a')
     assert_cell_info(cell, 'SGC_rat_a')
 
 

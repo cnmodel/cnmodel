@@ -5,10 +5,19 @@ import numpy as np
 
 from .cell import Cell
 
-__all__ = ['Pyramidal']
-
+__all__ = ['Pyramidal', 'PyramidalKanold']
 
 class Pyramidal(Cell):
+
+    @classmethod
+    def create(cls, model='POK', **kwds):
+        if model == 'POK':
+            return PyramidalKanold(**kwds)
+        else:
+            raise ValueError ('DStellate type %s is unknown', type)
+
+
+class PyramidalKanold(Cell):
     """
     DCN pyramidal cell
     Kanold and Manis, 1999, 2001, 2005
@@ -21,7 +30,7 @@ class Pyramidal(Cell):
             Converting to a type IA model (add transient K current) (species: guineapig-TypeIA).
             Changing "species" to mouse or cat (scales conductances)
         """
-        super(Pyramidal, self).__init__()
+        super(PyramidalKanold, self).__init__()
         if type == None:
             type = 'I'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
@@ -74,7 +83,7 @@ class Pyramidal(Cell):
 
         self.status['species'] = species
         self.status['type'] = type
-        self.cell_initialize(showinfo=True)
+        self.cell_initialize(showinfo=False)
         if not silent:
             print 'set cell as: ', species
             print ' with Vm rest = %f' % self.vm0

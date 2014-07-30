@@ -4,16 +4,24 @@ from ..util import nstomho
 import numpy as np
 from .cell import Cell
 
-__all__ = ['Cartwheel']
-
+__all__ = ['Cartwheel', 'CartwheelDefault']
 
 class Cartwheel(Cell):
+
+    @classmethod
+    def create(cls, model='RM03', **kwds):
+        if model == 'RM03':
+            return CartwheelDefault(**kwds)
+        else:
+            raise ValueError ('DStellate type %s is unknown', type)
+
+class CartwheelDefault(Cell):
     """
     DCN cartwheel cell model.
     
     """
     def __init__(self, debug=False, ttx=False, nach='naRsg', species='rat', type=None):
-        super(Cartwheel, self).__init__()
+        super(CartwheelDefault, self).__init__()
         if type == None:
             type = 'I'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,

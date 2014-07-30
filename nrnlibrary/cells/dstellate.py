@@ -4,11 +4,24 @@ from ..util import nstomho
 import numpy as np
 from .cell import Cell
 
-__all__ = ['DStellate', 'DStellateEager']
+__all__ = ['DStellate', 'DStellateRothman', 'DStellateEager']
 
 
 class DStellate(Cell):
-    """ 
+
+    @classmethod
+    def create(cls, model='RM03', **kwds):
+        if model == 'RM03':
+            print 'making RM03'
+            return DStellateRothman(**kwds)
+        elif model == 'Eager':
+            return DStellateEager(**kwds)
+        else:
+            raise ValueError ('DStellate type %s is unknown', type)
+
+
+class DStellateRothman(DStellate):
+    """
     VCN D-stellate model:
     as a type I-II from Rothman and Manis, 2003
     """
@@ -21,8 +34,8 @@ class DStellate(Cell):
             Changing "species" to mouse or cat (scales conductances)
             Shifting model type
         """
-        super(DStellate, self).__init__()
-
+        super(DStellateRothman, self).__init__()
+        print 'rm03 model'
         if type == None:  # allow us to pass None to get the default
             type = 'I-II'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
@@ -91,7 +104,7 @@ class DStellate(Cell):
             raise ValueError('Species %s or species-type %s is not recognized for D-Stellate cells' %  (species, type))
         self.status['species'] = species
         self.status['type'] = type
-        self.cell_initialize(showinfo=True)
+        self.cell_initialize(showinfo=False)
         if not silent:
             print 'set cell as: ', species
             print ' with Vm rest = %6.3f' % self.vm0
@@ -168,7 +181,7 @@ class DStellate(Cell):
         self.add_section(self.maindend, 'maindend')
 
 
-class DStellateEager(Cell):
+class DStellateEager(DStellate):
     """
     This is a model of the VCN D-Stellate cells as proposed by
     Eager, M.A., Grayden, D.B., Burkitt, A.N., and Meffin, H.,

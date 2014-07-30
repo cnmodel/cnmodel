@@ -4,15 +4,23 @@ from ..util import nstomho
 import numpy as np
 from .cell import Cell
 
-__all__ = ['SGC']
-
+__all__ = ['SGC', 'SGC_TypeI']
 
 class SGC(Cell):
+
+    @classmethod
+    def create(cls, model='I', **kwds):
+        if model == 'I':
+            return SGC_TypeI(**kwds)
+        else:
+            raise ValueError ('DStellate type %s is unknown', type)
+
+class SGC_TypeI(Cell):
     """
     Spiral ganglion cell model
     """
     def __init__(self, nach='jsrna', ttx=False, debug=False, species='guineapig', type='bm'):
-        super(SGC, self).__init__()
+        super(SGC_TypeI, self).__init__()
 
         if type == None:
             type = 'bm'  # types are: a (apical), bm (basal middle)
@@ -84,7 +92,7 @@ class SGC(Cell):
 
         self.status['species'] = species
         self.status['type'] = type
-        self.cell_initialize(showinfo=True)
+        self.cell_initialize(showinfo=False)
         if not silent:
             print 'set cell as: ', species
             print ' with Vm rest = %f' % self.vm0

@@ -6,10 +6,19 @@ import scipy.optimize
 
 from .cell import Cell
 
-__all__ = ['Bushy']
-
+__all__ = ['Bushy', 'BushyRothman']
 
 class Bushy(Cell):
+
+    @classmethod
+    def create(cls, model='RM03', **kwds):
+        if model == 'RM03':
+            return BushyRothman(**kwds)
+        else:
+            raise ValueError ('DStellate type %s is unknown', type)
+
+
+class BushyRothman(Cell):
     """
     VCN bushy cell model.
     Rothman and Manis, 2003abc (Type II, Type II-I)
@@ -21,7 +30,7 @@ class Bushy(Cell):
         R&M2003, as a type II cell.
         Modifications to the cell can be made by calling methods below.
         """
-        super(Bushy, self).__init__()
+        super(BushyRothman, self).__init__()
         print "\n>>>>Creating Bushy Cell"
         if type == None:
             type = 'II'
@@ -106,7 +115,7 @@ class Bushy(Cell):
             raise ValueError('Species "%s" or species-type "%s" is not recognized for Bushy cells' %  (species, type))
         self.status['species'] = species
         self.status['type'] = type
-        self.cell_initialize(showinfo=True)
+        self.cell_initialize(showinfo=False)
         if not silent:
             print 'set cell as: ', species
             print ' with Vm rest = %6.3f' % self.vm0
