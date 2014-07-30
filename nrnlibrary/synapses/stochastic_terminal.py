@@ -1,7 +1,6 @@
 from neuron import h
 
 from .terminal import Terminal
-from .. import cells
 
 # utility class to create parameter lists... 
 # create like: p = Params(abc=2.0, defg = 3.0, lunch='sandwich')
@@ -47,7 +46,8 @@ class StochasticTerminal(Terminal):
         # set parameter control for the stochastic release of vesicles...
         # this structure is passed to stochastic synapses, and replaces several variables 
         # that were previously defined in the call to that function.
-        
+        from .. import cells
+            
         thresh = -30 # mV - AP detection on the presynaptic side.
         
         ANTerminals_Latency = 0.5 # latency 
@@ -153,6 +153,7 @@ class StochasticTerminal(Terminal):
             for times out to about 0.5 - 1.0 second. Data from Ruili Xie and Yong Wang.
             Fitting by Paul Manis
         """
+        from .. import cells
         if isinstance(target_cell, cells.Bushy):
             if synapsetype == 'epsc':
                 self.bushy_epsc()

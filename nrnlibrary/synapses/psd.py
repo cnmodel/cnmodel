@@ -1,7 +1,6 @@
 import numpy as np
 from neuron import h
 
-from .. import cells
 
 class PSD(object):
     """
@@ -27,6 +26,7 @@ class PSD(object):
             Each psd can have a different conductance centered about the mean of
             gmax, according to a gaussian distribution set by gvar.
         """
+        from .. import cells
         self.AN_Po_Ratio = 23.2917 # ratio of open probabilities for AMPA and NMDAR's at peak currents
         self.AMPA_Max_Po = 0.44727
         self.NMDARatio = 0.0
@@ -156,6 +156,7 @@ class PSD(object):
         self.adjust_nmda()
 
     def adjust_nmda(self):
+        from .. import cells
         k = 0
         kNMDA = -1
         kAMPA = -1

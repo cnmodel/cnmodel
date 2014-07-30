@@ -3,6 +3,7 @@ import neuron as nrn
 from ..util import nstomho
 import numpy as np
 from .cell import Cell
+from .. import synapses
 
 __all__ = ['SGC']
 
@@ -156,16 +157,21 @@ class SGC(Cell):
         return np.sum([self.ix[i] for i in self.ix])
 
     def make_terminal(self, pre_sec, post_sec, **kwds):
+        from .. import cells
         post_cell = cells.cell_from_section(post_sec)
+        #
+        # set parameters according to the target cell type
+        #
+        
         if isinstance(post_cell, cells.Bushy):
-            pass
+            nzones, delay = 100, 0
         elif isinstance(post_cell, cells.TStellate):
-            pass
+            nzones, delay = 1, 0
         elif isinstance(post_cell, cells.DStellate):
-            pass
+            nzones, delay = 1, 0
         else:
             raise NotImplementedError("Cannot connect SGC to cell type %s" % 
                                       type(post_cell))
         
-    def make_psd(self, pre_sec, post_sec, **kwds):
-        raise NotImplementedError()
+        return synapses.StochasticTerminal(pre_sec, post_sec, nzones=nzones, delay=delay)
+        

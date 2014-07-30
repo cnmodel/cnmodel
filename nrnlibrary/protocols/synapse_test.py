@@ -17,22 +17,17 @@ class SynapseTest(Protocol):
     def reset(self):
         super(SynapseTest, self).reset()
 
-    def run(self, pre_cell, cell, synapses, temp=34.0):
+    def run(self, pre_cell, cell, n_synapses, temp=34.0):
         """ 
         Basic synapse test.
-        Creates a presynaptic HH neuron and connects it to *cell* via *synapses*.
+        Creates a presynaptic HH neuron and connects it to *cell* with 
+        *n_synapses*.
         
-        v_pre is the presynaptic voltage
-            v_soma is the postsynaptic voltage
-            coh is the calyx of held state
-            isyn is the synaptic current
         """
+        synapses = []
+        for i in range(n_synapses):
+            synapses.append(pre_cell.connect(pre_cell.soma, cell.soma))
         
-        if not isinstance(synapses, list):
-            synapses = [synapses]
-        
-        for synapse in synapses:
-            synapse.connect(pre_cell.soma, cell.soma, debug=True)
         self.synapses = synapses
         self.pre_cell = pre_cell
         self.allpsd = []
@@ -94,6 +89,7 @@ class SynapseTest(Protocol):
             #self['isyn%03d' % i] = h.Vector(nANTerminals_ReleaseZones, 1000)
         
         # create hoc vectors for each parameter we wish to monitor and display
+        synapse = synapses[0]
         self['v_pre'] = pre_cell.soma(0.5)._ref_v
         self['t'] = h._ref_t
         self['v_soma'] = pre_cell.soma(0.5)._ref_v
@@ -158,12 +154,13 @@ class SynapseTest(Protocol):
         #
         # Analysis
         #
+        synapse = self.synapses[0]
         nreq = 0
         nrel = 0
         nANTerminals = len(self.synapses)
         coh = [syn.terminal.relsite for syn in self.synapses]
         ntrel = np.zeros(nANTerminals)
-        nANTerminals_ReleaseZones = self.synapses[0].zones_per_terminal
+        nANTerminals_ReleaseZones = synapse.terminal.n_rzones
         psd = self.allpsd
         
         #
@@ -185,12 +182,12 @@ class SynapseTest(Protocol):
         print 'nreq: %d\n' % nreq
         if nreq > 0:
             print 'Rel Prob: %8.3f\n' % (float(nrel) / nreq)
-        if self.synapses[0].psd.kNMDA >= 0:
+        if synapse.psd.kNMDA >= 0:
             nmOmax = self['nmOpen'].max()
             amOmax = self['amOpen'].max()
             print 'Synapse.py: Max NMDAR Open Prob: %f   AMPA Open Prob: %f\n' % (nmOmax, amOmax)
-            nmImax = self['isyn%03d' % self.synapses[0].psd.kNMDA].max()
-            amImax = self['isyn%03d' % self.synapses[0].psd.kAMPA].max()
+            nmImax = self['isyn%03d' % synapse.psd.kNMDA].max()
+            amImax = self['isyn%03d' % synapse.psd.kAMPA].max()
             if nmImax + amImax > 0.0:
                 print 'Synapse.py: Max NMDAR I: %f   AMPA I: %f, N/(N+A): %f\n' % (
                     nmImax, amImax, nmImax / (nmImax + amImax))
@@ -225,14 +222,14 @@ class SynapseTest(Protocol):
             k = 0
             for p in self.synapse.psd:
                 if p.hname().find('NMDA', 0, 6) >= 0:
-                    g5.plot(t, self['isyn%03d' % self.synapses[0].kNMDA]) # current through nmdar
+                    g5.plot(t, self['isyn%03d' % synapse.kNMDA]) # current through nmdar
                 k = k + 1
             g5.axes.set_ylabel('inmda')
             g6 = mpl.subplot2grid((5, 1), (5, 0))
             k = 0
             for p in self.synapse.psd:
                 if p.hname().find('NMDA', 0, 6) < 0:
-                    g6.plot(t, self['isyn%03d' % self.synapses[0].kAMPA]) # glutamate
+                    g6.plot(t, self['isyn%03d' % synapse.kAMPA]) # glutamate
                 k = k + 1
             g6.axes.set_ylabel('iAMPA')
 

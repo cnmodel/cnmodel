@@ -27,8 +27,8 @@ else:
     raise ValueError("Unknown cell type '%s'" % cellType)
 
 preCell = cells.SGC()
-synapses = [Synapse() for i in range(nANTerminals)]
+#synapses = [Synapse() for i in range(nANTerminals)]
 st = SynapseTest()
-st.run(preCell, postCell, synapses)
+st.run(preCell, postCell, nANTerminals)
 st.analyze()
 
