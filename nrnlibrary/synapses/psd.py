@@ -33,14 +33,13 @@ class GluPSD(PSD):
             Each psd can have a different conductance centered about the mean of
             gmax, according to a gaussian distribution set by gvar.
             
-            
         Notes:
         
         *ampa_gmax* should be provided as the maximum *measured* AMPA conductance;
         this will be automatically corrected for the maximum open probability of
         the AMPA mechanism.
         
-        *nmda_ampa_ratio* should be the ratio nmda/ampa contuctance measured at +40 mV.
+        *nmda_ampa_ratio* should be the ratio nmda/ampa Po measured at +40 mV.
         """
         from .. import cells
         self.AN_Po_Ratio = 23.2917 # ratio of open probabilities for AMPA and NMDAR's at peak currents
