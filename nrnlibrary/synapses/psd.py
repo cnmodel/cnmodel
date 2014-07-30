@@ -52,23 +52,7 @@ class GluPSD(PSD):
 
         # get AMPA gmax corrected for max open probability
         gmax = ampa_gmax / self.AMPA_Max_Po
-
-        self.psdType = 'ampa'
         
-        #if cellname not in ['bushy', 'MNTB', 'stellate']:
-            #raise TypeError
-            #exit()
-        #if debug:
-            #print "\nTarget cell  = %s, psdtype = %s" % (cellname, psdtype)
-        #printParams(stochastic_pars)
-        glyslowPoMax = 0.162297  # thse were measured from the kinetic models in Synapses.py, as peak open P for the glycine receptors
-        glyfastPoMax = 0.038475  # also later verified, same numbers...
-        if self.psdType == 'glyfast':
-            gmax /= glyfastPoMax  # normalized to maximum open probability for this receptor
-        if self.psdType == 'glyslow':
-            gmax /= glyslowPoMax  # normalized to max open prob for the slow receptor.
-        
-        #        print "Stochastic syn: j = %d of n_fibers = %d n_rzones = %d\n" % (j, n_fibers, n_rzones)
         relzone = terminal.relsite
         n_rzones = terminal.n_rzones
         
@@ -82,67 +66,29 @@ class GluPSD(PSD):
         
         # and then make a set of postsynaptic receptor mechanisms
         #        print 'PSDTYPE: ', psdtype
-        if self.psdType == 'ampa':
-            (psd, psdn, par, parn) = template_iGluR_PSD(post_sec, nReceptors=n_rzones,
-                                                        nmda_ratio=nmda_ratio)
-        elif self.psdType == 'glyslow':
-            (psd, par) = template_Gly_PSD_State_Gly6S(post_sec, nReceptors=n_rzones,
-                                                        psdtype=self.psdType)
-        elif self.psdType == 'glyfast':
-            (psd, par) = template_Gly_PSD_State_PL(post_sec, nReceptors=n_rzones,
-                                                    psdtype=self.psdType)
-        elif self.psdType == 'glyGC':
-            (psd, par) = template_Gly_PSD_State_GC(post_sec, nReceptors=n_rzones,
-                                                    psdtype=self.psdType)
-        elif self.psdType == 'glya5':
-            (psd, par) = template_Gly_PSD_State_Glya5(post_sec, nReceptors=n_rzones,
-                                                        psdtype=self.psdType)
-        elif self.psdType == 'glyexp':
-            (psd, par) = template_Gly_PSD_exp(post_sec, nReceptors=n_rzones,
-                                                psdtype=self.psdType)
-        else:
-            print "**PSDTYPE IS NOT RECOGNIZED: [%s]\n" % (psdtype)
-            exit()
-        if debug:
-            print 'pre_sec: ', pre_sec
-        
+        (psd, psdn, par, parn) = template_iGluR_PSD(post_sec, nReceptors=n_rzones,
+                                                    nmda_ratio=nmda_ratio)
         
         # Connect terminal to psd (or cleft)
         for k in range(0, n_rzones):
-            if self.psdType == 'ampa': # direct connection, no "cleft"
-                relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', psd[k])
-                relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', psdn[k]) # include NMDAR's as well at same release site
-            elif self.psdType in ['glyslow', 'glyfast', 'glyexp', 'glya5', 'glyGC']:
-                relzone.setpointer(relzone._ref_XMTR[k], 'pre',
-                                    clefts[k]) # connect the cleft to the release of transmitter
-                clefts[k].preThresh = 0.1
-                if isinstance(self.post_cell, cells.TStellate):
-                    clefts[k].KV = 531.0 # set cleft transmitter kinetic parameters
-                    clefts[k].KU = 4.17
-                    clefts[k].XMax = 0.731
-                elif isinstance(self.post_cell, cells.Bushy):
-                    clefts[k].KV = 1e9 # really fast for bushy cells.
-                    clefts[k].KU = 4.46
-                    clefts[k].XMax = 0.733
-                else:
-                    print('Error in cell name, dying:   '), cellname
-                    exit()
-                clefts[k].setpointer(clefts[k]._ref_CXmtr, 'XMTR', psd[k]) #connect transmitter release to the PSD
-            else:
-                print "PSDTYPE IS NOT RECOGNIZED: [%s]\n" % (self.psdType)
-                exit()
+            # Note: cleft kinetics is implemented in the AMPA mechanism
+            relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', psd[k])
+            
+            # Note: NMDA has no cleft mechanism, but it has a slow response that
+            # would not be strongly affected by the relatively fast cleft kinetics.
+            relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', psdn[k]) # include NMDAR's as well at same release site
+            
             v = 1.0 + gvar * np.random.standard_normal()
             psd[k].gmax = gmax * v # add a little variability - gvar is CV of amplitudes
             psd[k].Erev = eRev # set the reversal potential
-            if self.psdType == 'ampa': # also adjust the nmda receptors at the same synapse
-                psdn[k].gmax = gmax * v
-                psdn[k].Erev = eRev
-        h.pop_section()
+            
+            # also adjust the nmda receptors at the same synapse
+            psdn[k].gmax = gmax * v
+            psdn[k].Erev = eRev
         
         par = list(par)
-        if self.psdType == 'ampa': # include nmda receptors in psd
-            psd.extend(psdn)
-            par.extend(parn)
+        psd.extend(psdn)
+        par.extend(parn)
         if message is not None:
             print message
                 
@@ -342,8 +288,6 @@ class GlyPSD(PSD):
         #coh.append(h.COH2(0.5, calyx))
     #h.pop_section()
     #return (calyx, coh)
-
-
 
 
 def template_iGluR_PSD(sec, nReceptors=1, debug=False, cellname=None, message=None, nmda_ratio=1):

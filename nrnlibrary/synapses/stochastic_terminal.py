@@ -130,6 +130,7 @@ class StochasticTerminal(Terminal):
         self.netcon = h.NetCon(pre_sec(0.5)._ref_v, relsite, thresh, delay, 1.0)
         self.netcon.weight[0] = 1
         self.netcon.threshold = -30.0
+        h.pop_section()
 
         if psdtype is not None:
             self.setPsdType(target_cell, select)

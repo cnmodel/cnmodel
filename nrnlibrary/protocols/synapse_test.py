@@ -8,6 +8,7 @@ from neuron import h
 import nrnlibrary.util as util
 from .protocol import Protocol
 from .. import cells
+from ..synapses import GluPSD, GlyPSD
 
 mpl.rcParams['interactive'] = False
 
@@ -109,24 +110,25 @@ class SynapseTest(Protocol):
         if synapse.psd.kAMPA >= 0:
             self['amOpen'] = psd[synapse.psd.kAMPA]._ref_Open
         
-        if synapse.psd.psdType == 'glyslow':
-            nstate = 7
-            self['C0'] = psd[0]._ref_C0
-            self['C1'] = psd[0]._ref_C1
-            self['C2'] = psd[0]._ref_C2
-            self['O1'] = psd[0]._ref_O1
-            self['O2'] = psd[0]._ref_O2
-            self['D1'] = psd[0]._ref_D1
-            #self['D3'] = psd[0]._ref_D3
-            #self['O1'] = psd[0]._ref_O1
-        if synapse.psd.psdType == 'glyfast':
-            nstate = 7
-            self['C0'] = psd[0]._ref_C0
-            self['C1'] = psd[0]._ref_C1
-            self['C2'] = psd[0]._ref_C2
-            self['C3'] = psd[0]._ref_C3
-            self['O1'] = psd[0]._ref_O1
-            self['O2'] = psd[0]._ref_O2
+        if isinstance(synapse.psd, GlyPSD):
+            if synapse.psd.psdType == 'glyslow':
+                nstate = 7
+                self['C0'] = psd[0]._ref_C0
+                self['C1'] = psd[0]._ref_C1
+                self['C2'] = psd[0]._ref_C2
+                self['O1'] = psd[0]._ref_O1
+                self['O2'] = psd[0]._ref_O2
+                self['D1'] = psd[0]._ref_D1
+                #self['D3'] = psd[0]._ref_D3
+                #self['O1'] = psd[0]._ref_O1
+            elif synapse.psd.psdType == 'glyfast':
+                nstate = 7
+                self['C0'] = psd[0]._ref_C0
+                self['C1'] = psd[0]._ref_C1
+                self['C2'] = psd[0]._ref_C2
+                self['C3'] = psd[0]._ref_C3
+                self['O1'] = psd[0]._ref_O1
+                self['O2'] = psd[0]._ref_O2
 
         #
         # Run simulation
