@@ -22,7 +22,7 @@ class TStellate(Cell):
         else:
             raise ValueError ('DStellate type %s is unknown', type)
 
-class TStellateRothman(Cell):
+class TStellateRothman(TStellate, Cell):
     """
     VCN T-stellate base model.
     Rothman and Manis, 2003abc (Type I-c, Type I-t)

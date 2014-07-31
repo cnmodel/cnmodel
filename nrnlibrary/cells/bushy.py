@@ -19,7 +19,7 @@ class Bushy(Cell):
             raise ValueError ('DStellate type %s is unknown', type)
 
 
-class BushyRothman(Cell):
+class BushyRothman(Bushy, Cell):
     """
     VCN bushy cell model.
     Rothman and Manis, 2003abc (Type II, Type II-I)

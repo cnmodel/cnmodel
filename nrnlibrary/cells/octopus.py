@@ -33,7 +33,7 @@ class Octopus(Cell):
         else:
             raise ValueError ('DStellate type %s is unknown', type)
 
-class OctopusRothman(Cell):
+class OctopusRothman(Octopus, Cell):
     """
     VCN octopus cell model (point cell).
     Rothman and Manis, 2003abc (Type II, with high gklt and hcno - octopus cell h current).

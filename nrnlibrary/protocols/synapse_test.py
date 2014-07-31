@@ -13,7 +13,6 @@ from ..synapses import GluPSD, GlyPSD
 mpl.rcParams['interactive'] = False
 
 
-
 class SynapseTest(Protocol):
     def reset(self):
         super(SynapseTest, self).reset()
@@ -31,11 +30,12 @@ class SynapseTest(Protocol):
         
         self.synapses = synapses
         self.pre_cell = pre_cell
+        self.cell = cell
         self.allpsd = []
         # collect all PSDs across all synapses
         for syn in synapses:
             self.allpsd.extend(syn.psd.psd)
-
+        print self.allpsd
         VCLAMP = True
         glyPlot = False
         releasePlot = True
@@ -105,10 +105,11 @@ class SynapseTest(Protocol):
             k = k + 1
         
         self['Open'] = psd[0]._ref_Open
-        if synapse.psd.kNMDA >= 0:
-            self['nmOpen'] = psd[synapse.psd.kNMDA]._ref_Open
-        if synapse.psd.kAMPA >= 0:
-            self['amOpen'] = psd[synapse.psd.kAMPA]._ref_Open
+        if isinstance(synapse.psd, GluPSD):
+            if synapse.psd.kNMDA >= 0:
+               self['nmOpen'] = psd[synapse.psd.kNMDA]._ref_Open
+            if synapse.psd.kAMPA >= 0:
+               self['amOpen'] = psd[synapse.psd.kAMPA]._ref_Open
         
         if isinstance(synapse.psd, GlyPSD):
             if synapse.psd.psdType == 'glyslow':
@@ -136,7 +137,8 @@ class SynapseTest(Protocol):
         h.tstop = 200.0 # duration of a run
         h.celsius = temp
         tvec = np.arange(0, h.tstop, h.dt)
-        h.init() # set up the parameters
+        self.custom_init()
+        #h.init() # set up the parameters
         for nrep in xrange(1): # could do multiple runs.... 
             h.run()
             k = 0
@@ -184,17 +186,19 @@ class SynapseTest(Protocol):
         print 'nreq: %d\n' % nreq
         if nreq > 0:
             print 'Rel Prob: %8.3f\n' % (float(nrel) / nreq)
-        if synapse.psd.kNMDA >= 0:
-            nmOmax = self['nmOpen'].max()
-            amOmax = self['amOpen'].max()
-            print 'Synapse.py: Max NMDAR Open Prob: %f   AMPA Open Prob: %f\n' % (nmOmax, amOmax)
-            nmImax = self['isyn%03d' % synapse.psd.kNMDA].max()
-            amImax = self['isyn%03d' % synapse.psd.kAMPA].max()
-            if nmImax + amImax > 0.0:
-                print 'Synapse.py: Max NMDAR I: %f   AMPA I: %f, N/(N+A): %f\n' % (
-                    nmImax, amImax, nmImax / (nmImax + amImax))
-            else:
-                print "Synapse.py: release might have failed"
+        print synapse.psd
+        if isinstance(synapse.psd, GluPSD):
+            if synapse.psd.kNMDA >= 0:
+                nmOmax = self['nmOpen'].max()
+                amOmax = self['amOpen'].max()
+                print 'Synapse.py: Max NMDAR Open Prob: %f   AMPA Open Prob: %f\n' % (nmOmax, amOmax)
+                nmImax = self['isyn%03d' % synapse.psd.kNMDA].max()
+                amImax = self['isyn%03d' % synapse.psd.kAMPA].max()
+                if nmImax + amImax > 0.0:
+                    print 'Synapse.py: Max NMDAR I: %f   AMPA I: %f, N/(N+A): %f\n' % (
+                        nmImax, amImax, nmImax / (nmImax + amImax))
+                else:
+                    print "Synapse.py: release might have failed"
 
         #
         # plot the results for comparison
@@ -203,6 +207,7 @@ class SynapseTest(Protocol):
         g1 = mpl.subplot2grid((5, 1), (0, 0))
         p1 = g1.plot(t, self['v_pre'], color='black')
         g1.axes.set_ylabel('V pre')
+        g1.set_title(self.pre_cell.status['name'])
         
         plotFocus = 'EPSC'
         
@@ -211,6 +216,7 @@ class SynapseTest(Protocol):
             g2.plot(t, self.isoma, color='red')
             g2.axes.set_ylabel('I post')
             g2.axes.set_xlabel('Time (ms)')
+            g2.set_title(self.cell.status['name'])
         else:
             g2 = mpl.subplot2grid((5, 1), (1, 0), rowspan=1)
             g2.plot(t, self.isoma, color='cyan')
@@ -362,14 +368,14 @@ class SynapseTest(Protocol):
 
         i = 0
         if glyPlot:
-            if psdType == 'glyslow':
+            if synapse.psd.psdType == 'glyslow':
                 mpl.figure(2)
                 for var in ['C0', 'C1', 'C2', 'O1', 'O1', 'D1', 'Open']:
                     mpl.subplot(nstate, 1, i + 1)
                     mpl.plot(t, self[var])
                     mpl.ylabel(var)
                     i = i + 1
-            if psdType == 'glyfast':
+            if synapse.psd.psdType == 'glyfast':
                 mpl.figure(2)
                 for var in ['C0', 'C1', 'C2', 'C3', 'O1', 'O2', 'Open']:
                     mpl.subplot(7, 1, i + 1)

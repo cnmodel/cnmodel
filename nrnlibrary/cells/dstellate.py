@@ -13,7 +13,6 @@ class DStellate(Cell):
     @classmethod
     def create(cls, model='RM03', **kwds):
         if model == 'RM03':
-            print 'making RM03'
             return DStellateRothman(**kwds)
         elif model == 'Eager':
             return DStellateEager(**kwds)
@@ -21,7 +20,7 @@ class DStellate(Cell):
             raise ValueError ('DStellate type %s is unknown', type)
 
 
-class DStellateRothman(DStellate):
+class DStellateRothman(DStellate, Cell):
     """
     VCN D-stellate model:
     as a type I-II from Rothman and Manis, 2003
@@ -185,14 +184,39 @@ class DStellateRothman(DStellate):
         from .. import cells
         pre_cell = cells.cell_from_section(pre_sec)
         if isinstance(pre_cell, cells.SGC):
-            return synapses.GluPSD(pre_sec, post_sec, terminal,
+            psd = synapses.GluPSD(pre_sec, post_sec, terminal,
                                    ampa_gmax=4600.,
                                    nmda_ampa_ratio = 1.28,
                                    )
+            return psd
+        elif isinstance(pre_cell, cells.DStellate):
+            psd = synapses.GlyPSD(pre_sec, post_sec, terminal,
+                                   psdType='glyfast',
+                                   )
+            return psd
         else:
             raise TypeError("Cannot make PSD for %s => %s" % 
                             (pre_cell.__class__.__name__, 
                              self.__class__.__name__))
+
+    def make_terminal(self, pre_sec, post_sec, **kwds):
+        from .. import cells
+        post_cell = cells.cell_from_section(post_sec)
+        #
+        # set parameters according to the target cell type
+        #
+
+        if isinstance(post_cell, cells.Bushy):
+            nzones, delay = 10, 0
+        elif isinstance(post_cell, cells.TStellate):
+            nzones, delay = 5, 0
+        elif isinstance(post_cell, cells.DStellate):
+            nzones, delay = 5, 0
+        else:
+            raise NotImplementedError("No knowledge as to how to connect DStellate to cell type %s" %
+                                      type(post_cell))
+
+        return synapses.StochasticTerminal(pre_sec, post_sec, nzones=nzones, delay=delay)
 
 
 class DStellateEager(DStellate):

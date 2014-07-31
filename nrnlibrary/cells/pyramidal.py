@@ -17,7 +17,7 @@ class Pyramidal(Cell):
             raise ValueError ('DStellate type %s is unknown', type)
 
 
-class PyramidalKanold(Cell):
+class PyramidalKanold(Pyramidal, Cell):
     """
     DCN pyramidal cell
     Kanold and Manis, 1999, 2001, 2005

@@ -15,7 +15,7 @@ class Cartwheel(Cell):
         else:
             raise ValueError ('DStellate type %s is unknown', type)
 
-class CartwheelDefault(Cell):
+class CartwheelDefault(Cartwheel, Cell):
     """
     DCN cartwheel cell model.
     

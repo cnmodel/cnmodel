@@ -120,11 +120,9 @@ class GlyPSD(PSD):
     Glycinergic PSD
     """
     def __init__(self, pre_sec, post_sec, terminal,
-                 ampa_gmax,
-                 nmda_ampa_ratio,
+                 gmax=1000., psdType='glyfast',
                  message=None, debug=False,
-                 gvar=0, eRev=0,
-                 nmda_ratio=1.0, identifier=0):
+                 gvar=0, eRev=-70):
         """ This routine generates the synaptic connections from one presynaptic
             input onto a postsynaptic cell.
             Each connection is a stochastic presynaptic synapse ("presynaptic") with
@@ -156,7 +154,7 @@ class GlyPSD(PSD):
         # get AMPA gmax corrected for max open probability
         #gmax = ampa_gmax / self.AMPA_Max_Po
 
-        self.psdType = None
+        self.psdType = psdType
         
         #if cellname not in ['bushy', 'MNTB', 'stellate']:
             #raise TypeError
@@ -201,7 +199,7 @@ class GlyPSD(PSD):
             (psd, par) = template_Gly_PSD_exp(post_sec, nReceptors=n_rzones,
                                                 psdtype=self.psdType)
         else:
-            print "**PSDTYPE IS NOT RECOGNIZED: [%s]\n" % (psdtype)
+            print "**PSDTYPE IS NOT RECOGNIZED: [%s]\n" % (self.psdType)
             exit()
         if debug:
             print 'pre_sec: ', pre_sec
@@ -217,19 +215,24 @@ class GlyPSD(PSD):
                     clefts[k].KV = 531.0 # set cleft transmitter kinetic parameters
                     clefts[k].KU = 4.17
                     clefts[k].XMax = 0.731
+                if isinstance(self.post_cell, cells.DStellate):
+                    clefts[k].KV = 531.0 # set cleft transmitter kinetic parameters - same as for TStellate
+                    clefts[k].KU = 4.17
+                    clefts[k].XMax = 0.731
                 elif isinstance(self.post_cell, cells.Bushy):
                     clefts[k].KV = 1e9 # really fast for bushy cells.
                     clefts[k].KU = 4.46
                     clefts[k].XMax = 0.733
                 else:
-                    print('Error in cell name, dying:   '), cellname
-                    exit()
+                    raise ValueError ('Post Cell type not known:  ', self.post_cell)
+
                 clefts[k].setpointer(clefts[k]._ref_CXmtr, 'XMTR', psd[k]) #connect transmitter release to the PSD
             else:
-                print "PSDTYPE IS NOT RECOGNIZED: [%s]\n" % (self.psdType)
+                raise ValueError("PSDTYPE IS NOT RECOGNIZED: [%s]\n" % (self.psdType))
                 exit()
             v = 1.0 + gvar * np.random.standard_normal()
             psd[k].gmax = gmax * v # add a little variability - gvar is CV of amplitudes
+            #print 'psd %d gmax=%f' % (k, gmax)
             psd[k].Erev = eRev # set the reversal potential
         
         par = list(par)
@@ -376,7 +379,7 @@ def template_Gly_PSD_State_Gly6S(sec, debug=False, nReceptors=2, psdtype=None, m
     sec.push()
     for k in range(0, nReceptors):
         psd.append(h.Gly6S(0.5, sec)) # simple using Trussell model 6 states with desens
-        if not runQuiet:
+        if debug:
             print 'Gly6S psdtype: ', psdtype
         if psdtype == 'glyslow': # fit on 8 March 2010, error =  0.164, max open: 0.155
             psd[-1].Rd = 1.177999
@@ -407,7 +410,7 @@ def template_Gly_PSD_State_PL(sec, debug=False, nReceptors=2, cellname=None,
     sec.push()
     for k in range(0, nReceptors):
         psd.append(h.GLYaPL(0.5, sec)) # simple dextesche glycine receptors
-        if not runQuiet:
+        if debug:
             print 'PL psdtype: ', psdtype
         if psdtype == 'glyslow':
             psd[-1].a1 = 0.000451

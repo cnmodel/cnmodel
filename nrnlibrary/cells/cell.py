@@ -114,7 +114,7 @@ class Cell(object):
         """
         pre_cell = Cell.from_section(pre_sec)
         post_cell = Cell.from_section(post_sec)
-        raise NotImplementedError("Cannot make PSD connecting %s => %s" % 
+        raise NotImplementedError("Cannot make PSD connecting %s => %s" %
                                   (pre_cell.__class__.__name__, 
                                    post_cell.__class__.__name__))
 

@@ -16,7 +16,7 @@ class SGC(Cell):
         else:
             raise ValueError ('DStellate type %s is unknown', type)
 
-class SGC_TypeI(Cell):
+class SGC_TypeI(SGC, Cell):
     """
     Spiral ganglion cell model
     """
