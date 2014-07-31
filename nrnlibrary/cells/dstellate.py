@@ -20,7 +20,7 @@ class DStellate(Cell):
             raise ValueError ('DStellate type %s is unknown', type)
 
 
-class DStellateRothman(DStellate, Cell):
+class DStellateRothman(DStellate):
     """
     VCN D-stellate model:
     as a type I-II from Rothman and Manis, 2003

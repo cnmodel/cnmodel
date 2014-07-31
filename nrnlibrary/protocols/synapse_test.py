@@ -35,7 +35,6 @@ class SynapseTest(Protocol):
         # collect all PSDs across all synapses
         for syn in synapses:
             self.allpsd.extend(syn.psd.psd)
-        print self.allpsd
         VCLAMP = True
         glyPlot = False
         releasePlot = True

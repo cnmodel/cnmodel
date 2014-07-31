@@ -2,34 +2,45 @@ from nrnlibrary.protocols import SynapseTest
 from nrnlibrary import cells
 from nrnlibrary.synapses import Synapse
 
+
 import sys
-if len(sys.argv) < 2:
-    print "Usage:  python test_synapses.py <celltype>"
-    print "   Supported cell types: bushy, tstellate, dstellate"
+if len(sys.argv) < 3:
+    print "Usage:  python test_synapses.py <pre_celltype> <post_celltype>"
+    print "   Supported cell types: sgc, bushy, tstellate, dstellate"
     sys.exit(1)
 
-cellType = sys.argv[1]
+
+convergence = {
+    'sgc': {'bushy': 3, 'tstellate': 6, 'dstellate': 10, 'dstellate_eager': 10},
+    'dstellate': {'bushy': 10, 'tstellate': 15, 'dstellate': 5},
+    }
 
 
-if cellType == 'tstellate':
-    postCell = cells.TStellate.create(debug=True, ttx=False) # make a postsynaptic cell
-    nANTerminals = 6
-elif cellType == 'dstellate': # Type I-II Rothman model, similiar excitability (Xie/Manis, unpublished)
-    postCell = cells.DStellate.create(debug=True, ttx=False) # make a postsynaptic cell
-    nANTerminals = 10
-elif cellType == 'dstellate_eager': # From Eager et al.
-    postCell = cells.DStellateEager.create(debug=True, ttx=False) # make a postsynaptic cell
-    nANTerminals = 10
-elif cellType == 'bushy':
-    postCell = cells.Bushy.create(debug=True, ttx=True) # make a postsynaptic cell
-    nANTerminals = 3
-else:
-    raise ValueError("Unknown cell type '%s'" % cellType)
+c = []
+for cellType in sys.argv[1:3]:
+    if cellType == 'sgc':
+        cell = cells.SGC.create()
+    elif cellType == 'tstellate':
+        cell = cells.TStellate.create(debug=True, ttx=False)
+    elif cellType == 'dstellate': # Type I-II Rothman model, similiar excitability (Xie/Manis, unpublished)
+        cell = cells.DStellate.create(model='RM03', debug=True, ttx=False)
+    elif cellType == 'dstellate_eager': # From Eager et al.
+        cell = cells.DStellate.create(model='Eager', debug=True, ttx=False)
+    elif cellType == 'bushy':
+        cell = cells.Bushy.create(debug=True, ttx=True)
+    else:
+        raise ValueError("Unknown cell type '%s'" % cellType)
+    c.append(cell)
 
-preCell = cells.DStellate.create()
-#preCell = cells.SGC.create()
-#synapses = [Synapse() for i in range(nANTerminals)]
+preCell, postCell = c
+    
+nTerminals = convergence.get(sys.argv[1], {}).get(sys.argv[2], None)
+if nTerminals is None:
+    nTerminals = 1
+    print "Warning: Unknown convergence for %s => %s, assuming %d" % (sys.argv[1], sys.argv[2], nTerminals)
+
+
 st = SynapseTest()
-st.run(preCell, postCell, nANTerminals)
+st.run(preCell, postCell, nTerminals)
 st.analyze()
 
