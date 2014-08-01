@@ -3,6 +3,7 @@ import numpy as np
 import scipy
 import scipy.integrate
 import scipy.stats
+import scipy.optimize
 
 try:
     import pyqtgraph as pg
@@ -224,7 +225,7 @@ class IVCurve(Protocol):
         d = int(self.durs[0] / self.dt)
         return self.voltage_traces[-1][d//2:d].mean()
     
-    def input_resistance(self, vmin=-70, imax=0):
+    def input_resistance_tau(self, vmin=-70, imax=0):
         """
         Estimate resting input resistance.
         :param vmin: minimum voltage to use in computation
@@ -256,8 +257,31 @@ class IVCurve(Protocol):
         # Use these to measure input resistance by linear regression.
         reg = scipy.stats.linregress(Icmd[mask], Vss[mask])
         (slope, intercept, r, p, stderr) = reg
-        
-        return slope, intercept
+
+        # also measure the tau in the same traces:
+        window = 0.5  # only use first half of trace for fitting.
+        peakStart = int(self.durs[0] / self.dt)
+        peakStop = int(peakStart + (self.durs[1]*window) / self.dt) # peak can be in first half
+
+        fits = []
+        tx = self.time_values[peakStart:peakStop] - self.durs[0]
+        for i, m in enumerate(mask):
+            if m and (self.rest_vm() - Vss[i]) > 1:
+                print 'i: %d  v: %f' % (i, Vss[i])
+                fitParams, fitCovariances = scipy.optimize.curve_fit(self.expFunc,
+                                                                     tx, self.voltage_traces[i][peakStart:peakStop],
+                                                                     p0 = [vmin, 2., 2., 5., 15.], maxfev = 5000)
+                fits.append(fitParams)
+        tau1 = np.mean([f[2] for f in fits])
+        print "tau1/amp1: ", tau1, [f[2] for f in fits], [a[1] for a in fits]
+        tau2 = np.mean([f[4] for f in fits])
+        print 'tau2/amp2: ', tau2, [f[4] for f in fits], [a[3] for a in fits]
+
+        return slope, intercept, [tau1, tau2]
+
+
+    def expFunc(self, t, d, a1, r1, a2, r2):
+        return d + a1*np.exp(-t/r1) + a2*np.exp(-t/r2)
 
     def show(self, cell=None):
         """
@@ -319,8 +343,8 @@ class IVCurve(Protocol):
         
         
         # Print Rm, Vrest 
-        (s, i) = self.input_resistance()
-        print "\nMembrane resistance (chord): %0.1f MOhm" % s
+        (s, i, tau) = self.input_resistance_tau()
+        print ("\nMembrane resistance (chord): {0:0.1f} MOhm  Taum1: {1:0.2f}  Taum2: {2:0.2f}".format(s, tau[0], tau[1]))
         ivals = np.array([Icmd.min(), Icmd.max()])
         vvals = s * ivals + i
         line = pg.QtGui.QGraphicsLineItem(ivals[0], vvals[0], ivals[1], vvals[1])

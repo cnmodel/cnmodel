@@ -11,8 +11,11 @@ import re
 #   to mho/cm2 as required by NEURON 1/28/99 P. Manis
 # units: nano siemens, soma area in um^2
 #
-def nstomho(ns, somaarea):
-    return 1E-9*float(ns)/float(somaarea)
+def nstomho(ns, somaarea, refarea = None):
+    if refarea == None:
+        return 1E-9*float(ns)/float(somaarea)
+    else:
+        return 1e9*float(ns)/float(refarea)
 
 def mho2ns(mho, somaarea):
     return float(mho)*somaarea/1E-9

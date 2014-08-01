@@ -15,7 +15,7 @@ import gc
 import faulthandler
 import numpy as np
 #import scipy as sp
-import nrnlibrary
+import nrnlibrary.util
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
 import pylibrary.Utility as Util
@@ -61,7 +61,7 @@ class ChannelKinetics():
                      'ihsgcApical': [1000., 200.],
                      'ihsgcBasalMiddle': [1000., 200.],
                      'kif': [100., 100.], 'kis': [100., 10.], 'napyr': [10, 5.], 'ihpyr': [1000., 200.],
-                     'kdpyr': [200., 20.]
+                     'kdpyr': [200., 20.], 'kcnq': [200, 20]
                      }
         for i, mfile in enumerate(modfile):
             self.run(modfile=mfile, color=colors[i])
