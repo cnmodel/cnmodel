@@ -42,21 +42,12 @@ class PyramidalKanold(Pyramidal, Cell):
 
         soma.nseg = 1
 
-        # if nach in ['nacn', 'na']:
-        #     soma.insert('na')
-        # elif nach == 'nav11':
-        #     soma.insert('nav11')
-        # elif nach == 'jsrna':
-        #     soma.insert('jsrna')
-        # else:
-        #     raise ValueError('Sodium channel %s in type 1 cell not known' % nach)
-
-        self.mechanisms = ['napyr', 'kdpyr', 'kif', 'kis', 'ihpyr', 'leak']
+        self.mechanisms = ['napyr', 'kdpyr', 'kif', 'kis', 'ihpyr', 'ihvcn', 'leak', 'kcnq']
         for mech in self.mechanisms:
             soma.insert(mech)
         soma().kif.kif_ivh = -89.6
         self.add_section(soma, 'soma')
-        self.species_scaling(silent=True, species=species, type=type)  # set the default type I-c  cell parameters
+        self.species_scaling(silent=False, species=species, type=type)  # set the default type I-c  cell parameters
         self.get_mechs(soma)
 #        self.cell_initialize()
         if debug:
@@ -64,7 +55,7 @@ class PyramidalKanold(Pyramidal, Cell):
 
     def species_scaling(self, silent=True, species='rat', type='I'):
         soma = self.soma
-        if species == 'rat' and type == 'I':
+        if species == 'rat' and type == 'I':  # canonical K&M2001 model cell
             self.set_soma_size_from_Cm(12.0)
             soma().napyr.gbar = nstomho(350, self.somaarea)
             #soma().pyr.gnapbar = 0.0
@@ -72,21 +63,49 @@ class PyramidalKanold(Pyramidal, Cell):
             soma().kif.gbar = nstomho(150, self.somaarea)
             soma().kis.gbar = nstomho(40, self.somaarea)
             soma().ihpyr.gbar = nstomho(3, self.somaarea)
+            soma().ihvcn.gbar = 0. # nstomho(3, self.somaarea)
             soma().leak.gbar = nstomho(2.8, self.somaarea)
             soma().leak.erev = -57.7  # override default values in cell.py
             soma().ena = 50.0
             soma().ek = -81.5
             soma().ihpyr.eh = -43
 
+        elif species == 'rat' and type == 'II':  # canonical K&M2001 model cell
+            self.c_m = 4.0
+            self.set_soma_size_from_Cm(80.0)
+            self.refarea = self.somaarea
+            print 'diamater: %7.1f' % self.soma.diam
+            #self.set_soma_size_from_Diam(30.0)
+            #self.refarea = self.somaarea
+            soma().napyr.gbar = nstomho(350, self.refarea)
+            #soma().pyr.gnapbar = 0.0
+            soma().kcnq.gbar = nstomho(2, self.refarea)  # pyramidal cells have kcnq: Li et al, 2011 (Thanos)
+            soma().kdpyr.gbar = nstomho(80, self.refarea) # used to be 20?
+            soma().kif.gbar = nstomho(150, self.refarea)
+            soma().kis.gbar = nstomho(40, self.refarea)
+            soma().ihpyr.gbar = 0. # nstomho(3, self.refarea)
+            soma().ihvcn.gbar = nstomho(2.8, self.refarea)
+            soma().leak.gbar = nstomho(2, self.refarea)
+            soma().leak.erev = -62.  # override default values in cell.py
+            soma().ena = 50.0
+            soma().ek = -81.5
+            soma().ihpyr.eh = -43
+            soma().ihvcn.eh = -43
+            if not self.status['dendrites']:
+                self.add_dendrites()
+
         else:
-            raise ValueError('Species %s or species-type %s is not recognized for T-stellate cells' % (species, type))
+            raise ValueError('Species %s or species-type %s is not recognized for Pyramidal cells' % (species, type))
 
         self.status['species'] = species
         self.status['type'] = type
         self.cell_initialize(showinfo=False)
         if not silent:
-            print 'set cell as: ', species
+            print 'set cell as: ', species, type
             print ' with Vm rest = %f' % self.vm0
+            print self.status
+            for m in self.mechanisms:
+                print '%s.gbar = %f' % (m, eval('soma().%s.gbar' % m))
 
     # more complex cell type:
     #        gkpksk = nstomho(0, self.somaarea)
@@ -133,17 +152,53 @@ class PyramidalKanold(Pyramidal, Cell):
         h.finitialize()
         self.ix = {}
 
-        if 'kif' in self.mechanisms:
-             self.ix['kif'] = self.soma().kif.gkif*(V - self.soma().ek)
-        if 'kis' in self.mechanisms:
-             self.ix['kis'] = self.soma().kis.gkis*(V - self.soma().ek)
-        if 'ihpyr' in self.mechanisms:
-             self.ix['ihpyr'] = self.soma().ihpyr.gh*(V - self.soma().ihpyr.eh)
         if 'napyr' in self.mechanisms:
              self.ix['napyr'] = self.soma().napyr.gna*(V - self.soma().ena)
         if 'kdpyr' in self.mechanisms:
              self.ix['kdpyr'] = self.soma().kdpyr.gk*(V - self.soma().ek)
+        if 'kif' in self.mechanisms:
+             self.ix['kif'] = self.soma().kif.gkif*(V - self.soma().ek)
+        if 'kis' in self.mechanisms:
+             self.ix['kis'] = self.soma().kis.gkis*(V - self.soma().ek)
+        if 'kcnq' in self.mechanisms:
+             self.ix['kcnq'] = self.soma().kcnq.gk*(V - self.soma().ik)
+        if 'ihvcn' in self.mechanisms:
+             self.ix['ihvcn'] = self.soma().ihvcn.gh*(V - self.soma().ihvcn.eh)
+        if 'ihpyr' in self.mechanisms:
+             self.ix['ihpyr'] = self.soma().ihpyr.gh*(V - self.soma().ihpyr.eh)
         # leak
         if 'leak' in self.mechanisms:
             self.ix['leak'] = self.soma().leak.gbar*(V - self.soma().leak.erev)
         return np.sum([self.ix[i] for i in self.ix])
+
+    def add_dendrites(self):
+        """
+        Add simple unbranched dendrite.
+        The dendrites have some kd, kif and ih current
+        """
+        nDend = range(2) # these will be simple, unbranced, N=4 dendrites
+        dendrites=[]
+        for i in nDend:
+            dendrites.append(h.Section(cell=self.soma))
+        for i in nDend:
+            dendrites[i].connect(self.soma)
+            dendrites[i].L = 250 # length of the dendrite (not tapered)
+            dendrites[i].diam = 1
+            dendrites[i].cm = self.c_m
+            #h('dendrites[i].diam(0:1) = 2:1') # dendrite diameter, with tapering
+            dendrites[i].nseg = 21 # # segments in dendrites
+            dendrites[i].Ra = 150 # ohm.cm
+            dendrites[i].insert('napyr')
+            dendrites[i]().napyr.gbar = 0.00
+            dendrites[i].insert('kdpyr')
+            dendrites[i]().kdpyr.gbar = 0.002 # a little Ht
+            dendrites[i].insert('kif')
+            dendrites[i]().kif.gbar = 0.0001 # a little Ht
+            dendrites[i].insert('leak') # leak
+            dendrites[i]().leak.gbar = 0.00001
+            dendrites[i].insert('ihvcn') # some H current
+            dendrites[i]().ihvcn.gbar =  0. # 0.00002
+            dendrites[i]().ihvcn.eh = -43.0
+        self.maindend = dendrites
+        self.status['dendrites'] = True
+        self.add_section(self.maindend, 'maindend')

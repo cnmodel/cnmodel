@@ -226,7 +226,7 @@ class Cell(object):
             raise ValueError('vrange not good for %s : %f at %6.1f, %f at %6.1f' %
                              (self.status['name'], i0, vrange[0], i1, vrange[1]))
         if showinfo:
-            print '\n  find_i0  Species: %s  cell type: %s' % (self.status['species'], self.status['type'])
+            print '\n  [soma] find_i0  Species: %s  cell type: %s' % (self.status['species'], self.status['type'])
             print '    *** found V0 = %f' % v0
             print '    *** using conductances: ', self.ix.keys()
             print '    *** and cell has mechanisms: ', self.mechanisms
@@ -252,6 +252,7 @@ class Cell(object):
                     'napyr': 'gna', 'kdpyr': 'gk',
                     'kif': 'gkif', 'kis': 'gkis',
                     'ihpyr': 'gh',
+                    'kcnq': 'gk',
                     # cartwheel cell specific:
                     'bkpkj': 'gbkpkj', 'hpkj': 'gh',
                     'kpkj': 'gk', 'kpkj2': 'gk', 'kpkjslow': 'gk',

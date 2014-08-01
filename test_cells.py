@@ -24,7 +24,7 @@ ccivrange = {'bushy': (-0.5, 0.5, 0.05),
             'dstellateeager': (-0.6, 1.0, 0.025),
             'sgc': (-0.3, 0.3, 0.02),
             'cartwheel': (-0.2, 0.1, 0.02),
-            'pyramidal': (-0.3, 0.3, 0.03),
+            'pyramidal': (-0.4, 0., 0.02),
             'octopus': (-3., 3., 0.2)}
 # scales holds some default scaling to use in the cciv plots
 # argument is {cellname: (xmin, xmax, IVymin, IVymax, FIspikemax,
@@ -101,46 +101,46 @@ if args.configuration in cellinfo['configs']:
 #
 
 if args.celltype == 'sgc':
-    cell = cells.SGC(debug=debugFlag, species=args.species, nach=args.nav, ttx=args.ttx, type=args.type)
+    cell = cells.SGC.create(debug=debugFlag, species=args.species, nach=args.nav, ttx=args.ttx, type=args.type)
 #
 # T-stellate tests
 #
 elif args.celltype == 'stellate':
-    cell = cells.TStellate(debug=debugFlag, species=args.species, nach=args.nav, type=args.type, ttx=args.ttx)
+    cell = cells.TStellate.create(debug=debugFlag, species=args.species, nach=args.nav, type=args.type, ttx=args.ttx)
 #
 # Bushy tests
 #
 elif args.celltype == 'bushy' and args.configuration == 'waxon':
-    cell = cells.Bushy(debug=debugFlag, species=args.species, nach=args.nav, type=args.type, ttx=args.ttx)
+    cell = cells.Bushy.create(debug=debugFlag, species=args.species, nach=args.nav, type=args.type, ttx=args.ttx)
     cell.add_axon()
 
 elif args.celltype == 'bushy' and args.configuration == 'std':
-    cell = cells.Bushy(debug=debugFlag, species=args.species, nach=args.nav, type=args.type, ttx=args.ttx)
+    cell = cells.Bushy.create(debug=debugFlag, species=args.species, nach=args.nav, type=args.type, ttx=args.ttx)
 #
 # Ocotpus tests
 #
 elif args.celltype == 'octopus' and args.configuration == 'std':
-    cell = cells.Octopus(debug=debugFlag, species=args.species, nach='jsrna', type=args.type, ttx=args.ttx)
+    cell = cells.Octopus.create(debug=debugFlag, species=args.species, nach='jsrna', type=args.type, ttx=args.ttx)
 #
 # D-stellate tests
 #
 elif args.celltype == 'dstellate':
-    cell = cells.DStellate(debug=debugFlag, ttx=args.ttx)
+    cell = cells.DStellate.create(debug=debugFlag, ttx=args.ttx, type=args.type)
 
 elif args.celltype == 'dstellateeager':
-    cell = cells.DStellateEager(debug=debugFlag, ttx=args.ttx)
+    cell = cells.DStellateEager.create(debug=debugFlag, ttx=args.ttx, type=args.type)
 
 #
 # DCN pyramidal cell tests
 #
 elif args.celltype == 'pyramidal':
-    cell = cells.Pyramidal(debug=debugFlag, ttx=args.ttx)
+    cell = cells.Pyramidal.create(debug=debugFlag, ttx=args.ttx, type=args.type)
 
 #
 # DCN cartwheel cell tests
 #
 elif args.celltype == 'cartwheel':
-    cell = cells.Cartwheel(debug=debugFlag, ttx=args.ttx)
+    cell = cells.Cartwheel.create(debug=debugFlag, ttx=args.ttx, type=args.type)
 
 else:
     print ("Cell Type %s and configurations nav=%s or config=%s are not available" % (args.celltype, args.nav, args.configuration))
