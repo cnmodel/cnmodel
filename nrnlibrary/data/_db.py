@@ -14,7 +14,10 @@ def get_source(*args, **kwds):
     key = mk_key(*args, **kwds)
     return DATA[key][1]
     
-def setval(key, val):
+def setval(val, *args, **kwds):
+    key = mk_key(*args, **kwds)
+    if key in DATA:
+        raise RuntimeError("Data key '%s' has already been set." % str(key))
     DATA[key] = val
     
 def mk_key(*args, **kwds):
@@ -139,8 +142,7 @@ def add_table_data(name, row_key, col_key, data, **kwds):
         for j,col in enumerate(col_names):
             kwds[row_key] = row
             kwds[col_key] = col
-            key = mk_key(name, **kwds)
-            setval(key, cells[i][j])
+            setval(cells[i][j], name, **kwds)
 
 
 
