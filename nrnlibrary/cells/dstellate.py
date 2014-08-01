@@ -3,12 +3,25 @@ import neuron as nrn
 from ..util import nstomho
 import numpy as np
 from .cell import Cell
+from .. import synapses
 
-__all__ = ['DStellate', 'DStellateEager']
+__all__ = ['DStellate', 'DStellateRothman', 'DStellateEager']
 
 
 class DStellate(Cell):
-    """ 
+
+    @classmethod
+    def create(cls, model='RM03', **kwds):
+        if model == 'RM03':
+            return DStellateRothman(**kwds)
+        elif model == 'Eager':
+            return DStellateEager(**kwds)
+        else:
+            raise ValueError ('DStellate type %s is unknown', type)
+
+
+class DStellateRothman(DStellate):
+    """
     VCN D-stellate model:
     as a type I-II from Rothman and Manis, 2003
     """
@@ -21,8 +34,8 @@ class DStellate(Cell):
             Changing "species" to mouse or cat (scales conductances)
             Shifting model type
         """
-        super(DStellate, self).__init__()
-
+        super(DStellateRothman, self).__init__()
+        print 'rm03 model'
         if type == None:  # allow us to pass None to get the default
             type = 'I-II'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
@@ -91,7 +104,7 @@ class DStellate(Cell):
             raise ValueError('Species %s or species-type %s is not recognized for D-Stellate cells' %  (species, type))
         self.status['species'] = species
         self.status['type'] = type
-        self.cell_initialize(showinfo=True)
+        self.cell_initialize(showinfo=False)
         if not silent:
             print 'set cell as: ', species
             print ' with Vm rest = %6.3f' % self.vm0
@@ -167,8 +180,46 @@ class DStellate(Cell):
         self.status['dendrites'] = True
         self.add_section(self.maindend, 'maindend')
 
+    def make_psd(self, pre_sec, post_sec, terminal, **kwds):
+        from .. import cells
+        pre_cell = cells.cell_from_section(pre_sec)
+        if isinstance(pre_cell, cells.SGC):
+            psd = synapses.GluPSD(pre_sec, post_sec, terminal,
+                                   ampa_gmax=4600.,
+                                   nmda_ampa_ratio = 1.28,
+                                   )
+            return psd
+        elif isinstance(pre_cell, cells.DStellate):
+            psd = synapses.GlyPSD(pre_sec, post_sec, terminal,
+                                   psdType='glyfast',
+                                   )
+            return psd
+        else:
+            raise TypeError("Cannot make PSD for %s => %s" % 
+                            (pre_cell.__class__.__name__, 
+                             self.__class__.__name__))
 
-class DStellateEager(Cell):
+    def make_terminal(self, pre_sec, post_sec, **kwds):
+        from .. import cells
+        post_cell = cells.cell_from_section(post_sec)
+        #
+        # set parameters according to the target cell type
+        #
+
+        if isinstance(post_cell, cells.Bushy):
+            nzones, delay = 10, 0
+        elif isinstance(post_cell, cells.TStellate):
+            nzones, delay = 5, 0
+        elif isinstance(post_cell, cells.DStellate):
+            nzones, delay = 5, 0
+        else:
+            raise NotImplementedError("No knowledge as to how to connect DStellate to cell type %s" %
+                                      type(post_cell))
+
+        return synapses.StochasticTerminal(pre_sec, post_sec, nzones=nzones, delay=delay)
+
+
+class DStellateEager(DStellate):
     """
     This is a model of the VCN D-Stellate cells as proposed by
     Eager, M.A., Grayden, D.B., Burkitt, A.N., and Meffin, H.,
@@ -346,4 +397,5 @@ class DStellateEager(Cell):
         self.maindend = dendrites
         self.status['dendrites'] = True
         self.add_section(self.maindend, 'maindend')
+
 

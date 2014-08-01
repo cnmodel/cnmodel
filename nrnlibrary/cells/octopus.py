@@ -5,26 +5,35 @@ import numpy as np
 Original hoc code from RMmodel.hoc
 // including the "Octopus" cell:
 proc set_Type2o() {
-	gbar_na = nstomho(1000)
-	gbar_kht = nstomho(150)
-	gbar_klt = nstomho(600)
-	gbar_ka = nstomho(0)
-	gbar_ih = nstomho(0)
-	gbar_hcno = nstomho(40)
-	gbar_leak = nstomho(2)
-	model = 6
-	modelname = "Type IIo (Octopus)"
-	vm0 = -66.67
+    gbar_na = nstomho(1000)
+    gbar_kht = nstomho(150)
+    gbar_klt = nstomho(600)
+    gbar_ka = nstomho(0)
+    gbar_ih = nstomho(0)
+    gbar_hcno = nstomho(40)
+    gbar_leak = nstomho(2)
+    model = 6
+    modelname = "Type IIo (Octopus)"
+    vm0 = -66.67
 }
 
 """
 
 from .cell import Cell
 
-__all__ = ['Octopus']
-
+__all__ = ['Octopus', 'OctopusRothman']
 
 class Octopus(Cell):
+
+    @classmethod
+    def create(cls, model='RM03', **kwds):
+        if model == 'RM03':
+            print 'making RM03'
+            return OctopusRothman(**kwds)
+        else:
+            raise ValueError ('DStellate type %s is unknown', type)
+
+class OctopusRothman(Octopus, Cell):
     """
     VCN octopus cell model (point cell).
     Rothman and Manis, 2003abc (Type II, with high gklt and hcno - octopus cell h current).
@@ -36,13 +45,13 @@ class Octopus(Cell):
         R&M2003, as a type II cell with modified conductances.
         Modifications to the cell can be made by calling methods below.
         """
-        super(Octopus, self).__init__()
+        super(OctopusRothman, self).__init__()
         print "\n>>>>Creating Octopus Cell"
         if type == None:
             type = 'II-o'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'Octopus'}
-        self.i_test_range=(-2, 2, 0.05)
+        self.i_test_range=(-2.0, 2.0, 0.2)
         self.spike_threshold = -50
         # overrides:
         self.e_leak = -62
@@ -53,27 +62,13 @@ class Octopus(Cell):
         self.mechanisms = ['klt', 'kht', 'hcno', 'leak', nach]
         for mech in self.mechanisms:
             soma.insert(mech)
-        # soma.insert('klt')
-        # soma.insert('kht')
-        # soma.insert('hcno')
-        # soma.insert('leak')
         soma.ek = self.e_k
         soma.ena = self.e_na
         soma().hcno.eh = self.e_h
         soma().leak.erev = self.e_leak
-
-        # insert the requested sodium channel
-        # if nach == 'jsrna':
-        #     soma.insert('jsrna')
-        # elif nach == 'nav11':
-        #     soma.insert('nav11')
-        # elif nach in ['na', 'nacn']:
-        #     soma.insert('na')
-        # else:
-        #     raise ValueError('Sodium channel %s not available for octopus cells' % nach)
+        soma.Ra = self.R_a
 
         self.add_section(soma, 'soma')
-        self.mechanisms = ['klt', 'kht', 'hcno', 'leak', nach]
         self.species_scaling(silent=True, species=species, type=type)  # set the default type II cell parameters
         self.get_mechs(soma)
         if debug:
@@ -127,7 +122,7 @@ class Octopus(Cell):
             raise ValueError('Species "%s" or species-type "%s" is not recognized for octopus cells' %  (species, type))
         self.status['species'] = species
         self.status['type'] = type
-        self.cell_initialize(showinfo=True)
+        self.cell_initialize(showinfo=False)
         if not silent:
             print 'set cell as: ', species
             print ' with Vm rest = %6.3f' % self.vm0

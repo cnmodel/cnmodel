@@ -114,9 +114,9 @@ class Toy(Protocol):
             print cellname
             type = g.group('type')
             if g.group('type') == '':
-                netcells.append(self.celltypes[c][0]())
+                netcells.append(self.celltypes[c][0].create())
             else:
-                netcells.append(self.celltypes[c][0](type=type))
+                netcells.append(self.celltypes[c][0].create(type=type))
         istim = {}
 
         #

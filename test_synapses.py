@@ -2,29 +2,45 @@ from nrnlibrary.protocols import SynapseTest
 from nrnlibrary import cells
 from nrnlibrary.synapses import Synapse
 
+
 import sys
-if len(sys.argv) < 2:
-    print "Usage:  python test_synapses.py <celltype>"
-    print "   Supported cell types: bushy, tstellate, dstellate"
+if len(sys.argv) < 3:
+    print "Usage:  python test_synapses.py <pre_celltype> <post_celltype>"
+    print "   Supported cell types: sgc, bushy, tstellate, dstellate"
     sys.exit(1)
 
-cellType = sys.argv[1]
+
+convergence = {
+    'sgc': {'bushy': 3, 'tstellate': 6, 'dstellate': 10, 'dstellate_eager': 10},
+    'dstellate': {'bushy': 10, 'tstellate': 15, 'dstellate': 5},
+    }
 
 
+c = []
+for cellType in sys.argv[1:3]:
+    if cellType == 'sgc':
+        cell = cells.SGC.create()
+    elif cellType == 'tstellate':
+        cell = cells.TStellate.create(debug=True, ttx=False)
+    elif cellType == 'dstellate': # Type I-II Rothman model, similiar excitability (Xie/Manis, unpublished)
+        cell = cells.DStellate.create(model='RM03', debug=True, ttx=False)
+    elif cellType == 'dstellate_eager': # From Eager et al.
+        cell = cells.DStellate.create(model='Eager', debug=True, ttx=False)
+    elif cellType == 'bushy':
+        cell = cells.Bushy.create(debug=True, ttx=True)
+    else:
+        raise ValueError("Unknown cell type '%s'" % cellType)
+    c.append(cell)
 
-if cellType == 'tstellate':
-    TargetCell = cells.TStellate(debug=True, ttx=False) # make a postsynaptic cell
-elif cellType == 'dstellate': # Type I-II Rothman model, similiar excitability (Xie/Manis, unpublished)
-    TargetCell = cells.DStellate(debug=True, ttx=False) # make a postsynaptic cell
-elif cellType == 'dstellate_eager': # From Eager et al.
-    TargetCell = cells.DStellateEager(debug=True, ttx=False) # make a postsynaptic cell
-elif cellType == 'bushy':
-    TargetCell = cells.Bushy(debug=True, ttx=True) # make a postsynaptic cell
-else:
-    raise ValueError("Unknown cell type '%s'" % cellType)
+preCell, postCell = c
+    
+nTerminals = convergence.get(sys.argv[1], {}).get(sys.argv[2], None)
+if nTerminals is None:
+    nTerminals = 1
+    print "Warning: Unknown convergence for %s => %s, assuming %d" % (sys.argv[1], sys.argv[2], nTerminals)
 
-synapse = Synapse()
+
 st = SynapseTest()
-st.run(TargetCell, synapse)
+st.run(preCell, postCell, nTerminals)
 st.analyze()
 
