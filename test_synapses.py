@@ -41,6 +41,6 @@ if nTerminals is None:
 
 
 st = SynapseTest()
-st.run(preCell, postCell, nTerminals)
+st.run(preCell.soma, postCell.soma, nTerminals)
 st.analyze()
 

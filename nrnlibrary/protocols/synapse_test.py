@@ -17,40 +17,41 @@ class SynapseTest(Protocol):
     def reset(self):
         super(SynapseTest, self).reset()
 
-    def run(self, pre_cell, cell, n_synapses, temp=34.0):
+    def run(self, pre_sec, post_sec, n_synapses, temp=34.0):
         """ 
-        Basic synapse test.
-        Creates a presynaptic HH neuron and connects it to *cell* with 
-        *n_synapses*.
+        Basic synapse test. Connects sections of two cells with *n_synapses*.
+        The cells are allowed to negotiate the details of the connecting 
+        synapse. The presynaptic soma is then driven with a pulse train
+        followed by a recovery pulse of varying delay.
         
+        Analyses:
+        
+        * Distribution of PSG amplitude, kinetics, and latency
+        * Synaptic depression / facilitation and recovery timecourses
         """
+        pre_cell = cells.cell_from_section(pre_sec)
+        post_cell = cells.cell_from_section(post_sec)
         synapses = []
         for i in range(n_synapses):
-            synapses.append(pre_cell.connect(pre_cell.soma, cell.soma))
+            synapses.append(pre_cell.connect(pre_sec, post_sec))
         
         self.synapses = synapses
+        self.pre_sec = pre_sec
+        self.post_sec = post_sec
         self.pre_cell = pre_cell
-        self.cell = cell
-        self.allpsd = []
-        # collect all PSDs across all synapses
-        for syn in synapses:
-            self.allpsd.extend(syn.psd.psd)
-        VCLAMP = True
-        glyPlot = False
-        releasePlot = True
+        self.post_cell = post_cell
         
         #
         # voltage clamp the target cell
         #
-        if VCLAMP == True:
-            clampV = -65.0
-            vccontrol = h.VClamp(0.5, sec=cell.soma)
-            vccontrol.dur[0] = 10.0
-            vccontrol.amp[0] = clampV
-            vccontrol.dur[1] = 100.0
-            vccontrol.amp[1] = clampV
-            vccontrol.dur[2] = 20.0
-            vccontrol.amp[2] = clampV
+        clampV = -65.0
+        vccontrol = h.VClamp(0.5, sec=post_cell.soma)
+        vccontrol.dur[0] = 10.0
+        vccontrol.amp[0] = clampV
+        vccontrol.dur[1] = 100.0
+        vccontrol.amp[1] = clampV
+        vccontrol.dur[2] = 20.0
+        vccontrol.amp[2] = clampV
 
         #
         # set up stimulation of the presynaptic axon/terminal
@@ -76,18 +77,6 @@ class SynapseTest(Protocol):
         i_stim_vec.play(istim._ref_i, h.dt, 0)
 
 
-        #
-        # set up recordings
-        #
-        #self = {}
-        #for var in ['v_pre', 'v_soma', 'i_soma', 'coh', 't', 'C0', 'C1', 'i_stim',
-                    #'C2', 'C3', 'D', 'O1', 'O2', 'D1', 'D2', 'D3', 'Open', 'nmOpen', 'amOpen']:
-            #self[var] = h.Vector()
-        
-
-        #for i in range(0, nANTerminals_ReleaseZones): 
-            #self['isyn%03d' % i] = h.Vector(nANTerminals_ReleaseZones, 1000)
-        
         # create hoc vectors for each parameter we wish to monitor and display
         synapse = synapses[0]
         self['v_pre'] = pre_cell.soma(0.5)._ref_v
@@ -95,9 +84,15 @@ class SynapseTest(Protocol):
         self['v_soma'] = pre_cell.soma(0.5)._ref_v
         self['coh'] = synapse.terminal.relsite._ref_XMTR[0]
 
+
         # make a synapse monitor for each release zone
-        k = 0
+        self.allpsd = []
+        for syn in synapses:
+            # collect all PSDs across all synapses
+            self.allpsd.extend(syn.psd.psd)
+        
         psd = self.allpsd
+        k = 0
         for p in psd:
             #self['isyn%03d' % k] = h.Vector(len(psd), 1000)
             self['isyn%03d' % k] = psd[k]._ref_i
@@ -135,23 +130,17 @@ class SynapseTest(Protocol):
         #
         h.tstop = 200.0 # duration of a run
         h.celsius = temp
-        tvec = np.arange(0, h.tstop, h.dt)
         self.custom_init()
-        #h.init() # set up the parameters
         for nrep in xrange(1): # could do multiple runs.... 
             h.run()
-            k = 0
-            if nrep is 0: # save the soma current
+            
+            if nrep is 0: # add up psd current across all runs
                 isoma = np.zeros_like(self['isyn000'])
-            for p in psd:
+            for k,p in enumerate(psd):
                 thissyn = 'isyn%03d' % k
                 if thissyn in self._vectors.keys():
                     isoma = isoma + self[thissyn]
-                    k = k + 1
         self.isoma = isoma
-        
-        print 'Synapse.py: all runs done'
-    
 
     def analyze(self, releasePlot=True, glyPlot=False):
         #
@@ -160,16 +149,15 @@ class SynapseTest(Protocol):
         synapse = self.synapses[0]
         nreq = 0
         nrel = 0
-        nANTerminals = len(self.synapses)
         coh = [syn.terminal.relsite for syn in self.synapses]
-        ntrel = np.zeros(nANTerminals)
+        ntrel = np.zeros(len(self.synapses))
         nANTerminals_ReleaseZones = synapse.terminal.n_rzones
         psd = self.allpsd
         
         #
         # compute some parameters
         #
-        for j in range(0, nANTerminals):
+        for j in range(0, len(self.synapses)):
             nreq = nreq + coh[j].nRequests # number of release requests during the for a terminal
             nrel = nrel + coh[j].nReleases # number of actual release events
             ntrel[j] = ntrel[j] + coh[j].nReleases # cumulative release events. (seems redundant)
@@ -178,7 +166,7 @@ class SynapseTest(Protocol):
 
         t = self['t']
 
-        for i in range(0, nANTerminals):
+        for i in range(0, len(self.synapses)):
             print 'ntrel[%d] = %d' % (i, ntrel[i])
         nreq = (nreq * nANTerminals_ReleaseZones)
         print 'Prel: %8.3f\n' % (coh[0].Dn * coh[0].Fn)
@@ -215,7 +203,7 @@ class SynapseTest(Protocol):
             g2.plot(t, self.isoma, color='red')
             g2.axes.set_ylabel('I post')
             g2.axes.set_xlabel('Time (ms)')
-            g2.set_title(self.cell.status['name'])
+            g2.set_title(self.post_cell.status['name'])
         else:
             g2 = mpl.subplot2grid((5, 1), (1, 0), rowspan=1)
             g2.plot(t, self.isoma, color='cyan')
@@ -347,7 +335,7 @@ class SynapseTest(Protocol):
             ph1 = fig_ev.add_subplot(211)
             ph2 = fig_ev.add_subplot(212)
             nbins = 50
-            for j in range(0, nANTerminals):
+            for j in range(0, len(self.synapses)):
                 nev = coh[j].ev_index
                 dis = np.array(coh[j].EventDist)[0:nev] # actual events, not original distribution
                 tim = np.array(coh[j].EventTime)[0:nev]
