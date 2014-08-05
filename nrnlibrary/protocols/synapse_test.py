@@ -89,19 +89,23 @@ class SynapseTest(Protocol):
         self.allpsd = []
         for syn in synapses:
             # collect all PSDs across all synapses
-            self.allpsd.extend(syn.psd.psd)
+            self.allpsd.extend(syn.psd.all_psd)
         
+        #  Record current through all PSDs individually
         psd = self.allpsd
         for k,p in enumerate(psd):
-            #self['isyn%03d' % k] = h.Vector(len(psd), 1000)
             self['isyn%03d' % k] = psd[k]._ref_i
+        
+        # Record sample AMPA and NMDA currents
+        self['iNMDA'] = synapse.psd.nmda_psd[0]._ref_i
+        self['iAMPA'] = synapse.psd.ampa_psd[0]._ref_i
         
         self['Open'] = psd[0]._ref_Open
         if isinstance(synapse.psd, GluPSD):
-            if synapse.psd.kNMDA >= 0:
-               self['nmOpen'] = psd[synapse.psd.kNMDA]._ref_Open
-            if synapse.psd.kAMPA >= 0:
-               self['amOpen'] = psd[synapse.psd.kAMPA]._ref_Open
+            if len(synapse.psd.nmda_psd) > 0:
+               self['nmOpen'] = synapse.psd.nmda_psd[0]._ref_Open
+            if len(synapse.psd.ampa_psd) > 0:
+               self['amOpen'] = synapse.psd.ampa_psd[0]._ref_Open
         
         if isinstance(synapse.psd, GlyPSD):
             if synapse.psd.psdType == 'glyslow':
@@ -175,18 +179,17 @@ class SynapseTest(Protocol):
         # Compute NMDA / AMPA open probability
         #
         print ""
-        if isinstance(synapse.psd, GluPSD):
-            if synapse.psd.kNMDA >= 0:
-                nmOmax = self['nmOpen'].max()
-                amOmax = self['amOpen'].max()
-                print 'Max NMDAR Open Prob: %f   AMPA Open Prob: %f' % (nmOmax, amOmax)
-                nmImax = self['isyn%03d' % synapse.psd.kNMDA].max()
-                amImax = self['isyn%03d' % synapse.psd.kAMPA].max()
-                print 'Max NMDAR I: %f   AMPA I: %f' % (nmImax, amImax)                
-                if nmImax + amImax > 0.0:
-                    print '   N/(N+A): %f\n' % (nmImax / (nmImax + amImax))
-                else:
-                    print "   (release might have failed)"
+        if isinstance(synapse.psd, GluPSD) and len(synapse.psd.nmda_psd) > 0:
+            nmOmax = self['nmOpen'].max()
+            amOmax = self['amOpen'].max()
+            print 'Max NMDAR Open Prob: %f   AMPA Open Prob: %f' % (nmOmax, amOmax)
+            nmImax = self['iNMDA'].max()
+            amImax = self['iAMPA'].max()
+            print 'Max NMDAR I: %f   AMPA I: %f' % (nmImax, amImax)                
+            if nmImax + amImax > 0.0:
+                print '   N/(N+A): %f\n' % (nmImax / (nmImax + amImax))
+            else:
+                print "   (release might have failed)"
 
 
         #
@@ -221,14 +224,16 @@ class SynapseTest(Protocol):
             k = 0
             for p in self.synapse.psd:
                 if p.hname().find('NMDA', 0, 6) >= 0:
-                    g5.plot(t, self['isyn%03d' % synapse.kNMDA]) # current through nmdar
+                    #g5.plot(t, self['isyn%03d' % synapse.kNMDA]) # current through nmdar
+                    g5.plot(t, self['iNMDA']) # current through nmdar
                 k = k + 1
             g5.axes.set_ylabel('inmda')
             g6 = mpl.subplot2grid((5, 1), (5, 0))
             k = 0
             for p in self.synapse.psd:
                 if p.hname().find('NMDA', 0, 6) < 0:
-                    g6.plot(t, self['isyn%03d' % synapse.kAMPA]) # glutamate
+                    #g6.plot(t, self['isyn%03d' % synapse.kAMPA]) # glutamate
+                    g6.plot(t, self['iAMPA']) # glutamate
                 k = k + 1
             g6.axes.set_ylabel('iAMPA')
 

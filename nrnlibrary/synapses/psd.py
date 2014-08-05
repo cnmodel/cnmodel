@@ -65,53 +65,38 @@ class GluPSD(PSD):
         
         # and then make a set of postsynaptic receptor mechanisms
         #        print 'PSDTYPE: ', psdtype
-        (psd, psdn, par, parn) = template_iGluR_PSD(post_sec, nReceptors=n_rzones,
+        (ampa_psd, nmda_psd, par, parn) = template_iGluR_PSD(post_sec, nReceptors=n_rzones,
                                                     nmda_ratio=nmda_ratio)
         
         # Connect terminal to psd (or cleft)
         for k in range(0, n_rzones):
             # Note: cleft kinetics is implemented in the AMPA mechanism
-            relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', psd[k])
+            relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', ampa_psd[k])
             
             # Note: NMDA has no cleft mechanism, but it has a slow response that
             # would not be strongly affected by the relatively fast cleft kinetics.
-            relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', psdn[k]) # include NMDAR's as well at same release site
+            relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', nmda_psd[k]) # include NMDAR's as well at same release site
             
             v = 1.0 + gvar * np.random.standard_normal()
-            psd[k].gmax = gmax * v # add a little variability - gvar is CV of amplitudes
-            psd[k].Erev = eRev # set the reversal potential
+            ampa_psd[k].gmax = gmax * v # add a little variability - gvar is CV of amplitudes
+            ampa_psd[k].Erev = eRev # set the reversal potential
             
             # also adjust the nmda receptors at the same synapse
-            psdn[k].gmax = gmax * v
-            psdn[k].Erev = eRev
+            nmda_psd[k].gmax = gmax * v
+            nmda_psd[k].Erev = eRev
+            nmda_psd[k].gNAR = nmda_ampa_ratio * self.AN_Po_Ratio * self.NMDARatio
+            nmda_psd[k].vshift = 0
         
         par = list(par)
-        psd.extend(psdn)
         par.extend(parn)
         if message is not None:
             print message
                 
-        self.psd = psd
+        self.ampa_psd = ampa_psd
+        self.nmda_psd = nmda_psd
+        self.all_psd = nmda_psd + ampa_psd
         self.clefts = clefts
         self.par = par
-
-        # adjust NMDA receptors to match postsynaptic cell
-        # TODO: replace self.psd, kNMDA, kAMPA with self.nmda, self.ampa
-        kNMDA = -1
-        kAMPA = -1
-        for k,p in enumerate(self.psd):
-            if p.hname().find('NMDA', 0, 6) >= 0:
-                p.gNAR = nmda_ampa_ratio * self.AN_Po_Ratio * self.NMDARatio
-                p.vshift = 0
-                if kNMDA == -1:
-                    kNMDA = k # save the first instance where we have an NMDA receptor
-            else:
-                if kAMPA == -1: # not NMDA, so get AMPA 
-                    kAMPA = k
-
-        self.kNMDA = kNMDA
-        self.kAMPA = kAMPA
-
 
 
 class GlyPSD(PSD):
