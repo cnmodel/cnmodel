@@ -96,10 +96,10 @@ class GluPSD(PSD):
         self.par = par
 
         # adjust NMDA receptors to match postsynaptic cell
-        k = 0
+        # TODO: replace self.psd, kNMDA, kAMPA with self.nmda, self.ampa
         kNMDA = -1
         kAMPA = -1
-        for p in self.psd:
+        for k,p in enumerate(self.psd):
             if p.hname().find('NMDA', 0, 6) >= 0:
                 p.gNAR = nmda_ampa_ratio * self.AN_Po_Ratio * self.NMDARatio
                 p.vshift = 0
@@ -108,7 +108,6 @@ class GluPSD(PSD):
             else:
                 if kAMPA == -1: # not NMDA, so get AMPA 
                     kAMPA = k
-            k = k + 1
 
         self.kNMDA = kNMDA
         self.kAMPA = kAMPA

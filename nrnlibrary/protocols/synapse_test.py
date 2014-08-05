@@ -82,7 +82,7 @@ class SynapseTest(Protocol):
         self['v_pre'] = pre_cell.soma(0.5)._ref_v
         self['t'] = h._ref_t
         self['v_soma'] = pre_cell.soma(0.5)._ref_v
-        self['coh'] = synapse.terminal.relsite._ref_XMTR[0]
+        self['relsite_xmtr'] = synapse.terminal.relsite._ref_XMTR[0]
 
 
         # make a synapse monitor for each release zone
@@ -92,11 +92,9 @@ class SynapseTest(Protocol):
             self.allpsd.extend(syn.psd.psd)
         
         psd = self.allpsd
-        k = 0
-        for p in psd:
+        for k,p in enumerate(psd):
             #self['isyn%03d' % k] = h.Vector(len(psd), 1000)
             self['isyn%03d' % k] = psd[k]._ref_i
-            k = k + 1
         
         self['Open'] = psd[0]._ref_Open
         if isinstance(synapse.psd, GluPSD):
@@ -147,49 +145,55 @@ class SynapseTest(Protocol):
         # Analysis
         #
         synapse = self.synapses[0]
-        nreq = 0
-        nrel = 0
-        coh = [syn.terminal.relsite for syn in self.synapses]
-        ntrel = np.zeros(len(self.synapses))
-        nANTerminals_ReleaseZones = synapse.terminal.n_rzones
-        psd = self.allpsd
         
         #
-        # compute some parameters
+        # Count spikes and releases for each terminal
         #
-        for j in range(0, len(self.synapses)):
-            nreq = nreq + coh[j].nRequests # number of release requests during the for a terminal
-            nrel = nrel + coh[j].nReleases # number of actual release events
-            ntrel[j] = ntrel[j] + coh[j].nReleases # cumulative release events. (seems redundant)
-            print 'Spikes: T%3d: = %3d ' % (j, coh[j].nRequests),
-            print ' Releases = %4d from %d zones' % (coh[j].nReleases, nANTerminals_ReleaseZones)
+        zones_per_terminal = synapse.terminal.n_rzones
+        n_requests = [syn.terminal.relsite.nRequests for syn in self.synapses]
+        n_releases = [syn.terminal.relsite.nReleases for syn in self.synapses]
+        for i in range(len(self.synapses)):
+            print 'Spikes: T%3d: = %3d   ' % (i, n_requests[i]),
+            print 'Releases = %4d from %d zones' % (n_releases[i], zones_per_terminal)
 
-        t = self['t']
+        #
+        # Compute release probability
+        #
+        # total number of release requests
+        tot_requests = np.sum(n_requests) * zones_per_terminal 
+        # total number of actual release events        
+        tot_releases = np.sum(n_releases) 
+        print ""
+        print 'Prel: %8.3f' % (synapse.terminal.relsite.Dn * synapse.terminal.relsite.Fn)
+        print 'Total release requests: %d' % tot_requests
+        print 'Total release events:   %d' % tot_releases
+        if tot_requests > 0:
+            print 'Release probability: %8.3f' % (float(tot_releases) / tot_requests)
 
-        for i in range(0, len(self.synapses)):
-            print 'ntrel[%d] = %d' % (i, ntrel[i])
-        nreq = (nreq * nANTerminals_ReleaseZones)
-        print 'Prel: %8.3f\n' % (coh[0].Dn * coh[0].Fn)
-        print 'nreq: %d\n' % nreq
-        if nreq > 0:
-            print 'Rel Prob: %8.3f\n' % (float(nrel) / nreq)
-        print synapse.psd
+
+        #
+        # Compute NMDA / AMPA open probability
+        #
+        print ""
         if isinstance(synapse.psd, GluPSD):
             if synapse.psd.kNMDA >= 0:
                 nmOmax = self['nmOpen'].max()
                 amOmax = self['amOpen'].max()
-                print 'Synapse.py: Max NMDAR Open Prob: %f   AMPA Open Prob: %f\n' % (nmOmax, amOmax)
+                print 'Max NMDAR Open Prob: %f   AMPA Open Prob: %f' % (nmOmax, amOmax)
                 nmImax = self['isyn%03d' % synapse.psd.kNMDA].max()
                 amImax = self['isyn%03d' % synapse.psd.kAMPA].max()
+                print 'Max NMDAR I: %f   AMPA I: %f' % (nmImax, amImax)                
                 if nmImax + amImax > 0.0:
-                    print 'Synapse.py: Max NMDAR I: %f   AMPA I: %f, N/(N+A): %f\n' % (
-                        nmImax, amImax, nmImax / (nmImax + amImax))
+                    print '   N/(N+A): %f\n' % (nmImax / (nmImax + amImax))
                 else:
-                    print "Synapse.py: release might have failed"
+                    print "   (release might have failed)"
+
 
         #
         # plot the results for comparison
         #
+        t = self['t']
+
         mpl.figure(1)
         g1 = mpl.subplot2grid((5, 1), (0, 0))
         p1 = g1.plot(t, self['v_pre'], color='black')
@@ -211,8 +215,8 @@ class SynapseTest(Protocol):
             g3.plot(t, self['v_pre'], color='blue')
             g3.plot(t, self['v_soma'], color='red')
             g4 = mpl.subplot2grid((5, 1), (3, 0))
-            p4 = g4.plot(t, self['coh']) # glutamate
-            g4.axes.set_ylabel('coh')
+            p4 = g4.plot(t, self['relsite_xmtr']) # glutamate
+            g4.axes.set_ylabel('relsite_xmtr')
             g5 = mpl.subplot2grid((5, 1), (4, 0))
             k = 0
             for p in self.synapse.psd:
@@ -336,11 +340,12 @@ class SynapseTest(Protocol):
             ph2 = fig_ev.add_subplot(212)
             nbins = 50
             for j in range(0, len(self.synapses)):
-                nev = coh[j].ev_index
-                dis = np.array(coh[j].EventDist)[0:nev] # actual events, not original distribution
-                tim = np.array(coh[j].EventTime)[0:nev]
+                relsite = self.synapses[j].terminal.relsite
+                nev = relsite.ev_index
+                dis = np.array(relsite.EventDist)[0:nev] # actual events, not original distribution
+                tim = np.array(relsite.EventTime)[0:nev]
                 #            print "dis[%03d]: nev=%d " % (j, nev),
-                #            print "# of spike Requests detected: %d \n" % (coh[j].nRequests)
+                #            print "# of spike Requests detected: %d \n" % (relsites[j].nRequests)
                 #print dis
                 (hist, binedges) = np.histogram(dis, 25, range=(0.0, 5.0))
                 ph1.hist(dis, nbins, range=(0.0, 5.0))
