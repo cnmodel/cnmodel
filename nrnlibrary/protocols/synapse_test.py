@@ -10,14 +10,14 @@ from .protocol import Protocol
 from .. import cells
 from ..synapses import GluPSD, GlyPSD
 
-mpl.rcParams['interactive'] = False
+#mpl.rcParams['interactive'] = False
 
 
 class SynapseTest(Protocol):
     def reset(self):
         super(SynapseTest, self).reset()
 
-    def run(self, pre_sec, post_sec, n_synapses, temp=34.0):
+    def run(self, pre_sec, post_sec, n_synapses, temp=34.0, dt=0.025):
         """ 
         Basic synapse test. Connects sections of two cells with *n_synapses*.
         The cells are allowed to negotiate the details of the connecting 
@@ -64,7 +64,7 @@ class SynapseTest(Protocol):
         stim['dur'] = 0.5
         stim['amp'] = 10.0
         stim['PT'] = 0.0
-        stim['dt'] = h.dt
+        stim['dt'] = dt
         (secmd, maxt, tstims) = util.make_pulse(stim)
         self.stim = stim
         
@@ -74,7 +74,7 @@ class SynapseTest(Protocol):
 
         # istim current pulse train
         i_stim_vec = h.Vector(secmd)
-        i_stim_vec.play(istim._ref_i, h.dt, 0)
+        i_stim_vec.play(istim._ref_i, dt, 0)
 
 
         # create hoc vectors for each parameter we wish to monitor and display
@@ -132,6 +132,10 @@ class SynapseTest(Protocol):
         #
         h.tstop = 200.0 # duration of a run
         h.celsius = temp
+        h.dt = dt
+        self.temp = temp
+        self.dt = dt
+        
         self.custom_init()
         for nrep in xrange(1): # could do multiple runs.... 
             h.run()
@@ -144,35 +148,68 @@ class SynapseTest(Protocol):
                     isoma = isoma + self[thissyn]
         self.isoma = isoma
 
-    def analyze(self, releasePlot=True, glyPlot=False):
-        #
-        # Analysis
-        #
+    def release_events(self):
+        """
+        Analyze results and return a dict of values related to release 
+        probability:
+            
+            n_zones: Array containing the number of release zones for each
+                     synapse.
+            n_requests: Array containing number of release requests for each 
+                        synapse. Note for multi-zone synapses, a single 
+                        presynaptic spike results in one release request _per_
+                        zone.
+            n_releases: Array containing actual number of releases for each 
+                        synapse.
+            tot_requests: The total number of release requests across all
+                          release zones. 
+            tot_releases: The total number of releases.
+            release_p: Release probability computed as 
+                       tot_releases / tot_requests
+        """
         synapse = self.synapses[0]
         
+        ret = {}
         #
         # Count spikes and releases for each terminal
         #
-        zones_per_terminal = synapse.terminal.n_rzones
-        n_requests = [syn.terminal.relsite.nRequests for syn in self.synapses]
-        n_releases = [syn.terminal.relsite.nReleases for syn in self.synapses]
-        for i in range(len(self.synapses)):
-            print 'Spikes: T%3d: = %3d   ' % (i, n_requests[i]),
-            print 'Releases = %4d from %d zones' % (n_releases[i], zones_per_terminal)
+        ret['n_zones'] = np.array([syn.terminal.n_rzones for syn in self.synapses])
+        ret['n_spikes'] = np.array([syn.terminal.relsite.nRequests for syn in self.synapses])
+        ret['n_requests'] = ret['n_spikes'] * ret['n_zones']
+        ret['n_releases'] = np.array([syn.terminal.relsite.nReleases for syn in self.synapses])
 
         #
         # Compute release probability
         #
         # total number of release requests
-        tot_requests = np.sum(n_requests) * zones_per_terminal 
+        ret['tot_requests'] = ret['n_requests'].sum()
         # total number of actual release events        
-        tot_releases = np.sum(n_releases) 
+        ret['tot_releases'] = ret['n_releases'].sum() 
+        
+        if ret['tot_requests'] > 0:
+            ret['release_p'] = float(ret['tot_releases']) / ret['tot_requests']
+        else:
+            ret['release_p'] = np.nan
+        
+        return ret
+
+    def show(self, releasePlot=True, glyPlot=False, plotFocus='EPSC'):
+        synapse = self.synapses[0]
+        
+        #
+        # Print parameters related to release probability
+        #
+        events = self.release_events()
+        ns = len(self.synapses)
+        for i in range(ns):
+            v = (i, events['n_spikes'][i], events['n_zones'][i], events['n_releases'][i])
+            print 'Synapse %d:  spikes: %d  zones: %d  releases: %d' % v
         print ""
-        print 'Prel: %8.3f' % (synapse.terminal.relsite.Dn * synapse.terminal.relsite.Fn)
-        print 'Total release requests: %d' % tot_requests
-        print 'Total release events:   %d' % tot_releases
-        if tot_requests > 0:
-            print 'Release probability: %8.3f' % (float(tot_releases) / tot_requests)
+        print 'Total release requests: %d' % events['tot_requests']
+        print 'Total release events:   %d' % events['tot_releases']
+        print 'Release probability: %8.3f' % events['release_p']
+        prel_final = synapse.terminal.relsite.Dn * synapse.terminal.relsite.Fn
+        print 'Final release probability (Dn * Fn): %8.3f' % prel_final
 
 
         #
@@ -198,51 +235,56 @@ class SynapseTest(Protocol):
         t = self['t']
 
         mpl.figure(1)
-        g1 = mpl.subplot2grid((5, 1), (0, 0))
+        g1 = mpl.subplot2grid((6, 1), (0, 0))
         p1 = g1.plot(t, self['v_pre'], color='black')
         g1.axes.set_ylabel('V pre')
         g1.set_title(self.pre_cell.status['name'])
         
-        plotFocus = 'EPSC'
+        win = pg.GraphicsWindow()
+        p1 = win.addPlot(title=self.pre_cell.status['name'])
+        p1.setLabels(left='V pre (mV)', bottom='Time (ms)')
+        p1.plot(t, self['v_pre'])
         
         if plotFocus == 'EPSC':
-            g2 = mpl.subplot2grid((5, 1), (1, 0), rowspan=4)
+            g2 = mpl.subplot2grid((6, 1), (1, 0), rowspan=4)
             g2.plot(t, self.isoma, color='red')
             g2.axes.set_ylabel('I post')
             g2.axes.set_xlabel('Time (ms)')
             g2.set_title(self.post_cell.status['name'])
+            
+            p2 = win.addPlot(row=1, col=0, title=self.post_cell.status['name'])
+            p2.plot(t, self.isoma, pen='r')
+            p2.setLabels(left='I post (nA)', bottom='Time (ms)')
         else:
-            g2 = mpl.subplot2grid((5, 1), (1, 0), rowspan=1)
+            # todo: resurrect this?
+            g2 = mpl.subplot2grid((6, 1), (1, 0), rowspan=1)
             g2.plot(t, self.isoma, color='cyan')
-            g3 = mpl.subplot2grid((5, 1), (2, 0))
+            g3 = mpl.subplot2grid((6, 1), (2, 0))
             g3.plot(t, self['v_pre'], color='blue')
             g3.plot(t, self['v_soma'], color='red')
-            g4 = mpl.subplot2grid((5, 1), (3, 0))
+            g4 = mpl.subplot2grid((6, 1), (3, 0))
             p4 = g4.plot(t, self['relsite_xmtr']) # glutamate
             g4.axes.set_ylabel('relsite_xmtr')
-            g5 = mpl.subplot2grid((5, 1), (4, 0))
-            k = 0
-            for p in self.synapse.psd:
+            g5 = mpl.subplot2grid((6, 1), (4, 0))
+            for k,p in enumerate(synapse.psd.all_psd):
                 if p.hname().find('NMDA', 0, 6) >= 0:
-                    #g5.plot(t, self['isyn%03d' % synapse.kNMDA]) # current through nmdar
-                    g5.plot(t, self['iNMDA']) # current through nmdar
-                k = k + 1
+                    g5.plot(t, self['isyn%03d' % k]) # current through nmdar
             g5.axes.set_ylabel('inmda')
-            g6 = mpl.subplot2grid((5, 1), (5, 0))
-            k = 0
-            for p in self.synapse.psd:
+            g6 = mpl.subplot2grid((6, 1), (5, 0))
+            for k,p in enumerate(synapse.psd.all_psd):
                 if p.hname().find('NMDA', 0, 6) < 0:
-                    #g6.plot(t, self['isyn%03d' % synapse.kAMPA]) # glutamate
-                    g6.plot(t, self['iAMPA']) # glutamate
-                k = k + 1
+                    g6.plot(t, self['isyn%03d' % k]) # glutamate
             g6.axes.set_ylabel('iAMPA')
 
-        # Analyze the individual events. EPSCs get rise time, latency, half-width, and decay tau estimates.
+        # 
+        # Analyze the individual events. 
+        # EPSCs get rise time, latency, half-width, and decay tau estimates.
+        #
         stim = self.stim
         ipi = 1000.0 / stim['Sfreq'] # convert from Hz (seconds) to msec.
         textend = 0.25 # allow response detection into the next frame
-        pscpts = int((ipi + textend) / h.dt)
-        tpsc = np.arange(0, ipi + textend, h.dt)
+        pscpts = int((ipi + textend) / self.dt)
+        tpsc = np.arange(0, ipi + textend, self.dt)
         ipsc = np.zeros((stim['NP'], pscpts))
         mpl.figure(num=220, facecolor='w')
         gpsc = mpl.subplot2grid((5, 2), (0, 0), rowspan=2, colspan=2)
@@ -255,27 +297,27 @@ class SynapseTest(Protocol):
         #    print 'NP: ', stim['NP']
         for i in range(stim['NP']):
             tstart = stim['delay'] + i * ipi
-            istart = int(tstart / h.dt)
-            minStart = int(minLat / h.dt)
+            istart = int(tstart / self.dt)
+            minStart = int(minLat / self.dt)
             tp[i] = tstart - stim['delay']
-            iend = int(istart + ((ipi + textend) / h.dt))
+            iend = int(istart + ((ipi + textend) / self.dt))
             #        print 'istart: %d iend: %d, len(isoma): %d\n' % (istart, iend, len(isoma))
             ipsc[i, :] = -self.isoma[istart:iend]
             psc_pk = np.argmax(ipsc[i, minStart:]) # position of the peak
             psc_pk = psc_pk + minStart - 1
             print 'i, pscpk, ipsc[i,pscpk]: ', i, psc_pk, ipsc[i, psc_pk]
-            #       print 'minLat: %f   ipi+textend: %f, hdt: %f' % ((minLat, ipi+textend, h.dt))
+            #       print 'minLat: %f   ipi+textend: %f, hdt: %f' % ((minLat, ipi+textend, self.dt))
             if psc_pk == 0:
                 continue
             pkval = ipsc[i, psc_pk]
             psc_20_lat[i] = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.2, direction='left', 
-                                            limits=(minLat, ipi + textend, h.dt))
+                                            limits=(minLat, ipi + textend, self.dt))
             psc_80_lat[i] = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.8, direction='left', 
-                                            limits=(minLat, ipi + textend, h.dt))
+                                            limits=(minLat, ipi + textend, self.dt))
             psc_50l = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.5, direction='left', 
-                                    limits=(minLat, ipi + textend, h.dt))
+                                    limits=(minLat, ipi + textend, self.dt))
             psc_50r = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.5, direction='right', 
-                                    limits=(minLat, ipi + textend, h.dt))
+                                    limits=(minLat, ipi + textend, self.dt))
             if not np.isnan(psc_20_lat[i]) and not np.isnan(psc_80_lat[i]):
                 psc_rt[i] = psc_80_lat[i] - psc_20_lat[i]
             else:
