@@ -86,21 +86,26 @@ class SynapseTest(Protocol):
 
 
         # make a synapse monitor for each release zone
-        self.allpsd = []
+        #self.all_psd = []
+        self.all_nmda = []
+        self.all_ampa = []
         for syn in synapses:
             # collect all PSDs across all synapses
-            self.allpsd.extend(syn.psd.all_psd)
+            #self.all_psd.extend(syn.psd.all_psd)
+            self.all_nmda.extend(syn.psd.nmda_psd)
+            self.all_ampa.extend(syn.psd.ampa_psd)
         
         #  Record current through all PSDs individually
-        psd = self.allpsd
-        for k,p in enumerate(psd):
-            self['isyn%03d' % k] = psd[k]._ref_i
+        for k,p in enumerate(self.all_nmda):
+            self['iNMDA%03d' % k] = p._ref_i
+        for k,p in enumerate(self.all_ampa):
+            self['iAMPA%03d' % k] = p._ref_i
         
         # Record sample AMPA and NMDA currents
-        self['iNMDA'] = synapse.psd.nmda_psd[0]._ref_i
-        self['iAMPA'] = synapse.psd.ampa_psd[0]._ref_i
+        #self['iNMDA'] = synapse.psd.nmda_psd[0]._ref_i
+        #self['iAMPA'] = synapse.psd.ampa_psd[0]._ref_i
         
-        self['Open'] = psd[0]._ref_Open
+        #self['Open'] = self.all_psd[0]._ref_Open
         if isinstance(synapse.psd, GluPSD):
             if len(synapse.psd.nmda_psd) > 0:
                self['nmOpen'] = synapse.psd.nmda_psd[0]._ref_Open
@@ -141,11 +146,11 @@ class SynapseTest(Protocol):
             h.run()
             
             if nrep is 0: # add up psd current across all runs
-                isoma = np.zeros_like(self['isyn000'])
-            for k,p in enumerate(psd):
-                thissyn = 'isyn%03d' % k
-                if thissyn in self._vectors.keys():
-                    isoma = isoma + self[thissyn]
+                isoma = np.zeros_like(self['iAMPA000'])
+            for k in range(len(self.all_ampa)):
+                isoma += self['iAMPA%03d'%k]
+            for k in range(len(self.all_nmda)):
+                isoma += self['iNMDA%03d'%k]
         self.isoma = isoma
 
     def release_events(self):
@@ -220,13 +225,24 @@ class SynapseTest(Protocol):
             nmOmax = self['nmOpen'].max()
             amOmax = self['amOpen'].max()
             print 'Max NMDAR Open Prob: %f   AMPA Open Prob: %f' % (nmOmax, amOmax)
-            nmImax = self['iNMDA'].max()
-            amImax = self['iAMPA'].max()
+            
+            # find a psd with ampa and nmda currents
+            nmImax = 0
+            amImax = 0
+            for i in range(len(self.all_ampa)):
+                nm = np.abs(self['iNMDA%03d'%i]).max()
+                am = np.abs(self['iAMPA%03d'%i]).max()
+                print i, nm, am
+                if nm != 0 and am != 0:
+                    nmImax = nm
+                    amImax = am
+                    break
+            
             print 'Max NMDAR I: %f   AMPA I: %f' % (nmImax, amImax)                
-            if nmImax + amImax > 0.0:
+            if nmImax + amImax != 0.0:
                 print '   N/(N+A): %f\n' % (nmImax / (nmImax + amImax))
             else:
-                print "   (release might have failed)"
+                print "   (no NMDA/AMPA current; release might have failed)"
 
 
         #
@@ -234,25 +250,25 @@ class SynapseTest(Protocol):
         #
         t = self['t']
 
-        mpl.figure(1)
-        g1 = mpl.subplot2grid((6, 1), (0, 0))
-        p1 = g1.plot(t, self['v_pre'], color='black')
-        g1.axes.set_ylabel('V pre')
-        g1.set_title(self.pre_cell.status['name'])
+        #mpl.figure(1)
+        #g1 = mpl.subplot2grid((6, 1), (0, 0))
+        #p1 = g1.plot(t, self['v_pre'], color='black')
+        #g1.axes.set_ylabel('V pre')
+        #g1.set_title(self.pre_cell.status['name'])
         
-        win = pg.GraphicsWindow()
-        p1 = win.addPlot(title=self.pre_cell.status['name'])
+        self.win = pg.GraphicsWindow()
+        p1 = self.win.addPlot(title=self.pre_cell.status['name'])
         p1.setLabels(left='V pre (mV)', bottom='Time (ms)')
         p1.plot(t, self['v_pre'])
         
         if plotFocus == 'EPSC':
-            g2 = mpl.subplot2grid((6, 1), (1, 0), rowspan=4)
-            g2.plot(t, self.isoma, color='red')
-            g2.axes.set_ylabel('I post')
-            g2.axes.set_xlabel('Time (ms)')
-            g2.set_title(self.post_cell.status['name'])
+            #g2 = mpl.subplot2grid((6, 1), (1, 0), rowspan=4)
+            #g2.plot(t, self.isoma, color='red')
+            #g2.axes.set_ylabel('I post')
+            #g2.axes.set_xlabel('Time (ms)')
+            #g2.set_title(self.post_cell.status['name'])
             
-            p2 = win.addPlot(row=1, col=0, title=self.post_cell.status['name'])
+            p2 = self.win.addPlot(row=1, col=0, title=self.post_cell.status['name'])
             p2.plot(t, self.isoma, pen='r')
             p2.setLabels(left='I post (nA)', bottom='Time (ms)')
         else:
@@ -275,6 +291,8 @@ class SynapseTest(Protocol):
                 if p.hname().find('NMDA', 0, 6) < 0:
                     g6.plot(t, self['isyn%03d' % k]) # glutamate
             g6.axes.set_ylabel('iAMPA')
+
+        return
 
         # 
         # Analyze the individual events. 
