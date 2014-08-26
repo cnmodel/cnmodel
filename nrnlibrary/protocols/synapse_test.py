@@ -44,7 +44,7 @@ class SynapseTest(Protocol):
         #
         # voltage clamp the target cell
         #
-        clampV = -65.0
+        clampV = 40.0
         vccontrol = h.VClamp(0.5, sec=post_cell.soma)
         vccontrol.dur[0] = 10.0
         vccontrol.amp[0] = clampV
@@ -98,8 +98,10 @@ class SynapseTest(Protocol):
         #  Record current through all PSDs individually
         for k,p in enumerate(self.all_nmda):
             self['iNMDA%03d' % k] = p._ref_i
+            self['opNMDA%03d' % k] = p._ref_Open
         for k,p in enumerate(self.all_ampa):
             self['iAMPA%03d' % k] = p._ref_i
+            self['opAMPA%03d' % k] = p._ref_Open
         
         # Record sample AMPA and NMDA currents
         #self['iNMDA'] = synapse.psd.nmda_psd[0]._ref_i
@@ -199,6 +201,7 @@ class SynapseTest(Protocol):
         return ret
 
     def show(self, releasePlot=True, glyPlot=False, plotFocus='EPSC'):
+        self.win = pg.GraphicsWindow()
         synapse = self.synapses[0]
         
         #
@@ -221,6 +224,7 @@ class SynapseTest(Protocol):
         # Compute NMDA / AMPA open probability
         #
         print ""
+        
         if isinstance(synapse.psd, GluPSD) and len(synapse.psd.nmda_psd) > 0:
             nmOmax = self['nmOpen'].max()
             amOmax = self['amOpen'].max()
@@ -229,10 +233,22 @@ class SynapseTest(Protocol):
             # find a psd with ampa and nmda currents
             nmImax = 0
             amImax = 0
+            self.win.nextRow()
             for i in range(len(self.all_ampa)):
                 nm = np.abs(self['iNMDA%03d'%i]).max()
                 am = np.abs(self['iAMPA%03d'%i]).max()
-                print i, nm, am
+                opnm = np.abs(self['opNMDA%03d'%i]).max()
+                opam = np.abs(self['opAMPA%03d'%i]).max()
+                plt = self.win.addPlot()
+                plt.plot(self['iNMDA%03d'%i])
+                plt = self.win.addPlot()
+                plt.plot(self['iAMPA%03d'%i])
+                plt = self.win.addPlot()
+                plt.plot(self['opNMDA%03d'%i])
+                plt = self.win.addPlot()
+                plt.plot(self['opAMPA%03d'%i])
+                self.win.nextRow()
+                print i, nm, am, opnm, opam
                 if nm != 0 and am != 0:
                     nmImax = nm
                     amImax = am
@@ -256,7 +272,6 @@ class SynapseTest(Protocol):
         #g1.axes.set_ylabel('V pre')
         #g1.set_title(self.pre_cell.status['name'])
         
-        self.win = pg.GraphicsWindow()
         p1 = self.win.addPlot(title=self.pre_cell.status['name'])
         p1.setLabels(left='V pre (mV)', bottom='Time (ms)')
         p1.plot(t, self['v_pre'])
