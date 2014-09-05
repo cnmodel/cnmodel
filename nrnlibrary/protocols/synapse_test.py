@@ -108,11 +108,11 @@ class SynapseTest(Protocol):
         #self['iAMPA'] = synapse.psd.ampa_psd[0]._ref_i
         
         #self['Open'] = self.all_psd[0]._ref_Open
-        if isinstance(synapse.psd, GluPSD):
-            if len(synapse.psd.nmda_psd) > 0:
-               self['nmOpen'] = synapse.psd.nmda_psd[0]._ref_Open
-            if len(synapse.psd.ampa_psd) > 0:
-               self['amOpen'] = synapse.psd.ampa_psd[0]._ref_Open
+        #if isinstance(synapse.psd, GluPSD):
+            #if len(synapse.psd.nmda_psd) > 0:
+               #self['nmOpen'] = synapse.psd.nmda_psd[0]._ref_Open
+            #if len(synapse.psd.ampa_psd) > 0:
+               #self['amOpen'] = synapse.psd.ampa_psd[0]._ref_Open
         
         if isinstance(synapse.psd, GlyPSD):
             if synapse.psd.psdType == 'glyslow':
@@ -157,7 +157,7 @@ class SynapseTest(Protocol):
 
     def release_events(self):
         """
-        Analyze results and return a dict of values related to release 
+        Analyze results and return a dict of values related to terminal release 
         probability:
             
             n_zones: Array containing the number of release zones for each
@@ -200,6 +200,52 @@ class SynapseTest(Protocol):
         
         return ret
 
+    def open_probability(self):
+        """ 
+        Analyze results and return a dict of values related to psd open 
+        probability:
+            
+            op_nmda:
+            op_ampa:
+            imax_nmda:
+            imax_ampa:
+        """
+        synapse = self.synapses[0]
+        if isinstance(synapse.psd, GluPSD) and len(synapse.psd.nmda_psd) > 0:
+            # find a psd with ampa and nmda currents
+            nmImax = 0
+            amImax = 0
+            nmOmax = 0
+            amOmax = 0
+            #self.win.nextRow()
+            for i in range(len(self.all_ampa)):
+                nm = np.abs(self['iNMDA%03d'%i]).max()
+                am = np.abs(self['iAMPA%03d'%i]).max()
+                opnm = np.abs(self['opNMDA%03d'%i]).max()
+                opam = np.abs(self['opAMPA%03d'%i]).max()
+                #plt = self.win.addPlot()
+                #plt.plot(self['iNMDA%03d'%i])
+                #plt = self.win.addPlot()
+                #plt.plot(self['iAMPA%03d'%i])
+                #plt = self.win.addPlot()
+                #plt.plot(self['opNMDA%03d'%i])
+                #plt = self.win.addPlot()
+                #plt.plot(self['opAMPA%03d'%i])
+                #self.win.nextRow()
+                if nm != 0 or am != 0:
+                    nmImax = nm
+                    amImax = am
+                    nmOmax = opnm
+                    amOmax = opam
+                    break
+            
+            return {
+                'op_nmda': nmOmax,
+                'op_ampa': amOmax,
+                'imax_nmda': nmImax,
+                'imax_ampa': amImax,
+            }
+
     def show(self, releasePlot=True, glyPlot=False, plotFocus='EPSC'):
         self.win = pg.GraphicsWindow()
         synapse = self.synapses[0]
@@ -224,41 +270,14 @@ class SynapseTest(Protocol):
         # Compute NMDA / AMPA open probability
         #
         print ""
-        
-        if isinstance(synapse.psd, GluPSD) and len(synapse.psd.nmda_psd) > 0:
-            nmOmax = self['nmOpen'].max()
-            amOmax = self['amOpen'].max()
-            print 'Max NMDAR Open Prob: %f   AMPA Open Prob: %f' % (nmOmax, amOmax)
-            
-            # find a psd with ampa and nmda currents
-            nmImax = 0
-            amImax = 0
-            self.win.nextRow()
-            for i in range(len(self.all_ampa)):
-                nm = np.abs(self['iNMDA%03d'%i]).max()
-                am = np.abs(self['iAMPA%03d'%i]).max()
-                opnm = np.abs(self['opNMDA%03d'%i]).max()
-                opam = np.abs(self['opAMPA%03d'%i]).max()
-                plt = self.win.addPlot()
-                plt.plot(self['iNMDA%03d'%i])
-                plt = self.win.addPlot()
-                plt.plot(self['iAMPA%03d'%i])
-                plt = self.win.addPlot()
-                plt.plot(self['opNMDA%03d'%i])
-                plt = self.win.addPlot()
-                plt.plot(self['opAMPA%03d'%i])
-                self.win.nextRow()
-                print i, nm, am, opnm, opam
-                if nm != 0 and am != 0:
-                    nmImax = nm
-                    amImax = am
-                    break
-            
-            print 'Max NMDAR I: %f   AMPA I: %f' % (nmImax, amImax)                
-            if nmImax + amImax != 0.0:
-                print '   N/(N+A): %f\n' % (nmImax / (nmImax + amImax))
-            else:
-                print "   (no NMDA/AMPA current; release might have failed)"
+        oprob = self.open_probability()
+        print 'Max NMDAR Open Prob: %f   AMPA Open Prob: %f' % (oprob['op_nmda'], oprob['op_ampa'])
+        nmImax, amImax = oprob['imax_nmda'], oprob['imax_ampa']
+        print 'Max NMDAR I: %f   AMPA I: %f' % (nmImax, amImax)
+        if nmImax + amImax != 0.0:
+            print '   N/(N+A): %f\n' % (nmImax / (nmImax + amImax))
+        else:
+            print "   (no NMDA/AMPA current; release might have failed)"
 
 
         #
@@ -285,7 +304,7 @@ class SynapseTest(Protocol):
             
             p2 = self.win.addPlot(row=1, col=0, title=self.post_cell.status['name'])
             p2.plot(t, self.isoma, pen='r')
-            p2.setLabels(left='I post (nA)', bottom='Time (ms)')
+            p2.setLabels(left='Total PSD current (nA)', bottom='Time (ms)')
         else:
             # todo: resurrect this?
             g2 = mpl.subplot2grid((6, 1), (1, 0), rowspan=1)
@@ -307,7 +326,6 @@ class SynapseTest(Protocol):
                     g6.plot(t, self['isyn%03d' % k]) # glutamate
             g6.axes.set_ylabel('iAMPA')
 
-        return
 
         # 
         # Analyze the individual events. 
@@ -315,70 +333,79 @@ class SynapseTest(Protocol):
         #
         stim = self.stim
         ipi = 1000.0 / stim['Sfreq'] # convert from Hz (seconds) to msec.
-        textend = 0.25 # allow response detection into the next frame
-        pscpts = int((ipi + textend) / self.dt)
-        tpsc = np.arange(0, ipi + textend, self.dt)
-        ipsc = np.zeros((stim['NP'], pscpts))
-        mpl.figure(num=220, facecolor='w')
-        gpsc = mpl.subplot2grid((5, 2), (0, 0), rowspan=2, colspan=2)
+        t_extend = 0.25 # allow response detection into the next frame
+        
+        pscpts = int((ipi + t_extend) / self.dt) # number of samples to analyze for each psc
+        ipsc = np.zeros((stim['NP'], pscpts))  # storage for psc currents
+        tpsc = np.arange(0, ipi + t_extend, self.dt) # time values corresponding to *ipsc*
+        
+        #mpl.figure(num=220, facecolor='w')
+        #gpsc = mpl.subplot2grid((5, 2), (0, 0), rowspan=2, colspan=2)
         psc_20_lat = np.zeros((stim['NP'], 1)) # latency to 20% of rising amplitude
         psc_80_lat = np.zeros((stim['NP'], 1)) # latency to 80% of rising amplitude
         psc_hw = np.zeros((stim['NP'], 1)) # width at half-height
         psc_rt = np.zeros((stim['NP'], 1)) # 20-80 rise time
-        tp = np.zeros((stim['NP'], 1))
+        tp = np.zeros((stim['NP'], 1))  # pulse time relative to first pulse
+        events = np.empty(stim['NP'], dtype=[
+            ('20% latency', float),
+            ('80% latency', float),
+            ('half width', float),
+            ('rise time', float),
+            ('pulse time', float)])
+        
         minLat = 0.5 # minimum latency for an event, in ms
-        #    print 'NP: ', stim['NP']
+        minStart = int(minLat / self.dt)  # first index relative to pulse to search for psc peak
+        
         for i in range(stim['NP']):
-            tstart = stim['delay'] + i * ipi
-            istart = int(tstart / self.dt)
-            minStart = int(minLat / self.dt)
+            tstart = stim['delay'] + i * ipi # pulse start time 
+            istart = int(tstart / self.dt)   # pulse start index
             tp[i] = tstart - stim['delay']
-            iend = int(istart + ((ipi + textend) / self.dt))
+            iend = istart + pscpts
             #        print 'istart: %d iend: %d, len(isoma): %d\n' % (istart, iend, len(isoma))
             ipsc[i, :] = -self.isoma[istart:iend]
-            psc_pk = np.argmax(ipsc[i, minStart:]) # position of the peak
-            psc_pk = psc_pk + minStart - 1
-            print 'i, pscpk, ipsc[i,pscpk]: ', i, psc_pk, ipsc[i, psc_pk]
-            #       print 'minLat: %f   ipi+textend: %f, hdt: %f' % ((minLat, ipi+textend, self.dt))
+            psc_pk = minStart + np.argmax(ipsc[i, minStart:]) # position of the peak
+            #print 'i, pscpk, ipsc[i,pscpk]: ', i, psc_pk, ipsc[i, psc_pk]
+            #       print 'minLat: %f   ipi+t_extend: %f, hdt: %f' % ((minLat, ipi+t_extend, self.dt))
             if psc_pk == 0:
                 continue
             pkval = ipsc[i, psc_pk]
-            psc_20_lat[i] = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.2, direction='left', 
-                                            limits=(minLat, ipi + textend, self.dt))
-            psc_80_lat[i] = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.8, direction='left', 
-                                            limits=(minLat, ipi + textend, self.dt))
+            events['20% latency'][i] = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.2, direction='left', 
+                                            limits=(minLat, ipi + t_extend, self.dt))
+            events['80% latency'][i] = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.8, direction='left', 
+                                            limits=(minLat, ipi + t_extend, self.dt))
             psc_50l = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.5, direction='left', 
-                                    limits=(minLat, ipi + textend, self.dt))
+                                    limits=(minLat, ipi + t_extend, self.dt))
             psc_50r = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.5, direction='right', 
-                                    limits=(minLat, ipi + textend, self.dt))
-            if not np.isnan(psc_20_lat[i]) and not np.isnan(psc_80_lat[i]):
-                psc_rt[i] = psc_80_lat[i] - psc_20_lat[i]
+                                    limits=(minLat, ipi + t_extend, self.dt))
+            if not np.isnan(events['20% latency'][i]) and not np.isnan(events['80% latency'][i]):
+                events['rise time'][i] = events['80% latency'][i] - events['20% latency'][i]
             else:
-                psc_rt[i] = np.nan
+                events['rise time'][i] = np.nan
             if not np.isnan(psc_50r) and not np.isnan(psc_50l):
-                psc_hw[i] = float(psc_50r) - float(psc_50l)
-                gpsc.plot(psc_50l, pkval * 0.5, 'k+')
-                gpsc.plot(psc_50r, pkval * 0.5, 'k+')
-                gpsc.plot(tpsc, ipsc[i, :].T)
+                events['half width'][i] = float(psc_50r) - float(psc_50l)
+                #gpsc.plot(psc_50l, pkval * 0.5, 'k+')
+                #gpsc.plot(psc_50r, pkval * 0.5, 'k+')
+                #gpsc.plot(tpsc, ipsc[i, :].T)
             else:
-                psc_hw[i] = np.nan
-                gpsc.plot(tpsc, ipsc[i, :].T, color='0.6')
-            gpsc.hold(True)
-            gpsc.plot(psc_20_lat[i], pkval * 0.2, 'bo')
-            gpsc.plot(psc_80_lat[i], pkval * 0.8, 'go')
-            gpsc.plot(tpsc[psc_pk], pkval, 'ro')
-        glat = mpl.subplot2grid((5, 2), (2, 0), colspan=2)
-        grt = mpl.subplot2grid((5, 2), (3, 0), colspan=2)
-        ghw = mpl.subplot2grid((5, 2), (4, 0), colspan=2)
-        glat.plot(tp, psc_20_lat, 'bo-')
-        glat.axes.set_ylabel('20%% Latency (ms)')
-        grt.plot(tp, psc_rt, 'ms-')
-        ghw.axes.set_ylabel('20-80 RT (ms)')
-        ghw.plot(tp, psc_hw, 'rx-')
-        ghw.axes.set_ylabel('Half-width (ms)')
-        ghw.axes.set_xlabel('Time (ms)')
+                events['half width'][i] = np.nan
+                #gpsc.plot(tpsc, ipsc[i, :].T, color='0.6')
+            #gpsc.hold(True)
+            #gpsc.plot(events['20% latency'][i], pkval * 0.2, 'bo')
+            #gpsc.plot(events['80% latency'][i], pkval * 0.8, 'go')
+            #gpsc.plot(tpsc[psc_pk], pkval, 'ro')
+        #glat = mpl.subplot2grid((5, 2), (2, 0), colspan=2)
+        #grt = mpl.subplot2grid((5, 2), (3, 0), colspan=2)
+        #ghw = mpl.subplot2grid((5, 2), (4, 0), colspan=2)
+        #glat.plot(tp, events['20% latency'], 'bo-')
+        #glat.axes.set_ylabel('20%% Latency (ms)')
+        #grt.plot(tp, events['rise time'], 'ms-')
+        #ghw.axes.set_ylabel('20-80 RT (ms)')
+        #ghw.plot(tp, events['half width'], 'rx-')
+        #ghw.axes.set_ylabel('Half-width (ms)')
+        #ghw.axes.set_xlabel('Time (ms)')
 
-        mpl.show()
+        #mpl.show()
+        return
         
         #
         # now print some average values
@@ -386,13 +413,13 @@ class SynapseTest(Protocol):
         nst = range(stim['NP'])
         analysisWindow = [nst[0:2], nst[-10:-1]]
         print analysisWindow
-        print psc_rt
-        RT_mean2080_early = np.ma.masked_invalid(psc_rt[analysisWindow[0]]).mean()
-        RT_mean2080_late = np.ma.masked_invalid(psc_rt[analysisWindow[1]]).mean()
-        Lat_mean20_early = np.ma.masked_invalid(psc_20_lat[analysisWindow[0]]).mean()
-        Lat_mean20_late = np.ma.masked_invalid(psc_20_lat[analysisWindow[1]]).mean()
-        HW_mean_early = np.ma.masked_invalid(psc_hw[analysisWindow[0]]).mean()
-        HW_mean_late = np.ma.masked_invalid(psc_hw[analysisWindow[1]]).mean()
+        print events['rise time']
+        RT_mean2080_early = np.ma.masked_invalid(events['rise time'][analysisWindow[0]]).mean()
+        RT_mean2080_late = np.ma.masked_invalid(events['rise time'][analysisWindow[1]]).mean()
+        Lat_mean20_early = np.ma.masked_invalid(events['20% latency'][analysisWindow[0]]).mean()
+        Lat_mean20_late = np.ma.masked_invalid(events['20% latency'][analysisWindow[1]]).mean()
+        HW_mean_early = np.ma.masked_invalid(events['half width'][analysisWindow[0]]).mean()
+        HW_mean_late = np.ma.masked_invalid(events['half width'][analysisWindow[1]]).mean()
         print "Means: --------------"
         print RT_mean2080_early
         print Lat_mean20_early
@@ -401,12 +428,12 @@ class SynapseTest(Protocol):
                                                                                 HW_mean_early)
         print 'Late :   RT {0:7.3f} ms   Lat {1:7.3f} ms   HW {2:7.3f} ms'.format(RT_mean2080_late, Lat_mean20_late,
                                                                                 HW_mean_late)
-        RT_std2080_early = np.ma.masked_invalid(psc_rt[analysisWindow[0]]).std()
-        RT_std2080_late = np.ma.masked_invalid(psc_rt[analysisWindow[1]]).std()
-        Lat_std20_early = np.ma.masked_invalid(psc_20_lat[analysisWindow[0]]).std()
-        Lat_std20_late = np.ma.masked_invalid(psc_20_lat[analysisWindow[1]]).std()
-        HW_std_early = np.ma.masked_invalid(psc_hw[analysisWindow[0]]).std()
-        HW_std_late = np.ma.masked_invalid(psc_hw[analysisWindow[1]]).std()
+        RT_std2080_early = np.ma.masked_invalid(events['rise time'][analysisWindow[0]]).std()
+        RT_std2080_late = np.ma.masked_invalid(events['rise time'][analysisWindow[1]]).std()
+        Lat_std20_early = np.ma.masked_invalid(events['20% latency'][analysisWindow[0]]).std()
+        Lat_std20_late = np.ma.masked_invalid(events['20% latency'][analysisWindow[1]]).std()
+        HW_std_early = np.ma.masked_invalid(events['half width'][analysisWindow[0]]).std()
+        HW_std_late = np.ma.masked_invalid(events['half width'][analysisWindow[1]]).std()
         print "Standard Deviations: --------------"
         print 'Early:   RT {0:7.3f} ms   Lat {1:7.3f} ms   HW {2:7.3f} ms'.format(RT_std2080_early, Lat_std20_early,
                                                                                 HW_std_early)
