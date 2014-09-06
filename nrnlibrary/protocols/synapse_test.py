@@ -430,12 +430,11 @@ class SynapseTest(Protocol):
         p5.plot(events['pulse time'], events['rise time'], pen=None, symbol='o')
         p5.setXLink(p1)
         
-        return
         
         #
-        # now print some average values
+        # Print average values from events
         #
-        nst = range(stim['NP'])
+        nst = range(self.stim['NP'])
         analysisWindow = [nst[0:2], nst[-10:-1]]
         print analysisWindow
         print events['rise time']
@@ -445,7 +444,9 @@ class SynapseTest(Protocol):
         Lat_mean20_late = np.ma.masked_invalid(events['20% latency'][analysisWindow[1]]).mean()
         HW_mean_early = np.ma.masked_invalid(events['half width'][analysisWindow[0]]).mean()
         HW_mean_late = np.ma.masked_invalid(events['half width'][analysisWindow[1]]).mean()
-        print "Means: --------------"
+        print "\n--------------"
+        print "Means:"
+        print "--------------"
         print RT_mean2080_early
         print Lat_mean20_early
         print HW_mean_early
@@ -459,14 +460,20 @@ class SynapseTest(Protocol):
         Lat_std20_late = np.ma.masked_invalid(events['20% latency'][analysisWindow[1]]).std()
         HW_std_early = np.ma.masked_invalid(events['half width'][analysisWindow[0]]).std()
         HW_std_late = np.ma.masked_invalid(events['half width'][analysisWindow[1]]).std()
-        print "Standard Deviations: --------------"
+        print "\n--------------"
+        print "Standard Deviations:"
+        print "--------------"
         print 'Early:   RT {0:7.3f} ms   Lat {1:7.3f} ms   HW {2:7.3f} ms'.format(RT_std2080_early, Lat_std20_early,
                                                                                 HW_std_early)
         print 'Late :   RT {0:7.3f} ms   Lat {1:7.3f} ms   HW {2:7.3f} ms'.format(RT_std2080_late, Lat_std20_late,
                                                                                 HW_std_late)
         print "-----------------"
 
-        if releasePlot: # plot the release event distributions over time in a separate window
+        return
+        #
+        # Plot release event distributions over time
+        #
+        if releasePlot:
             fig_ev = mpl.figure(num=301, facecolor='w')
             ph1 = fig_ev.add_subplot(211)
             ph2 = fig_ev.add_subplot(212)
