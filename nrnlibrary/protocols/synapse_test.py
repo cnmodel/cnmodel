@@ -247,6 +247,16 @@ class SynapseTest(Protocol):
             }
 
     def analyze_events(self):
+        """
+        Analyze postsynaptic events for peak, latency, and shape.
+        
+        Todo: 
+        - This currently analyzes cumulative currents; might be better to 
+          analyze individual PSD currents
+        - Measure decay time constant, rate of facilitation/depression,
+          #recovery.
+        
+        """
         stim = self.stim
         ipi = 1000.0 / stim['Sfreq'] # convert from Hz (seconds) to msec.
         t_extend = 0.25 # allow response detection into the next frame
@@ -328,6 +338,7 @@ class SynapseTest(Protocol):
 
     def show(self, releasePlot=True, glyPlot=False, plotFocus='EPSC'):
         self.win = pg.GraphicsWindow()
+        self.win.resize(1000, 1000)
         synapse = self.synapses[0]
         
         #
@@ -361,26 +372,15 @@ class SynapseTest(Protocol):
 
 
         #
-        # plot the results for comparison
+        # Plot pre/postsynaptic currents
         #
         t = self['t']
 
-        #mpl.figure(1)
-        #g1 = mpl.subplot2grid((6, 1), (0, 0))
-        #p1 = g1.plot(t, self['v_pre'], color='black')
-        #g1.axes.set_ylabel('V pre')
-        #g1.set_title(self.pre_cell.status['name'])
-        
         p1 = self.win.addPlot(title=self.pre_cell.status['name'])
         p1.setLabels(left='V pre (mV)', bottom='Time (ms)')
         p1.plot(t, self['v_pre'])
         
         if plotFocus == 'EPSC':
-            #g2 = mpl.subplot2grid((6, 1), (1, 0), rowspan=4)
-            #g2.plot(t, self.isoma, color='red')
-            #g2.axes.set_ylabel('I post')
-            #g2.axes.set_xlabel('Time (ms)')
-            #g2.set_title(self.post_cell.status['name'])
             self.win.nextRow()
             p2 = self.win.addPlot(title=self.post_cell.status['name'])
             p2.plot(t, self.isoma, pen='r')
@@ -414,17 +414,6 @@ class SynapseTest(Protocol):
         #
         events = self.analyze_events()
         
-        #for i in range(len(events)):
-            #if not np.isnan(events['half width'][i]):
-                #gpsc.plot(psc_50l, pkval * 0.5, 'k+')
-                #gpsc.plot(psc_50r, pkval * 0.5, 'k+')
-                #gpsc.plot(tpsc, ipsc[i, :].T)
-            #else:
-                #gpsc.plot(tpsc, ipsc[i, :].T, color='0.6')
-            #gpsc.hold(True)
-            #gpsc.plot(events['20% latency'][i], pkval * 0.2, 'bo')
-            #gpsc.plot(events['80% latency'][i], pkval * 0.8, 'go')
-            #gpsc.plot(tpsc[psc_pk], pkval, 'ro')
         self.win.nextRow()
         p3 = self.win.addPlot(labels={'left': '20%-80% Latency (ms)', 'bottom': 'Pulse Time (ms)'})
         p3.plot(events['pulse time'], events['20% latency'], pen=None, symbol='o')
@@ -434,8 +423,6 @@ class SynapseTest(Protocol):
         self.win.nextRow()
         p4 = self.win.addPlot(labels={'left': 'Half Width (ms)', 'bottom': 'Pulse Time (ms)'})
         p4.plot(events['pulse time'], events['half width'], pen=None, symbol='o')
-        #p4.plot(events['pulse time'], events['half left'], pen=None, symbol='t')
-        #p4.plot(events['pulse time'], events['half right'], pen=None, symbol='t')
         p4.setXLink(p1)
         
         self.win.nextRow()
@@ -443,18 +430,6 @@ class SynapseTest(Protocol):
         p5.plot(events['pulse time'], events['rise time'], pen=None, symbol='o')
         p5.setXLink(p1)
         
-        #glat = mpl.subplot2grid((5, 2), (2, 0), colspan=2)
-        #grt = mpl.subplot2grid((5, 2), (3, 0), colspan=2)
-        #ghw = mpl.subplot2grid((5, 2), (4, 0), colspan=2)
-        #glat.plot(tp, events['20% latency'], 'bo-')
-        #glat.axes.set_ylabel('20%% Latency (ms)')
-        #grt.plot(tp, events['rise time'], 'ms-')
-        #ghw.axes.set_ylabel('20-80 RT (ms)')
-        #ghw.plot(tp, events['half width'], 'rx-')
-        #ghw.axes.set_ylabel('Half-width (ms)')
-        #ghw.axes.set_xlabel('Time (ms)')
-
-        #mpl.show()
         return
         
         #
