@@ -274,18 +274,21 @@ class SynapseTest(Protocol):
             ('peak', float),
             ('peak index', int),
         ])
+        events[:] = np.nan
         
         minLat = 0.0 # minimum latency for an event, in ms
         minStart = int(minLat / self.dt)  # first index relative to pulse to search for psc peak
         
         for i in range(stim['NP']):
             tstart = stim['delay'] + i * ipi # pulse start time 
+            events['pulse time'][i] = tstart
             istart = int(tstart / self.dt)   # pulse start index
             tp[i] = tstart - stim['delay']
             iend = istart + pscpts
             #        print 'istart: %d iend: %d, len(isoma): %d\n' % (istart, iend, len(isoma))
-            ipsc[i, :] = -self.isoma[istart:iend]
-            psc_pk = minStart + np.argmax(ipsc[i, minStart:-extend_pts]) # position of the peak
+            ipsc[i, :] = np.abs(self.isoma[istart:iend])
+            psc_pk = minStart + np.argmax(ipsc[i, minStart:-(extend_pts+1)]) # position of the peak
+            
             #print 'i, pscpk, ipsc[i,pscpk]: ', i, psc_pk, ipsc[i, psc_pk]
             #       print 'minLat: %f   ipi+t_extend: %f, hdt: %f' % ((minLat, ipi+t_extend, self.dt))
             if psc_pk == minStart:
@@ -382,6 +385,7 @@ class SynapseTest(Protocol):
             p2 = self.win.addPlot(title=self.post_cell.status['name'])
             p2.plot(t, self.isoma, pen='r')
             p2.setLabels(left='Total PSD current (nA)', bottom='Time (ms)')
+            p2.setXLink(p1)
         else:
             # todo: resurrect this?
             g2 = mpl.subplot2grid((6, 1), (1, 0), rowspan=1)
@@ -422,11 +426,23 @@ class SynapseTest(Protocol):
             #gpsc.plot(events['80% latency'][i], pkval * 0.8, 'go')
             #gpsc.plot(tpsc[psc_pk], pkval, 'ro')
         self.win.nextRow()
-        plt = self.win.addPlot(labels={'left': '20% Latency (ms)', 'bottom': 'Pulse Time (ms)'})
-        plt.plot(events['20% latency'], pen=None, symbol='o')
+        p3 = self.win.addPlot(labels={'left': '20%-80% Latency (ms)', 'bottom': 'Pulse Time (ms)'})
+        p3.plot(events['pulse time'], events['20% latency'], pen=None, symbol='o')
+        p3.plot(events['pulse time'], events['80% latency'], pen=None, symbol='t')
+        p3.setXLink(p1)
+        
         self.win.nextRow()
-        plt = self.win.addPlot(labels={'left': '80% Latency (ms)', 'bottom': 'Pulse Time (ms)'})
-        plt.plot(events['80% latency'], pen=None, symbol='o')
+        p4 = self.win.addPlot(labels={'left': 'Half Width (ms)', 'bottom': 'Pulse Time (ms)'})
+        p4.plot(events['pulse time'], events['half width'], pen=None, symbol='o')
+        #p4.plot(events['pulse time'], events['half left'], pen=None, symbol='t')
+        #p4.plot(events['pulse time'], events['half right'], pen=None, symbol='t')
+        p4.setXLink(p1)
+        
+        self.win.nextRow()
+        p5 = self.win.addPlot(labels={'left': 'Rise Time (ms)', 'bottom': 'Pulse Time (ms)'})
+        p5.plot(events['pulse time'], events['rise time'], pen=None, symbol='o')
+        p5.setXLink(p1)
+        
         #glat = mpl.subplot2grid((5, 2), (2, 0), colspan=2)
         #grt = mpl.subplot2grid((5, 2), (3, 0), colspan=2)
         #ghw = mpl.subplot2grid((5, 2), (4, 0), colspan=2)
