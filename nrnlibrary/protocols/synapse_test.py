@@ -246,6 +246,83 @@ class SynapseTest(Protocol):
                 'imax_ampa': amImax,
             }
 
+    def analyze_events(self):
+        stim = self.stim
+        ipi = 1000.0 / stim['Sfreq'] # convert from Hz (seconds) to msec.
+        t_extend = 0.25 # allow response detection into the next frame
+        extend_pts = int(t_extend / self.dt)
+        
+        pscpts = int(ipi / self.dt) + extend_pts # number of samples to analyze for each psc
+        ipsc = np.zeros((stim['NP'], pscpts))  # storage for psc currents
+        tpsc = np.arange(0, ipi + t_extend, self.dt) # time values corresponding to *ipsc*
+        
+        #mpl.figure(num=220, facecolor='w')
+        #gpsc = mpl.subplot2grid((5, 2), (0, 0), rowspan=2, colspan=2)
+        psc_20_lat = np.zeros((stim['NP'], 1)) # latency to 20% of rising amplitude
+        psc_80_lat = np.zeros((stim['NP'], 1)) # latency to 80% of rising amplitude
+        psc_hw = np.zeros((stim['NP'], 1)) # width at half-height
+        psc_rt = np.zeros((stim['NP'], 1)) # 20-80 rise time
+        tp = np.zeros((stim['NP'], 1))  # pulse time relative to first pulse
+        events = np.zeros(stim['NP'], dtype=[
+            ('20% latency', float),
+            ('80% latency', float),
+            ('half width', float),
+            ('half left', float),
+            ('half right', float),
+            ('rise time', float),
+            ('pulse time', float),
+            ('peak', float),
+            ('peak index', int),
+        ])
+        
+        minLat = 0.0 # minimum latency for an event, in ms
+        minStart = int(minLat / self.dt)  # first index relative to pulse to search for psc peak
+        
+        for i in range(stim['NP']):
+            tstart = stim['delay'] + i * ipi # pulse start time 
+            istart = int(tstart / self.dt)   # pulse start index
+            tp[i] = tstart - stim['delay']
+            iend = istart + pscpts
+            #        print 'istart: %d iend: %d, len(isoma): %d\n' % (istart, iend, len(isoma))
+            ipsc[i, :] = -self.isoma[istart:iend]
+            psc_pk = minStart + np.argmax(ipsc[i, minStart:-extend_pts]) # position of the peak
+            #print 'i, pscpk, ipsc[i,pscpk]: ', i, psc_pk, ipsc[i, psc_pk]
+            #       print 'minLat: %f   ipi+t_extend: %f, hdt: %f' % ((minLat, ipi+t_extend, self.dt))
+            if psc_pk == minStart:
+                continue
+            pkval = ipsc[i, psc_pk]
+            events['peak'][i] = pkval
+            events['peak index'][i] = psc_pk
+            
+            lat20 = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.2, direction='left', 
+                                            limits=(minLat, ipi + t_extend, self.dt))
+            lat80 = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.8, direction='left', 
+                                            limits=(minLat, ipi + t_extend, self.dt))
+            events['20% latency'][i] = lat20
+            events['80% latency'][i] = lat80
+            
+            psc_50l = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.5, direction='left', 
+                                    limits=(minLat, ipi + t_extend, self.dt))
+            psc_50r = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.5, direction='right', 
+                                    limits=(minLat, ipi + t_extend, self.dt))
+            events['half left'] = psc_50l
+            events['half right'] = psc_50r
+            
+            if not np.isnan(lat20) and not np.isnan(lat80):
+                events['rise time'][i] = lat80 - lat20
+            else:
+                events['rise time'][i] = np.nan
+            if not np.isnan(psc_50r) and not np.isnan(psc_50l):
+                events['half width'][i] = float(psc_50r) - float(psc_50l)
+                #gpsc.plot(psc_50l, pkval * 0.5, 'k+')
+                #gpsc.plot(psc_50r, pkval * 0.5, 'k+')
+                #gpsc.plot(tpsc, ipsc[i, :].T)
+            else:
+                events['half width'][i] = np.nan
+
+        print events
+        return events
+
     def show(self, releasePlot=True, glyPlot=False, plotFocus='EPSC'):
         self.win = pg.GraphicsWindow()
         synapse = self.synapses[0]
@@ -301,8 +378,8 @@ class SynapseTest(Protocol):
             #g2.axes.set_ylabel('I post')
             #g2.axes.set_xlabel('Time (ms)')
             #g2.set_title(self.post_cell.status['name'])
-            
-            p2 = self.win.addPlot(row=1, col=0, title=self.post_cell.status['name'])
+            self.win.nextRow()
+            p2 = self.win.addPlot(title=self.post_cell.status['name'])
             p2.plot(t, self.isoma, pen='r')
             p2.setLabels(left='Total PSD current (nA)', bottom='Time (ms)')
         else:
@@ -331,68 +408,25 @@ class SynapseTest(Protocol):
         # Analyze the individual events. 
         # EPSCs get rise time, latency, half-width, and decay tau estimates.
         #
-        stim = self.stim
-        ipi = 1000.0 / stim['Sfreq'] # convert from Hz (seconds) to msec.
-        t_extend = 0.25 # allow response detection into the next frame
+        events = self.analyze_events()
         
-        pscpts = int((ipi + t_extend) / self.dt) # number of samples to analyze for each psc
-        ipsc = np.zeros((stim['NP'], pscpts))  # storage for psc currents
-        tpsc = np.arange(0, ipi + t_extend, self.dt) # time values corresponding to *ipsc*
-        
-        #mpl.figure(num=220, facecolor='w')
-        #gpsc = mpl.subplot2grid((5, 2), (0, 0), rowspan=2, colspan=2)
-        psc_20_lat = np.zeros((stim['NP'], 1)) # latency to 20% of rising amplitude
-        psc_80_lat = np.zeros((stim['NP'], 1)) # latency to 80% of rising amplitude
-        psc_hw = np.zeros((stim['NP'], 1)) # width at half-height
-        psc_rt = np.zeros((stim['NP'], 1)) # 20-80 rise time
-        tp = np.zeros((stim['NP'], 1))  # pulse time relative to first pulse
-        events = np.empty(stim['NP'], dtype=[
-            ('20% latency', float),
-            ('80% latency', float),
-            ('half width', float),
-            ('rise time', float),
-            ('pulse time', float)])
-        
-        minLat = 0.5 # minimum latency for an event, in ms
-        minStart = int(minLat / self.dt)  # first index relative to pulse to search for psc peak
-        
-        for i in range(stim['NP']):
-            tstart = stim['delay'] + i * ipi # pulse start time 
-            istart = int(tstart / self.dt)   # pulse start index
-            tp[i] = tstart - stim['delay']
-            iend = istart + pscpts
-            #        print 'istart: %d iend: %d, len(isoma): %d\n' % (istart, iend, len(isoma))
-            ipsc[i, :] = -self.isoma[istart:iend]
-            psc_pk = minStart + np.argmax(ipsc[i, minStart:]) # position of the peak
-            #print 'i, pscpk, ipsc[i,pscpk]: ', i, psc_pk, ipsc[i, psc_pk]
-            #       print 'minLat: %f   ipi+t_extend: %f, hdt: %f' % ((minLat, ipi+t_extend, self.dt))
-            if psc_pk == 0:
-                continue
-            pkval = ipsc[i, psc_pk]
-            events['20% latency'][i] = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.2, direction='left', 
-                                            limits=(minLat, ipi + t_extend, self.dt))
-            events['80% latency'][i] = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.8, direction='left', 
-                                            limits=(minLat, ipi + t_extend, self.dt))
-            psc_50l = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.5, direction='left', 
-                                    limits=(minLat, ipi + t_extend, self.dt))
-            psc_50r = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.5, direction='right', 
-                                    limits=(minLat, ipi + t_extend, self.dt))
-            if not np.isnan(events['20% latency'][i]) and not np.isnan(events['80% latency'][i]):
-                events['rise time'][i] = events['80% latency'][i] - events['20% latency'][i]
-            else:
-                events['rise time'][i] = np.nan
-            if not np.isnan(psc_50r) and not np.isnan(psc_50l):
-                events['half width'][i] = float(psc_50r) - float(psc_50l)
+        #for i in range(len(events)):
+            #if not np.isnan(events['half width'][i]):
                 #gpsc.plot(psc_50l, pkval * 0.5, 'k+')
                 #gpsc.plot(psc_50r, pkval * 0.5, 'k+')
                 #gpsc.plot(tpsc, ipsc[i, :].T)
-            else:
-                events['half width'][i] = np.nan
+            #else:
                 #gpsc.plot(tpsc, ipsc[i, :].T, color='0.6')
             #gpsc.hold(True)
             #gpsc.plot(events['20% latency'][i], pkval * 0.2, 'bo')
             #gpsc.plot(events['80% latency'][i], pkval * 0.8, 'go')
             #gpsc.plot(tpsc[psc_pk], pkval, 'ro')
+        self.win.nextRow()
+        plt = self.win.addPlot(labels={'left': '20% Latency (ms)', 'bottom': 'Pulse Time (ms)'})
+        plt.plot(events['20% latency'], pen=None, symbol='o')
+        self.win.nextRow()
+        plt = self.win.addPlot(labels={'left': '80% Latency (ms)', 'bottom': 'Pulse Time (ms)'})
+        plt.plot(events['80% latency'], pen=None, symbol='o')
         #glat = mpl.subplot2grid((5, 2), (2, 0), colspan=2)
         #grt = mpl.subplot2grid((5, 2), (3, 0), colspan=2)
         #ghw = mpl.subplot2grid((5, 2), (4, 0), colspan=2)
