@@ -44,21 +44,38 @@ class UserTester(object):
         
         If *result* and *expect* do not match, then raise an exception.
         """
-        assert expect is not None
-        
         # Check test structures are the same
-        assert len(info) == len(expect)
-        for k in info:
-            assert k in expect
+        assert type(info) is type(expect)
+        if hasattr(info, '__len__'):
+            assert len(info) == len(expect)
             
-        # Check data matches
-        for k in info:
-            if isinstance(info[k], list):
-                assert len(info[k]) == len(expect[k])
-                for i in range(len(info[k])):
-                    assert np.allclose(info[k][i], expect[k][i])
+        if isinstance(info, dict):
+            for k in info:
+                assert k in expect
+            for k in expect:
+                assert k in info
+                self.compare_results(info[k], expect[k])
+        elif isinstance(info, list):
+            for i in range(len(info)):
+                self.compare_results(info[i], expect[i])
+        elif isinstance(info, np.ndarray):
+            assert info.shape == expect.shape
+            assert info.dtype == expect.dtype
+            if info.dtype.fields is None:
+                intnan = -9223372036854775808  # happens when np.nan is cast to int
+                inans = np.isnan(info) | (info == intnan)
+                enans = np.isnan(expect) | (expect == intnan)
+                assert np.all(inans == enans)
+                mask = ~inans
+                assert np.allclose(info[mask], expect[mask])
             else:
-                assert np.allclose(info[k], expect[k])
+                for k in info.dtype.fields.keys():
+                    self.compare_results(info[k], expect[k])
+        else:
+            try:
+                assert info == expect
+            except Exception:
+                raise NotImplementedError("Cannot compare objects of type %s" % type(info))
 
     def audit_result(self, info, expect):
         """ Display results and ask the user to decide whether the test passed.
@@ -82,6 +99,7 @@ class UserTester(object):
         result = self.run_test(*args, **kwds)
         expect = self.load_test_result()
         try:
+            assert expect is not None
             self.compare_results(result, expect)
         except:
             if not audit:
