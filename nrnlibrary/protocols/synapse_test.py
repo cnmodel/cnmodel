@@ -1,6 +1,6 @@
 from scipy import interpolate
 import numpy as np
-import matplotlib.pylab as mpl
+#import matplotlib.pylab as mpl
 import pyqtgraph as pg
 
 from neuron import h
@@ -506,6 +506,10 @@ class SynapseTest(Protocol):
             curve.rotate(-90)
             curve.scale(-1, 1)
 
+
+        #
+        # Plot GlyR state variables
+        #
         if glyPlot:
             i = 0
             if synapse.psd.psdType == 'glyslow':
@@ -523,4 +527,4 @@ class SynapseTest(Protocol):
                     mpl.ylabel(var)
                     i = i + 1
             mpl.draw()
-        mpl.show()
+        #mpl.show()
