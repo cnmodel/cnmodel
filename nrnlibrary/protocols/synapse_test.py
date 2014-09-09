@@ -200,6 +200,21 @@ class SynapseTest(Protocol):
         
         return ret
 
+    def release_timings(self):
+        """
+        Return a list of arrays (one array per synapse) describing the timing 
+        and latency of release events. 
+        """
+        data = []
+        for j in range(0, len(self.synapses)):
+            relsite = self.synapses[j].terminal.relsite
+            nev = relsite.ev_index
+            ev = np.empty(nev, dtype=[('time', float), ('latency', float)])
+            ev['latency'] = np.array(relsite.EventLatencies)[:nev]
+            ev['time'] = np.array(relsite.EventTime)[:nev]
+            data.append(ev)
+        return data
+    
     def open_probability(self):
         """ 
         Analyze results and return a dict of values related to psd open 
@@ -254,7 +269,7 @@ class SynapseTest(Protocol):
         - This currently analyzes cumulative currents; might be better to 
           analyze individual PSD currents
         - Measure decay time constant, rate of facilitation/depression,
-          #recovery.
+          recovery.
         
         """
         stim = self.stim
@@ -333,7 +348,6 @@ class SynapseTest(Protocol):
             else:
                 events['half width'][i] = np.nan
 
-        print events
         return events
 
     def show(self, releasePlot=True, glyPlot=False, plotFocus='EPSC'):
@@ -438,28 +452,28 @@ class SynapseTest(Protocol):
         analysisWindow = [nst[0:2], nst[-10:-1]]
         print analysisWindow
         print events['rise time']
-        RT_mean2080_early = np.ma.masked_invalid(events['rise time'][analysisWindow[0]]).mean()
-        RT_mean2080_late = np.ma.masked_invalid(events['rise time'][analysisWindow[1]]).mean()
-        Lat_mean20_early = np.ma.masked_invalid(events['20% latency'][analysisWindow[0]]).mean()
-        Lat_mean20_late = np.ma.masked_invalid(events['20% latency'][analysisWindow[1]]).mean()
-        HW_mean_early = np.ma.masked_invalid(events['half width'][analysisWindow[0]]).mean()
-        HW_mean_late = np.ma.masked_invalid(events['half width'][analysisWindow[1]]).mean()
+        RT_mean2080_early = np.nanmean(events['rise time'][analysisWindow[0]])
+        RT_mean2080_late = np.nanmean(events['rise time'][analysisWindow[1]])
+        Lat_mean20_early = np.nanmean(events['20% latency'][analysisWindow[0]])
+        Lat_mean20_late = np.nanmean(events['20% latency'][analysisWindow[1]])
+        HW_mean_early = np.nanmean(events['half width'][analysisWindow[0]])
+        HW_mean_late = np.nanmean(events['half width'][analysisWindow[1]])
         print "\n--------------"
         print "Means:"
         print "--------------"
-        print RT_mean2080_early
-        print Lat_mean20_early
-        print HW_mean_early
+        #print RT_mean2080_early
+        #print Lat_mean20_early
+        #print HW_mean_early
         print 'Early:   RT {0:7.3f} ms   Lat {1:7.3f} ms   HW {2:7.3f} ms'.format(RT_mean2080_early, Lat_mean20_early,
                                                                                 HW_mean_early)
         print 'Late :   RT {0:7.3f} ms   Lat {1:7.3f} ms   HW {2:7.3f} ms'.format(RT_mean2080_late, Lat_mean20_late,
                                                                                 HW_mean_late)
-        RT_std2080_early = np.ma.masked_invalid(events['rise time'][analysisWindow[0]]).std()
-        RT_std2080_late = np.ma.masked_invalid(events['rise time'][analysisWindow[1]]).std()
-        Lat_std20_early = np.ma.masked_invalid(events['20% latency'][analysisWindow[0]]).std()
-        Lat_std20_late = np.ma.masked_invalid(events['20% latency'][analysisWindow[1]]).std()
-        HW_std_early = np.ma.masked_invalid(events['half width'][analysisWindow[0]]).std()
-        HW_std_late = np.ma.masked_invalid(events['half width'][analysisWindow[1]]).std()
+        RT_std2080_early = np.nanstd(events['rise time'][analysisWindow[0]])
+        RT_std2080_late = np.nanstd(events['rise time'][analysisWindow[1]])
+        Lat_std20_early = np.nanstd(events['20% latency'][analysisWindow[0]])
+        Lat_std20_late = np.nanstd(events['20% latency'][analysisWindow[1]])
+        HW_std_early = np.nanstd(events['half width'][analysisWindow[0]])
+        HW_std_late = np.nanstd(events['half width'][analysisWindow[1]])
         print "\n--------------"
         print "Standard Deviations:"
         print "--------------"
@@ -469,36 +483,31 @@ class SynapseTest(Protocol):
                                                                                 HW_std_late)
         print "-----------------"
 
-        return
+
         #
         # Plot release event distributions over time
         #
         if releasePlot:
-            fig_ev = mpl.figure(num=301, facecolor='w')
-            ph1 = fig_ev.add_subplot(211)
-            ph2 = fig_ev.add_subplot(212)
-            nbins = 50
-            for j in range(0, len(self.synapses)):
-                relsite = self.synapses[j].terminal.relsite
-                nev = relsite.ev_index
-                dis = np.array(relsite.EventDist)[0:nev] # actual events, not original distribution
-                tim = np.array(relsite.EventTime)[0:nev]
-                #            print "dis[%03d]: nev=%d " % (j, nev),
-                #            print "# of spike Requests detected: %d \n" % (relsites[j].nRequests)
-                #print dis
-                (hist, binedges) = np.histogram(dis, 25, range=(0.0, 5.0))
-                ph1.hist(dis, nbins, range=(0.0, 5.0))
-                ph2.plot(tim, dis, 'ro')
-                ph2.axes.set_ylim((0, 5.0))
-            ph2.axes.set_ylim((0, 5.0))
-            ph2.axes.set_ylabel('# release events')
-            ph2.axes.set_xlabel('Time post stimulus (ms)')
-            ph1.axes.set_ylabel('Event latency (ms)')
-            ph1.axes.set_xlabel('Time into train (ms)')
-            mpl.draw()
+            self.win.nextRow()
+            p6 = self.win.addPlot(labels={'left': 'Release latency', 'bottom': 'Time (ms)'})
+            p6.setXLink(p1)
+            p7 = self.win.addPlot(labels={'left': 'Release latency', 'bottom': 'Num. Releases'})
+            p7.setYLink(p6)
+            self.win.ci.layout.setColumnFixedWidth(1, 200)
+            
+            events = self.release_timings()
+            all_latencies = []
+            for syn in events:
+                p6.plot(syn['time'], syn['latency'], pen=None, symbol='o')
+                all_latencies.append(syn['latency'])
+            all_latencies = np.concatenate(all_latencies)
+            (hist, binedges) = np.histogram(all_latencies)
+            curve = p7.plot(binedges, hist, stepMode=True, fillBrush=(100, 100, 255, 150), fillLevel=0)
+            curve.rotate(-90)
+            curve.scale(-1, 1)
 
-        i = 0
         if glyPlot:
+            i = 0
             if synapse.psd.psdType == 'glyslow':
                 mpl.figure(2)
                 for var in ['C0', 'C1', 'C2', 'O1', 'O1', 'D1', 'Open']:
@@ -513,5 +522,5 @@ class SynapseTest(Protocol):
                     mpl.plot(t, self[var])
                     mpl.ylabel(var)
                     i = i + 1
-        mpl.draw()
+            mpl.draw()
         mpl.show()

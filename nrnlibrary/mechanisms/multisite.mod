@@ -62,10 +62,10 @@ THREADSAFE
 	RANGE Identifier : just a number so we can report which instance is active
 	RANGE TDur, TAmp
 	: Distributions for stochastic release and testing (Sept, Oct, 2011):
-	RANGE EventDist, EventTime : returns the first EVENT_N latencies and absolute times at which they were used
+	RANGE EventLatencies, EventTime : returns the first EVENT_N latencies and absolute times at which they were used
 	RANGE ScopDist : returns the first EVENT_N random numbers generated and checked.
-	RANGE ev_index : count in the EventDist (in case we are "short")
-	RANGE sc_index : count in the EventDist (in case we are "short")
+	RANGE ev_index : count in the EventLatencies (in case we are "short")
+	RANGE sc_index : count in the ScopDist (in case we are "short")
 	: parameters for latency shift during repetitive stimulation (Oct 19, 2011)
 	RANGE Lat_Flag, Lat_t0, Lat_A0, Lat_tau : Lat_Flag  = 0 means fixed latency (set by "latency" above) 
 											: otherwise, latency = latency for t < Lat_t0
@@ -124,7 +124,7 @@ ASSIGNED {
 	nZones (1)    : number of zones in the model
 	nRequests (1) 
 	nReleases (1)
-	EventDist[EVENT_N] (0)
+	EventLatencies[EVENT_N] (0)
 	EventTime[EVENT_N] (0)
 	ScopDist[EVENT_N] (0)
 
@@ -275,7 +275,7 @@ PROCEDURE release() {
 					latzone = 0.0
 				}
 				if (ev_index < EVENT_N) { : save event distribution list for verification
-					EventDist[ev_index] = latzone
+					EventLatencies[ev_index] = latzone
 					EventTime[ev_index] = t
 					ev_index = ev_index + 1
 				}
