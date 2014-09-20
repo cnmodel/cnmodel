@@ -199,7 +199,7 @@ class GlyPSD(PSD):
                 clefts[k].KV = 531.0 # set cleft transmitter kinetic parameters
                 clefts[k].KU = 4.17
                 clefts[k].XMax = 0.731
-            if isinstance(self.post_cell, cells.DStellate):
+            elif isinstance(self.post_cell, cells.DStellate):
                 clefts[k].KV = 531.0 # set cleft transmitter kinetic parameters - same as for TStellate
                 clefts[k].KU = 4.17
                 clefts[k].XMax = 0.731
