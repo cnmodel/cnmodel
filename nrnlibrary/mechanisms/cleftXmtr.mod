@@ -73,19 +73,17 @@ INITIAL {
 
 BREAKPOINT {
 :	SOLVE initiate_release METHOD cnexp
+    initiate_release()
     SOLVE kstates METHOD sparse
     CXmtr = XC*XMax
 }
 
 PROCEDURE initiate_release () {
-    if (preLast < preThresh && pre > preThresh) {		: spike occurred?
+    if (preLast < preThresh && pre >= preThresh) {		: spike occurred?
         XV = 1
-        preLast = pre
         tLast = t
     }
-    if (pre < preThresh && preLast > 0.0) { : wait for end of event
-        preLast = 0
-    }
+    preLast = pre
 }
 
 KINETIC kstates {

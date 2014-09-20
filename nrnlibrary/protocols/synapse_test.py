@@ -131,6 +131,13 @@ class SynapseTest(Protocol):
                 self['C3'] = psd[0]._ref_C3
                 self['O1'] = psd[0]._ref_O1
                 self['O2'] = psd[0]._ref_O2
+        
+        #for i, cleft in enumerate(synapse.psd.clefts):
+            #self['cleft_xmtr%d' % i] = cleft._ref_CXmtr
+            #self['cleft_pre%d' % i] = cleft._ref_pre
+            #self['cleft_xv%d' % i] = cleft._ref_XV
+            #self['cleft_xc%d' % i] = cleft._ref_XC
+            #self['cleft_xu%d' % i] = cleft._ref_XU
 
         #
         # Run simulation

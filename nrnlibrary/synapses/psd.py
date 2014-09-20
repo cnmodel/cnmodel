@@ -214,7 +214,7 @@ class GlyPSD(PSD):
             
             v = 1.0 + gvar * np.random.standard_normal()
             psd[k].gmax = gmax * v # add a little variability - gvar is CV of amplitudes
-            #print 'psd %d gmax=%f' % (k, gmax)
+            #print 'GLY psd %s %d gmax=%f' % (self.psdType, k, gmax)
             psd[k].Erev = eRev # set the reversal potential
         
         par = list(par)
