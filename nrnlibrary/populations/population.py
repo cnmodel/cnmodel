@@ -35,14 +35,36 @@ class Population(object):
     requests a recording of the neuron.
     
     """
-    def __init__(self):
-        pass
+    def __init__(self, species, size, fields):
+        self._species = species
+        self._connections = []
+        
+        # numpy record array with information about each cell in the 
+        # population
+        fields = [('cell', object), ('resolved', bool)] + fields
+        self._cells = np.empty(size, dtype=fields)
     
     def connect(self, *pops):
         """ Connect this population to any number of other populations. 
         
+        A connection is unidirectional; calling ``pop1.connect(pop2)`` can only
+        result in projections from pop1 to pop2.
+        
         Note that the connection is purely symbolic at first; no cells are 
         actually connected by synapses at this time.
+        """
+        self._connections.extend(pops)
+
+    def resolve_inputs(self):
+        """ For each _real_ cell in the population, select a set of 
+        presynaptic partners from each connected population and generate a 
+        synapse from each.
+        
+        Although it is allowed to call ``resolve_inputs`` multiple times for
+        a single population, each individual cell will only resolve its inputs
+        once. Therefore, it is recommended to create and connect all 
+        populations before making any calls to ``resolve_inputs``.
+        
         """
     
     def select(self, **kwds):

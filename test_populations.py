@@ -35,7 +35,7 @@ cell = pops[cellType].add_cell()
 pops[cellType].resolve_inputs(depth=1)
 
 
-ct = CircuitTest()
-ct.run(pops)
-ct.show()
+pt = PopulationTest()
+pt.run(pops)
+pt.show()
 
