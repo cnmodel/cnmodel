@@ -17,12 +17,12 @@ class Bushy(Population):
         super(Bushy, self).__init__(species, size, fields=fields)
         self._cells['cf'] = 4000 * 2**np.linspace(0, 4.5, size)
     
-    def create_cells(self, cells):
-        """ Instantiate each cell in *cells*, which is a list of indexes into
-        self.cells.
+    def create_cell(self, cell_rec):
+        """ Return a single new cell to be used in this population. The 
+        *cell_rec* argument is the row from self.cells that describes the cell 
+        to be created.
         """
-        for i in cells:
-            self._cells[i]['cell'] = cells.Bushy.create(species=self.species)
+        return cells.Bushy.create(species=self.species)
         
     def connect_pop_to_cell(self, pop, cell_index):
         """ Connect cells in a presynaptic population to the cell in this 

@@ -46,7 +46,7 @@ class Population(object):
         # population
         fields = [
             ('cell', object), 
-            ('inputs_resolved', bool),
+            ('input_resolved', bool),
             ('connections', object),  # {pop: [cells], ...}
         ] + fields
         self._cells = np.zeros(size, dtype=fields)
@@ -72,7 +72,7 @@ class Population(object):
         """
         real = self._cells['cell'] != 0
         unresolved = self._cells['input_resolved'] == False
-        return np.argwhere(real & unresolved)[0]
+        return np.argwhere(real & unresolved)[:,0]
 
     def connect(self, *pops):
         """ Connect this population to any number of other populations. 
@@ -97,7 +97,7 @@ class Population(object):
         """
         return self._cells[index]['connections']
 
-    def resolve_inputs(self):
+    def resolve_inputs(self, depth=1):
         """ For each _real_ cell in the population, select a set of 
         presynaptic partners from each connected population and generate a 
         synapse from each.
@@ -164,6 +164,9 @@ class Population(object):
             mask[cell] = False
             cells.append(cell)
             
+        if create:
+            self.create_cells(cells)
+        
         return cells
 
     def get_cell(self, i, create=True):
@@ -174,10 +177,20 @@ class Population(object):
             self.create_cells([i])
         return self._cells[i]['cell']
         
-    def create_cells(self, cells):
-        """ Instantiate each cell in *cells*, which is a list of indexes into
+    def create_cells(self, cell_inds):
+        """ Instantiate each cell in *cell_inds*, which is a list of indexes into
         self.cells.
+        """
+        for i in cell_inds:
+            if self._cells[i]['cell'] != 0:
+                continue
+            self._cells[i]['cell'] = self.create_cell(self._cells[i])
+            
+    def create_cell(self, cell_rec):
+        """ Return a single new cell to be used in this population. The 
+        *cell_rec* argument is the row from self.cells that describes the cell 
+        to be created.
         
-        Subclasses must implement this method.
+        Subclasses must reimplement this method.
         """
         raise NotImplementedError()

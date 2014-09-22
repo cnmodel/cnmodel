@@ -24,7 +24,7 @@ class PopulationTest(Protocol):
         
         # start with one cell, selected from the user-selected population, that has
         # a cf close to 4kHz
-        post_cell_ind = post_pop.select(1, cf=cf, create=True)
+        post_cell_ind = post_pop.select(1, cf=cf, create=True)[0]
         post_cell = post_pop.get_cell(post_cell_ind)
         post_pop.resolve_inputs(depth=1)
         

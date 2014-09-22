@@ -6,6 +6,7 @@
 5. Stimulate presynaptic cells and record postsynaptically
 """
 from nrnlibrary import populations
+from nrnlibrary.protocols import PopulationTest
 
 import sys
 if len(sys.argv) < 3:
