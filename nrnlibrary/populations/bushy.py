@@ -11,7 +11,6 @@ class Bushy(Population):
         size = 5000
         fields = [
             ('cf', float),
-            ('connections', object),  # {pop: [cells], ...}
         ]
         super(Bushy, self).__init__(species, size, fields=fields)
         self._cells['cf'] = 4000 * 2**np.linspace(0, 4.5, size)

@@ -43,7 +43,11 @@ class Population(object):
         
         # numpy record array with information about each cell in the 
         # population
-        fields = [('cell', object), ('inputs_resolved', bool)] + fields
+        fields = [
+            ('cell', object), 
+            ('inputs_resolved', bool),
+            ('connections', object),  # {pop: [cells], ...}
+        ] + fields
         self._cells = np.zeros(size, dtype=fields)
 
     @property
@@ -82,7 +86,15 @@ class Population(object):
 
     @property
     def connections(self):
+        """ The list of populations connected to this one.
+        """
         return self._connections[:]
+
+    def cell_connections(self, index):
+        """ Return a dictionary containing, for each population, a list of 
+        cells connected to the cell in this population at *index*.
+        """
+        return self._cells[index]['connections']
 
     def resolve_inputs(self):
         """ For each _real_ cell in the population, select a set of 
