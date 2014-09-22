@@ -26,14 +26,6 @@ for cell_type in sys.argv[1:3]:
         sys.exit(-1)
     pops.append(pop_types[cell_type]())
 
-pre_pop, post_pop = pops
-pre_pop.connect(post_pop)
-
-# start with one cell, selected from the user-selected population, that has
-# a cf close to 4kHz
-cell = post_pop.select(1, cf=4000, create=True)
-post_pop.resolve_inputs(depth=1)
-
 
 pt = PopulationTest()
 pt.run(pops)

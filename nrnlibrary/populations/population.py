@@ -93,7 +93,28 @@ class Population(object):
         a single population, each individual cell will only resolve its inputs
         once. Therefore, it is recommended to create and connect all 
         populations before making any calls to ``resolve_inputs``.
+        """
+        for i in self.unresolved_cells():
+            cell = self._cells[i]['cell']
+            self._cells[i]['connections'] = {}
+            
+            # select cells from each population to connect to this cell
+            for pop in self.connections:
+                pre_cells = self.connect_pop_to_cell(pop, i)
+                self._cells[i]['connections'][pop] = pre_cells
+            self._cells[i]['input_resolved'] = True
+
+        # recursively resolve inputs in connected populations
+        if depth > 1:
+            for pop in self.connections:
+                pop.resolve_inputs(depth-1)
+
+    def connect_pop_to_cell(self, pop, cell_index):
+        """ Connect cells in a presynaptic population to the cell in this 
+        population at *cell_index*. Return the presynaptic indexes of cells
+        that were connected.
         
+        This method must be reimplmented in subclasses.
         """
         raise NotImplementedError()
     
@@ -132,11 +153,11 @@ class Population(object):
             
         return cells
 
-    def get_cell(self, i):
+    def get_cell(self, i, create=True):
         """ Return the cell at index i. If the cell is virtual, then it will 
-        be instantiated first.
+        be instantiated first unless *create* is False.
         """
-        if self._cells[i]['cell'] == 0:
+        if create and self._cells[i]['cell'] == 0:
             self.create_cells([i])
         return self._cells[i]['cell']
         
