@@ -1,4 +1,5 @@
 import scipy.stats
+import numpy as np
 
 """
 Todo: 
@@ -146,8 +147,8 @@ class Population(object):
         if len(kwds) == 0:
             raise TypeError("Must specify at least one selection criteria")
         if len(kwds) > 1:
-            raise NotImplementedError("Multiple selection criteria not yet 
-                supported.")
+            raise NotImplementedError("Multiple selection criteria not yet "
+                "supported.")
         
         field, values = list(kwds.items())[0]
         if isinstance(values, scipy.stats.distributions.rv_frozen):

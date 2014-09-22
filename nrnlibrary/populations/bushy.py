@@ -1,4 +1,6 @@
 import scipy.stats
+import numpy as np
+
 from .population import Population
 from .. import cells
 
