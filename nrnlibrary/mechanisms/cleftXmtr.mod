@@ -72,18 +72,8 @@ INITIAL {
 }
 
 BREAKPOINT {
-:	SOLVE initiate_release METHOD cnexp
-    initiate_release()
     SOLVE kstates METHOD sparse
     CXmtr = XC*XMax
-}
-
-PROCEDURE initiate_release () {
-    if (preLast < preThresh && pre >= preThresh) {		: spike occurred?
-        XV = 1
-        tLast = t
-    }
-    preLast = pre
 }
 
 KINETIC kstates {
@@ -92,7 +82,6 @@ KINETIC kstates {
     : note that this mechanism has no CONSERVATION : XU can accumulate as much
     : as needed.
 }
-
 
 NET_RECEIVE(conc (mM)) { : detect and cause a release event
 	XV = XV + 1
