@@ -128,12 +128,29 @@ class Population(object):
 
     def connect_pop_to_cell(self, pop, cell_index):
         """ Connect cells in a presynaptic population to the cell in this 
-        population at *cell_index*. Return the presynaptic indexes of cells
+        population at *cell_index*, and return the presynaptic indexes of cells
         that were connected.
         
-        This method must be reimplmented in subclasses.
+        This method may be overridden in subclasses.
+        
+        The default implementation calls self.connection_stats to determine
+        the number and selection criteria of presynaptic cells.
         """
-        raise NotImplementedError()
+        cell_rec = self._cells[cell_index]
+        cell = cell_rec['cell']
+        
+        size, dist = self.connection_stats(pop, cell_rec) 
+
+        # Select SGCs from distribution, create, and connect to this cell
+        # todo: select sgcs with similar spont. rate?
+        pre_cells = pop.select(size=size, create=False, **dist)
+        for j in pre_cells:
+            pre_cell = pop.get_cell(j)
+            # use default settings for connecting these. 
+            # todo: connect from sgc axon instead of soma
+            # (maybe the cell should handle this?)
+            pre_cell.connect(pre_cell.soma, cell.soma)
+        return pre_cells
     
     def select(self, size, create=False, **kwds):
         """ Return a list of indexes for cells matching the selection criteria.
@@ -144,30 +161,62 @@ class Population(object):
         instantiated.
         
         Each keyword argument must be the name of a field in self.cells. Values
-        may be either a number, in which case the cell with the closest match 
-        is returned, or a distribution (see scipy.stats), in which case random
-        values will be selected from the distribution.
+        may be:
+        * A distribution (see scipy.stats), in which case the distribution 
+          influences the selection of cells
+        * An array giving the probability to assign to each cell in the
+          population
+        * A number, in which case the cell(s) with the closest match 
+          are returned. If this is used, it overrides all other criteria except
+          where they evaluate to 0.
+        
+        If multiple distributions are provided, then the product of the survival
+        functions of all distributions determines the probability of selecting 
+        each cell.
         """
         if len(kwds) == 0:
             raise TypeError("Must specify at least one selection criteria")
-        if len(kwds) > 1:
-            raise NotImplementedError("Multiple selection criteria not yet "
-                "supported.")
         
-        field, values = list(kwds.items())[0]
-        if isinstance(values, scipy.stats.distributions.rv_frozen):
-            values = values.rvs(size=size)
-        elif np.isscalar(values):
-            values = [values]
+        full_dist = np.ones(len(self._cells))
+        nearest = None
+        nearest_field = None
+        for field, dist in kwds.items():
+            if np.isscalar(dist):
+                if nearest is not None:
+                    raise Exception("May not specify multiple single-valued selection criteria.")
+                nearest = dist
+                nearest_field = field
+            elif isinstance(dist, scipy.stats.distributions.rv_frozen):
+                vals = self._cells[field]
+                full_dist *= dist.pdf(vals)
+            elif isinstance(dist, np.ndarray):
+                full_dist *= dist
+            else:
+                raise TypeError("Distributed criteria must be array or rv_frozen.")
+                
+        # Select cells nearest to the requested value, but only pick from 
+        # cells with nonzero probability. 
+        if nearest is not None:
+            cells = []
+            mask = full_dist == 0
+            err = np.abs(self._cells[nearest_field] - nearest)
+            for i in range(size):
+                err[mask] = np.inf
+                cell = np.argmin(err)
+                mask[cell] = True
+                cells.append(cell)
             
-        cells = []
-        mask = np.zeros(self._cells.shape, dtype=bool)
-        for val in values:
-            err = np.abs(self._cells[field] - val)
-            err[mask] = np.inf
-            cell = np.argmin(err)
-            mask[cell] = True
-            cells.append(cell)
+        # Select cells randomly from the specified combined probability 
+        # distribution
+        else:
+            cells = []
+            full_dist /= full_dist.sum()
+            vals = np.random.uniform(size=size)
+            vals.sort()
+            cumulative = np.cumsum(full_dist)
+            for val in vals:
+                cell = np.argwhere(cumulative >= val)[0,0]
+                cells.append(cell)
             
         if create:
             self.create_cells(cells)

@@ -16,14 +16,14 @@ if len(sys.argv) < 3:
 pop_types = {
     'sgc': populations.SGC,
     'bushy': populations.Bushy,
-    #'tstellate': tstellate,
-    #'dstellate': dstellate,
+    'tstellate': populations.TStellate,
+    'dstellate': populations.DStellate,
     }
 
 pops = []
 for cell_type in sys.argv[1:3]:
     if cell_type not in pop_types:
-        print 'Unsupported cell type: "%s". Options are %s' % (cell_type, pops.keys())
+        print '\nUnsupported cell type: "%s". Options are %s' % (cell_type, pop_types.keys())
         sys.exit(-1)
     pops.append(pop_types[cell_type]())
 
