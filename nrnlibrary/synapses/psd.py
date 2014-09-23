@@ -191,10 +191,13 @@ class GlyPSD(PSD):
         
         
         # Connect terminal to psd (or cleft)
+        self._cleft_netcons = []
         for k in range(0, n_rzones):
-            relzone.setpointer(relzone._ref_XMTR[k], 'pre',
-                                clefts[k]) # connect the cleft to the release of transmitter
-            clefts[k].preThresh = 0.1
+            pre_sec.push()
+            netcon = h.NetCon(relzone._ref_XMTR[k], clefts[k], 0.1, 0.0, 1.0)
+            self._cleft_netcons.append(netcon)
+            h.pop_section()
+            
             if isinstance(self.post_cell, cells.TStellate):
                 clefts[k].KV = 531.0 # set cleft transmitter kinetic parameters
                 clefts[k].KU = 4.17
