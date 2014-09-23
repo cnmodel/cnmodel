@@ -33,7 +33,7 @@ class PopulationTest(Protocol):
         self.post_cell_ind = post_cell_ind
         self.post_cell = post_cell
         
-        pre_cell_inds, synapses = post_pop.cell_connections(post_cell_ind)[pre_pop]
+        pre_cell_inds = post_pop.cell_connections(post_cell_ind)[pre_pop]
         pre_cells = [pre_pop.get_cell(i) for i in pre_cell_inds]
         pre_secs = [cell.soma for cell in pre_cells]
         self.pre_cells = pre_cells

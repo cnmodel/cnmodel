@@ -44,16 +44,14 @@ class Bushy(Population):
             # Select SGCs from distribution, create, and connect to this cell
             # todo: select sgcs with similar spont. rate?
             pre_cells = pop.select(size=size, create=False, cf=dist)
-            synapses = []
             for j in pre_cells:
                 sgc = pop.get_cell(j)
                 # use default settings for connecting these. 
                 # todo: connect from sgc axon instead of soma
                 # (maybe the cell should handle this?)
-                synapses.append(sgc.connect(sgc.soma, cell.soma))
-            
+                sgc.connect(sgc.soma, cell.soma)
             assert np.any(pop._cells['cell'] != 0)
-            return pre_cells, synapses
+            return pre_cells
         else:
             raise TypeError("Cannot connect population %s to %s" % (pop, self))
 

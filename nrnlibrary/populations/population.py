@@ -116,9 +116,9 @@ class Population(object):
             
             # select cells from each population to connect to this cell
             for pop in self._pre_connections:
-                pre_cells, synapses = self.connect_pop_to_cell(pop, i)
+                pre_cells = self.connect_pop_to_cell(pop, i)
                 assert pre_cells is not None
-                self._cells[i]['connections'][pop] = (pre_cells, synapses)
+                self._cells[i]['connections'][pop] = pre_cells
             self._cells[i]['input_resolved'] = True
 
         # recursively resolve inputs in connected populations
