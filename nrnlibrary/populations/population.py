@@ -40,7 +40,8 @@ class Population(object):
     """
     def __init__(self, species, size, fields):
         self._species = species
-        self._connections = []
+        self._post_connections = []  # populations this one connects to
+        self._pre_connections = []  # populations connecting to this one
         
         # numpy record array with information about each cell in the 
         # population
@@ -83,7 +84,9 @@ class Population(object):
         Note that the connection is purely symbolic at first; no cells are 
         actually connected by synapses at this time.
         """
-        self._connections.extend(pops)
+        self._post_connections.extend(pops)
+        for pop in pops:
+            pop._pre_connections.append(self)
 
     @property
     def connections(self):
@@ -112,8 +115,9 @@ class Population(object):
             self._cells[i]['connections'] = {}
             
             # select cells from each population to connect to this cell
-            for pop in self.connections:
+            for pop in self._pre_connections:
                 pre_cells = self.connect_pop_to_cell(pop, i)
+                assert pre_cells is not None
                 self._cells[i]['connections'][pop] = pre_cells
             self._cells[i]['input_resolved'] = True
 
@@ -155,13 +159,14 @@ class Population(object):
             values = values.rvs(size=size)
         elif np.isscalar(values):
             values = [values]
-        
+            
         cells = []
-        mask = np.ones(self._cells.shape, dtype=bool)
+        mask = np.zeros(self._cells.shape, dtype=bool)
         for val in values:
             err = np.abs(self._cells[field] - val)
-            cell = np.argmin(err[mask])
-            mask[cell] = False
+            err[mask] = np.inf
+            cell = np.argmin(err)
+            mask[cell] = True
             cells.append(cell)
             
         if create:

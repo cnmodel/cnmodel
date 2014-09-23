@@ -29,22 +29,29 @@ class Bushy(Population):
         population at *cell_index*. Return the presynaptic indexes of cells
         that were connected.
         """
+        from .. import populations
         cell = self._cells[cell_index]['cell']
         
         if isinstance(pop, populations.SGC):
             # Fabricated input distribution (this should be log-normal, or 
             # perhaps cf should be expressed in octaves?)
             cf = self._cells[cell_index]['cf']
-            dist = scipy.stats.norm(loc=cf, scale=cf / 10.)
+            dist = scipy.stats.norm(loc=cf, scale=cf / 100.)
             
             # Fabricated convergence distribution
             size = np.random.randint(3) + 2
             
             # Select SGCs from distribution, create, and connect to this cell
+            # todo: select sgcs with similar spont. rate?
             pre_cells = pop.select(size=size, create=False, cf=dist)
             for j in pre_cells:
                 sgc = pop.get_cell(j)
-                sgc.connect(cell)
-                
+                # use default settings for connecting these. 
+                # todo: connect from sgc axon instead of soma
+                # (maybe the cell should handle this?)
+                sgc.connect(sgc.soma, cell.soma)
+            assert np.any(pop._cells['cell'] != 0)
+            return pre_cells
         else:
             raise TypeError("Cannot connect population %s to %s" % (pop, self))
+
