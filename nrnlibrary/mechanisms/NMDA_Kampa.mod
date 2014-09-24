@@ -91,8 +91,8 @@ PARAMETER {
 	vmax 	= 100	(mV)
 	valence = -2		: parameters of voltage-dependent Mg block
 	memb_fraction = 0.8
-	gNAR = 0.5
-	vshift = 0.0
+	gNAR = 0.5 (1)
+	vshift = 0.0 (mV)
 	Q10 = 2.0 : temperature sensitivity (see above)
 
 : Rates
@@ -166,7 +166,7 @@ STATE {
 
 INITIAL {
 	U = 1
-	qfac = Q10^((celsius-23)/10)}
+	qfac = Q10^((celsius-23)/10 (degC))}
 
 BREAKPOINT {
 	SOLVE kstates METHOD sparse
@@ -179,16 +179,16 @@ KINETIC kstates {
 
 	rb 	= Rb 	* (1e3) * XMTR
 	rbMg 	= RbMg 	* (1e3) * XMTR
-	rmb 	= Rmb 	* mg * (1e3) * exp((v-40+vshift) * valence * memb_fraction /25)
-	rmu 	= Rmu 	* exp((-1)*(v-40+vshift) * valence * (1-memb_fraction) /25)
-	rmc1b 	= Rmc1b * mg * (1e3) * exp((v-40+vshift) * valence * memb_fraction /25)
-	rmc1u 	= Rmc1u * exp((-1)*(v-40+vshift) * valence * (1-memb_fraction) /25)
-	rmc2b 	= Rmc2b * mg * (1e3) * exp((v-40+vshift) * valence * memb_fraction /25)
-	rmc2u 	= Rmc2u * exp((-1)*(v-40+vshift) * valence * (1-memb_fraction) /25)
-	rmd1b 	= Rmd1b * mg * (1e3) * exp((v-40+vshift) * valence * memb_fraction /25)
-	rmd1u 	= Rmd1u * exp((-1)*(v-40+vshift) * valence * (1-memb_fraction) /25)
-	rmd2b 	= Rmd2b * mg * (1e3) * exp((v-40+vshift) * valence * memb_fraction /25)
-	rmd2u 	= Rmd2u * exp((-1)*(v-40+vshift) * valence * (1-memb_fraction) /25)
+	rmb 	= Rmb 	* mg * (1e3) * exp((v-40+vshift) * valence * memb_fraction /25 (mV))
+	rmu 	= Rmu 	* exp((-1)*(v-40+vshift) * valence * (1-memb_fraction) /25 (mV))
+	rmc1b 	= Rmc1b * mg * (1e3) * exp((v-40+vshift) * valence * memb_fraction /25 (mV))
+	rmc1u 	= Rmc1u * exp((-1)*(v-40+vshift) * valence * (1-memb_fraction) /25 (mV))
+	rmc2b 	= Rmc2b * mg * (1e3) * exp((v-40+vshift) * valence * memb_fraction /25 (mV))
+	rmc2u 	= Rmc2u * exp((-1)*(v-40+vshift) * valence * (1-memb_fraction) /25 (mV))
+	rmd1b 	= Rmd1b * mg * (1e3) * exp((v-40+vshift) * valence * memb_fraction /25 (mV))
+	rmd1u 	= Rmd1u * exp((-1)*(v-40+vshift) * valence * (1-memb_fraction) /25 (mV))
+	rmd2b 	= Rmd2b * mg * (1e3) * exp((v-40+vshift) * valence * memb_fraction /25 (mV))
+	rmd2u 	= Rmd2u * exp((-1)*(v-40+vshift) * valence * (1-memb_fraction) /25 (mV))
 
 	~ U <-> Cl	(rb*qfac,Ru*qfac)
 	~ Cl <-> Open	(Ro*qfac,Rc*qfac)
