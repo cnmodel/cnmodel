@@ -30,13 +30,17 @@ class TStellate(Cell):
                                    ampa_gmax=4600.,
                                    nmda_ampa_ratio = 1.28,
                                    )
+        elif isinstance(pre_cell, cells.DStellate):
+            return synapses.GlyPSD(pre_sec, post_sec, terminal,
+                                   psdType='glyfast',
+                                   )
         else:
             raise TypeError("Cannot make PSD for %s => %s" % 
                             (pre_cell.__class__.__name__, 
                              self.__class__.__name__))
 
 
-class TStellateRothman(TStellate, Cell):
+class TStellateRothman(TStellate):
     """
     VCN T-stellate base model.
     Rothman and Manis, 2003abc (Type I-c, Type I-t)
@@ -216,7 +220,7 @@ class TStellateRothman(TStellate, Cell):
 
 
 
-class TStellateNav11(Cell):
+class TStellateNav11(TStellate):
     """
     VCN T-stellate cell setup from Rothman and Manis, 2003, 
     using nav11 sodium channel model
@@ -310,7 +314,7 @@ class TStellateNav11(Cell):
         self.add_section(soma, 'soma')
         self.add_section(dendrites, 'dendrite')
 
-class TStellateFast(Cell):
+class TStellateFast(TStellate):
     """ 
     VCN t-stellate model based on Rothman and Manis 2003, but with fast sodium
     channel 

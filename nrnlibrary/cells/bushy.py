@@ -233,6 +233,10 @@ class BushyRothman(Bushy, Cell):
                                    ampa_gmax=1700.,
                                    nmda_ampa_ratio = 0.36,
                                    )
+        elif isinstance(pre_cell, cells.DStellate):
+            return synapses.GlyPSD(pre_sec, post_sec, terminal,
+                                   psdType='glyslow',
+                                   )
         else:
             raise TypeError("Cannot make PSD for %s => %s" % 
                             (pre_cell.__class__.__name__, 

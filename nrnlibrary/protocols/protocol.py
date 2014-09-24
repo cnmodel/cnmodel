@@ -6,7 +6,11 @@ class Protocol(object):
     Base class providing common tools for running, analyzing, and displaying
     simulations.
     """
-    def __init__(self):
+    def __init__(self, seed=None):
+        if seed is not None:
+            np.random.seed(seed)
+            # todo: seed random generators used in NEURON as well
+            
         self.reset()
 
     def reset(self):

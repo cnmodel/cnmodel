@@ -11,6 +11,7 @@ class PSD(object):
     """
     def __init__(self, pre_sec, post_sec, terminal):
         pass
+
     
 class GluPSD(PSD):
     """
@@ -190,33 +191,33 @@ class GlyPSD(PSD):
         
         
         # Connect terminal to psd (or cleft)
+        self._cleft_netcons = []
         for k in range(0, n_rzones):
-            if self.psdType in ['glyslow', 'glyfast', 'glyexp', 'glya5', 'glyGC']:
-                relzone.setpointer(relzone._ref_XMTR[k], 'pre',
-                                    clefts[k]) # connect the cleft to the release of transmitter
-                clefts[k].preThresh = 0.1
-                if isinstance(self.post_cell, cells.TStellate):
-                    clefts[k].KV = 531.0 # set cleft transmitter kinetic parameters
-                    clefts[k].KU = 4.17
-                    clefts[k].XMax = 0.731
-                if isinstance(self.post_cell, cells.DStellate):
-                    clefts[k].KV = 531.0 # set cleft transmitter kinetic parameters - same as for TStellate
-                    clefts[k].KU = 4.17
-                    clefts[k].XMax = 0.731
-                elif isinstance(self.post_cell, cells.Bushy):
-                    clefts[k].KV = 1e9 # really fast for bushy cells.
-                    clefts[k].KU = 4.46
-                    clefts[k].XMax = 0.733
-                else:
-                    raise ValueError ('Post Cell type not known:  ', self.post_cell)
-
-                clefts[k].setpointer(clefts[k]._ref_CXmtr, 'XMTR', psd[k]) #connect transmitter release to the PSD
+            pre_sec.push()
+            netcon = h.NetCon(relzone._ref_XMTR[k], clefts[k], 0.1, 0.0, 1.0)
+            self._cleft_netcons.append(netcon)
+            h.pop_section()
+            
+            if isinstance(self.post_cell, cells.TStellate):
+                clefts[k].KV = 531.0 # set cleft transmitter kinetic parameters
+                clefts[k].KU = 4.17
+                clefts[k].XMax = 0.731
+            elif isinstance(self.post_cell, cells.DStellate):
+                clefts[k].KV = 531.0 # set cleft transmitter kinetic parameters - same as for TStellate
+                clefts[k].KU = 4.17
+                clefts[k].XMax = 0.731
+            elif isinstance(self.post_cell, cells.Bushy):
+                clefts[k].KV = 1e9 # really fast for bushy cells.
+                clefts[k].KU = 4.46
+                clefts[k].XMax = 0.733
             else:
-                raise ValueError("PSDTYPE IS NOT RECOGNIZED: [%s]\n" % (self.psdType))
-                exit()
+                raise ValueError ('Post Cell type not known:  ', self.post_cell)
+
+            clefts[k].setpointer(clefts[k]._ref_CXmtr, 'XMTR', psd[k]) #connect transmitter release to the PSD
+            
             v = 1.0 + gvar * np.random.standard_normal()
             psd[k].gmax = gmax * v # add a little variability - gvar is CV of amplitudes
-            #print 'psd %d gmax=%f' % (k, gmax)
+            #print 'GLY psd %s %d gmax=%f' % (self.psdType, k, gmax)
             psd[k].Erev = eRev # set the reversal potential
         
         par = list(par)
@@ -226,27 +227,10 @@ class GlyPSD(PSD):
         if message is not None:
             print message
                 
-        self.psd = psd
+        self.all_psd = psd
         self.clefts = clefts
         self.par = par
 
-        ## adjust NMDA receptors to match postsynaptic cell
-        #k = 0
-        #kNMDA = -1
-        #kAMPA = -1
-        #for p in self.psd:
-            #if p.hname().find('NMDA', 0, 6) >= 0:
-                #p.gNAR = nmda_ampa_ratio * self.AN_Po_Ratio * self.NMDARatio
-                #p.vshift = 0
-                #if kNMDA == -1:
-                    #kNMDA = k # save the first instance where we have an NMDA receptor
-            #else:
-                #if kAMPA == -1: # not NMDA, so get AMPA 
-                    #kAMPA = k
-            #k = k + 1
-
-        #self.kNMDA = kNMDA
-        #self.kAMPA = kAMPA
 
 
 

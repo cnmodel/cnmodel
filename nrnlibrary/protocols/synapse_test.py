@@ -84,37 +84,35 @@ class SynapseTest(Protocol):
         self['v_soma'] = pre_cell.soma(0.5)._ref_v
         self['relsite_xmtr'] = synapse.terminal.relsite._ref_XMTR[0]
 
-
-        # make a synapse monitor for each release zone
-        #self.all_psd = []
-        self.all_nmda = []
-        self.all_ampa = []
+        self.all_psd = []
         for syn in synapses:
             # collect all PSDs across all synapses
-            #self.all_psd.extend(syn.psd.all_psd)
-            self.all_nmda.extend(syn.psd.nmda_psd)
-            self.all_ampa.extend(syn.psd.ampa_psd)
+            self.all_psd.extend(syn.psd.all_psd)
+            
+        if isinstance(synapse.psd, GluPSD):
+            # make a synapse monitor for each release zone
+            self.all_nmda = []
+            self.all_ampa = []
+            for syn in synapses:
+                # collect all PSDs across all synapses
+                self.all_nmda.extend(syn.psd.nmda_psd)
+                self.all_ampa.extend(syn.psd.ampa_psd)
+            
+            #  Record current through all PSDs individually
+            for k,p in enumerate(self.all_nmda):
+                self['iNMDA%03d' % k] = p._ref_i
+                self['opNMDA%03d' % k] = p._ref_Open
+            for k,p in enumerate(self.all_ampa):
+                self['iAMPA%03d' % k] = p._ref_i
+                self['opAMPA%03d' % k] = p._ref_Open
         
-        #  Record current through all PSDs individually
-        for k,p in enumerate(self.all_nmda):
-            self['iNMDA%03d' % k] = p._ref_i
-            self['opNMDA%03d' % k] = p._ref_Open
-        for k,p in enumerate(self.all_ampa):
-            self['iAMPA%03d' % k] = p._ref_i
-            self['opAMPA%03d' % k] = p._ref_Open
-        
-        # Record sample AMPA and NMDA currents
-        #self['iNMDA'] = synapse.psd.nmda_psd[0]._ref_i
-        #self['iAMPA'] = synapse.psd.ampa_psd[0]._ref_i
-        
-        #self['Open'] = self.all_psd[0]._ref_Open
-        #if isinstance(synapse.psd, GluPSD):
-            #if len(synapse.psd.nmda_psd) > 0:
-               #self['nmOpen'] = synapse.psd.nmda_psd[0]._ref_Open
-            #if len(synapse.psd.ampa_psd) > 0:
-               #self['amOpen'] = synapse.psd.ampa_psd[0]._ref_Open
-        
-        if isinstance(synapse.psd, GlyPSD):
+        elif isinstance(synapse.psd, GlyPSD):
+            #  Record current through all PSDs individually
+            for k,p in enumerate(self.all_psd):
+                self['iGLY%03d' % k] = p._ref_i
+                self['opGLY%03d' % k] = p._ref_Open
+                
+            psd = self.all_psd
             if synapse.psd.psdType == 'glyslow':
                 nstate = 7
                 self['C0'] = psd[0]._ref_C0
@@ -133,6 +131,13 @@ class SynapseTest(Protocol):
                 self['C3'] = psd[0]._ref_C3
                 self['O1'] = psd[0]._ref_O1
                 self['O2'] = psd[0]._ref_O2
+        
+        #for i, cleft in enumerate(synapse.psd.clefts):
+            #self['cleft_xmtr%d' % i] = cleft._ref_CXmtr
+            #self['cleft_pre%d' % i] = cleft._ref_pre
+            #self['cleft_xv%d' % i] = cleft._ref_XV
+            #self['cleft_xc%d' % i] = cleft._ref_XC
+            #self['cleft_xu%d' % i] = cleft._ref_XU
 
         #
         # Run simulation
@@ -147,12 +152,19 @@ class SynapseTest(Protocol):
         for nrep in xrange(1): # could do multiple runs.... 
             h.run()
             
-            if nrep is 0: # add up psd current across all runs
-                isoma = np.zeros_like(self['iAMPA000'])
-            for k in range(len(self.all_ampa)):
-                isoma += self['iAMPA%03d'%k]
-            for k in range(len(self.all_nmda)):
-                isoma += self['iNMDA%03d'%k]
+            # add up psd current across all runs
+            if isinstance(synapse.psd, GluPSD):
+                if nrep is 0:
+                    isoma = np.zeros_like(self['iAMPA000'])
+                for k in range(len(self.all_ampa)):
+                    isoma += self['iAMPA%03d'%k]
+                for k in range(len(self.all_nmda)):
+                    isoma += self['iNMDA%03d'%k]
+            elif isinstance(synapse.psd, GlyPSD):
+                if nrep is 0:
+                    isoma = np.zeros_like(self['iGLY000'])
+                for k in range(len(self.all_psd)):
+                    isoma += self['iGLY%03d'%k]
         self.isoma = isoma
 
     def release_events(self):
@@ -220,10 +232,9 @@ class SynapseTest(Protocol):
         Analyze results and return a dict of values related to psd open 
         probability:
             
-            op_nmda:
-            op_ampa:
-            imax_nmda:
-            imax_ampa:
+            nmda: (imax, opmax)
+            ampa: (imax, opmax)
+            gly:  (imax, opmax)
         """
         synapse = self.synapses[0]
         if isinstance(synapse.psd, GluPSD) and len(synapse.psd.nmda_psd) > 0:
@@ -254,12 +265,17 @@ class SynapseTest(Protocol):
                     amOmax = opam
                     break
             
-            return {
-                'op_nmda': nmOmax,
-                'op_ampa': amOmax,
-                'imax_nmda': nmImax,
-                'imax_ampa': amImax,
-            }
+            return {'nmda': (nmImax, nmOmax), 'ampa': (amImax, amOmax)}
+        
+        elif isinstance(synapse.psd, GlyPSD) and len(synapse.psd.all_psd) > 0:
+            # find a psd with ampa and nmda currents
+            glyImax = 0
+            glyOmax = 0
+            for i in range(len(self.all_psd)):
+                imax = np.abs(self['iGLY%03d'%i]).max()
+                omax = np.abs(self['opGLY%03d'%i]).max()
+            
+            return {'gly': (glyImax, glyOmax)}
 
     def analyze_events(self):
         """
@@ -376,13 +392,19 @@ class SynapseTest(Protocol):
         #
         print ""
         oprob = self.open_probability()
-        print 'Max NMDAR Open Prob: %f   AMPA Open Prob: %f' % (oprob['op_nmda'], oprob['op_ampa'])
-        nmImax, amImax = oprob['imax_nmda'], oprob['imax_ampa']
-        print 'Max NMDAR I: %f   AMPA I: %f' % (nmImax, amImax)
-        if nmImax + amImax != 0.0:
-            print '   N/(N+A): %f\n' % (nmImax / (nmImax + amImax))
+        if 'gly' in oprob:
+            glyImax, glyOPmax = oprob['gly']
+            print 'Max GLYR Open Prob: %f' % (glyOPmax,)
+            print 'Max GLYR I: %f' % (glyImax,)
         else:
-            print "   (no NMDA/AMPA current; release might have failed)"
+            nmImax, nmOPmax = oprob['nmda']
+            amImax, amOPmax = oprob['ampa']
+            print 'Max NMDAR Open Prob: %f   AMPA Open Prob: %f' % (nmOPmax, amOPmax)
+            print 'Max NMDAR I: %f   AMPA I: %f' % (nmImax, amImax)
+            if nmImax + amImax != 0.0:
+                print '   N/(N+A): %f\n' % (nmImax / (nmImax + amImax))
+            else:
+                print "   (no NMDA/AMPA current; release might have failed)"
 
 
         #
