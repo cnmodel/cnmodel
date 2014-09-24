@@ -42,3 +42,5 @@ tstellate.resolve_inputs(depth=2)
 # TODO: 
 #   - specify which parameters to record (Vm, spike times, per-synapse currents, etc)
 #   - run simulation and display / analyze results
+#   - add examples of modifying circuitry to search parameter spaces, test
+#     hypotheses, etc.
