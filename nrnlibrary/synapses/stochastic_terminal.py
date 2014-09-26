@@ -1,6 +1,7 @@
 from neuron import h
 
 from .terminal import Terminal
+from ..util import random
 
 # utility class to create parameter lists... 
 # create like: p = Params(abc=2.0, defg = 3.0, lunch='sandwich')
@@ -77,7 +78,7 @@ class StochasticTerminal(Terminal):
         # Create point process to simulate multiple independent release zones.
         relsite = h.MultiSiteSynapse(0.5, sec=terminal)
         relsite.nZones = nzones
-        relsite.rseed = 2 # int(np.random.random_integers(1,1024))
+        relsite.rseed = random.current_seed()  # use global random seed
         relsite.latency = stochastic_pars.latency
         relsite.latstd = stochastic_pars.LN_std
         if debug is True:
