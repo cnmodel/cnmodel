@@ -83,9 +83,9 @@ class GluPSD(PSD):
             ampa_psd[k].Erev = eRev # set the reversal potential
             
             # also adjust the nmda receptors at the same synapse
-            nmda_psd[k].gmax = gmax * v
+            gNAR = nmda_ampa_ratio * self.AN_Po_Ratio * self.NMDARatio
+            nmda_psd[k].gmax = gmax * v * gNAR
             nmda_psd[k].Erev = eRev
-            nmda_psd[k].gNAR = nmda_ampa_ratio * self.AN_Po_Ratio * self.NMDARatio
             nmda_psd[k].vshift = 0
         
         par = list(par)
