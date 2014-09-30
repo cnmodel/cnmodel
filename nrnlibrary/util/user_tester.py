@@ -88,6 +88,7 @@ class UserTester(object):
         print "\n=== New test results for %s: ===\n" % self.key
         pprint.pprint(info)
         win = pg.DiffTreeWidget()
+        win.resize(800, 800)
         win.setData(expect, info)
         win.show()
         print "Store new test results? [y/n]",

@@ -227,12 +227,15 @@ class IVCurve(Protocol):
     
     def input_resistance_tau(self, vmin=-70, imax=0):
         """
-        Estimate resting input resistance.
+        Estimate resting input resistance and time constant.
         :param vmin: minimum voltage to use in computation
         :param imax: maximum current to use in computation.
-        Return (slope, intercept) of linear regression for subthreshold traces
-        near rest.
-        Include traces in which spikes appear only AFTER the pulse using spike_filter
+        Return dict containing 'slope' and 'intercept' keys giving linear 
+        regression for subthreshold traces near rest, and 'tau'
+        giving two membrane time constants and their associated amplitudes.
+        
+        Analyzes only traces hyperpolarizing pulse traces near rest, with no 
+        spikes.
         """
         Vss = self.steady_vm()
         Icmd = self.current_cmd
@@ -247,6 +250,8 @@ class IVCurve(Protocol):
         smask = nSpikes > 0
         mask = vmask & imask & ~smask
         if mask.sum() < 2:
+            print("WARNING: Not enough traces to do linear reggression in "
+                  "IVCurve.input_resistance_tau().")
             print('{0:<15s}: {1:s}'.format('vss', ', '.join(['{:.2f}'.format(v) for v in Vss])))
             print('{0:<15s}: {1:s}'.format('vmask', repr(vmask.astype(int))))
             print('{0:<15s}: {1:s} '.format('imask', repr(imask.astype(int))))
@@ -267,21 +272,32 @@ class IVCurve(Protocol):
         tx = self.time_values[peakStart:peakStop] - self.durs[0]
         for i, m in enumerate(mask):
             if m and (self.rest_vm() - Vss[i]) > 1:
-                print 'i: %d  v: %f' % (i, Vss[i])
-                fitParams, fitCovariances = scipy.optimize.curve_fit(self.expFunc,
-                                                                     tx, self.voltage_traces[i][peakStart:peakStop],
-                                                                     p0 = [vmin, 2., 2., 5., 15.], maxfev = 5000)
+                #print 'i: %d  v: %f' % (i, Vss[i])
+                try:
+                    def expFunc(t, d, a1, r1, a2, r2):
+                        return d + a1*np.exp(-t/r1) + a2*np.exp(-t/r2)
+                    trace = self.voltage_traces[i][peakStart:peakStop]
+                    dif = trace.max() - trace.min()
+                    p0 = [trace.min(), dif*0.5, 2., dif*0.5, 15.]
+                    fitParams, fitCovariances = scipy.optimize.curve_fit(
+                        expFunc, tx, trace, p0=p0, maxfev=5000)
+                except RuntimeError:
+                    print "WARNING: Exponential fits failed in IVCurve.input_resistance_tau()."
+                    plt = pg.plot(tx, self.voltage_traces[i][peakStart:peakStop])
+                    plt.plot(tx, expFunc(tx, *p0), pen='r')
+                    fitParams = np.zeros(5)
                 fits.append(fitParams)
+        amp1 = np.mean([f[1] for f in fits])
         tau1 = np.mean([f[2] for f in fits])
-        print "tau1/amp1: ", tau1, [f[2] for f in fits], [a[1] for a in fits]
+        #print "tau1/amp1: ", tau1, [f[2] for f in fits], [a[1] for a in fits]
+        amp2 = np.mean([f[3] for f in fits])
         tau2 = np.mean([f[4] for f in fits])
-        print 'tau2/amp2: ', tau2, [f[4] for f in fits], [a[3] for a in fits]
+        #print 'tau2/amp2: ', tau2, [f[4] for f in fits], [a[3] for a in fits]
 
-        return slope, intercept, [tau1, tau2]
+        return {'slope': slope, 
+                'intercept': intercept, 
+                'tau': ((tau1, amp1), (tau2, amp2))}
 
-
-    def expFunc(self, t, d, a1, r1, a2, r2):
-        return d + a1*np.exp(-t/r1) + a2*np.exp(-t/r2)
 
     def show(self, cell=None):
         """
@@ -343,8 +359,11 @@ class IVCurve(Protocol):
         
         
         # Print Rm, Vrest 
-        (s, i, tau) = self.input_resistance_tau()
-        print ("\nMembrane resistance (chord): {0:0.1f} MOhm  Taum1: {1:0.2f}  Taum2: {2:0.2f}".format(s, tau[0], tau[1]))
+        rmtau = self.input_resistance_tau()
+        s = rmtau['slope']
+        i = rmtau['intercept']
+        tau = rmtau['tau']
+        print ("\nMembrane resistance (chord): {0:0.1f} MOhm  Taum1: {1:0.2f}  Taum2: {2:0.2f}".format(s, tau[0][0], tau[1][0]))
         ivals = np.array([Icmd.min(), Icmd.max()])
         vvals = s * ivals + i
         line = pg.QtGui.QGraphicsLineItem(ivals[0], vvals[0], ivals[1], vvals[1])

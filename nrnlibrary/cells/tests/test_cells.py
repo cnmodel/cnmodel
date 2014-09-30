@@ -63,18 +63,19 @@ class CellTester(UserTester):
     def run_test(self, cell):
         # run I/V test on cell
         iv = IVCurve()
+        self.iv = iv
         iv.run(cell.i_test_range, cell)
-        iv.show(cell)
+        if self.audit:
+            iv.show(cell)
         
         info = dict(
             icmd=iv.current_cmd,
             spikes=iv.spike_times(),
             rmp=iv.rest_vm(),
-            rm=iv.input_resistance(),
+            rm_taum=iv.input_resistance_tau(),
             vpeak=iv.peak_vm(),
             vss=iv.steady_vm(),
             )
-        self.iv = iv
         return info
     
     def assert_test_info(self, *args, **kwds):
