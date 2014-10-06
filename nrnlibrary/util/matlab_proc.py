@@ -5,10 +5,11 @@ Simple system for interfacing with a MATLAB process using stdin/stdout pipes.
 from process import Process
 from StringIO import StringIO
 import scipy.io
+import numpy as np
 import tempfile
 import os
 
-class MatlabProc(Process):
+class MatlabProcess(Process):
     """ This class starts a new matlab process, allowing remote control of
     the interpreter and transfer of data between python and matlab.
     """
@@ -47,13 +48,17 @@ class MatlabProc(Process):
             fprintf('\n::err\n');
             fprintf(['::message:', err.message, '\n']);
             fprintf(['::identifier:', err.identifier, '\n']);
+            for i = 1:length(err.stack)
+                frame = err.stack(i,1);
+                fprintf(['::stack:', frame.name, ' in ', frame.file, ' line ', frame.line]);
+            end
         end
     end
     """
     
-    def __init__(self, executable='matlab'):
+    def __init__(self, executable='matlab', **kwds):
         self.cmd_index = 0
-        Process.__init__(self, [executable, '-nodesktop', '-nosplash'])
+        Process.__init__(self, [executable, '-nodesktop', '-nosplash'], **kwds)
         # Wait a moment for MATLAB to start up, 
         # read the version string
         while True:
@@ -62,7 +67,16 @@ class MatlabProc(Process):
                 # next line is version info
                 self.version_str = self.stdout.readline().strip()
                 break
+            
+        # start input loop
         self.stdin.write(self._bootstrap)
+        
+        # wait for input loop to be ready
+        while True:
+            line = self.stdout.readline()
+            if line == '::ready\n':
+                break
+            
         
     def __call__(self, cmd, timeout=5.0):
         """
@@ -88,11 +102,10 @@ class MatlabProc(Process):
         for i in reversed(range(len(output))):
             line = output[i]
             if line == '::ok\n':
-                return output[:i]
+                return ''.join(output[:i])
             elif line == '::err\n':
                 raise MatlabError(output[i+1:])
             
-        print output
         raise RuntimeError("No success/failure code found in output (printed above).")
 
     def get(self, name):
@@ -175,44 +188,77 @@ class MatlabCallable(object):
     def __init__(self, proc, name):
         self._proc = proc
         self._name = name
+        self._nargout = None
+
+    @property
+    def nargout(self):
+        """ Number of output arguments for this function.
+        
+        For some functions, requesting nargout() will fail. In these cases,
+        the nargout property must be set manually before calling the function.
+        """
+        if self._nargout is None:
+            nargvar = "%s_nargs_%d" % (self._name, id(self))
+            self._proc("%s = nargout('%s');" % (nargvar, self._name))
+            self._nargout = self._proc.get(nargvar)
+        return self._nargout
+    
+    @nargout.setter
+    def nargout(self, n):
+        self._nargout = n
         
     def __call__(self, *args):
         # store args to temporary variables
         argnames = ['%s_%d_%d' % (self._name, i, id(self)) for i in range(len(args))]
-        retname = "%s_rval_%d" % (self._name, id(self))
         args = dict(zip(argnames, args))
         self._proc.set(**args)
         
-        # invoke function, fetch return value
-        cmd = "%s = %s(%s)" % (retname, self._name, ','.join(argnames))
-        self._proc(cmd)
-        ret = self._proc.get(retname)
+        try:
+            # get number of output args
+            nargs = self.nargout
         
-        # clear all temp variables
-        cmd = "clear %s" % (' '.join(argnames + [retname]))
-        self._proc(cmd)
+            # invoke function, fetch return value(s)
+            retvars = ["%s_rval_%d_%d" % (self._name, i, id(self)) for i in range(nargs)]
+            cmd = "[%s] = %s(%s)" % (','.join(retvars), self._name, ','.join(argnames))
+            self._proc(cmd)
+            ret = [self._proc.get(var) for var in retvars]
+            if len(ret) == 1:
+                ret = ret[0]
+            return ret
+        
+        finally:
+            pass
+            # clear all temp variables
+            #cmd = "clear %s" % (' '.join(argnames + retvars + [nargvar]))
+            #self._proc(cmd)
         
         return ret
         
 
 class MatlabError(Exception):
     def __init__(self, output):
-        fields = ['message', 'identifier']
         for line in output:
-            for field in fields:
-                key = '::%s:'%field
-                if line.startswith(key):
-                    setattr(self, field, line[len(key):].strip())
+            self.stack = []
+            if line.startswith('::message:'):
+                self.message = line[10:].strip()
+            elif line.startswith('::identifier:'):
+                self.identifier = line[13:].strip()
+            elif line.startswith('::stack:'):
+                self.stack.append(line[8:].strip())
 
     def __repr__(self):
         return "MatlabError(message=%s, identifier=%s)" % (repr(self.message), repr(self.identifier))
     
     def __str__(self):
-        return self.message
+        if len(self.stack) > 0:
+            stack = "\nMATLAB Stack:\n%s\nMATLAB Error: " % '\n'.join(self.stack) 
+            return stack + self.message
+        else:
+            return self.message
 
 
 if __name__ == '__main__':
-    p = MatlabProc()
+    p = MatlabProcess()
     io = StringIO()
     scipy.io.savemat(io, {'x': 1})
     io.seek(0)

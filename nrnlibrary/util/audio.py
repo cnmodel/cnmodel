@@ -9,13 +9,18 @@ import numpy as np
 
 def modtone(t, rt, Fs, F0, dBSPL, FMod, DMod, phaseshift):
     """
-    Apply modulation and ramps to a waveform.
+    Generate an amplitude-modulated tone with linear ramps.
     
+    t: waveform time values
+    rt: ramp duration
+    Fs: sample rate
+    F0: tone frequency
     FMod : modulation frequency
     DMod : modulation depth percent
     phaseshift : modulation phase
-    """
-    """
+    
+    Original: 
+    
     function [pin, env] = modtone(t, rt, Fs, F0, dBSPL, FMod, DMod, phaseshift)
         % fprintf(1, 'Phase: %f\n', phaseshift)
         irpts = rt*Fs;
@@ -46,8 +51,9 @@ def modtone(t, rt, Fs, F0, dBSPL, FMod, DMod, phaseshift):
 def ramp(pin, mxpts, irpts):
     """
     Apply linear ramps to *pin*.
-    """
-    """
+    
+    Original: 
+    
     function [out] = ramp(pin, mxpts, irpts)
         out = pin;
         out(1:irpts)=pin(1:irpts).*(0:(irpts-1))/irpts;
@@ -63,6 +69,19 @@ def ramp(pin, mxpts, irpts):
 
 def pipnoise(t, rt, Fs, dBSPL, pip_dur, pip_start):
     """
+    Create a waveform with multiple sine-ramped noise pips. Output is in 
+    Pascals.
+    
+    t: array of time values
+    rt: ramp duration 
+    Fs: sample rate
+    dBSPL: maximum sound pressure level of pip
+    pip_dur: duration of pip including ramps
+    pip_start: list of starting times for multiple pips
+    
+    
+    Original: 
+    
     function [pin, mask] = pipnoise(t, rt, Fs, dBSPL, pip_dur, pip_start)
         % note factor of 2 in the scaling here: this is to make the signal level
         % match the "100%" modulation of the modtone above, with the same SPL.
@@ -87,7 +106,7 @@ def pipnoise(t, rt, Fs, dBSPL, pip_dur, pip_start):
     """
     irpts = rt * Fs
     mxpts = len(t)
-    pin = np.sqrt(2) * 20e-6 * 10^(dBSPL/20) * np.random.randn(len(t)) * 2  # unramped stimulus
+    pin = np.sqrt(2) * 20e-6 * 10**(dBSPL/20) * np.random.randn(len(t)) * 2  # unramped stimulus
     mask = np.zeros(len(t))
     for i in range(len(pip_start)):
         ts = np.floor(pip_start[i] * Fs)
@@ -96,14 +115,28 @@ def pipnoise(t, rt, Fs, dBSPL, pip_dur, pip_start):
             te = mxpts
         mask[ts:te] = 1
         ramp = np.linspace(0, 1, irpts)
-        mask[ts:ts+irpts-1] = np.sin(0.5*np.pi * ramp)**2
-        mask[te-irpts:te] = np.sin(pi/2 - 0.5*np.pi * ramp)**2
+        mask[ts:ts+irpts] = np.sin(0.5*np.pi * ramp)**2
+        mask[te-irpts:te] = np.sin(np.pi/2 - 0.5*np.pi * ramp)**2
     pin *= mask
     return pin
         
    
-def piptone(t, rt, Fs, F0, dBSPL, pip_dur, pip_start)
+def piptone(t, rt, Fs, F0, dBSPL, pip_dur, pip_start):
     """
+    Create a waveform with multiple sine-ramped tone pips. Output is in 
+    Pascals.
+    
+    t: array of time values
+    rt: ramp duration 
+    Fs: sample rate
+    F0: pip frequency
+    dBSPL: maximum sound pressure level of pip
+    pip_dur: duration of pip including ramps
+    pip_start: list of starting times for multiple pips
+    
+    
+    Original: 
+    
     function [pin, mask] = piptone(t, rt, Fs, F0, dBSPL, pip_dur, pip_start)
         % note factor of 2 in the scaling here: this is to make the signal level
         % match the "100%" modulation of the modtone above, with the same SPL.
@@ -128,7 +161,7 @@ def piptone(t, rt, Fs, F0, dBSPL, pip_dur, pip_start)
     """
     irpts = rt * Fs
     mxpts = len(t)
-    pin = np.sqrt(2) * 20e-6 * 10^(dBSPL/20) * (np.sin((2*pi*F0*t) - np.pi/2))*2  # unramped stimulus
+    pin = np.sqrt(2) * 20e-6 * 10**(dBSPL/20) * (np.sin((2*np.pi*F0*t) - np.pi/2))*2  # unramped stimulus
     mask = np.zeros(len(t))
     for i in range(len(pip_start)):
         ts = np.floor(pip_start[i] * Fs)
@@ -137,8 +170,8 @@ def piptone(t, rt, Fs, F0, dBSPL, pip_dur, pip_start)
             te = mxpts
         mask[ts:te] = 1
         ramp = np.linspace(0, 1, irpts)
-        mask[ts:ts+irpts-1] = np.sin(0.5*np.pi * ramp)**2
-        mask[te-irpts:te]  = np.sin(pi/2 - 0.5*np.pi * ramp)**2
+        mask[ts:ts+irpts] = np.sin(0.5*np.pi * ramp)**2
+        mask[te-irpts:te]  = np.sin(np.pi/2 - 0.5*np.pi * ramp)**2
 
     pin *= mask
     return pin

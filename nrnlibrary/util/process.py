@@ -22,21 +22,35 @@ class Process(object):
     For non-blocking reads, use proc.stdout.get_nowait() or 
     proc.stdout.get(timeout=0.1).
     """
-    def __init__(self, exec_args):
+    def __init__(self, exec_args, cwd=None):
         self.proc = Popen(exec_args, stdout=PIPE, stdin=PIPE, stderr=PIPE, 
-                          bufsize=1, close_fds=ON_POSIX, universal_newlines=True)
+                          bufsize=1, close_fds=ON_POSIX, universal_newlines=True,
+                          cwd=cwd)
         self.stdin = self.proc.stdin
-        #self.stdout = self.proc.stdout
-        #self.stderr = self.proc.stderr
         self.stdout = PipeQueue(self.proc.stdout)
         self.stderr = PipeQueue(self.proc.stderr)
         for method in ['poll', 'wait', 'send_signal', 'kill', 'terminate']:
             setattr(self, method, getattr(self.proc, method))
 
 
+class PipePrinter(object):
+    """ For debugging writes to a pipe.
+    """
+    def __init__(self, pipe):
+        self._pipe = pipe
+        
+    def __getattr__(self, attr):
+        return getattr(self._pipe, attr)
+    
+    def write(self, strn):
+        print "WRITE:" + repr(strn)
+        return self._pipe.write(strn)
+
+
 class PipeQueue(Queue):
     """
     Queue that starts a second process to monitor a PIPE for new data.
+    This is needed to allow non-blocking pipe reads.
     """
     def __init__(self, pipe):
         Queue.__init__(self)
