@@ -4,6 +4,7 @@ Test the embedded auditory nerve model with a set of tone pips.
 
 Adapted from Manis (makeANF_CF_RI.m)
 """
+import time
 import numpy as np
 import pyqtgraph as pg
 from nrnlibrary import an_model
@@ -26,30 +27,21 @@ rt = 2.5e-3 # rise/fall time in seconds
 stimdb = 65 # stimulus intensity in dB SPL
 
 # PSTH parameters
-nrep = 100            # number of stimulus repetitions (e.g., 50)
+nrep = 1000            # number of stimulus repetitions (e.g., 50)
 psthbinwidth = 0.5e-3 # binwidth in seconds
 
 t = np.arange(0, T, 1/Fs) # time vector
-mxpts = len(t)
-irpts = rt * Fs  # number of samples to ramp
+pin = audio.piptone(t, rt, Fs, F0, stimdb, T, [0])
 
-pin = np.sqrt(2) * 20e-6 * 10**(stimdb/20) * np.sin(2*np.pi*F0*t) # unramped stimulus
-pin[:irpts] *= np.linspace(0, 1, irpts) 
-pin[-irpts:] *= np.linspace(1, 0, irpts)
 
 an_model.seed_rng(34978)
-import time
+
 start = time.time()
 vihc = an_model.model_ihc(pin,CF,nrep,1/Fs,T*2,cohc,cihc,species, _transfer=False) 
 print "IHC time:", time.time() - start
 
 start = time.time()
-psth = []
-m = an_model.get_matlab()
-for i in range(1):
-    m, v, p = an_model.model_synapse(vihc,CF,nrep,1/Fs,fiberType,noiseType,implnt, _transfer=False) 
-    psth.append(p.get())
-psth = np.concatenate(psth, axis=0).sum(axis=0)
+m, v, psth = an_model.model_synapse(vihc,CF,nrep,1/Fs,fiberType,noiseType,implnt)
 print "Syn time:", time.time() - start
 
 win = pg.GraphicsWindow()
@@ -57,14 +49,16 @@ p1 = win.addPlot(title='Input Stimulus')
 p1.plot(t, pin)
 
 p2 = win.addPlot(col=0, row=1, title='IHC voltage')
+p2.setXLink(p1)
 vihc = vihc.get()[0]
 vihc = vihc[:len(vihc) // nrep]
 t = np.arange(len(vihc)) * 1e-5
 p2.plot(t, vihc)
 
 p3 = win.addPlot(col=0, row=2, title='PSTH')
+p3.setXLink(p2)
 ds = 100
 size = psth.size // ds
 psth = psth[:size*ds].reshape(size, ds).sum(axis=1)
 t = np.arange(len(psth)) * 1e-5 * ds
-p3.plot(t, psth)
+p3.plot(t, psth[:-1], stepMode=True, fillLevel=0, fillBrush='w')

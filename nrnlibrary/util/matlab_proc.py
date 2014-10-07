@@ -9,7 +9,7 @@ import numpy as np
 import tempfile
 import os, signal
 
-class MatlabProcess(Process):
+class MatlabProcess(object):
     """ This class starts a new matlab process, allowing remote control of
     the interpreter and transfer of data between python and matlab.
     """
@@ -36,7 +36,7 @@ class MatlabProcess(Process):
             if strcmp(line, '::cmd_done')
                 break
             end
-            cmd = [cmd, line, sprintf('\n')]
+            cmd = [cmd, line, sprintf('\n')];
         end
         
         % Evaluate command
@@ -57,23 +57,23 @@ class MatlabProcess(Process):
     """
     
     def __init__(self, executable='matlab', **kwds):
-        self._refs = {}
-        Process.__init__(self, [executable, '-nodesktop', '-nosplash'], **kwds)
+        self.__refs = {}
+        self.__proc = Process([executable, '-nodesktop', '-nosplash'], **kwds)
         # Wait a moment for MATLAB to start up, 
         # read the version string
         while True:
-            line = self.stdout.readline()
+            line = self.__proc.stdout.readline()
             if 'Copyright' in line:
                 # next line is version info
-                self.version_str = self.stdout.readline().strip()
+                self.__version_str = self.__proc.stdout.readline().strip()
                 break
             
         # start input loop
-        self.stdin.write(self._bootstrap)
+        self.__proc.stdin.write(self._bootstrap)
         
         # wait for input loop to be ready
         while True:
-            line = self.stdout.readline()
+            line = self.__proc.stdout.readline()
             if line == '::ready\n':
                 break
         
@@ -85,15 +85,15 @@ class MatlabProcess(Process):
         if cmd[-1] != '\n':
             cmd += '\n'
         cmd += "::cmd_done\n"
-        self.stdout.read()
-        self.stdin.write(cmd)
+        self.__proc.stdout.read()
+        self.__proc.stdin.write(cmd)
         
         return self._parse_result()
     
     def _parse_result(self):
         output = []
         while True:
-            line = self.stdout.readline()
+            line = self.__proc.stdout.readline()
             if line == '::ready\n':
                 break
             output.append(line)
@@ -107,7 +107,7 @@ class MatlabProcess(Process):
             
         raise RuntimeError("No success/failure code found in output (printed above).")
 
-    def get(self, name):
+    def _get(self, name):
         """
         Transfer an object from MATLAB to Python.
         """
@@ -118,7 +118,7 @@ class MatlabProcess(Process):
         os.remove(tmp)
         return objs[name]
 
-    def set(self, **kwds):
+    def _set(self, **kwds):
         """
         Transfer an object from Python to MATLAB and assign it to the given
         variable name.
@@ -128,7 +128,7 @@ class MatlabProcess(Process):
         self("load('%s')" % tmp)
         os.remove(tmp)
                 
-    def get_via_pipe(self, name):
+    def _get_via_pipe(self, name):
         """
         Transfer an object from MATLAB to Python.
         
@@ -147,7 +147,7 @@ class MatlabProcess(Process):
         objs = scipy.io.loadmat(io)
         return objs[name]
 
-    def set_via_pipe(self, **kwds):
+    def _set_via_pipe(self, **kwds):
         """
         Transfer an object from Python to MATLAB and assign it to the given
         variable name.
@@ -158,17 +158,17 @@ class MatlabProcess(Process):
         scipy.io.savemat(io, kwds)
         io.seek(0)
         strn = io.read()
-        self.stdout.read()
-        self.stdin.write("load('stdio')\n::cmd_done\n")
+        self.__proc.stdout.read()
+        self.__proc.stdin.write("load('stdio')\n::cmd_done\n")
         while True:
-            line = self.stdout.readline()
+            line = self.__proc.stdout.readline()
             if line == 'ack load stdio\n':
                 # now it is safe to send data
                 break
-        self.stdin.write(strn)
-        self.stdin.write('\n')
+        self.__proc.stdin.write(strn)
+        self.__proc.stdin.write('\n')
         while True:
-            line = self.stdout.readline()
+            line = self.__proc.stdout.readline()
             if line == 'ack load finished\n':
                 break
         self._parse_result()
@@ -184,7 +184,7 @@ class MatlabProcess(Process):
                     pass
 
     def __getattr__(self, name):
-        if name not in self._refs:
+        if name not in self.__refs:
             ex = self.exist(name)
             if ex == 0:
                 raise AttributeError("No object named '%s' in matlab workspace." % name)
@@ -192,17 +192,20 @@ class MatlabProcess(Process):
                 r = MatlabFunction(self, name)
             elif ex == 1:
                 r = self._mkref(name)
-            self._refs[name] = r
-        return self._refs[name]
+            self.__refs[name] = r
+        return self.__refs[name]
         
     def _mkref(self, name):
-        assert name not in self._refs
+        assert name not in self.__refs
         ref = MatlabReference(self, name)
-        self._refs[name] = ref
+        self.__refs[name] = ref
         return ref
     
-    #def __setattr__(self, name, value):
-        #self.set(**{name:value})
+    def __setattr__(self, name, value):
+        if name.startswith('_MatlabProcess__'):
+            object.__setattr__(self, name, value)
+        else:
+            self._set(**{name:value})
 
 
 class MatlabReference(object):
@@ -217,7 +220,7 @@ class MatlabReference(object):
         return self._name
 
     def get(self):
-        return self._proc.get(self._name)
+        return self._proc._get(self._name)
 
     def clear(self):
         self._proc("clear %s;" % self._name)
@@ -243,12 +246,9 @@ class MatlabFunction(object):
         the nargout property must be set manually before calling the function.
         """
         if self._nargout is None:
-            nargvar = "%s_nargs" % self._name
-            try:
-                self._proc("%s = nargout('%s');" % (nargvar, self._name))
-                self._nargout = self._proc.get(nargvar)
-            finally:
-                self._proc("clear %s;" % nargvar)
+            cmd = "fprintf('%%d\\n', nargout('%s'));" % (self._name)
+            ret = self._proc(cmd)
+            self._nargout = int(ret.strip())
         return self._nargout
     
     @nargout.setter
@@ -284,7 +284,7 @@ class MatlabFunction(object):
                 argnames.append(argname)
                 upload[argname] = arg
         if len(upload) > 0:
-            self._proc.set(**upload)
+            self._proc._set(**upload)
         
         try:
             # get number of output args
@@ -295,7 +295,7 @@ class MatlabFunction(object):
             cmd = "[%s] = %s(%s);" % (','.join(retvars), self._name, ','.join(argnames))
             self._proc(cmd)
             if _transfer:
-                ret = [self._proc.get(var) for var in retvars]
+                ret = [self._proc._get(var) for var in retvars]
             else:
                 ret = [self._proc._mkref(name) for name in retvars]
             if len(ret) == 1:
@@ -306,8 +306,8 @@ class MatlabFunction(object):
         finally:
             # clear all temp variables
             clear = list(upload.keys())
-            if _transfer:
-                clear += retvars
+            #if _transfer:
+                #clear += retvars
             if len(clear) > 0:
                 cmd = "clear %s;" % (' '.join(clear))
                 self._proc(cmd)
