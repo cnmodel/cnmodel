@@ -15,7 +15,7 @@ def get_matlab():
     return _proc
 
 
-def model_ihc(pin, CF, nrep=1, tdres=1e-5, reptime=1, cohc=1, cihc=1, species=1):
+def model_ihc(pin, CF, nrep=1, tdres=1e-5, reptime=1, cohc=1, cihc=1, species=1, **kwds):
     """
     Return the output of model_IHC() from the AN model
     (Zilany, Bruce, Ibrahim and Carney, 2014; requires MATLAB)
@@ -47,27 +47,23 @@ def model_ihc(pin, CF, nrep=1, tdres=1e-5, reptime=1, cohc=1, cihc=1, species=1)
         Shera et al. (PNAS 2002), or "3" for human BM tuning from 
         Glasberg & Moore (Hear. Res. 1990)
     """
-    if tdres != 1e-5:
-        raise ValueError("The AN model requires a sample period of 10us (see ANmodel.m)")
-    
     # make sure pin is a row vector
     pin = pin.reshape(1, pin.size)
     
     # convert all args to double, as required by model_IHC
-    args = []
-    for arg in (pin, CF, nrep, tdres, reptime, cohc, cihc, species):
-        args.append(np.array(arg).astype(np.double))
+    args = [pin]
+    for arg in (CF, nrep, tdres, reptime, cohc, cihc, species):
+        if not isinstance(arg, matlab_proc.MatlabReference):
+            arg = float(arg)
+        args.append(arg)
     
     ml = get_matlab()
     fn = ml.model_IHC
     fn.nargout = 1  # necessary because nargout(model_IHC) fails
-    ret = fn(*args)
-    
-    # flatten output shape
-    return ret.reshape(ret.size)
+    return fn(*args, **kwds)
 
 
-def model_synapse(vihc, CF, nrep=1, tdres=1e-5, fiberType=0, noiseType=1, implnt=1):
+def model_synapse(vihc, CF, nrep=1, tdres=1e-5, fiberType=0, noiseType=1, implnt=1, **kwds):
     """
     Return the output of model_Synapse() from the AN model
     (Zilany, Bruce, Ibrahim and Carney, 2014; requires MATLAB)
@@ -99,27 +95,22 @@ def model_synapse(vihc, CF, nrep=1, tdres=1e-5, fiberType=0, noiseType=1, implnt
         "Approxiate" or "actual" implementation of the power-law functions: 
         "0" for approx. and "1" for actual implementation
     """
-    if tdres != 1e-5:
-        raise ValueError("The AN model requires a sample period of 10us (see ANmodel.m)")
-    if fiberType == 0:
-        raise ValueError("Must specify fiberType of 1, 2, or 3.")
-    
-    # make sure vihc is a row vector
-    vihc = vihc.reshape(1, vihc.size)
+    # make sure vihc is a row vector (unless it is a reference to a matlab variable)
+    if isinstance(vihc, np.ndarray):
+        vihc = vihc.reshape(1, vihc.size)
 
     # convert all args to double, as required by model_Synapse
-    args = []
-    for arg in (vihc, CF, nrep, tdres, fiberType, noiseType, implnt):
-        args.append(np.array(arg).astype(np.double))
+    args = [vihc]
+    for arg in (CF, nrep, tdres, fiberType, noiseType, implnt):
+        if not isinstance(arg, matlab_proc.MatlabReference):
+            arg = float(arg)
+        args.append(arg)
     
     ml = get_matlab()
     fn = ml.model_Synapse
     fn.nargout = 3  # necessary because nargout(model_IHC) fails
-    ret = fn(*args)
+    return fn(*args, **kwds)
     
-    # flatten output shapes
-    return tuple([r.reshape(r.size) for r in ret])
-
 
 def seed_rng(seed):
     """

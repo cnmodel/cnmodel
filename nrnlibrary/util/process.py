@@ -2,7 +2,7 @@
 Utility class for spawning and controlling CLI processes. 
 See: http://stackoverflow.com/questions/375427/non-blocking-read-on-a-subprocess-pipe-in-python
 """
-import sys
+import sys, time
 from subprocess import PIPE, Popen
 from threading  import Thread
 
@@ -27,6 +27,7 @@ class Process(object):
                           bufsize=1, close_fds=ON_POSIX, universal_newlines=True,
                           cwd=cwd)
         self.stdin = self.proc.stdin
+        #self.stdin = PipePrinter(self.proc.stdin)
         self.stdout = PipeQueue(self.proc.stdout)
         self.stderr = PipeQueue(self.proc.stderr)
         for method in ['poll', 'wait', 'send_signal', 'kill', 'terminate']:
@@ -78,4 +79,21 @@ class PipeQueue(Queue):
         return out
         
     def readline(self, timeout=None):
-        return self.get(timeout=timeout)
+        """ Read a single line from the queue.
+        """
+        # we break this up into multiple short reads to allow keyboard 
+        # interrupts
+        start = time.time()
+        ret = ""
+        while True:
+            if timeout is not None:
+                remaining = start + timeout - time.time()
+                if remaining <= 0:
+                    return ""
+            else:
+                remaining = 1
+            
+            try:
+                return self.get(timeout=min(0.1, remaining))
+            except Empty:
+                pass

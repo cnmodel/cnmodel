@@ -26,7 +26,7 @@ rt = 2.5e-3 # rise/fall time in seconds
 stimdb = 65 # stimulus intensity in dB SPL
 
 # PSTH parameters
-nrep = 100             # number of stimulus repetitions (e.g., 50)
+nrep = 100            # number of stimulus repetitions (e.g., 50)
 psthbinwidth = 0.5e-3 # binwidth in seconds
 
 t = np.arange(0, T, 1/Fs) # time vector
@@ -37,14 +37,27 @@ pin = np.sqrt(2) * 20e-6 * 10**(stimdb/20) * np.sin(2*np.pi*F0*t) # unramped sti
 pin[:irpts] *= np.linspace(0, 1, irpts) 
 pin[-irpts:] *= np.linspace(1, 0, irpts)
 
-vihc = an_model.model_ihc(pin,CF,nrep,1/Fs,T*2,cohc,cihc,species) 
-meanrate, varrate, psth = an_model.model_synapse(vihc,CF,nrep,1/Fs,fiberType,noiseType,implnt) 
+an_model.seed_rng(34978)
+import time
+start = time.time()
+vihc = an_model.model_ihc(pin,CF,nrep,1/Fs,T*2,cohc,cihc,species, _transfer=False) 
+print "IHC time:", time.time() - start
+
+start = time.time()
+psth = []
+m = an_model.get_matlab()
+for i in range(1):
+    m, v, p = an_model.model_synapse(vihc,CF,nrep,1/Fs,fiberType,noiseType,implnt, _transfer=False) 
+    psth.append(p.get())
+psth = np.concatenate(psth, axis=0).sum(axis=0)
+print "Syn time:", time.time() - start
 
 win = pg.GraphicsWindow()
 p1 = win.addPlot(title='Input Stimulus')
 p1.plot(t, pin)
 
 p2 = win.addPlot(col=0, row=1, title='IHC voltage')
+vihc = vihc.get()[0]
 vihc = vihc[:len(vihc) // nrep]
 t = np.arange(len(vihc)) * 1e-5
 p2.plot(t, vihc)

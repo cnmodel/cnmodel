@@ -14,7 +14,7 @@ T  = 50e-3;  % stimulus duration in seconds
 rt = 2.5e-3; % rise/fall time in seconds
 stimdb = 65; % stimulus intensity in dB SPL
 % PSTH parameters
-nrep = 1;               % number of stimulus repetitions (e.g., 50);
+nrep = 100;               % number of stimulus repetitions (e.g., 50);
 psthbinwidth = 0.5e-3; % binwidth in seconds;
 
 t = 0:1/Fs:T-1/Fs; % time vector
