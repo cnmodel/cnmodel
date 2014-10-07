@@ -199,8 +199,11 @@ class MatlabCallable(object):
         """
         if self._nargout is None:
             nargvar = "%s_nargs_%d" % (self._name, id(self))
-            self._proc("%s = nargout('%s');" % (nargvar, self._name))
-            self._nargout = self._proc.get(nargvar)
+            try:
+                self._proc("%s = nargout('%s');" % (nargvar, self._name))
+                self._nargout = self._proc.get(nargvar)
+            finally:
+                self._proc("clear %s" % nargvar)
         return self._nargout
     
     @nargout.setter
@@ -227,10 +230,9 @@ class MatlabCallable(object):
             return ret
         
         finally:
-            pass
             # clear all temp variables
-            #cmd = "clear %s" % (' '.join(argnames + retvars + [nargvar]))
-            #self._proc(cmd)
+            cmd = "clear %s" % (' '.join(argnames + retvars))
+            self._proc(cmd)
         
         return ret
         
