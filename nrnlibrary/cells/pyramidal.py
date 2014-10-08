@@ -44,7 +44,10 @@ class PyramidalKanold(Pyramidal, Cell):
 
         self.mechanisms = ['napyr', 'kdpyr', 'kif', 'kis', 'ihpyr', 'ihvcn', 'leak', 'kcnq']
         for mech in self.mechanisms:
-            soma.insert(mech)
+            try:
+                soma.insert(mech)
+            except ValueError:
+                print 'Mechanism %s not found' % mech
         soma().kif.kif_ivh = -89.6
         self.add_section(soma, 'soma')
         self.species_scaling(silent=False, species=species, type=type)  # set the default type I-c  cell parameters
@@ -60,15 +63,17 @@ class PyramidalKanold(Pyramidal, Cell):
             soma().napyr.gbar = nstomho(350, self.somaarea)
             #soma().pyr.gnapbar = 0.0
             soma().kdpyr.gbar = nstomho(80, self.somaarea) # used to be 20?
+            soma().kcnq.gbar = 0 # nstomho(2, self.refarea)  # pyramidal cells have kcnq: Li et al, 2011 (Thanos)
             soma().kif.gbar = nstomho(150, self.somaarea)
             soma().kis.gbar = nstomho(40, self.somaarea)
-            soma().ihpyr.gbar = nstomho(3, self.somaarea)
-            soma().ihvcn.gbar = 0. # nstomho(3, self.somaarea)
+            soma().ihpyr.gbar = nstomho(0, self.somaarea)
+            soma().ihvcn.gbar = nstomho(2.8, self.somaarea)
             soma().leak.gbar = nstomho(2.8, self.somaarea)
-            soma().leak.erev = -57.7  # override default values in cell.py
+            soma().leak.erev = -62  # override default values in cell.py
             soma().ena = 50.0
             soma().ek = -81.5
             soma().ihpyr.eh = -43
+            soma().ihvcn.eh = -43
 
         elif species == 'rat' and type == 'II':  # canonical K&M2001 model cell
             self.c_m = 4.0

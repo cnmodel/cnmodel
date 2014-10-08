@@ -4,6 +4,7 @@ import scipy
 import scipy.integrate
 import scipy.stats
 import scipy.optimize
+import nrnlibrary.util.expfitting as expfitting
 
 try:
     import pyqtgraph as pg
@@ -265,18 +266,41 @@ class IVCurve(Protocol):
 
         fits = []
         tx = self.time_values[peakStart:peakStop] - self.durs[0]
+        nexp = 1
+        if nexp == 2:
+            fitter = expfitting.ExpFitting(nexp=2, 
+                    initpars={'dc': vmin, 'a1': -10., 't1': 5., 'a2': 2., 'delta': 3.0},
+                    bounds={'dc': (-120, 0.), 'a1': (-50, 0.), 't1': (0.1, 25.), 'a2': (-50., 50.), 'delta': (3., 50.)}
+            )
+        elif nexp == 1:
+            fitter = expfitting.ExpFitting(nexp=1, 
+                    initpars={'dc': vmin, 'a1': 2., 't1': 5.},
+                    bounds={'dc': (-120, 0.), 'a1': (-50, 0.), 't1': (0.1, 50.)}
+            )
         for i, m in enumerate(mask):
             if m and (self.rest_vm() - Vss[i]) > 1:
-                print 'i: %d  v: %f' % (i, Vss[i])
-                fitParams, fitCovariances = scipy.optimize.curve_fit(self.expFunc,
-                                                                     tx, self.voltage_traces[i][peakStart:peakStop],
-                                                                     p0 = [vmin, 2., 2., 5., 15.], maxfev = 5000)
+                print( ' i: {0:3d}  v: {1:6.2f}'.format(i, Vss[i]))
+                # 10/9/2014: replaced with lmfit version - much more stable and has bounds control
+                #fitParams, fitCovariances = scipy.optimize.curve_fit(self.expFunc,
+                #                                                     tx, self.voltage_traces[i][peakStart:peakStop],
+                #                                                     p0 = [vmin, 2., 2., 5., 15.], maxfev = 5000)
+                
+                fitParams = fitter.fit(tx, self.voltage_traces[i][peakStart:peakStop], fitter.fitpars)
                 fits.append(fitParams)
-        tau1 = np.mean([f[2] for f in fits])
-        print "tau1/amp1: ", tau1, [f[2] for f in fits], [a[1] for a in fits]
-        tau2 = np.mean([f[4] for f in fits])
-        print 'tau2/amp2: ', tau2, [f[4] for f in fits], [a[3] for a in fits]
-
+        tau1 = np.mean([f['t1'] for f in fits])
+        dc = np.mean([f['dc'] for f in fits])
+        print ('mean dc:   {:7.3f} '.format(dc))
+        print ('mean tau1: {:7.3f}'.format(tau1))
+        print ('dc:      {:s}'.format(''.join(['{0:7.3f}  '.format(f['dc'].value) for f in fits])))
+        print ('amp1:    {:s}'.format(''.join([ '{0:7.3f}  '.format(a['a1'].value) for a in fits])))
+        print ('tau1:    {:s}'.format(''.join([ '{0:7.3f}  '.format(a['t1'].value) for a in fits])))
+        if nexp == 2:
+            tau2 = np.mean([f['delta'].value*f['t1'].value for f in fits])
+            print ('mean tau2:  {:7.3f}'.format(tau2))
+            print ('amp2:    {:s}'.format(''.join(['{:7.3f}  '.format(a['a2'].value) for a in fits])))
+            print ('tau2:    {:s}'.format(''.join(['{:7.3f}  '.format(a['t1'].value*a['delta'].value) for a in fits])))
+        else:
+            tau2 = 0.
         return slope, intercept, [tau1, tau2]
 
 

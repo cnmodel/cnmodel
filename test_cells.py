@@ -17,14 +17,14 @@ cellinfo = {'types': ['bushy', 'stellate', 'steldend', 'dstellate', 'dstellateea
             'nav': ['std', 'jsrna', 'nav11'],
             'species': ['guineapig', 'cat', 'rat', 'mouse'],
             'pulse': ['step', 'pulse']}
-ccivrange = {'bushy': (-0.5, 0.5, 0.05),
-            'stellate': (-0.2, 0.2, 0.01),
+ccivrange = {'bushy': (-0.5, 0.5, 0.025),
+            'stellate': (-0.1, 0.1, 0.005),
             'steldend': (-1.0, 1.0, 0.1),
             'dstellate': (-0.2, 0.2, 0.0125),
             'dstellateeager': (-0.6, 1.0, 0.025),
-            'sgc': (-0.3, 0.3, 0.02),
+            'sgc': (-0.3, 0.3, 0.01),
             'cartwheel': (-0.2, 0.1, 0.02),
-            'pyramidal': (-0.4, 0., 0.02),
+            'pyramidal': (-0.3, 0.2, 0.01),
             'octopus': (-3., 3., 0.2)}
 # scales holds some default scaling to use in the cciv plots
 # argument is {cellname: (xmin, xmax, IVymin, IVymax, FIspikemax,

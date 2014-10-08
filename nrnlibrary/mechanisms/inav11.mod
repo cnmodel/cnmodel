@@ -103,9 +103,9 @@ INITIAL {
     h = hinf
     s = sinf
     
-    VERBATIM
-    return 0;
-    ENDVERBATIM
+:    VERBATIM
+:    return 0;
+:    ENDVERBATIM
 }
 
 
