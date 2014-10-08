@@ -8,7 +8,7 @@ import time
 import numpy as np
 import pyqtgraph as pg
 from nrnlibrary import an_model
-from nrnlibrary.util import audio
+from nrnlibrary.util import sound
 
 # model fiber parameters
 CF    = 1.5e3   # CF in Hz   
@@ -30,22 +30,27 @@ stimdb = 65 # stimulus intensity in dB SPL
 nrep = 1000            # number of stimulus repetitions (e.g., 50)
 psthbinwidth = 0.5e-3 # binwidth in seconds
 
-t = np.arange(0, T, 1/Fs) # time vector
-pin = audio.piptone(t, rt, Fs, F0, stimdb, T, [0])
+#t = np.arange(0, T, 1/Fs) # time vector
+#pin = audio.piptone(t, rt, Fs, F0, stimdb, T, [0])
+stim = sound.TonePip(rate=Fs, duration=T, f0=F0, dbspl=stimdb, 
+                     pip_duration=T, pip_start=[0], ramp_duration=rt)
+t = stim.time
+pin = stim.sound
 
 
 an_model.seed_rng(34978)
 
 start = time.time()
-vihc = an_model.model_ihc(pin,CF,nrep,1/Fs,T*2,cohc,cihc,species, _transfer=False) 
+vihc = an_model.model_ihc(pin, CF, nrep, 1/Fs, T*2, cohc, cihc, species, _transfer=False) 
 print "IHC time:", time.time() - start
 
 start = time.time()
-m, v, psth = an_model.model_synapse(vihc,CF,nrep,1/Fs,fiberType,noiseType,implnt)
+m, v, psth = an_model.model_synapse(vihc, CF, nrep, 1/Fs, fiberType, noiseType, implnt)
 print "Syn time:", time.time() - start
 
 win = pg.GraphicsWindow()
-p1 = win.addPlot(title='Input Stimulus')
+db = stim.measure_dbspl(rt, T-rt)
+p1 = win.addPlot(title='Input Stimulus (%0.1f dBSPL)' % db)
 p1.plot(t, pin)
 
 p2 = win.addPlot(col=0, row=1, title='IHC voltage')

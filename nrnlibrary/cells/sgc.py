@@ -14,9 +14,44 @@ class SGC(Cell):
         if model == 'I':
             return SGC_TypeI(**kwds)
         else:
-            raise ValueError ('DStellate type %s is unknown', type)
+            raise ValueError ('SGC type %s is unknown', type)
+        
+    def make_terminal(self, pre_sec, post_sec, **kwds):
+        from .. import cells
+        post_cell = cells.cell_from_section(post_sec)
+        #
+        # set parameters according to the target cell type
+        #
+        
+        if isinstance(post_cell, cells.Bushy):
+            nzones, delay = 100, 0
+        elif isinstance(post_cell, cells.TStellate):
+            nzones, delay = 1, 0
+        elif isinstance(post_cell, cells.DStellate):
+            nzones, delay = 1, 0
+        else:
+            raise NotImplementedError("Cannot connect SGC to cell type %s" % 
+                                      type(post_cell))
+        
+        return synapses.StochasticTerminal(pre_sec, post_sec, nzones=nzones, delay=delay)
+        
 
-class SGC_TypeI(SGC, Cell):
+class DummySGC(SGC):
+    """ SGC class with no cell body; this cell only replays a predetermined
+    spike train.
+    """
+    def __init__(self):
+        self.soma = h.VecStim()
+        
+    def set_spiketrain(self, times):
+        """ Set the times of spikes to be replayed by the cell.
+        """
+        self._spiketrain = times
+        self._stvec = h.Vector(times)
+        self.soma.play(self._stvec)
+    
+
+class SGC_TypeI(SGC):
     """
     Spiral ganglion cell model
     """
@@ -164,22 +199,3 @@ class SGC_TypeI(SGC, Cell):
 #        print self.status['name'], self.status['type'], V, self.ix
         return np.sum([self.ix[i] for i in self.ix])
 
-    def make_terminal(self, pre_sec, post_sec, **kwds):
-        from .. import cells
-        post_cell = cells.cell_from_section(post_sec)
-        #
-        # set parameters according to the target cell type
-        #
-        
-        if isinstance(post_cell, cells.Bushy):
-            nzones, delay = 100, 0
-        elif isinstance(post_cell, cells.TStellate):
-            nzones, delay = 1, 0
-        elif isinstance(post_cell, cells.DStellate):
-            nzones, delay = 1, 0
-        else:
-            raise NotImplementedError("Cannot connect SGC to cell type %s" % 
-                                      type(post_cell))
-        
-        return synapses.StochasticTerminal(pre_sec, post_sec, nzones=nzones, delay=delay)
-        
