@@ -16,7 +16,7 @@ class Sound(object):
     """
     Base class for all sound stimulus generators.
     """
-    def __init__(self, rate, duration, **kwds):
+    def __init__(self, duration, rate=100e3, **kwds):
         self.opts = {'rate': rate, 'duration': duration}
         self.opts.update(kwds)
         self._time = None
@@ -37,7 +37,7 @@ class Sound(object):
         if self._time is None:
             self._time = np.linspace(0, self.opts['duration'], self.num_samples)
         return self._time
-    
+
     @property 
     def num_samples(self):
         """ The number of samples in the sound array.
@@ -71,6 +71,12 @@ class Sound(object):
         Generate and return the sound output. This method is defined by subclasses.
         """
         raise NotImplementedError()
+
+    def __getattr__(self, name):
+        if name in self.opts:
+            return self.opts[name]
+        else:
+            return object.__getattr__(self, name)
 
 
 class TonePip(Sound):

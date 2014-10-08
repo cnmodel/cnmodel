@@ -30,12 +30,11 @@ stimdb = 65 # stimulus intensity in dB SPL
 nrep = 1000            # number of stimulus repetitions (e.g., 50)
 psthbinwidth = 0.5e-3 # binwidth in seconds
 
-#t = np.arange(0, T, 1/Fs) # time vector
-#pin = audio.piptone(t, rt, Fs, F0, stimdb, T, [0])
 stim = sound.TonePip(rate=Fs, duration=T, f0=F0, dbspl=stimdb, 
                      pip_duration=T, pip_start=[0], ramp_duration=rt)
 t = stim.time
 pin = stim.sound
+db = stim.measure_dbspl(rt, T-rt)
 
 
 an_model.seed_rng(34978)
@@ -49,7 +48,6 @@ m, v, psth = an_model.model_synapse(vihc, CF, nrep, 1/Fs, fiberType, noiseType, 
 print "Syn time:", time.time() - start
 
 win = pg.GraphicsWindow()
-db = stim.measure_dbspl(rt, T-rt)
 p1 = win.addPlot(title='Input Stimulus (%0.1f dBSPL)' % db)
 p1.plot(t, pin)
 
@@ -60,7 +58,7 @@ vihc = vihc[:len(vihc) // nrep]
 t = np.arange(len(vihc)) * 1e-5
 p2.plot(t, vihc)
 
-p3 = win.addPlot(col=0, row=2, title='PSTH')
+p3 = win.addPlot(col=0, row=2, title='ANF PSTH')
 p3.setXLink(p2)
 ds = 100
 size = psth.size // ds

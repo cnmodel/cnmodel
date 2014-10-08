@@ -56,6 +56,8 @@ def model_ihc(pin, CF, nrep=1, tdres=1e-5, reptime=1, cohc=1, cihc=1, species=1,
         if not isinstance(arg, matlab_proc.MatlabReference):
             arg = float(arg)
         args.append(arg)
+        
+    assert reptime >= pin.size * tdres
     
     ml = get_matlab()
     fn = ml.model_IHC
