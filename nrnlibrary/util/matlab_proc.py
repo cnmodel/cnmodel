@@ -7,7 +7,8 @@ from StringIO import StringIO
 import scipy.io
 import numpy as np
 import tempfile
-import os, signal
+import os, sys, glob, signal
+
 
 class MatlabProcess(object):
     """ This class starts a new matlab process, allowing remote control of
@@ -56,9 +57,35 @@ class MatlabProcess(object):
     end
     """
     
-    def __init__(self, executable='matlab', **kwds):
+    def __init__(self, executable=None, **kwds):
         self.__refs = {}
-        self.__proc = Process([executable, '-nodesktop', '-nosplash'], **kwds)
+        
+        # Decide which executables to try
+        if executable is not None:
+            execs = [executable]
+        else:
+            execs = ['matlab']  # always pick the matlab in the path, if available
+            if sys.platform == 'darwin':
+                installed = glob.glob('/Applications/MATLAB_R*')
+                installed.sort(reverse=True)
+                execs.extend([os.path.join(p, 'bin', 'matlab') for p in installed])
+                
+        # try starting each in order until one works
+        self.__proc = None
+        for exe in execs:
+            try:
+                self.__proc = Process([exe, '-nodesktop', '-nosplash'], **kwds)
+                break
+            except Exception as e:
+                last_exception = e
+                pass
+            
+        # bail out if we couldn't start any
+        if self.__proc is None:
+            raise RuntimeError("Could not start MATLAB process.\nPaths attempted: %s "
+                               "\nLast error: %s" % (str(execs), str(e)))
+
+        
         # Wait a moment for MATLAB to start up, 
         # read the version string
         while True:
@@ -103,7 +130,7 @@ class MatlabProcess(object):
             if line == '::ok\n':
                 return ''.join(output[:i])
             elif line == '::err\n':
-                raise MatlabError(output[i+1:])
+                raise MatlabError(output[i+1:], output[:i])
             
         raise RuntimeError("No success/failure code found in output (printed above).")
 
@@ -315,8 +342,9 @@ class MatlabFunction(object):
         
 
 class MatlabError(Exception):
-    def __init__(self, output):
-        for line in output:
+    def __init__(self, error, output):
+        self.output = ''.join(output)
+        for line in error:
             self.stack = []
             if line.startswith('::message:'):
                 self.message = line[10:].strip()
