@@ -12,6 +12,16 @@ def get_matlab():
         path = os.path.dirname(__file__)
         model_path = os.path.join(path, 'model')
         _proc = matlab_proc.MatlabProcess(cwd=model_path)
+        # Try building the model mex files 
+        if _proc.exist('model_IHC') == 0:
+            print "\nCompiling MEX for auditory periphery model..."
+            try:
+                _proc('mexANmodel;')
+            except Exception as err:
+                raise RuntimeError(
+                    "An error occurred while compiling the auditory periphery model:\n" +
+                    str(err) + "\nSee nrnlibrary/an_model/model/readme.txt for more information.")
+            print "Done."
     return _proc
 
 
