@@ -18,9 +18,12 @@ def get_matlab():
             try:
                 _proc('mexANmodel;')
             except Exception as err:
+                print err.output
+                print ""
                 raise RuntimeError(
-                    "An error occurred while compiling the auditory periphery model:\n" +
-                    str(err) + "\nSee nrnlibrary/an_model/model/readme.txt for more information.")
+                    "An error occurred while compiling the auditory periphery model.\n" +
+                    "The complete output is printed above. " +
+                    "See nrnlibrary/an_model/model/readme.txt for more information.")
             print "Done."
     return _proc
 

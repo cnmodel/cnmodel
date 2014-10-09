@@ -130,7 +130,7 @@ class MatlabProcess(object):
             if line == '::ok\n':
                 return ''.join(output[:i])
             elif line == '::err\n':
-                raise MatlabError(output[i+1:])
+                raise MatlabError(output[i+1:], output[:i])
             
         raise RuntimeError("No success/failure code found in output (printed above).")
 
@@ -342,8 +342,9 @@ class MatlabFunction(object):
         
 
 class MatlabError(Exception):
-    def __init__(self, output):
-        for line in output:
+    def __init__(self, error, output):
+        self.output = ''.join(output)
+        for line in error:
             self.stack = []
             if line.startswith('::message:'):
                 self.message = line[10:].strip()
