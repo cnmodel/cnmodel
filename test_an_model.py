@@ -42,7 +42,7 @@ db = stim.measure_dbspl(rt, T-rt)
 an_model.seed_rng(34978)
 
 start = time.time()
-vihc = an_model.model_ihc(pin, CF, nrep, 1/Fs, T, cohc, cihc, species, _transfer=False) 
+vihc = an_model.model_ihc(pin, CF, nrep, 1/Fs, T+1e-3, cohc, cihc, species, _transfer=False) 
 print "IHC time:", time.time() - start
 
 start = time.time()
