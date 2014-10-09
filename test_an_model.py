@@ -22,7 +22,9 @@ implnt = 0     # "0" for approximate or "1" for actual implementation of the pow
 # stimulus parameters
 F0 = CF     # stimulus frequency in Hz
 Fs = 100e3  # sampling rate in Hz (must be 100, 200 or 500 kHz)
-T  = 50e-3  # stimulus duration in seconds
+T  = 150e-3  # stimulus duration in seconds
+pdur = 0.02  # pip duration
+pstart = [0.01, 0.035]  # pip start times
 rt = 2.5e-3 # rise/fall time in seconds
 stimdb = 65 # stimulus intensity in dB SPL
 
@@ -31,7 +33,7 @@ nrep = 1000            # number of stimulus repetitions (e.g., 50)
 psthbinwidth = 0.5e-3 # binwidth in seconds
 
 stim = sound.TonePip(rate=Fs, duration=T, f0=F0, dbspl=stimdb, 
-                     pip_duration=T, pip_start=[0], ramp_duration=rt)
+                     pip_duration=pdur, pip_start=pstart, ramp_duration=rt)
 t = stim.time
 pin = stim.sound
 db = stim.measure_dbspl(rt, T-rt)
@@ -40,7 +42,7 @@ db = stim.measure_dbspl(rt, T-rt)
 an_model.seed_rng(34978)
 
 start = time.time()
-vihc = an_model.model_ihc(pin, CF, nrep, 1/Fs, T*2, cohc, cihc, species, _transfer=False) 
+vihc = an_model.model_ihc(pin, CF, nrep, 1/Fs, T, cohc, cihc, species, _transfer=False) 
 print "IHC time:", time.time() - start
 
 start = time.time()

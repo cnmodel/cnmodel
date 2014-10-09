@@ -243,46 +243,23 @@ def pipnoise(t, rt, Fs, dBSPL, pip_dur, pip_start, seed):
     pip_dur: duration of pip including ramps
     pip_start: list of starting times for multiple pips
     seed: random seed
-    
-    Original (adapted from Manis; makeANF_CF_RI.m): 
-    
-    function [pin, mask] = pipnoise(t, rt, Fs, dBSPL, pip_dur, pip_start)
-        % note factor of 2 in the scaling here: this is to make the signal level
-        % match the "100%" modulation of the modtone above, with the same SPL.
-        irpts = rt*Fs;
-        mxpts = length(t);
-        pin = sqrt(2)*20e-6*10^(dBSPL/20)*randn(size(t))*2; % unramped stimulus
-        mask = zeros(size(t));
-        for i = 1:length(pip_start)
-            ts = floor(pip_start(i)*Fs);
-            te = floor((pip_start(i)+pip_dur)*Fs);
-            if te > mxpts
-                te = mxpts;
-            end;
-            mask(ts:te) = 1;
-            mask(ts:ts+irpts-1)=sin(0.5*pi*((0:(irpts-1))/irpts)).^2;
-            mask((te-irpts):te)=sin(pi/2-0.5*pi*((0:(irpts))/irpts)).^2;
-
-        end
-        pin = pin .* mask;
-        return;
-    end
     """
-    irpts = rt * Fs
-    mxpts = len(t)
     rng = np.random.RandomState(seed)
-    pin = dbspl_to_pa(dBSPL) * rng.randn(len(t))  # unramped stimulus
-    mask = np.zeros(len(t))
-    for i in range(len(pip_start)):
-        ts = np.floor(pip_start[i] * Fs)
-        te = np.floor((pip_start[i] + pip_dur) * Fs)
-        if te > mxpts:
-            te = mxpts
-        mask[ts:te] = 1
-        ramp = np.linspace(0, 1, irpts)
-        mask[ts:ts+irpts] = np.sin(0.5*np.pi * ramp)**2
-        mask[te-irpts:te] = np.sin(np.pi/2 - 0.5*np.pi * ramp)**2
-    pin *= mask
+    pin = np.zeros(t.size)
+    for start in pip_start:
+        # make pip template
+        pip_pts = int(pip_dur * Fs) + 1
+        pip = dbspl_to_pa(dBSPL) * rng.randn(pip_pts)  # unramped stimulus
+
+        # add ramp
+        ramp_pts = int(rt * Fs) + 1
+        ramp = np.sin(np.linspace(0, np.pi/2., ramp_pts))**2
+        pip[:ramp_pts] *= ramp
+        pip[-ramp_pts:] *= ramp[::-1]
+        
+        ts = np.floor(start * Fs)
+        pin[ts:ts+pip.size] += pip
+
     return pin
         
    
@@ -298,46 +275,23 @@ def piptone(t, rt, Fs, F0, dBSPL, pip_dur, pip_start):
     dBSPL: maximum sound pressure level of pip
     pip_dur: duration of pip including ramps
     pip_start: list of starting times for multiple pips
-    
-    
-    Original (adapted from Manis; makeANF_CF_RI.m): 
-    
-    function [pin, mask] = piptone(t, rt, Fs, F0, dBSPL, pip_dur, pip_start)
-        % note factor of 2 in the scaling here: this is to make the signal level
-        % match the "100%" modulation of the modtone above, with the same SPL.
-        irpts = rt*Fs;
-        mxpts = length(t);
-        pin = sqrt(2)*20e-6*10^(dBSPL/20)*(sin((2*pi*F0*t)-pi/2))*2; % unramped stimulus
-        mask = zeros(size(t));
-        for i = 1:length(pip_start)
-            ts = floor(pip_start(i)*Fs);
-            te = floor((pip_start(i)+pip_dur)*Fs);
-            if te > mxpts
-                te = mxpts;
-            end;
-            mask(ts:te) = 1;
-            mask(ts:ts+irpts-1)=sin(0.5*pi*((0:(irpts-1))/irpts)).^2;
-            mask((te-irpts):te)=sin(pi/2-0.5*pi*((0:(irpts))/irpts)).^2;
-
-        end
-        pin = pin .* mask;
-        return;
-    end
     """
-    irpts = rt * Fs
-    mxpts = len(t)
-    pin = np.sqrt(2) * dbspl_to_pa(dBSPL) * (np.sin((2*np.pi*F0*t) - np.pi/2))  # unramped stimulus
-    mask = np.zeros(len(t))
-    for i in range(len(pip_start)):
-        ts = np.floor(pip_start[i] * Fs)
-        te = np.floor((pip_start[i] + pip_dur) * Fs)
-        if te > mxpts:
-            te = mxpts
-        mask[ts:te] = 1
-        ramp = np.linspace(0, 1, irpts)
-        mask[ts:ts+irpts] = np.sin(0.5*np.pi * ramp)**2
-        mask[te-irpts:te]  = np.sin(np.pi/2 - 0.5*np.pi * ramp)**2
+    # make pip template
+    pip_pts = int(pip_dur * Fs) + 1
+    pip_t = np.linspace(0, pip_dur, pip_pts)
+    pip = np.sqrt(2) * dbspl_to_pa(dBSPL) * np.sin(2*np.pi*F0*pip_t)  # unramped stimulus
 
-    pin *= mask
+    # add ramp
+    ramp_pts = int(rt * Fs) + 1
+    ramp = np.sin(np.linspace(0, np.pi/2., ramp_pts))**2
+    pip[:ramp_pts] *= ramp
+    pip[-ramp_pts:] *= ramp[::-1]
+    
+    # apply template to waveform
+    pin = np.zeros(t.size)
+    for start in pip_start:
+        ts = np.floor(start * Fs)
+        pin[ts:ts+pip.size] += pip
+
     return pin
     

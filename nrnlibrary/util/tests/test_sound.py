@@ -55,7 +55,7 @@ def test_noisepip():
 
     # test for consistency
     assert np.allclose([s1.sound.min(), s1.sound.mean(), s1.sound.max()], 
-                       [-0.075321563261528668, -0.00014394786981389017, 0.07120823615110343])
+                       [-0.082260796003197786, -0.00018484322982972046, 0.069160217220832404])
     
     # test that we got the requested amplitude
     assert np.allclose(s1.measure_dbspl(ps+rd, ps+pd-rd), db, atol=0.1, rtol=0.01)
