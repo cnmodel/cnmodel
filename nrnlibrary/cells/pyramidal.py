@@ -42,7 +42,7 @@ class PyramidalKanold(Pyramidal, Cell):
 
         soma.nseg = 1
 
-        self.mechanisms = ['napyr', 'kdpyr', 'kif', 'kis', 'ihpyr', 'ihvcn', 'leak', 'kcnq']
+        self.mechanisms = ['napyr', 'kdpyr', 'kif', 'kis', 'ihpyr', 'ihvcn', 'leak', 'kcnq', 'nap']
         for mech in self.mechanisms:
             try:
                 soma.insert(mech)
@@ -61,13 +61,13 @@ class PyramidalKanold(Pyramidal, Cell):
         if species == 'rat' and type == 'I':  # canonical K&M2001 model cell
             self.set_soma_size_from_Cm(12.0)
             soma().napyr.gbar = nstomho(350, self.somaarea)
-            #soma().pyr.gnapbar = 0.0
+            soma().nap.gbar = 0.0
             soma().kdpyr.gbar = nstomho(80, self.somaarea) # used to be 20?
-            soma().kcnq.gbar = 0 # nstomho(2, self.refarea)  # pyramidal cells have kcnq: Li et al, 2011 (Thanos)
+            soma().kcnq.gbar = 0 # does not exist in canonical model.
             soma().kif.gbar = nstomho(150, self.somaarea)
             soma().kis.gbar = nstomho(40, self.somaarea)
-            soma().ihpyr.gbar = nstomho(0, self.somaarea)
-            soma().ihvcn.gbar = nstomho(2.8, self.somaarea)
+            soma().ihpyr.gbar = nstomho(2.8, self.somaarea)
+            soma().ihvcn.gbar = nstomho(0., self.somaarea)
             soma().leak.gbar = nstomho(2.8, self.somaarea)
             soma().leak.erev = -62  # override default values in cell.py
             soma().ena = 50.0
@@ -75,22 +75,30 @@ class PyramidalKanold(Pyramidal, Cell):
             soma().ihpyr.eh = -43
             soma().ihvcn.eh = -43
 
-        elif species == 'rat' and type == 'II':  # canonical K&M2001 model cell
-            self.c_m = 4.0
-            self.set_soma_size_from_Cm(80.0)
+        elif species == 'rat' and type == 'II':
+            """
+            Modified canonical K&M2001 model cell
+            In this model version, the specific membrane capacitance is modified
+            so that the overall membrane time constant is consistent with experimental
+            measures in slices. However, this is not a physiological value. Attempts
+            to use the normal 1 uF/cm2 value were unsuccessful in establishing the expected
+            ~12 msec time constant.
+            This model also adds a KCNQ channel, as described by Li et al., 2012.
+            """
+            self.c_m = 10.0
+            self.set_soma_size_from_Diam(30.0)
+            #self.set_soma_size_from_Cm(80.0)
+            print 'diameter: %7.1f' % self.soma.diam
             self.refarea = self.somaarea
-            print 'diamater: %7.1f' % self.soma.diam
-            #self.set_soma_size_from_Diam(30.0)
-            #self.refarea = self.somaarea
-            soma().napyr.gbar = nstomho(350, self.refarea)
-            #soma().pyr.gnapbar = 0.0
+            soma().napyr.gbar = nstomho(550, self.refarea)
+            soma().nap.gbar = nstomho(1.0, self.refarea)
             soma().kcnq.gbar = nstomho(2, self.refarea)  # pyramidal cells have kcnq: Li et al, 2011 (Thanos)
-            soma().kdpyr.gbar = nstomho(80, self.refarea) # used to be 20?
-            soma().kif.gbar = nstomho(150, self.refarea)
-            soma().kis.gbar = nstomho(40, self.refarea)
-            soma().ihpyr.gbar = 0. # nstomho(3, self.refarea)
-            soma().ihvcn.gbar = nstomho(2.8, self.refarea)
-            soma().leak.gbar = nstomho(2, self.refarea)
+            soma().kdpyr.gbar = nstomho(80, self.refarea) # Normally 80.
+            soma().kif.gbar = nstomho(150, self.refarea) # normally 150
+            soma().kis.gbar = nstomho(140, self.refarea) # 40
+            soma().ihpyr.gbar = nstomho(2.8, self.refarea)
+            soma().ihvcn.gbar = nstomho(0., self.refarea)
+            soma().leak.gbar = nstomho(1.5, self.refarea)
             soma().leak.erev = -62.  # override default values in cell.py
             soma().ena = 50.0
             soma().ek = -81.5
@@ -104,7 +112,7 @@ class PyramidalKanold(Pyramidal, Cell):
 
         self.status['species'] = species
         self.status['type'] = type
-        self.cell_initialize(showinfo=False)
+        self.cell_initialize(showinfo=True)
         if not silent:
             print 'set cell as: ', species, type
             print ' with Vm rest = %f' % self.vm0
@@ -159,6 +167,8 @@ class PyramidalKanold(Pyramidal, Cell):
 
         if 'napyr' in self.mechanisms:
              self.ix['napyr'] = self.soma().napyr.gna*(V - self.soma().ena)
+        if 'nap' in self.mechanisms:
+             self.ix['nap'] = self.soma().nap.gnap*(V - self.soma().ena)
         if 'kdpyr' in self.mechanisms:
              self.ix['kdpyr'] = self.soma().kdpyr.gk*(V - self.soma().ek)
         if 'kif' in self.mechanisms:
@@ -166,7 +176,7 @@ class PyramidalKanold(Pyramidal, Cell):
         if 'kis' in self.mechanisms:
              self.ix['kis'] = self.soma().kis.gkis*(V - self.soma().ek)
         if 'kcnq' in self.mechanisms:
-             self.ix['kcnq'] = self.soma().kcnq.gk*(V - self.soma().ik)
+             self.ix['kcnq'] = self.soma().kcnq.gk*(V - self.soma().ek)
         if 'ihvcn' in self.mechanisms:
              self.ix['ihvcn'] = self.soma().ihvcn.gh*(V - self.soma().ihvcn.eh)
         if 'ihpyr' in self.mechanisms:

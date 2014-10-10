@@ -35,8 +35,9 @@ class IVCurve(Protocol):
         Run a current-clamp I/V curve on *cell*.
         
         Parameters:
-        ivrange : tuple
-            (min, max, step)
+        ivrange : a list of tuples:
+                [(min, max, step), (min1, max1, step1)...] to allow finer measurements in some ranges
+                could just be [(min, max, step)]
         cell : Cell
             The Cell instance to test.
         durs : tuple
@@ -52,17 +53,24 @@ class IVCurve(Protocol):
         """
         self.reset()
         self.cell = cell
-        try:
-            (imin, imax, istep) = ivrange # unpack the tuple...
-        except:
-            raise TypeError("run_iv argument 1 must be a tuple (imin, imax, istep)")
-        
+
+        # Calculate current pulse levels
+        icur = []
+        for c in ivrange:  # unpack current levels
+            try:
+                (imin, imax, istep) = c # unpack a tuple... or list
+            except:
+                raise TypeError("run_iv arguments must be a list or tuple of tuples [(imin, imax, istep), ...]")
+            nstep = np.floor((imax-imin)/istep) + 1
+            icur.extend(np.linspace(imin, imax, nstep))  # build the list
+
+        self.current_cmd = np.array(sorted(icur))
+        nsteps = self.current_cmd.shape[0]
         # Configure IClamp
         if durs is None:
             durs = [10.0, 100.0, 50.0]
             
         self.durs = durs
-        icur = []
         # set up stimulation with a pulse train
         if reppulse is None:
             stim = {
@@ -93,26 +101,14 @@ class IVCurve(Protocol):
             iextend = np.ones(int((self.durs[2]-50)/stim['dt']))
             secmd = np.append(secmd, secmd[-1]*iextend)
         tend = maxt + len(iextend)*stim['dt']
-
-
-        # Calculate current pulse levels
-        iv_nstepi = int(np.ceil((imax - imin) / istep))
-        iv_mini = imin
-        iv_maxi = imax
-        istep = (iv_maxi - iv_mini) / iv_nstepi
-        iv_nstepi = iv_nstepi + 1
-        for i in range(iv_nstepi):
-            icur.append(float(i * istep) + iv_mini)
-        nsteps = iv_nstepi
         
-        self.current_cmd = np.array(icur)
         self.dt = dt
         self.temp = temp
         vec = {}
 
         for i in range(nsteps):
             # Generate current command for this level 
-            stim['amp'] = icur[i]
+            stim['amp'] = self.current_cmd[i]
             (secmd, maxt, tstims) = make_pulse(stim)
             vec['i_stim'] = h.Vector(secmd)
             
@@ -354,16 +350,16 @@ class IVCurve(Protocol):
 
 
         # I/V relationships
-        IVplot.plot(Icmd, self.peak_vm(), symbol='o', symbolBrush=(50, 150, 50, 255))
-        IVplot.plot(Icmd, self.steady_vm(), symbol='s')
+        IVplot.plot(Icmd, self.peak_vm(), symbol='o', symbolBrush=(50, 150, 50, 255), symbolSize=4.0)
+        IVplot.plot(Icmd, self.steady_vm(), symbol='s', symbolSize=4.0)
 
 
         # F/I relationship and raster plot
         spikes = self.spike_times()
         for i,times in enumerate(spikes):
             spikePlot.plot(x=times, y=[Icmd[i]]*len(times), pen=None, 
-                           symbol='d', symbolBrush=colors[i])
-        FIplot.plot(x=Icmd, y=[len(s) for s in spikes], symbol='o')
+                           symbol='d', symbolBrush=colors[i], symbolSize=4.0)
+        FIplot.plot(x=Icmd, y=[len(s) for s in spikes], symbol='o', symbolSize=4.0)
         
         
         # Print Rm, Vrest 

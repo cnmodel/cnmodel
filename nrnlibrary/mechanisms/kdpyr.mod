@@ -15,16 +15,6 @@ Note also that it is possible to set the initial values > 1 but this is meaningl
 the present equations. 
 -- 5 Feb 1999 P. Manis
 
-Removed slow Ih current 30 Jan 2000. P. Manis
-- also renamed variables to saner forms
-Added Patrick's version of ih as ihd
-
-Added persistent sodium current from deSchutter and Bower, J. Neurophys.
-71:375, 1994.
-Changed to Nap current from Quadroni and Knopfel, 1994
-
-2/10/02. P. Manis.
-
 ENDCOMMENT
 
 UNITS {

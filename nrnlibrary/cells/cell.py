@@ -249,8 +249,8 @@ class Cell(object):
                     'ka': 'gka',
                     'ihvcn': 'gh', 'hcno': 'gh',
                     # pyramidal cell specific:
-                    'napyr': 'gna', 'kdpyr': 'gk',
-                    'kif': 'gkif', 'kis': 'gkis',
+                    'napyr': 'gna', 'nap': 'gnap',
+                    'kdpyr': 'gk', 'kif': 'gkif', 'kis': 'gkis',
                     'ihpyr': 'gh',
                     'kcnq': 'gk',
                     # cartwheel cell specific:
