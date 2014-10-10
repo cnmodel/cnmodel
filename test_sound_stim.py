@@ -23,3 +23,8 @@ for sr in 1,2,3:
         seed += 1
 
     p1.plot(levels, [s.size for s in spikes], pen=(sr, 6))
+
+
+import sys
+if sys.flags.interactive == 0:
+    pg.QtGui.QApplication.exec_()

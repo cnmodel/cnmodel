@@ -44,3 +44,7 @@ st = SynapseTest()
 st.run(preCell.soma, postCell.soma, nTerminals)
 st.show()
 
+
+import sys
+if sys.flags.interactive == 0:
+    pg.QtGui.QApplication.exec_()

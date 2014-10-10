@@ -67,3 +67,8 @@ size = psth.size // ds
 psth = psth[:size*ds].reshape(size, ds).sum(axis=1)
 t = np.arange(len(psth)) * 1e-5 * ds
 p3.plot(t, psth[:-1], stepMode=True, fillLevel=0, fillBrush='w')
+
+
+import sys
+if sys.flags.interactive == 0:
+    pg.QtGui.QApplication.exec_()
