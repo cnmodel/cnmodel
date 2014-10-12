@@ -16,6 +16,10 @@ class SGC(Cell):
         else:
             raise ValueError ('SGC type %s is unknown', type)
         
+    def __init__(self):
+        Cell.__init__(self)
+        self.spike_source = None  # used by DummySGC to connect VecStim to terminal
+        
     def make_terminal(self, post_cell, **kwds):
         from .. import cells
         #
@@ -33,9 +37,10 @@ class SGC(Cell):
                                       type(post_cell))
         
         pre_sec = self.soma
-        
-        return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, delay=delay)
-        
+        return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, 
+                                           delay=delay, spike_source=self.spike_source)
+
+    
 
 class DummySGC(SGC):
     """ SGC class with no cell body; this cell only replays a predetermined
@@ -44,7 +49,12 @@ class DummySGC(SGC):
     def __init__(self):
         SGC.__init__(self)
         self.vecstim = h.VecStim()
-        #self.add_section(self.vecstim, 'soma')
+        
+        # this causes the terminal to receive events from the VecStim:
+        self.spike_source = self.vecstim
+        
+        # just an empty section for holding the terminal
+        self.add_section(h.Section(), 'soma')
         
     def set_spiketrain(self, times):
         """ Set the times of spikes to be replayed by the cell.
@@ -52,10 +62,7 @@ class DummySGC(SGC):
         self._spiketrain = times
         self._stvec = h.Vector(times)
         self.vecstim.play(self._stvec)
-        
-    def make_terminal(self, pre_sec, post_sec, **kwds):
-        return SGC.make_terminal(self.vecstim, post_sec, **kwds)
-    
+
 
 class SGC_TypeI(SGC):
     """

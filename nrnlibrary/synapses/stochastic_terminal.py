@@ -16,7 +16,7 @@ class StochasticTerminal(Terminal):
     """
     def __init__(self, pre_sec, target_cell, nzones=1, celltype='bushy', message=None,
                 type='lognormal', identifier=0, stochastic_pars=None, calcium_pars=None,
-                delay=0, debug=False, psdtype=None, select=None):
+                delay=0, debug=False, psdtype=None, select=None, spike_source=None):
         """
         This routine creates a (potentially) multisite synapse with:
             A MultiSiteSynapse release mechanism that includes stochastic release, with a lognormal
@@ -72,7 +72,7 @@ class StochasticTerminal(Terminal):
         if debug:
             print message
         terminal = pre_sec
-        terminal.push()
+        #terminal.push()
         if calcium_pars is not None:
             terminal.insert('cap') # insert calcium channel density
             terminal().cap.pcabar = calcium_pars.Ca_gbar
@@ -130,8 +130,11 @@ class StochasticTerminal(Terminal):
         self.relsite = relsite
         self.n_rzones = nzones
 
+        if spike_source is None:
+            spike_source = pre_sec(0.5)._ref_v
+            
         pre_sec.push()
-        self.netcon = h.NetCon(pre_sec(0.5)._ref_v, relsite, thresh, delay, 1.0)
+        self.netcon = h.NetCon(spike_source, relsite, thresh, delay, 1.0)
         self.netcon.weight[0] = 1
         self.netcon.threshold = -30.0
         h.pop_section()
