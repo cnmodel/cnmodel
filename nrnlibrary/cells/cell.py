@@ -4,6 +4,7 @@ import numpy as np
 from ..util import nstomho, mho2ns
 from ..synapses import Synapse
 
+
 class Cell(object):
     """
     Base class for all cell types.
@@ -76,47 +77,44 @@ class Cell(object):
         """
         return self.all_sections['soma'][0]
 
-
-    def connect(self, pre_sec, post_sec, 
-                pre_opts=None, post_opts=None):
+    def connect(self, post_cell, pre_opts=None, post_opts=None):
         """
-        Create a new synapse connecting pre_sec on this cell to post_sec
-        on another cell. The synapse is automatically created using 
-        pre_cell.make_terminal(pre_sec, post_sec, **pre_opts) and  
-        post_cell.make_psd(pre_sec, post_sec, **post_opts).
+        Create a new synapse connecting this cell to a postsynaptic cell. 
+        The synapse is automatically created using 
+        pre_cell.make_terminal(post_cell, **pre_opts) and  
+        post_cell.make_psd(terminal, **post_opts).
+        
+        By default, the cells decide which sections to connect. This can be 
+        overridden by specifying 'section' in pre_opts and/or post_opts.
         """
         if pre_opts is None:
             pre_opts = {}
         if post_opts is None:
             post_opts = {}
-        post_cell = Cell.from_section(post_sec)
         
-        terminal = self.make_terminal(pre_sec, post_sec, **pre_opts)
-        psd = post_cell.make_psd(pre_sec, post_sec, terminal, **post_opts)
+        terminal = self.make_terminal(post_cell, **pre_opts)
+        psd = post_cell.make_psd(terminal, **post_opts)
         synapse = Synapse(terminal, psd)
         
         return synapse
 
-    def make_terminal(self, pre_sec, post_sec, **kwds):
+    def make_terminal(self, post_cell, **kwds):
         """
         Create a synaptic terminal release mechanism suitable for output
         from this cell to post_sec
         """
-        pre_cell = Cell.from_section(pre_sec)
-        post_cell = Cell.from_section(post_sec)
         raise NotImplementedError("Cannot make Terminal connecting %s => %s" % 
-                                  (pre_cell.__class__.__name__, 
+                                  (self.__class__.__name__, 
                                    post_cell.__class__.__name__))
     
-    def make_psd(self, pre_sec, post_sec, terminal, **kwds):
+    def make_psd(self, terminal, **kwds):
         """
         Create a PSD suitable for synaptic input from pre_sec.
         """
-        pre_cell = Cell.from_section(pre_sec)
-        post_cell = Cell.from_section(post_sec)
+        pre_cell = terminal.cell
         raise NotImplementedError("Cannot make PSD connecting %s => %s" %
                                   (pre_cell.__class__.__name__, 
-                                   post_cell.__class__.__name__))
+                                   self.__class__.__name__))
 
     def print_status(self):
         print("\nCell model: %s" % self.__class__.__name__)

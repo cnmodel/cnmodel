@@ -9,6 +9,7 @@ class Params(object):
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
 
+
 class StochasticTerminal(Terminal):
     """
     Axon terminal with multi-site sctochastic release mechanism.    
@@ -43,6 +44,9 @@ class StochasticTerminal(Terminal):
             relsite: a list of the nzones release sites that were created
             cleft: a list of the nzones cleft mechanisms that were created.
         """
+        Terminal.__init__(self, pre_sec)
+        
+        
         # set parameter control for the stochastic release of vesicles...
         # this structure is passed to stochastic synapses, and replaces several variables 
         # that were previously defined in the call to that function.

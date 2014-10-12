@@ -5,7 +5,7 @@ import numpy as np
 from .cell import Cell
 from .. import synapses
 
-__all__ = ['SGC', 'SGC_TypeI']
+__all__ = ['SGC', 'SGC_TypeI', 'DummySGC']
 
 class SGC(Cell):
 
@@ -16,9 +16,8 @@ class SGC(Cell):
         else:
             raise ValueError ('SGC type %s is unknown', type)
         
-    def make_terminal(self, pre_sec, post_sec, **kwds):
+    def make_terminal(self, post_cell, **kwds):
         from .. import cells
-        post_cell = cells.cell_from_section(post_sec)
         #
         # set parameters according to the target cell type
         #
@@ -33,7 +32,9 @@ class SGC(Cell):
             raise NotImplementedError("Cannot connect SGC to cell type %s" % 
                                       type(post_cell))
         
-        return synapses.StochasticTerminal(pre_sec, post_sec, nzones=nzones, delay=delay)
+        pre_sec = self.soma
+        
+        return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, delay=delay)
         
 
 class DummySGC(SGC):
@@ -41,14 +42,19 @@ class DummySGC(SGC):
     spike train.
     """
     def __init__(self):
-        self.soma = h.VecStim()
+        SGC.__init__(self)
+        self.vecstim = h.VecStim()
+        #self.add_section(self.vecstim, 'soma')
         
     def set_spiketrain(self, times):
         """ Set the times of spikes to be replayed by the cell.
         """
         self._spiketrain = times
         self._stvec = h.Vector(times)
-        self.soma.play(self._stvec)
+        self.vecstim.play(self._stvec)
+        
+    def make_terminal(self, pre_sec, post_sec, **kwds):
+        return SGC.make_terminal(self.vecstim, post_sec, **kwds)
     
 
 class SGC_TypeI(SGC):

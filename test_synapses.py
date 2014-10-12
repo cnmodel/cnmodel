@@ -1,3 +1,4 @@
+import pyqtgraph as pg
 from nrnlibrary.protocols import SynapseTest
 from nrnlibrary import cells
 from nrnlibrary.synapses import Synapse
@@ -41,7 +42,7 @@ if nTerminals is None:
 
 
 st = SynapseTest()
-st.run(preCell.soma, postCell.soma, nTerminals)
+st.run(preCell, postCell, nTerminals)
 st.show()
 
 

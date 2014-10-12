@@ -6,3 +6,19 @@ class Terminal(object):
     and either NetCon or pointer output for driving a PSD.
     
     """
+    def __init__(self, section):
+        self._section = section
+        
+    @property
+    def section(self):
+        """ The cell section this terminal is attached to.
+        """
+        return self._section
+    
+    @property
+    def cell(self):
+        """ The cell this terminal is attached to.
+        """
+        from ..cells import Cell
+        return Cell.from_section(self.section)
+    

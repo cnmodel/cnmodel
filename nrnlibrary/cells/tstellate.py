@@ -22,16 +22,20 @@ class TStellate(Cell):
         else:
             raise ValueError ('DStellate type %s is unknown', type)
 
-    def make_psd(self, pre_sec, post_sec, terminal, **kwds):
+    def make_psd(self, terminal, **kwds):
         from .. import cells
-        pre_cell = cells.cell_from_section(pre_sec)
+        
+        pre_sec = terminal.section
+        pre_cell = terminal.cell
+        post_sec = self.soma
+        
         if isinstance(pre_cell, cells.SGC):
-            return synapses.GluPSD(pre_sec, post_sec, terminal, 
+            return synapses.GluPSD(post_sec, terminal, 
                                    ampa_gmax=4600.,
                                    nmda_ampa_ratio = 1.28,
                                    )
         elif isinstance(pre_cell, cells.DStellate):
-            return synapses.GlyPSD(pre_sec, post_sec, terminal,
+            return synapses.GlyPSD(post_sec, terminal,
                                    psdType='glyfast',
                                    )
         else:
