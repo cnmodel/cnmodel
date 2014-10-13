@@ -46,7 +46,6 @@ class OctopusRothman(Octopus, Cell):
         Modifications to the cell can be made by calling methods below.
         """
         super(OctopusRothman, self).__init__()
-        print "\n>>>>Creating Octopus Cell"
         if type == None:
             type = 'II-o'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,

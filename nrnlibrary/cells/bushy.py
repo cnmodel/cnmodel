@@ -32,7 +32,6 @@ class BushyRothman(Bushy, Cell):
         Modifications to the cell can be made by calling methods below.
         """
         super(BushyRothman, self).__init__()
-        print "\n>>>>Creating Bushy Cell"
         if type == None:
             type = 'II'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,

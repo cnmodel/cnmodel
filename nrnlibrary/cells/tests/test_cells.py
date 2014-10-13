@@ -82,7 +82,8 @@ class CellTester(UserTester):
         try:
             super(CellTester, self).assert_test_info(*args, **kwds)
         finally:
-            self.iv.win.hide()
+            if hasattr(self.iv, 'win'):
+                self.iv.win.hide()
     
 
 #def result_file(key):

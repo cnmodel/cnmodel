@@ -4,6 +4,7 @@ import scipy
 import scipy.integrate
 import scipy.stats
 import scipy.optimize
+import nrnlibrary.util.expfitting as expfitting
 
 try:
     import pyqtgraph as pg
@@ -34,8 +35,11 @@ class IVCurve(Protocol):
         Run a current-clamp I/V curve on *cell*.
         
         Parameters:
-        ivrange : tuple
-            (min, max, step)
+        ivrange : list of tuples
+            Each item in the list is (min, max, step) describing a range of 
+            levels to test. Range values are inclusive, so the max value may
+            appear in the test values. Using multiple ranges allows finer 
+            measurements in some ranges. 
         cell : Cell
             The Cell instance to test.
         durs : tuple
@@ -51,17 +55,26 @@ class IVCurve(Protocol):
         """
         self.reset()
         self.cell = cell
-        try:
-            (imin, imax, istep) = ivrange # unpack the tuple...
-        except:
-            raise TypeError("run_iv argument 1 must be a tuple (imin, imax, istep)")
-        
+
+        # Calculate current pulse levels
+        icur = []
+        if isinstance(ivrange, tuple):
+            ivrange = [ivrange]
+        for c in ivrange:  # unpack current levels
+            try:
+                (imin, imax, istep) = c # unpack a tuple... or list
+            except:
+                raise TypeError("run_iv arguments must be a list of tuples [(imin, imax, istep), ...]")
+            nstep = np.floor((imax-imin)/istep) + 1
+            icur.extend(imin + istep * np.arange(nstep))  # build the list
+
+        self.current_cmd = np.array(sorted(icur))
+        nsteps = self.current_cmd.shape[0]
         # Configure IClamp
         if durs is None:
             durs = [10.0, 100.0, 50.0]
             
         self.durs = durs
-        icur = []
         # set up stimulation with a pulse train
         if reppulse is None:
             stim = {
@@ -92,26 +105,14 @@ class IVCurve(Protocol):
             iextend = np.ones(int((self.durs[2]-50)/stim['dt']))
             secmd = np.append(secmd, secmd[-1]*iextend)
         tend = maxt + len(iextend)*stim['dt']
-
-
-        # Calculate current pulse levels
-        iv_nstepi = int(np.ceil((imax - imin) / istep))
-        iv_mini = imin
-        iv_maxi = imax
-        istep = (iv_maxi - iv_mini) / iv_nstepi
-        iv_nstepi = iv_nstepi + 1
-        for i in range(iv_nstepi):
-            icur.append(float(i * istep) + iv_mini)
-        nsteps = iv_nstepi
         
-        self.current_cmd = np.array(icur)
         self.dt = dt
         self.temp = temp
         vec = {}
 
         for i in range(nsteps):
             # Generate current command for this level 
-            stim['amp'] = icur[i]
+            stim['amp'] = self.current_cmd[i]
             (secmd, maxt, tstims) = make_pulse(stim)
             vec['i_stim'] = h.Vector(secmd)
             
@@ -256,8 +257,7 @@ class IVCurve(Protocol):
             print('{0:<15s}: {1:s}'.format('vmask', repr(vmask.astype(int))))
             print('{0:<15s}: {1:s} '.format('imask', repr(imask.astype(int))))
             print('{0:<15s}: {1:s}'.format('spikemask', repr(smask.astype(int))))
-            return 0., 0.
-            #raise Exception("Not enough traces to do linear regression.")
+            raise Exception("Not enough traces to do linear regression (see info above).")
         
         # Use these to measure input resistance by linear regression.
         reg = scipy.stats.linregress(Icmd[mask], Vss[mask])
@@ -270,34 +270,44 @@ class IVCurve(Protocol):
 
         fits = []
         tx = self.time_values[peakStart:peakStop] - self.durs[0]
+        nexp = 1
+        if nexp == 2:
+            fitter = expfitting.ExpFitting(nexp=2, 
+                    initpars={'dc': vmin, 'a1': -10., 't1': 5., 'a2': 2., 'delta': 3.0},
+                    bounds={'dc': (-120, 0.), 'a1': (-50, 0.), 't1': (0.1, 25.), 'a2': (-50., 50.), 'delta': (3., 50.)}
+            )
+        elif nexp == 1:
+            fitter = expfitting.ExpFitting(nexp=1, 
+                    initpars={'dc': vmin, 'a1': 2., 't1': 5.},
+                    bounds={'dc': (-120, 0.), 'a1': (-50, 0.), 't1': (0.1, 50.)}
+            )
         for i, m in enumerate(mask):
             if m and (self.rest_vm() - Vss[i]) > 1:
-                #print 'i: %d  v: %f' % (i, Vss[i])
-                try:
-                    def expFunc(t, d, a1, r1, a2, r2):
-                        return d + a1*np.exp(-t/r1) + a2*np.exp(-t/r2)
-                    trace = self.voltage_traces[i][peakStart:peakStop]
-                    dif = trace.max() - trace.min()
-                    p0 = [trace.min(), dif*0.5, 2., dif*0.5, 15.]
-                    fitParams, fitCovariances = scipy.optimize.curve_fit(
-                        expFunc, tx, trace, p0=p0, maxfev=5000)
-                except RuntimeError:
-                    print "WARNING: Exponential fits failed in IVCurve.input_resistance_tau()."
-                    plt = pg.plot(tx, self.voltage_traces[i][peakStart:peakStop])
-                    plt.plot(tx, expFunc(tx, *p0), pen='r')
-                    fitParams = np.zeros(5)
+                trace = self.voltage_traces[i][peakStart:peakStop]
+                fitParams = fitter.fit(tx, trace, fitter.fitpars)
                 fits.append(fitParams)
-        amp1 = np.mean([f[1] for f in fits])
-        tau1 = np.mean([f[2] for f in fits])
-        #print "tau1/amp1: ", tau1, [f[2] for f in fits], [a[1] for a in fits]
-        amp2 = np.mean([f[3] for f in fits])
-        tau2 = np.mean([f[4] for f in fits])
-        #print 'tau2/amp2: ', tau2, [f[4] for f in fits], [a[3] for a in fits]
+        
+        tau1 = np.mean([f['t1'] for f in fits])
+        amp1 = np.mean([f['a1'] for f in fits]) 
+        dc = np.mean([f['dc'] for f in fits])
+        #print ('mean dc:   {:7.3f} '.format(dc))
+        #print ('mean tau1: {:7.3f}'.format(tau1))
+        #print ('dc:      {:s}'.format(''.join(['{0:7.3f}  '.format(f['dc'].value) for f in fits])))
+        #print ('amp1:    {:s}'.format(''.join([ '{0:7.3f}  '.format(a['a1'].value) for a in fits])))
+        #print ('tau1:    {:s}'.format(''.join([ '{0:7.3f}  '.format(a['t1'].value) for a in fits])))
+        if nexp == 2:
+            tau2 = np.mean([f['delta'].value*f['t1'].value for f in fits])
+            amp2 = np.mean([f['a2'] for f in fits]) 
+            #print ('mean tau2:  {:7.3f}'.format(tau2))
+            #print ('amp2:    {:s}'.format(''.join(['{:7.3f}  '.format(a['a2'].value) for a in fits])))
+            #print ('tau2:    {:s}'.format(''.join(['{:7.3f}  '.format(a['t1'].value*a['delta'].value) for a in fits])))
+        else:
+            tau2 = 0.
+            amp2 = 0.
 
         return {'slope': slope, 
                 'intercept': intercept, 
                 'tau': ((tau1, amp1), (tau2, amp2))}
-
 
     def show(self, cell=None):
         """
@@ -346,16 +356,16 @@ class IVCurve(Protocol):
 
 
         # I/V relationships
-        IVplot.plot(Icmd, self.peak_vm(), symbol='o', symbolBrush=(50, 150, 50, 255))
-        IVplot.plot(Icmd, self.steady_vm(), symbol='s')
+        IVplot.plot(Icmd, self.peak_vm(), symbol='o', symbolBrush=(50, 150, 50, 255), symbolSize=4.0)
+        IVplot.plot(Icmd, self.steady_vm(), symbol='s', symbolSize=4.0)
 
 
         # F/I relationship and raster plot
         spikes = self.spike_times()
         for i,times in enumerate(spikes):
             spikePlot.plot(x=times, y=[Icmd[i]]*len(times), pen=None, 
-                           symbol='d', symbolBrush=colors[i])
-        FIplot.plot(x=Icmd, y=[len(s) for s in spikes], symbol='o')
+                           symbol='d', symbolBrush=colors[i], symbolSize=4.0)
+        FIplot.plot(x=Icmd, y=[len(s) for s in spikes], symbol='o', symbolSize=4.0)
         
         
         # Print Rm, Vrest 
