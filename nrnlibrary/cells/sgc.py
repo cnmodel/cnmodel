@@ -28,7 +28,7 @@ class SGC_TypeI(SGC, Cell):
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'SGC'}
 
-        self.i_test_range=(-0.3, 0.3, 0.02)
+        self.i_test_range=[(-0.3, 0.3, 0.02), (-0.1, 0., 0.005)]
 
         soma = h.Section(name="SGC_Soma_%x" % id(self)) # one compartment of about 29000 um2
 

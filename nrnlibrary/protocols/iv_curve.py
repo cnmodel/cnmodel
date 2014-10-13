@@ -226,10 +226,10 @@ class IVCurve(Protocol):
         d = int(self.durs[0] / self.dt)
         return self.voltage_traces[-1][d//2:d].mean()
     
-    def input_resistance_tau(self, vmin=-70, imax=0):
+    def input_resistance_tau(self, vmin=-10, imax=0):
         """
         Estimate resting input resistance and time constant.
-        :param vmin: minimum voltage to use in computation
+        :param vmin: minimum voltage to use in computation relative to resting
         :param imax: maximum current to use in computation.
         Return dict containing 'slope' and 'intercept' keys giving linear 
         regression for subthreshold traces near rest, and 'tau'
@@ -239,6 +239,7 @@ class IVCurve(Protocol):
         spikes.
         """
         Vss = self.steady_vm()
+        vmin += self.rest_vm()
         Icmd = self.current_cmd
         rawspikes = self.spike_times()
         spikes = self.spike_filter(rawspikes, window=[0., self.durs[0]+self.durs[1]])
@@ -269,12 +270,14 @@ class IVCurve(Protocol):
         peakStop = int(peakStart + (self.durs[1]*window) / self.dt) # peak can be in first half
 
         fits = []
-        tx = self.time_values[peakStart:peakStop] - self.durs[0]
-        nexp = 1
+        fit_inds = []
+        tx = self.time_values[peakStart:peakStop].copy()
+        tx -= tx[0]
+        nexp = 2
         if nexp == 2:
             fitter = expfitting.ExpFitting(nexp=2, 
-                    initpars={'dc': vmin, 'a1': -10., 't1': 5., 'a2': 2., 'delta': 3.0},
-                    bounds={'dc': (-120, 0.), 'a1': (-50, 0.), 't1': (0.1, 25.), 'a2': (-50., 50.), 'delta': (3., 50.)}
+                    initpars={'dc': vmin, 'a1': 10., 't1': 5., 'a2': -10., 'delta': 3.0},
+                    bounds={'dc': (-120, 0.), 'a1': (0, 50.), 't1': (0.1, 25.), 'a2': (-50., 0.), 'delta': (3., 50.)}
             )
         elif nexp == 1:
             fitter = expfitting.ExpFitting(nexp=1, 
@@ -286,28 +289,20 @@ class IVCurve(Protocol):
                 trace = self.voltage_traces[i][peakStart:peakStop]
                 fitParams = fitter.fit(tx, trace, fitter.fitpars)
                 fits.append(fitParams)
+                fit_inds.append(i)
         
-        tau1 = np.mean([f['t1'] for f in fits])
-        amp1 = np.mean([f['a1'] for f in fits]) 
-        dc = np.mean([f['dc'] for f in fits])
-        #print ('mean dc:   {:7.3f} '.format(dc))
-        #print ('mean tau1: {:7.3f}'.format(tau1))
-        #print ('dc:      {:s}'.format(''.join(['{0:7.3f}  '.format(f['dc'].value) for f in fits])))
-        #print ('amp1:    {:s}'.format(''.join([ '{0:7.3f}  '.format(a['a1'].value) for a in fits])))
-        #print ('tau1:    {:s}'.format(''.join([ '{0:7.3f}  '.format(a['t1'].value) for a in fits])))
-        if nexp == 2:
-            tau2 = np.mean([f['delta'].value*f['t1'].value for f in fits])
-            amp2 = np.mean([f['a2'] for f in fits]) 
-            #print ('mean tau2:  {:7.3f}'.format(tau2))
-            #print ('amp2:    {:s}'.format(''.join(['{:7.3f}  '.format(a['a2'].value) for a in fits])))
-            #print ('tau2:    {:s}'.format(''.join(['{:7.3f}  '.format(a['t1'].value*a['delta'].value) for a in fits])))
-        else:
-            tau2 = 0.
-            amp2 = 0.
-
+        fit_data = np.empty(len(fits), dtype=[('tau1', float), ('amp1', float), 
+                                              ('tau2', float), ('amp2', float), 
+                                              ('offset', float), ('index', int)])
+        for i, fit in enumerate(fits):
+            if nexp == 1:
+                fit_data[i] = fit['t1'], fit['a1'], 0, 0, fit['dc'], fit_inds[i]
+            else:
+                fit_data[i] = fit['t1'], fit['a1'], fit['t1'] * fit['delta'], fit['a2'], fit['dc'], fit_inds[i]
+        
         return {'slope': slope, 
                 'intercept': intercept, 
-                'tau': ((tau1, amp1), (tau2, amp2))}
+                'fits': fit_data}
 
     def show(self, cell=None):
         """
@@ -372,8 +367,9 @@ class IVCurve(Protocol):
         rmtau = self.input_resistance_tau()
         s = rmtau['slope']
         i = rmtau['intercept']
-        tau = rmtau['tau']
-        print ("\nMembrane resistance (chord): {0:0.1f} MOhm  Taum1: {1:0.2f}  Taum2: {2:0.2f}".format(s, tau[0][0], tau[1][0]))
+        tau1 = rmtau['fits']['tau1'].mean()
+        tau2 = rmtau['fits']['tau2'].mean()
+        print ("\nMembrane resistance (chord): {0:0.1f} MOhm  Taum1: {1:0.2f}  Taum2: {2:0.2f}".format(s, tau1, tau2))
         ivals = np.array([Icmd.min(), Icmd.max()])
         vvals = s * ivals + i
         line = pg.QtGui.QGraphicsLineItem(ivals[0], vvals[0], ivals[1], vvals[1])
@@ -381,4 +377,13 @@ class IVCurve(Protocol):
         line.setZValue(-10)
         IVplot.addItem(line, ignoreBounds=True)
         
+        # plot fits
+        for rec in rmtau['fits']:
+            t1, a1, t2, a2, yoff, index = rec
+            
+            t = np.linspace(0, self.durs[1], 1000)
+            pars = {'t1': t1, 'a1': a1, 'a2': a2, 'dc': yoff, 'delta': t2/t1}
+            y = expfitting.ExpFitting.exp2(t, **pars)
+            Vplot.plot(t+self.durs[0], y, pen={'color': 'y', 'style': pg.QtCore.Qt.DashLine})
+            
         print "Resting membrane potential: %0.1f mV\n" % self.rest_vm()

@@ -76,6 +76,8 @@ class UserTester(object):
         else:
             try:
                 assert info == expect
+            except AssertionError:
+                raise
             except Exception:
                 raise NotImplementedError("Cannot compare objects of type %s" % type(info))
 
