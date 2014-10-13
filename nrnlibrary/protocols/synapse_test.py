@@ -74,7 +74,6 @@ class SynapseTest(Protocol):
         i_stim_vec = h.Vector(secmd)
         i_stim_vec.play(istim._ref_i, dt, 0)
 
-
         # create hoc vectors for each parameter we wish to monitor and display
         synapse = synapses[0]
         self['v_pre'] = pre_cell.soma(0.5)._ref_v

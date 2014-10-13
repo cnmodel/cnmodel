@@ -4,8 +4,10 @@ from ..util import nstomho
 import numpy as np
 from .cell import Cell
 from .. import synapses
+from .. import an_model
 
 __all__ = ['SGC', 'SGC_TypeI', 'DummySGC']
+
 
 class SGC(Cell):
 
@@ -16,9 +18,23 @@ class SGC(Cell):
         else:
             raise ValueError ('SGC type %s is unknown', type)
         
-    def __init__(self):
+    def __init__(self, cf=None, sr=None):
         Cell.__init__(self)
+        self._cf = cf
+        self._sr = sr
         self.spike_source = None  # used by DummySGC to connect VecStim to terminal
+
+    @property
+    def cf(self):
+        """ Center frequency
+        """
+        return self._cf
+    
+    @property
+    def sr(self):
+        """ Spontaneous rate group. 1=low, 2=mid, 3=high
+        """
+        return self._sr
         
     def make_terminal(self, post_cell, **kwds):
         from .. import cells
@@ -46,8 +62,8 @@ class DummySGC(SGC):
     """ SGC class with no cell body; this cell only replays a predetermined
     spike train.
     """
-    def __init__(self):
-        SGC.__init__(self)
+    def __init__(self, cf=None, sr=None):
+        SGC.__init__(self, cf, sr)
         self.vecstim = h.VecStim()
         
         # this causes the terminal to receive events from the VecStim:
@@ -63,13 +79,22 @@ class DummySGC(SGC):
         self._stvec = h.Vector(times)
         self.vecstim.play(self._stvec)
 
+    def set_sound_stim(self, stim, seed):
+        """ Set the sound stimulus used to generate this cell's spike train.
+        """
+        self._sound_stim = stim
+        spikes = an_model.get_spiketrain(cf=self.cf, sr=self.sr, seed=seed, stim=stim)
+        print spikes.dtype, spikes.shape, spikes
+        self.set_spiketrain(spikes * 1000)
+
 
 class SGC_TypeI(SGC):
     """
     Spiral ganglion cell model
     """
-    def __init__(self, nach='jsrna', ttx=False, debug=False, species='guineapig', type='bm'):
-        super(SGC_TypeI, self).__init__()
+    def __init__(self, nach='jsrna', ttx=False, debug=False, species='guineapig', 
+                 type='bm', cf=None, sr=None):
+        super(SGC_TypeI, self).__init__(cf=cf, sr=sr)
 
         if type == None:
             type = 'bm'  # types are: a (apical), bm (basal middle)

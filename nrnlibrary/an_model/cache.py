@@ -2,7 +2,7 @@
 Utilities for generating and caching spike trains from AN model.
 """
 
-import os, pickle
+import os, sys, pickle
 import numpy as np
 from .wrapper import get_matlab, model_ihc, model_synapse, seed_rng
 
@@ -17,6 +17,10 @@ def get_spiketrain(cf, sr, stim, seed, **kwds):
     
     Arrays are automatically cached and may be returned from disk if 
     available. See generate_spiketrain() for a description of arguments.
+    
+    If the flag --ignore-an-cache was given on the command line, then spike 
+    times will be regenerated and cached, regardless of the current cache 
+    state.
     """
     index = cache_index()
     keydata = dict(cf=cf, sr=sr, stim=stim.key(), seed=seed, **kwds)
@@ -24,7 +28,7 @@ def get_spiketrain(cf, sr, stim, seed, **kwds):
     data = None
     
     # Load data from cache if possible
-    if key in index:
+    if key in index and "--ignore-an-cache" not in sys.argv:
         data_file = index[key]['file']
         if os.path.exists(data_file):
             data = np.load(open(data_file, 'rb'))['data']
@@ -98,7 +102,8 @@ def save_index():
 
 
 def generate_spiketrain(cf, sr, stim, seed, **kwds):
-    """ Generate a new spike train from the auditory nerve model.
+    """ Generate a new spike train from the auditory nerve model. Returns an 
+    array of spike times in seconds.
     
     Parameters
     ----------
@@ -137,6 +142,6 @@ def generate_spiketrain(cf, sr, stim, seed, **kwds):
     seed_rng(seed)
     vihc = model_ihc(_transfer=False, **ihc_kwds) 
     m, v, psth = model_synapse(vihc, _transfer=False, **syn_kwds)
-    psth = psth.get()
-    
-    return np.argwhere(psth).ravel()
+    psth = psth.get().ravel()
+    times = np.argwhere(psth).ravel()
+    return times * stim.dt
