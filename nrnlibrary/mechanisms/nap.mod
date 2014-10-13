@@ -6,10 +6,8 @@ COMMENT
 Persistent sodium current from deSchutter and Bower, J. Neurophys.
 71:375, 1994.
 
-(also code for Nap current from Quadroni and Knopfel, 1994, but commented out)
 
-
-2/10/02. P. Manis.
+2/10/02, 10/10/2014. P. Manis.
 
 ENDCOMMENT
  
