@@ -85,17 +85,17 @@ class PyramidalKanold(Pyramidal, Cell):
             ~12 msec time constant.
             This model also adds a KCNQ channel, as described by Li et al., 2012.
             """
-            self.c_m = 10.0
+            self.c_m = 20.0
             self.set_soma_size_from_Diam(30.0)
             #self.set_soma_size_from_Cm(80.0)
             print 'diameter: %7.1f' % self.soma.diam
             self.refarea = self.somaarea
             soma().napyr.gbar = nstomho(550, self.refarea)
-            soma().nap.gbar = nstomho(1.0, self.refarea)
+            soma().nap.gbar = nstomho(20.0, self.refarea)
             soma().kcnq.gbar = nstomho(2, self.refarea)  # pyramidal cells have kcnq: Li et al, 2011 (Thanos)
-            soma().kdpyr.gbar = nstomho(80, self.refarea) # Normally 80.
+            soma().kdpyr.gbar = nstomho(180, self.refarea) # Normally 80.
             soma().kif.gbar = nstomho(150, self.refarea) # normally 150
-            soma().kis.gbar = nstomho(140, self.refarea) # 40
+            soma().kis.gbar = nstomho(120, self.refarea) # 40
             soma().ihpyr.gbar = nstomho(2.8, self.refarea)
             soma().ihvcn.gbar = nstomho(0., self.refarea)
             soma().leak.gbar = nstomho(1.5, self.refarea)
