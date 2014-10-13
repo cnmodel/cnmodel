@@ -84,7 +84,6 @@ class DummySGC(SGC):
         """
         self._sound_stim = stim
         spikes = an_model.get_spiketrain(cf=self.cf, sr=self.sr, seed=seed, stim=stim)
-        print spikes.dtype, spikes.shape, spikes
         self.set_spiketrain(spikes * 1000)
 
 
