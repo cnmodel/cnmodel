@@ -5,11 +5,14 @@ def make_pulse(stim):
     """
     Generate a pulse train for current / voltage command. Returns a tuple:
     
-    * w : stimulus waveform
-    * maxt : duration of waveform
-    * tstims : index of each pulse in the train
+    Returns
+    -------
+    w : stimulus waveform
+    maxt : duration of waveform
+    tstims : index of each pulse in the train
     
-    Parameters:
+    Parameters
+    ----------
     stim : dict
         Holds parameters that determine stimulus shape:
         
