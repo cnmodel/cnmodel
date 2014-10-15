@@ -55,7 +55,7 @@ THREADSAFE
 	POINT_PROCESS MultiSiteSynapse
 	RANGE F, k0, kmax, taud, kd, tauf, kf, taus, ks
 	RANGE nZones, nVesicles, rseed, latency, latstd, debug
-	RANGE dD, dF, XMTR, glu
+	RANGE dD, dF, XMTR, glu, CaDi, CaFi
 	RANGE Fn, Dn
 	RANGE TTotal
 	RANGE nRequests, nReleases
