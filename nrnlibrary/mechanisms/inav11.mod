@@ -103,9 +103,6 @@ INITIAL {
     h = hinf
     s = sinf
     
-    VERBATIM
-    return 0;
-    ENDVERBATIM
 }
 
 
@@ -116,12 +113,6 @@ DERIVATIVE states {        : Computes state variables m, h, s and n
     h' = (hinf - h)/htau
     s' = (sinf - s)/stau
 
-:    m = m + mexp*(minf-m)
-:    h = h + hexp*(hinf-h)
-:    s = s + sexp*(sinf-s)
-:    VERBATIM
-:    return 0;
-:    ENDVERBATIM
 }
  
 
