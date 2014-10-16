@@ -11,13 +11,8 @@ import sys
 import os
 import lmfit
 import numpy as np
-#           (Name,  Value,  Vary,   Min,  Max,  Expr)
-# p.add_many(('amp1',    10,  True, None, None,  None),
-#            ('cen1',   1.2,  True,  0.5,  2.0,  None),
-#            ('wid1',   0.8,  True,  0.1, None,  None),
-#            ('amp2',   7.5,  True, None, None,  None),
-#            ('cen2',   1.9,  True,  1.0,  3.0,  None),
-#            ('wid2',  None, False, None, None, '2*wid1/3'))
+
+
 class ExpFitting:
     """
     """
@@ -52,7 +47,7 @@ class ExpFitting:
     def fit(self, x, y, p, verbose=False):
         
         mim = lmfit.minimize(self.efunc, p, args=(x, y))
-        mim.leastsq()
+        mim.leastsq(maxfev=5000*5)
         if verbose:
             lmfit.printfuncs.report_fit(mim.params)
         fitpars = mim.params

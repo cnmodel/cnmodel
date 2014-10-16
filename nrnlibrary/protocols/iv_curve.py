@@ -4,7 +4,6 @@ import scipy
 import scipy.integrate
 import scipy.stats
 import scipy.optimize
-import nrnlibrary.util.expfitting as expfitting
 
 try:
     import pyqtgraph as pg
@@ -13,6 +12,7 @@ except ImportError:
     HAVE_PG = False
 
 from ..util.stim import make_pulse
+from ..util import fitting
 from .protocol import Protocol
 
 
@@ -226,14 +226,29 @@ class IVCurve(Protocol):
         d = int(self.durs[0] / self.dt)
         return self.voltage_traces[-1][d//2:d].mean()
     
-    def input_resistance_tau(self, vmin=-10, imax=0):
+    def input_resistance_tau(self, vmin=-40, imax=0, return_fits=False):
         """
         Estimate resting input resistance and time constant.
-        :param vmin: minimum voltage to use in computation relative to resting
-        :param imax: maximum current to use in computation.
-        Return dict containing 'slope' and 'intercept' keys giving linear 
-        regression for subthreshold traces near rest, and 'tau'
-        giving two membrane time constants and their associated amplitudes.
+        
+        Parameters
+        ----------
+        vmin : float
+            minimum voltage to use in computation relative to resting
+        imax : float
+            maximum current to use in computation.
+        return_eval : bool
+            If True, return lmfit.ModelFit instances for the subthreshold trace
+            fits as well.
+            
+        Returns
+        -------
+        dict :
+            Dict containing:
+            * 'slope' and 'intercept' keys giving linear 
+              regression for subthreshold traces near rest
+            * 'tau' giving the average first-exponential fit time constant
+            * 'fits' giving a record array of exponential fit data to subthreshold
+              traces.
         
         Analyzes only traces hyperpolarizing pulse traces near rest, with no 
         spikes.
@@ -265,44 +280,80 @@ class IVCurve(Protocol):
         (slope, intercept, r, p, stderr) = reg
 
         # also measure the tau in the same traces:
-        window = 0.5  # only use first half of trace for fitting.
-        peakStart = int(self.durs[0] / self.dt)
-        peakStop = int(peakStart + (self.durs[1]*window) / self.dt) # peak can be in first half
+        pulse_start = int(self.durs[0] / self.dt)
+        pulse_stop = int((self.durs[0] + self.durs[1]) / self.dt)
 
         fits = []
         fit_inds = []
-        tx = self.time_values[peakStart:peakStop].copy()
-        tx -= tx[0]
-        nexp = 2
-        if nexp == 2:
-            fitter = expfitting.ExpFitting(nexp=2, 
-                    initpars={'dc': vmin, 'a1': 10., 't1': 5., 'a2': -10., 'delta': 3.0},
-                    bounds={'dc': (-120, 0.), 'a1': (0, 50.), 't1': (0.1, 25.), 'a2': (-50., 0.), 'delta': (3., 50.)}
-            )
-        elif nexp == 1:
-            fitter = expfitting.ExpFitting(nexp=1, 
-                    initpars={'dc': vmin, 'a1': 2., 't1': 5.},
-                    bounds={'dc': (-120, 0.), 'a1': (-50, 0.), 't1': (0.1, 50.)}
-            )
+        tx = self.time_values[pulse_start:pulse_stop].copy()
         for i, m in enumerate(mask):
-            if m and (self.rest_vm() - Vss[i]) > 1:
-                trace = self.voltage_traces[i][peakStart:peakStop]
-                fitParams = fitter.fit(tx, trace, fitter.fitpars)
-                fits.append(fitParams)
-                fit_inds.append(i)
+            if not m or (self.rest_vm() - Vss[i]) <= 1:
+                continue
+            
+            trace = self.voltage_traces[i][pulse_start:pulse_stop]
+            
+            # find first minimum in the trace
+            min_ind = np.argmin(trace)
+            min_val = trace[min_ind]
+            min_diff = trace[0] - min_val
+            tau_est = min_ind * self.dt * (1 - 1 / np.e)
+            
+            # Fit cell charging to single exponential
+            fit = fitting.Exp1().fit(trace[:min_ind],
+                                     x=tx[:min_ind],
+                                     xoffset=(tx[0], 'fixed'),
+                                     yoffset=(min_val, -120, 0),
+                                     amp=(min_diff, 0, 50),
+                                     tau=(tau_est, 0.1, 50))
+
+            # find first maximum in the trace (following with first minimum)
+            max_ind = np.argmax(trace[min_ind:]) + min_ind
+            max_val = trace[max_ind]
+            max_diff = min_val - max_val
+            tau2_est = max_ind * self.dt * (1 - 1 / np.e)
+            amp1_est = fit.params['amp'].value
+            tau1_est = fit.params['tau'].value
+            amp2_est = fit.params['yoffset'] - max_val
+            
+            # fit up to first maximum with double exponential, using prior
+            # fit as seed.
+            fit = fitting.Exp2().fit(trace[:max_ind],
+                                     method='nelder',
+                                     x=tx[:max_ind],
+                                     xoffset=(tx[0], 'fixed'),
+                                     yoffset=(max_val, -120, 0),
+                                     amp1=(amp1_est, 0, 50),
+                                     tau1=(tau1_est, 0.1, 50),
+                                     amp2=(amp2_est, -50, 0),
+                                     tau_ratio=(tau2_est/tau1_est, 2, 50),
+                                     tau2='tau_ratio * tau1'
+                                     )
+            
+            fits.append(fit)
+            fit_inds.append(i)
         
-        fit_data = np.empty(len(fits), dtype=[('tau1', float), ('amp1', float), 
-                                              ('tau2', float), ('amp2', float), 
-                                              ('offset', float), ('index', int)])
+        # convert fits to record array
+        dtype = [(k, float) for k in fits[0].params] + [('index', int)]
+        fit_data = np.empty(len(fits), dtype=dtype)
         for i, fit in enumerate(fits):
-            if nexp == 1:
-                fit_data[i] = fit['t1'], fit['a1'], 0, 0, fit['dc'], fit_inds[i]
-            else:
-                fit_data[i] = fit['t1'], fit['a1'], fit['t1'] * fit['delta'], fit['a2'], fit['dc'], fit_inds[i]
+            for k,v in fit.params.items():
+                fit_data[i][k] = v.value
+            fit_data[i]['index'] = fit_inds[i]
         
-        return {'slope': slope, 
-                'intercept': intercept, 
+        if 'tau' in fit_data.dtype.fields:
+            tau = fit_data['tau'].mean()
+        else:
+            tau = fit_data['tau1'].mean()
+        
+        ret = {'slope': slope, 
+                'intercept': intercept,
+                'tau': tau,
                 'fits': fit_data}
+        
+        if return_fits:
+            return ret, fits
+        else:
+            return ret
 
     def show(self, cell=None):
         """
@@ -364,12 +415,14 @@ class IVCurve(Protocol):
         
         
         # Print Rm, Vrest 
-        rmtau = self.input_resistance_tau()
+        rmtau, fits = self.input_resistance_tau(return_fits=True)
         s = rmtau['slope']
         i = rmtau['intercept']
-        tau1 = rmtau['fits']['tau1'].mean()
-        tau2 = rmtau['fits']['tau2'].mean()
-        print ("\nMembrane resistance (chord): {0:0.1f} MOhm  Taum1: {1:0.2f}  Taum2: {2:0.2f}".format(s, tau1, tau2))
+        #tau1 = rmtau['fits']['tau1'].mean()
+        #tau2 = rmtau['fits']['tau2'].mean()
+        #print ("\nMembrane resistance (chord): {0:0.1f} MOhm  Taum1: {1:0.2f}  Taum2: {2:0.2f}".format(s, tau1, tau2))
+        
+        # Plot linear subthreshold I/V relationship
         ivals = np.array([Icmd.min(), Icmd.max()])
         vvals = s * ivals + i
         line = pg.QtGui.QGraphicsLineItem(ivals[0], vvals[0], ivals[1], vvals[1])
@@ -377,13 +430,14 @@ class IVCurve(Protocol):
         line.setZValue(-10)
         IVplot.addItem(line, ignoreBounds=True)
         
-        # plot fits
-        for rec in rmtau['fits']:
-            t1, a1, t2, a2, yoff, index = rec
-            
-            t = np.linspace(0, self.durs[1], 1000)
-            pars = {'t1': t1, 'a1': a1, 'a2': a2, 'dc': yoff, 'delta': t2/t1}
-            y = expfitting.ExpFitting.exp2(t, **pars)
-            Vplot.plot(t+self.durs[0], y, pen={'color': 'y', 'style': pg.QtCore.Qt.DashLine})
+        # plot exponential fits
+        for fit in fits:
+            t = np.linspace(self.durs[0], self.durs[0]+self.durs[1], 1000)
+            y = fit.eval(x=t)
+            Vplot.plot(t, y, pen={'color': 'y', 'style': pg.QtCore.Qt.DashLine})
+
+            # plot initial guess
+            #y = fit.eval(x=t, **fit.init_params.valuesdict())
+            #Vplot.plot(t, y, pen={'color': 'b', 'style': pg.QtCore.Qt.DashLine})
             
         print "Resting membrane potential: %0.1f mV\n" % self.rest_vm()
