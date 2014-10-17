@@ -19,6 +19,7 @@ if '--audit' in sys.argv:
 
 # generate test flags
 flags = sys.argv[1:]
+flags.append('-v')
 tb = [flag for flag in flags if flag.startswith('--tb')]
 if len(tb) == 0:
     flags.append('--tb=short')

@@ -50,7 +50,7 @@ class OctopusRothman(Octopus, Cell):
             type = 'II-o'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'Octopus'}
-        self.i_test_range=(-2.0, 2.0, 0.2)
+        self.i_test_range=(-4.0, 4.0, 0.2)
         self.spike_threshold = -50
         # overrides:
         self.e_leak = -62
