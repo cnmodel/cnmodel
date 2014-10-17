@@ -7,10 +7,16 @@ import re
 DATA = OrderedDict()
 
 def get(*args, **kwds):
+    """ Get a single value from the database using the supplied arguments
+    to query. 
+    """
     key = mk_key(*args, **kwds)
     return DATA[key][0]
     
 def get_source(*args, **kwds):
+    """ Get the source of a single value from the database using the supplied 
+    arguments to query. 
+    """
     key = mk_key(*args, **kwds)
     return DATA[key][1]
     

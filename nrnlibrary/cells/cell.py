@@ -21,6 +21,10 @@ class Cell(object):
         for k in ['soma', 'maindend', 'secdend', 'internode', 'initialsegment', 'axonnode', 'axon']:
             self.all_sections[k] = []  # initialize to an empty list
         
+        # Record synaptic inputs and projections
+        self.inputs = []
+        self.outputs = []
+        
         # each cell has the following parameters:
         self.totcap = None  # total membrane capacitance (somatic)
         self.somaarea = None  # total soma area
@@ -94,6 +98,8 @@ class Cell(object):
         terminal = self.make_terminal(pre_sec, post_sec, **pre_opts)
         psd = post_cell.make_psd(pre_sec, post_sec, terminal, **post_opts)
         synapse = Synapse(terminal, psd)
+        self.outputs.append(synapse)
+        post_cell.inputs.append(synapse)
         
         return synapse
 
