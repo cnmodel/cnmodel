@@ -226,7 +226,7 @@ class IVCurve(Protocol):
         d = int(self.durs[0] / self.dt)
         return self.voltage_traces[-1][d//2:d].mean()
     
-    def input_resistance_tau(self, vmin=-40, imax=0, return_fits=False):
+    def input_resistance_tau(self, vmin=-10, imax=0, return_fits=False):
         """
         Estimate resting input resistance and time constant.
         
@@ -322,16 +322,16 @@ class IVCurve(Protocol):
                                      x=tx[:max_ind],
                                      xoffset=(tx[0], 'fixed'),
                                      yoffset=(max_val, -120, 0),
-                                     amp1=(amp1_est, 0, 50),
+                                     amp1=(amp1_est, 0, 200),
                                      tau1=(tau1_est, 0.1, 50),
-                                     amp2=(amp2_est, -50, 0),
+                                     amp2=(amp2_est, -200, 0),
                                      tau_ratio=(tau2_est/tau1_est, 2, 50),
                                      tau2='tau_ratio * tau1'
                                      )
             
             fits.append(fit)
             fit_inds.append(i)
-        
+
         # convert fits to record array
         dtype = [(k, float) for k in fits[0].params] + [('index', int)]
         fit_data = np.empty(len(fits), dtype=dtype)
@@ -434,7 +434,7 @@ class IVCurve(Protocol):
         for fit in fits:
             t = np.linspace(self.durs[0], self.durs[0]+self.durs[1], 1000)
             y = fit.eval(x=t)
-            Vplot.plot(t, y, pen={'color': 'y', 'style': pg.QtCore.Qt.DashLine})
+            Vplot.plot(t, y, pen={'color': (100, 100, 0), 'style': pg.QtCore.Qt.DashLine})
 
             # plot initial guess
             #y = fit.eval(x=t, **fit.init_params.valuesdict())
