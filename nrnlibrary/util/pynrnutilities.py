@@ -43,7 +43,23 @@ def get_sections(h):
             secnames[g.group(1)].append(int(g.group(2)))
     return secnames
 
-
+def all_objects():
+    """ Return a dict of all objects known to NEURON. 
+    
+    Keys are 'Section', 'Segment', 'Mechanism', 'Vector', 'PointProcess', 
+    'NetCon', ...
+    """
+    objs = {}
+    objs['Section'] = list(h.all_sec())
+    objs['Segment'] = []
+    for sec in objs['Section']:
+        objs['Segment'].extend(list(sec.allseg()))
+    objs['PointProcess'] = []
+    for seg in objs['Segment']:
+        objs['PointProcess'].extend(list(seg.point_processes()))
+        
+    return objs
+    
 
 
 def alpha(alpha=0.1, delay=1, amp = 1.0, tdur = 50., dt=0.010):
