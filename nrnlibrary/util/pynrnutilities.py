@@ -5,7 +5,7 @@
 
 import numpy as np
 import numpy.ma as ma # masked array
-import pylab as pl
+#import pylab as pl
 import re
 # routine to convert conductances from nS as given elsewhere
 #   to mho/cm2 as required by NEURON 1/28/99 P. Manis

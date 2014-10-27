@@ -1,5 +1,6 @@
 import os, sys, pickle, pprint
 import numpy as np
+import pyqtgraph as pg
 from .. import AUDIT_TESTS
 
 class UserTester(object):
@@ -26,6 +27,7 @@ class UserTester(object):
         
         *key* is used to determine the file name for storing test results. 
         """
+        self.audit = AUDIT_TESTS
         self.key = key
         self.assert_test_info(*args, **kwds)
     
@@ -85,8 +87,12 @@ class UserTester(object):
         """
         print "\n=== New test results for %s: ===\n" % self.key
         pprint.pprint(info)
+        win = pg.DiffTreeWidget()
+        win.setData(expect, info)
+        win.show()
         print "Store new test results? [y/n]",
         yn = raw_input()
+        win.hide()
         return yn.lower().startswith('y')
     
     def assert_test_info(self, *args, **kwds):
@@ -94,15 +100,13 @@ class UserTester(object):
         Test *cell* and raise exception if the results do not match prior
         data.
         """
-        audit = AUDIT_TESTS
-        
         result = self.run_test(*args, **kwds)
         expect = self.load_test_result()
         try:
             assert expect is not None
             self.compare_results(result, expect)
         except:
-            if not audit:
+            if not self.audit:
                 if expect is None:
                     raise Exception("No prior test results for test '%s'. "
                                     "Run test.py --audit store new test data." % self.key)

@@ -1,20 +1,27 @@
 from neuron import h
 import numpy as np
+from ..util import random
 
 class Protocol(object):
     """
     Base class providing common tools for running, analyzing, and displaying
     simulations.
     """
-    def __init__(self, seed=None):
-        if seed is not None:
-            np.random.seed(seed)
-            # todo: seed random generators used in NEURON as well
-            
+    def __init__(self):
         self.reset()
 
     def reset(self):
         self._vectors = {}
+        
+    def run(self, seed=None):
+        """
+        Run this protocol. 
+        
+        Subclasses should extend this method.
+        """
+        if seed is not None:
+            random.set_seed(seed)
+        self.reset()
     
     def __setitem__(self, name, variable):
         """
@@ -29,8 +36,6 @@ class Protocol(object):
         Return a np array for previously recorded data given *name*.
         """
         return np.array(self._vectors[name])
-
-
 
     def custom_init(self, vinit=-60.):
         """
