@@ -18,8 +18,29 @@ class Bushy(Cell):
         else:
             raise ValueError ('DStellate type %s is unknown', type)
 
+    def make_psd(self, terminal, **kwds):
+        from .. import cells
+        
+        pre_sec = terminal.section
+        pre_cell = terminal.cell
+        post_sec = self.soma
+        
+        if isinstance(pre_cell, cells.SGC):
+            return synapses.GluPSD(post_sec, terminal,
+                                   ampa_gmax=1700.,
+                                   nmda_ampa_ratio = 0.36,
+                                   )
+        elif isinstance(pre_cell, cells.DStellate):
+            return synapses.GlyPSD(post_sec, terminal,
+                                   psdType='glyslow',
+                                   )
+        else:
+            raise TypeError("Cannot make PSD for %s => %s" % 
+                            (pre_cell.__class__.__name__, 
+                             self.__class__.__name__))
 
-class BushyRothman(Bushy, Cell):
+
+class BushyRothman(Bushy):
     """
     VCN bushy cell model.
     Rothman and Manis, 2003abc (Type II, Type II-I)
@@ -224,21 +245,4 @@ class BushyRothman(Bushy, Cell):
             h.topology()
         self.add_section(maindend, 'maindend')
         self.add_section(secdend, 'secdend')
-
-    def make_psd(self, pre_sec, post_sec, terminal, **kwds):
-        from .. import cells
-        pre_cell = cells.cell_from_section(pre_sec)
-        if isinstance(pre_cell, cells.SGC):
-            return synapses.GluPSD(pre_sec, post_sec, terminal,
-                                   ampa_gmax=1700.,
-                                   nmda_ampa_ratio = 0.36,
-                                   )
-        elif isinstance(pre_cell, cells.DStellate):
-            return synapses.GlyPSD(pre_sec, post_sec, terminal,
-                                   psdType='glyslow',
-                                   )
-        else:
-            raise TypeError("Cannot make PSD for %s => %s" % 
-                            (pre_cell.__class__.__name__, 
-                             self.__class__.__name__))
 

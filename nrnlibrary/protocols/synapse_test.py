@@ -17,7 +17,7 @@ class SynapseTest(Protocol):
     def reset(self):
         super(SynapseTest, self).reset()
 
-    def run(self, pre_sec, post_sec, n_synapses, temp=34.0, dt=0.025):
+    def run(self, pre_cell, post_cell, n_synapses, temp=34.0, dt=0.025):
         """ 
         Basic synapse test. Connects sections of two cells with *n_synapses*.
         The cells are allowed to negotiate the details of the connecting 
@@ -29,15 +29,13 @@ class SynapseTest(Protocol):
         * Distribution of PSG amplitude, kinetics, and latency
         * Synaptic depression / facilitation and recovery timecourses
         """
-        pre_cell = cells.cell_from_section(pre_sec)
-        post_cell = cells.cell_from_section(post_sec)
         synapses = []
         for i in range(n_synapses):
-            synapses.append(pre_cell.connect(pre_sec, post_sec))
+            synapses.append(pre_cell.connect(post_cell))
         
         self.synapses = synapses
-        self.pre_sec = pre_sec
-        self.post_sec = post_sec
+        self.pre_sec = synapses[0].terminal.section
+        self.post_sec = synapses[0].psd.section
         self.pre_cell = pre_cell
         self.post_cell = post_cell
         
@@ -75,7 +73,6 @@ class SynapseTest(Protocol):
         # istim current pulse train
         i_stim_vec = h.Vector(secmd)
         i_stim_vec.play(istim._ref_i, dt, 0)
-
 
         # create hoc vectors for each parameter we wish to monitor and display
         synapse = synapses[0]

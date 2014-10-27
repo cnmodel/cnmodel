@@ -4,8 +4,10 @@ from ..util import nstomho
 import numpy as np
 from .cell import Cell
 from .. import synapses
+from .. import an_model
 
-__all__ = ['SGC', 'SGC_TypeI']
+__all__ = ['SGC', 'SGC_TypeI', 'DummySGC']
+
 
 class SGC(Cell):
 
@@ -14,14 +16,84 @@ class SGC(Cell):
         if model == 'I':
             return SGC_TypeI(**kwds)
         else:
-            raise ValueError ('DStellate type %s is unknown', type)
+            raise ValueError ('SGC type %s is unknown', type)
+        
+    def __init__(self, cf=None, sr=None):
+        Cell.__init__(self)
+        self._cf = cf
+        self._sr = sr
+        self.spike_source = None  # used by DummySGC to connect VecStim to terminal
 
-class SGC_TypeI(SGC, Cell):
+    @property
+    def cf(self):
+        """ Center frequency
+        """
+        return self._cf
+    
+    @property
+    def sr(self):
+        """ Spontaneous rate group. 1=low, 2=mid, 3=high
+        """
+        return self._sr
+        
+    def make_terminal(self, post_cell, **kwds):
+        from .. import cells
+        #
+        # set parameters according to the target cell type
+        #
+        
+        if isinstance(post_cell, cells.Bushy):
+            nzones, delay = 100, 0
+        elif isinstance(post_cell, cells.TStellate):
+            nzones, delay = 1, 0
+        elif isinstance(post_cell, cells.DStellate):
+            nzones, delay = 1, 0
+        else:
+            raise NotImplementedError("Cannot connect SGC to cell type %s" % 
+                                      type(post_cell))
+        
+        pre_sec = self.soma
+        return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, 
+                                           delay=delay, spike_source=self.spike_source)
+
+    
+
+class DummySGC(SGC):
+    """ SGC class with no cell body; this cell only replays a predetermined
+    spike train.
+    """
+    def __init__(self, cf=None, sr=None):
+        SGC.__init__(self, cf, sr)
+        self.vecstim = h.VecStim()
+        
+        # this causes the terminal to receive events from the VecStim:
+        self.spike_source = self.vecstim
+        
+        # just an empty section for holding the terminal
+        self.add_section(h.Section(), 'soma')
+        
+    def set_spiketrain(self, times):
+        """ Set the times of spikes to be replayed by the cell.
+        """
+        self._spiketrain = times
+        self._stvec = h.Vector(times)
+        self.vecstim.play(self._stvec)
+
+    def set_sound_stim(self, stim, seed):
+        """ Set the sound stimulus used to generate this cell's spike train.
+        """
+        self._sound_stim = stim
+        spikes = an_model.get_spiketrain(cf=self.cf, sr=self.sr, seed=seed, stim=stim)
+        self.set_spiketrain(spikes * 1000)
+
+
+class SGC_TypeI(SGC):
     """
     Spiral ganglion cell model
     """
-    def __init__(self, nach='jsrna', ttx=False, debug=False, species='guineapig', type='bm'):
-        super(SGC_TypeI, self).__init__()
+    def __init__(self, nach='jsrna', ttx=False, debug=False, species='guineapig', 
+                 type='bm', cf=None, sr=None):
+        super(SGC_TypeI, self).__init__(cf=cf, sr=sr)
 
         if type == None:
             type = 'bm'  # types are: a (apical), bm (basal middle)
@@ -164,22 +236,3 @@ class SGC_TypeI(SGC, Cell):
 #        print self.status['name'], self.status['type'], V, self.ix
         return np.sum([self.ix[i] for i in self.ix])
 
-    def make_terminal(self, pre_sec, post_sec, **kwds):
-        from .. import cells
-        post_cell = cells.cell_from_section(post_sec)
-        #
-        # set parameters according to the target cell type
-        #
-        
-        if isinstance(post_cell, cells.Bushy):
-            nzones, delay = 100, 0
-        elif isinstance(post_cell, cells.TStellate):
-            nzones, delay = 1, 0
-        elif isinstance(post_cell, cells.DStellate):
-            nzones, delay = 1, 0
-        else:
-            raise NotImplementedError("Cannot connect SGC to cell type %s" % 
-                                      type(post_cell))
-        
-        return synapses.StochasticTerminal(pre_sec, post_sec, nzones=nzones, delay=delay)
-        

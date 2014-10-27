@@ -19,6 +19,49 @@ class DStellate(Cell):
         else:
             raise ValueError ('DStellate type %s is unknown', type)
 
+    def make_psd(self, terminal, **kwds):
+        from .. import cells
+
+        pre_sec = terminal.section
+        pre_cell = terminal.cell
+        post_sec = self.soma
+        
+        if isinstance(pre_cell, cells.SGC):
+            psd = synapses.GluPSD(post_sec, terminal,
+                                   ampa_gmax=4600.,
+                                   nmda_ampa_ratio = 1.28,
+                                   )
+            return psd
+        elif isinstance(pre_cell, cells.DStellate):
+            psd = synapses.GlyPSD(post_sec, terminal,
+                                   psdType='glyfast',
+                                   )
+            return psd
+        else:
+            raise TypeError("Cannot make PSD for %s => %s" % 
+                            (pre_cell.__class__.__name__, 
+                             self.__class__.__name__))
+
+    def make_terminal(self, post_cell, **kwds):
+        from .. import cells
+        #
+        # set parameters according to the target cell type
+        #
+
+        if isinstance(post_cell, cells.Bushy):
+            nzones, delay = 10, 0
+        elif isinstance(post_cell, cells.TStellate):
+            nzones, delay = 5, 0
+        elif isinstance(post_cell, cells.DStellate):
+            nzones, delay = 5, 0
+        else:
+            raise NotImplementedError("No knowledge as to how to connect DStellate to cell type %s" %
+                                      type(post_cell))
+        
+        pre_sec = self.soma
+        
+        return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, delay=delay)
+
 
 class DStellateRothman(DStellate):
     """
@@ -179,44 +222,6 @@ class DStellateRothman(DStellate):
         self.maindend = dendrites
         self.status['dendrites'] = True
         self.add_section(self.maindend, 'maindend')
-
-    def make_psd(self, pre_sec, post_sec, terminal, **kwds):
-        from .. import cells
-        pre_cell = cells.cell_from_section(pre_sec)
-        if isinstance(pre_cell, cells.SGC):
-            psd = synapses.GluPSD(pre_sec, post_sec, terminal,
-                                   ampa_gmax=4600.,
-                                   nmda_ampa_ratio = 1.28,
-                                   )
-            return psd
-        elif isinstance(pre_cell, cells.DStellate):
-            psd = synapses.GlyPSD(pre_sec, post_sec, terminal,
-                                   psdType='glyfast',
-                                   )
-            return psd
-        else:
-            raise TypeError("Cannot make PSD for %s => %s" % 
-                            (pre_cell.__class__.__name__, 
-                             self.__class__.__name__))
-
-    def make_terminal(self, pre_sec, post_sec, **kwds):
-        from .. import cells
-        post_cell = cells.cell_from_section(post_sec)
-        #
-        # set parameters according to the target cell type
-        #
-
-        if isinstance(post_cell, cells.Bushy):
-            nzones, delay = 10, 0
-        elif isinstance(post_cell, cells.TStellate):
-            nzones, delay = 5, 0
-        elif isinstance(post_cell, cells.DStellate):
-            nzones, delay = 5, 0
-        else:
-            raise NotImplementedError("No knowledge as to how to connect DStellate to cell type %s" %
-                                      type(post_cell))
-
-        return synapses.StochasticTerminal(pre_sec, post_sec, nzones=nzones, delay=delay)
 
 
 class DStellateEager(DStellate):
