@@ -16,7 +16,7 @@ class StochasticTerminal(Terminal):
     """
     def __init__(self, pre_sec, target_cell, nzones=1, celltype='bushy', message=None,
                 type='lognormal', identifier=0, stochastic_pars=None, calcium_pars=None,
-                delay=0, debug=False, psdtype=None, select=None, spike_source=None):
+                delay=0, debug=False, psdtype=None, select=None, spike_source=None, dep_flag=1):
         """
         This routine creates a (potentially) multisite synapse with:
             A MultiSiteSynapse release mechanism that includes stochastic release, with a lognormal
@@ -84,6 +84,7 @@ class StochasticTerminal(Terminal):
         relsite.rseed = 2 # int(np.random.random_integers(1,1024))
         relsite.latency = stochastic_pars.latency
         relsite.latstd = stochastic_pars.LN_std
+        relsite.Dep_Flag = dep_flag  # control synaptic dynamics
         if debug is True:
             relsite.debug = 1
         relsite.Identifier = identifier

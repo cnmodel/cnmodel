@@ -55,7 +55,7 @@ THREADSAFE
 	POINT_PROCESS MultiSiteSynapse
 	RANGE F, k0, kmax, taud, kd, tauf, kf, taus, ks
 	RANGE nZones, nVesicles, rseed, latency, latstd, debug
-	RANGE dD, dF, XMTR, glu
+	RANGE dD, dF, XMTR, glu, CaDi, CaFi
 	RANGE Fn, Dn
 	RANGE TTotal
 	RANGE nRequests, nReleases
@@ -67,7 +67,8 @@ THREADSAFE
 	RANGE ev_index : count in the EventLatencies (in case we are "short")
 	RANGE sc_index : count in the ScopDist (in case we are "short")
 	: parameters for latency shift during repetitive stimulation (Oct 19, 2011)
-	RANGE Lat_Flag, Lat_t0, Lat_A0, Lat_tau : Lat_Flag  = 0 means fixed latency (set by "latency" above) 
+	RANGE Dep_Flag : Depression flag (0 to remove depression; 1 to allow DKR control of facilitation and depression)
+    RANGE Lat_Flag, Lat_t0, Lat_A0, Lat_tau : Lat_Flag  = 0 means fixed latency (set by "latency" above)
 											: otherwise, latency = latency for t < Lat_t0
 											:            latency = latency + Lat_A0*(1-exp(-(t-Lat_t0)/Lat_tau))
 	: parameters for lognorm distribution shift during repetitive stimulation (Oct 19, 2011)
@@ -117,6 +118,7 @@ PARAMETER {
 	: control flags	 - if debug is 1, show all, if 2, just "some"
 	debug = 0
 	Identifier = 0
+    Dep_Flag = 1 (1) : 1 means use depression calculations; 0 means always set release probability to F
 }
 
 ASSIGNED {
@@ -342,6 +344,10 @@ PROCEDURE update(tstep (ms)) {
 	CaDi = CaDn
 	CaFi = CaFn
 	}
+    if (Dep_Flag == 0) { : no depression
+        Dn = 1.0  : set to 1
+        Fn = F   : set to initial value to set release probability constant
+    }
 :	VERBATIM
 :		if (debug >= 2 ){
 :			fprintf(stdout, "update start t = %f ts=%f: F=%7.2f CaDi = %g CaFi = %g\n", \

@@ -53,8 +53,11 @@ class SGC(Cell):
                                       type(post_cell))
         
         pre_sec = self.soma
-        return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, 
-                                           delay=delay, spike_source=self.spike_source)
+        # when created, depflag is set True (1) so that we compute the DKR D*F to get release
+        # this can be modified prior to the run by setting the terminal(s) so that dep_flag is 0
+        # (no DKR: constant release probability)
+        return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones,
+                                           delay=delay, spike_source=self.spike_source, dep_flag=1)
 
     
 
