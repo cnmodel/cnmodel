@@ -75,6 +75,9 @@ class SynapseTester(UserTester):
         # seed random generator using the name of this test
         seed = "%s_%s" % (pre, post)
         
+        # Make sure no sections are left over from previous tests
+        assert len(list(neuron.h.allsec())) == 0
+        
         pre_cell = make_cell(pre)
         post_cell = make_cell(post)
         n_term = convergence.get(pre, {}).get(post, None)
