@@ -26,6 +26,7 @@ class SGCInputTest(Protocol):
         #self['prevm'] = preCell.soma(0.5)._ref_v
         for i in range(30):
             self['xmtr%d'%i] = synapse.terminal.relsite._ref_XMTR[i]
+            synapse.terminal.relsite.Dep_Flag = False
         self['t'] = h._ref_t
         
         h.tstop = 100.0 # duration of a run
