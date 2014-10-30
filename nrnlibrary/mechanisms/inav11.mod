@@ -102,7 +102,7 @@ INITIAL {
     m = minf
     h = hinf
     s = sinf
-    
+
 }
 
 

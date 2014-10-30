@@ -17,8 +17,8 @@ class SynapseTest(Protocol):
     def reset(self):
         super(SynapseTest, self).reset()
 
-    def run(self, pre_cell, post_cell, n_synapses, temp=34.0, dt=0.025):
-        """ 
+    def run(self, pre_sec, post_sec, n_synapses, temp=34.0, dt=0.025, **kwds):
+        """
         Basic synapse test. Connects sections of two cells with *n_synapses*.
         The cells are allowed to negotiate the details of the connecting 
         synapse. The presynaptic soma is then driven with a pulse train
@@ -29,6 +29,10 @@ class SynapseTest(Protocol):
         * Distribution of PSG amplitude, kinetics, and latency
         * Synaptic depression / facilitation and recovery timecourses
         """
+        Protocol.run(self, **kwds)
+        
+        pre_cell = cells.cell_from_section(pre_sec)
+        post_cell = cells.cell_from_section(post_sec)
         synapses = []
         for i in range(n_synapses):
             synapses.append(pre_cell.connect(post_cell))
@@ -362,6 +366,10 @@ class SynapseTest(Protocol):
                 events['half width'][i] = np.nan
 
         return events
+
+    def hide(self):
+        if hasattr(self, 'win'):
+            self.win.hide()
 
     def show(self, releasePlot=True, glyPlot=False, plotFocus='EPSC'):
         self.win = pg.GraphicsWindow()
