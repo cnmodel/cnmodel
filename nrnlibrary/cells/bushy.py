@@ -98,14 +98,14 @@ class BushyRothman(Bushy):
         soma = self.soma
         if species == 'mouse' and type == 'II':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
-            #print 'Mouse bushy cell'
+           # print 'Mouse bushy cell'
             self.set_soma_size_from_Cm(26.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(58.0, self.somaarea)
             soma().klt.gbar = nstomho(80.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(30.0, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
-            self.vm0 = self.find_i0()
+            #self.vm0 = self.find_i0()
             self.axonsf = 0.57
         elif species == 'guineapig' and type =='II':
             self.set_soma_size_from_Cm(12.0)
@@ -137,7 +137,7 @@ class BushyRothman(Bushy):
             raise ValueError('Species "%s" or species-type "%s" is not recognized for Bushy cells' %  (species, type))
         self.status['species'] = species
         self.status['type'] = type
-        self.cell_initialize(showinfo=False)
+        self.cell_initialize(showinfo=True)
         if not silent:
             print 'set cell as: ', species
             print ' with Vm rest = %6.3f' % self.vm0
