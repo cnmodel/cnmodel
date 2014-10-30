@@ -79,6 +79,7 @@ class Endbulb(Protocol):
         """
         runinfo = {'CF': self._CF, 'StimFreq': self._stimFreq, 'SPL': self._dBSPL,
                    'nConverge': self.nconverge, 'SR': self.srs}
+        return runinfo
 
     def run(self, temp=34.0, dt=0.025, seed=575982035):
         cfs = np.random.normal(loc=self.CF, scale=20, size=self.nconverge)  # jitter frequencies. 20Hz is adjacent HC at 4k
@@ -88,7 +89,7 @@ class Endbulb(Protocol):
             preCell = cells.DummySGC(cf=cfs[i], sr=self.srs[i])
             synapse = preCell.connect(self.post_cell)
             synapse.terminal.relsite.Dep_Flag = False
-            synapse.terminal.relsite.nZones = 5
+            #synapse.terminal.relsite.nZones = 5
             synapse.terminal.relsite.dF = 0.2
             self.pre_cell[i] = preCell
             self.synapse[i] = synapse
@@ -123,17 +124,20 @@ class Endbulb(Protocol):
         self.custom_init()
         while self.h.t < self.h.tstop:
             self.h.fadvance()
-        print self.vecs.keys()
-        self.vecs_to_dict()
-        print self.d
-        return(self.d)
+        return self.vecs_to_dict()
 
+    def getResults(self):
+        return self.vecs_to_dict()  # make sure current
+        
     def vecs_to_dict(self):
         self.d = {}
         for k in self.vecs.keys():
-            print 'k: ', k
+            #print 'k: ', k
             self.d[k] = np.array(self.vecs[k])  # turn in to numpy arrays
-
+        # also add spike trains of pre cells
+        for k in range(self.nconverge):
+            self.d['preCell%03d'%k] = self.pre_cell[k]._spiketrain
+        return self.d
 
     def show0(self):
         self.win = pg.GraphicsWindow()
