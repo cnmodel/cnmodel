@@ -34,7 +34,14 @@ def plotResults(results):
             layout.getPlot((i,1)).addItem(vt)
     pgh.show()
 
+def saveResults(results):
+    """
+    Store the results to a disk file.
+    """
+    pass
 
+def retrieveResults():
+    pass
 
 RIlevels = np.arange(0, 101, 50)
 nLevels = RIlevels.shape[0]
@@ -51,7 +58,7 @@ with mproc.Parallelize(enumerate(TASKS), results=results, workers=nWorkers) as t
         endbulb[i] = endbulb1.Endbulb()
         endbulb[i].CF = CF0
         endbulb[i].dBSPL = RIlevels[i]
-        endbulb[i].run()
+        endbulb[i].run(seedoffset=12345687*i)
         #tres = {'index': i}
         #print tres
         #tasker.results[i] = {'r': tres, 'pars': {'db': RIlevels[i], 'cf': CF0}}

@@ -13,9 +13,9 @@ class Endbulb(Protocol):
     def __init__(self):
         # create a cell
 #        print dir(Endbulb)
-        self.post_cell = cells.Bushy.create(species='guineapig')
+        self.post_cell = cells.Bushy.create(species='mouse')
         self.post_cell.cell_initialize()  # initialize the cell to it's rmp
-        self.custom_init()
+        #self.custom_init()
         self.h = h
         self._CF = None  # cell CF in Hz
         self._stimFreq = None  # stim frequency, in Hz
@@ -81,7 +81,7 @@ class Endbulb(Protocol):
                    'nConverge': self.nconverge, 'SR': self.srs}
         return runinfo
 
-    def run(self, temp=34.0, dt=0.025, seed=575982035):
+    def run(self, temp=34.0, dt=0.025, seed=575982035, seedoffset=0):
         cfs = np.random.normal(loc=self.CF, scale=20, size=self.nconverge)  # jitter frequencies. 20Hz is adjacent HC at 4k
         self.pre_cell = [None]*self.nconverge
         self.synapse = [None]*self.nconverge
@@ -115,13 +115,19 @@ class Endbulb(Protocol):
             self.vecs[var].record(self.synapse[k].psd.ampa_psd[i]._ref_g)
 
         for i in range(self.nconverge):
-            self.pre_cell[i].set_sound_stim(self.stim, seed=seed+i)
+            self.pre_cell[i].set_sound_stim(self.stim, seed=seed+i+seedoffset)
 
         self.h.tstop = 40.0 # duration of a run, msec
         self.h.celsius = temp
         self.h.dt = dt
-        self.post_cell.cell_initialize()
+        self.post_cell.vm0 = None  # force initialization
+        self.post_cell.cell_initialize()  # initialize the cell to it's rmp
         self.custom_init()
+#        Rin, tau, v = self.post_cell.measure_rintau(auto_initialize=False)
+#        print '    *** Rin: %9.0f  tau: %9.1f   v: %6.1f' % (Rin, tau, v)
+#        self.post_cell.cell_initialize()  # re-initialize the cell to it's rmp
+#        self.custom_init()
+        #self.h.run()
         while self.h.t < self.h.tstop:
             self.h.fadvance()
         return self.vecs_to_dict()
