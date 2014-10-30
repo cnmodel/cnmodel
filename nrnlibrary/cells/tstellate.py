@@ -69,21 +69,9 @@ class TStellateRothman(TStellate):
 
         soma.nseg = 1
 
-        if nach in ['nacn', 'na']:
-            soma.insert('na')
-        elif nach == 'nav11':
-            soma.insert('nav11')
-        elif nach == 'jsrna':
-            soma.insert('jsrna')
-        else:
-            raise ValueError('Sodium channel %s in type 1 cell not known' % nach)
         self.mechanisms = ['kht', 'ka', 'ihvcn', 'leak', nach]
         for mech in self.mechanisms:
             soma.insert(mech)
-        # soma.insert("kht")
-        # soma.insert('ka')
-        # soma.insert('ihvcn')
-        # soma.insert('leak')
         soma.ek = self.e_k
         soma.ena = self.e_na
         soma().ihvcn.eh = self.e_h
@@ -145,10 +133,10 @@ class TStellateRothman(TStellate):
 
         self.status['species'] = species
         self.status['type'] = type
-        self.cell_initialize(showinfo=False)
-        if not silent:
-            print 'set cell as: ', species
-            print ' with Vm rest = %f' % self.vm0
+        # self.cell_initialize(showinfo=False)
+        # if not silent:
+        #     print 'set cell as: ', species
+        #     print ' with Vm rest = %f' % self.vm0
 
     def adjust_na_chans(self, soma, gbar=1000., debug=False):
         """
@@ -172,7 +160,7 @@ class TStellateRothman(TStellate):
             soma.ena = self.e_na
             soma().nav11.vsna = 4.3
             if debug:
-                print "bushy using inva11"
+                print "tstellate using inva11"
             print 'nav11 gbar: ', soma().nav11.gbar
         elif nach == 'na':
             soma().na.gbar = gnabar
@@ -185,7 +173,7 @@ class TStellateRothman(TStellate):
             if debug:
                 print 'nacn gbar: ', soma().nacn.gbar
         else:
-            raise ValueError("Dstellate setting Na channels: channel %s not known" % nach)
+            raise ValueError("tstellate setting Na channels: channel %s not known" % nach)
 
 
     def add_axon(self):
