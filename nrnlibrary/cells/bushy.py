@@ -59,33 +59,23 @@ class BushyRothman(Bushy):
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'Bushy'}
         self.i_test_range=(-0.5, 0.5, 0.05)
-        self.spike_threshold = -50
+        self.spike_threshold = -40
+        self.vrange = [-70., -57.]  # set a default vrange for searching for rmp
 
         soma = h.Section(name="Bushy_Soma_%x" % id(self))  # one compartment of about 29000 um2
         soma.nseg = 1
-        soma.insert('klt')
-        soma.insert('kht')
-        soma.insert('ihvcn')
-        soma.insert('leak')
+
+        self.mechanisms = ['klt', 'kht', 'ihvcn', 'leak', nach]
+        for mech in self.mechanisms:
+            soma.insert(mech)
+        soma.ena = self.e_na
         soma.ek = self.e_k
         soma().ihvcn.eh = self.e_h
         soma().leak.erev = self.e_leak
-
-        # insert the requested sodium channel
-        if nach == 'jsrna':
-            soma.insert('jsrna')
-        elif nach == 'nav11':
-            soma.insert('nav11')
-        elif nach in ['na', 'nacn']:
-            soma.insert('na')
-        else:
-            raise ValueError('Sodium channel %s not available for Bushy cells' % nach)
-
-        soma.ena = self.e_na
         self.add_section(soma, 'soma')
-        self.mechanisms = ['klt', 'kht', 'ihvcn', 'leak', nach]
         self.species_scaling(silent=True, species=species, type=type)  # set the default type II cell parameters
         self.get_mechs(soma)
+        self.cell_initialize(vrange=self.vrange)
         if debug:
             print "<< bushy: JSR bushy cell model created >>"
         #print 'Cell created: ', self.status
@@ -98,14 +88,14 @@ class BushyRothman(Bushy):
         soma = self.soma
         if species == 'mouse' and type == 'II':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
-            #print 'Mouse bushy cell'
+           # print 'Mouse bushy cell'
             self.set_soma_size_from_Cm(26.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(58.0, self.somaarea)
             soma().klt.gbar = nstomho(80.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(30.0, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
-            self.vm0 = self.find_i0()
+            self.vrange = [-70., -55.]  # need to specify non-default range for convergence
             self.axonsf = 0.57
         elif species == 'guineapig' and type =='II':
             self.set_soma_size_from_Cm(12.0)
@@ -137,15 +127,15 @@ class BushyRothman(Bushy):
             raise ValueError('Species "%s" or species-type "%s" is not recognized for Bushy cells' %  (species, type))
         self.status['species'] = species
         self.status['type'] = type
-        self.cell_initialize(showinfo=False)
-        if not silent:
-            print 'set cell as: ', species
-            print ' with Vm rest = %6.3f' % self.vm0
+#        self.cell_initialize(showinfo=False)
+#        if not silent:
+#            print 'set cell as: ', species
+#            print ' with Vm rest = %6.3f' % self.vm0
 
 
        # print 'Rescaled, status: ', self.status
 
-    def adjust_na_chans(self, soma, debug=False):
+    def adjust_na_chans(self, soma, gbar=1000., debug=False):
         """
         adjust the sodium channel conductance
         :param soma: a soma object whose sodium channel complement will have it's 
@@ -155,7 +145,7 @@ class BushyRothman(Bushy):
         if self.status['ttx']:
             gnabar = 0.0
         else:
-            gnabar = nstomho(1000.0, self.somaarea)
+            gnabar = nstomho(gbar, self.somaarea)
         nach = self.status['na']
         if nach == 'jsrna':
             soma().jsrna.gbar = gnabar

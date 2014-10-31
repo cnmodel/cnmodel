@@ -131,13 +131,13 @@ class Cell(object):
             print('{0:>12s} : {1:<12s}'.format(s, repr(self.status[s])))
         print '-'*32
 
-    def cell_initialize(self, showinfo=False):
+    def cell_initialize(self, showinfo=False, **kwargs):
         """
         Initialize this cell to it's "rmp" under current conditions
         All sections in the cell are set to the same value
         """
         if self.vm0 is None:
-            self.vm0 = self.find_i0(showinfo=showinfo)
+            self.vm0 = self.find_i0(showinfo=showinfo, **kwargs)
         for part in self.all_sections.keys():
             for sec in self.all_sections[part]:
                 sec.v = self.vm0
@@ -192,7 +192,7 @@ class Cell(object):
                 sec.v = V
 
         h.t = 0.
-        #h.finitialize()
+        h.finitialize()  # force variables to steady-state values in mod file
         self.ix = {}
         if 'na' in self.mechanisms:
             #print dir(self.soma().na)
@@ -213,15 +213,19 @@ class Cell(object):
         if 'leak' in self.mechanisms:
             self.ix['leak'] = self.soma().leak.gbar*(V - self.soma().leak.erev)
 #        print self.status['name'], self.status['type'], V, self.ix
-        return np.sum([self.ix[i] for i in self.ix])
+        isum = np.sum([self.ix[i] for i in self.ix])
+#        print 'conductances: ', self.ix.keys()
+#        print 'V, isum, values: ', V, isum, [self.ix[i] for i in self.ix]
+        return isum
 
-    def find_i0(self, vrange=[-70., -57.], showinfo=False):
+    def find_i0(self, vrange=[-70., -55.], showinfo=False):
         """
         find the root of the system of equations in vrange.
         Finds RMP fairly accurately as zero current level for current conductances.
         """
         try:
             v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1])
+#            print 'V0: ', v0, 'i+: ', self.i_currents(v0-0.1), 'i-: ', self.i_currents(v0+0.1)
         except:
             print 'find i0 failed:'
             print self.ix
