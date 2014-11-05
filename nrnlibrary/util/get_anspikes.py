@@ -3,7 +3,7 @@ __author__ = 'pbmanis'
 ManageANSpikes is a class to read the output of the Zilany et al. 2009 AN model into
 python, and provides services to access that data.
 
-
+Basic usage is to create an instance of the class
 """
 import os
 import re
@@ -25,6 +25,12 @@ class ManageANSpikes():
 
     def get_data_dir(self):
         return self.data_dir
+
+    def set_data_dir(self, directory):
+        if os.path.isdir(directory):
+            self.data_dir = directory
+        else:
+            raise ValueError('ManageANSpikes.set_data_dir: Path %d is not a directory')
 
     def get_data_read(self):
         return self.data_read_flag
