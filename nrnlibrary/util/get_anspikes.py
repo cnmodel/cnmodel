@@ -3,15 +3,18 @@ __author__ = 'pbmanis'
 ManageANSpikes is a class to read the output of the Zilany et al. 2009 AN model into
 python, and provides services to access that data.
 
-Basic usage is to create an instance of the class
+Basic usage is to create an instance of the class, and specify the data directory
+if necessary.
+
+You may then get the data in the format of a list using one of the "get" routines.
+The data is pulled from the nearest CF or the specified CF.
+
 """
 import os
 import re
 import numpy as np
 from collections import OrderedDict
-import pylibrary.Params as Params
 import scipy.io
-import pylibrary
 import matplotlib.pyplot as MP
 
 
@@ -77,7 +80,7 @@ class ManageANSpikes():
             if display:
                 MP.plot(self.CF_map, nsp)
 
-    def getANatFandSPL(self, spontName='MS', Freq=10000., CF=None, SPL=0):
+    def getANatFandSPL(self, spontclass='MS', freq=10000., CF=None, SPL=0):
         """
         getANatFandSPL:
         ====================
@@ -356,6 +359,8 @@ class ManageANSpikes():
         return result
 
 if __name__ == '__main__':
+    import pylibrary.Params as Params
+
     modes = ['CMR', 'CMD', 'REF']
     sr_types = ['H', 'M', 'L']
     sr_type = sr_types[0]
@@ -368,7 +373,7 @@ if __name__ == '__main__':
                      )
 
     manager = ManageANSpikes()  # create instance of the manager
-    test='all'
+    test='RI'
 
     if test == 'all':
         manager.read_all_ANdata(freq=10000., CFList=manager.CF_map, spontclass='HS', stim='BFTone')
