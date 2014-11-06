@@ -20,6 +20,7 @@ class ManageANSpikes():
         # self.datadir = environment['HOME'] + '/Desktop/Matlab/ZilanyCarney-JASAcode-2009/'
         self.data_dir = os.environ['HOME'] + '/Desktop/Matlab/ANData/'
         self.data_read_flag = False
+        self.dataType = 'RI'
         self.set_CF_map(4000, 38000, 25) # the default list
         self.all_AN = None
 
@@ -34,6 +35,15 @@ class ManageANSpikes():
 
     def set_CF_map(self, low, high, nfreq):
         self.CF_map = np.round(np.logspace(np.log10(low), np.log10(high), nfreq))
+
+    def get_dataType(self):
+        return self.dataType
+
+    def set_dataType(self, datatype):
+        if datatype in ['RI', 'PL']:  # only for recognized data types
+            self.dataType = datatype
+        else:
+            raise ValueError ('get_anspikes.set_dataType: unrecognized type %s ' % datatype)
 
     def plot_RI_vs_F(self, freq=10000., spontclass='HS', display=False):
         cfd = {}
@@ -188,9 +198,9 @@ class ManageANSpikes():
             # print 'This is a design decision to avoid confusion about which data is in the instance'
             # exit()
         if stim in ['BFTone', 'Tone']:
-            fname = 'RI_F%06.3f_CF%06.3f_%2s.mat' % (freq/1000.0, CF/1000., spontclass)
+            fname = '%s_F%06.3f_CF%06.3f_%2s.mat' % (self.dataType, freq/1000.0, CF/1000., spontclass)
         elif stim=='Noise':
-            fname = 'RI_Noise_CF%06.3f_%2s.mat' % (CF/1000., spontclass)
+            fname = '%s_Noise_CF%06.3f_%2s.mat' % (self.dataType, CF/1000., spontclass)
 
         #print 'Reading: %s' % (fname)
         try:
@@ -200,7 +210,7 @@ class ManageANSpikes():
             print 'Corresponding to Freq: %f  CF: %f  spontaneous rate class: %s' % (freq, CF, spontclass)
             exit()
 
-        n_spl = len(mfile['RI'])
+        n_spl = len(mfile[self.dataType])
         if display:
             n = int(np.sqrt(n_spl))+1
             mg = np.meshgrid(range(n), range(n))
@@ -208,8 +218,8 @@ class ManageANSpikes():
         spkl = [[]]*n_spl
         spl = np.zeros(n_spl)
         for k in range(n_spl):
-            spkl[k] = mfile['RI']['data'][k] # get data for one SPL
-            spl[k] = mfile['RI']['SPL'][k]  # get SPL for this set of runs
+            spkl[k] = mfile[self.dataType]['data'][k] # get data for one SPL
+            spl[k] = mfile[self.dataType]['SPL'][k]  # get SPL for this set of runs
             #print spkl[k].shape
             if display:
                 self.display(spkl[k], k, n,  mg)
@@ -218,7 +228,7 @@ class ManageANSpikes():
             MP.show()
         self.spikelist = spkl  # save these so we can have a single point to parse them
         self.SPLs = spl
-        self.n_reps = mfile['RI']['nrep']
+        self.n_reps = mfile[self.dataType]['nrep']
         if setflag:
             self.data_read_flag = True
         #return spkl, spl, mfile['RI']['nrep']
@@ -371,7 +381,7 @@ if __name__ == '__main__':
         manager.plot_Rate_vs_F(freq=manager.CF_map[0], display=True, spontclass='HS')
         MP.show()
 
-    if test == 'RI':
+    if test == manager.dataType:
         spikes = manager.get_AN_at_F_and_SPL(spontclass = 'MS', freq=10000., CF=None, SPL=50)
         spks = manager.combine_reps(spikes)
         if spks != []:
