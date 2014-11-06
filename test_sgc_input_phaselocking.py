@@ -73,8 +73,8 @@ class SGCInputTestPL(Protocol):
         prespk = self.pre_cell._spiketrain
         spkin = prespk[np.where(prespk > phasewin[0]*1e3)]
         spikesinwin = spkin[np.where(spkin <= phasewin[1]*1e3)]
-        vs = self.vector_strength(spikesinwin)
-        print 'AN Vector Strength: %7.3f, Rayleigh: %7.3f  p = %.3e  n = %d' % (vs['r'], vs['R'], vs['p'], vs['n'])
+        vs = PU.vector_strength(spikesinwin, self.f0)
+        print 'AN Vector Strength: %7.3f, d=%.2f (us) Rayleigh: %7.3f  p = %.3e  n = %d' % (vs['r'], vs['d']*1e6, vs['R'], vs['p'], vs['n'])
         (hist, binedges) = np.histogram(vs['ph'])
         curve = p6.plot(binedges, hist, stepMode=True, fillBrush=(100, 100, 255, 150), fillLevel=0)
         p6.setXRange(0., 2*np.pi)
@@ -82,8 +82,8 @@ class SGCInputTestPL(Protocol):
         p7 = self.win.addPlot(title='Bushy phase', row=2, col=1)
         spkin = prespk[np.where(bspk > phasewin[0]*1e3)]
         spikesinwin = spkin[np.where(spkin <= phasewin[1]*1e3)]
-        vs = self.vector_strength(spikesinwin)
-        print 'BU Vector Strength: %7.3f, Rayleigh: %7.3f  p = %.3e  n = %d' % (vs['r'], vs['R'], vs['p'], vs['n'])
+        vs = PU.vector_strength(spikesinwin, self.f0)
+        print 'BU Vector Strength: %7.3f, d=%.2f (us) Rayleigh: %7.3f  p = %.3e  n = %d' % (vs['r'], vs['d']*1e6, vs['R'], vs['p'], vs['n'])
         (hist, binedges) = np.histogram(vs['ph'])
         curve = p7.plot(binedges, hist, stepMode=True, fillBrush=(100, 100, 255, 150), fillLevel=0)
         p7.setXRange(0., 2*np.pi)
@@ -91,15 +91,6 @@ class SGCInputTestPL(Protocol):
 
         self.win.show()
 
-    def vector_strength(self, spikesinwin):
-        ph = 2*np.pi*np.fmod(spikesinwin, 1e3/self.f0)/(1e3/self.f0) # convert to radians within a cycle
-        c = np.sum(np.cos(ph))**2
-        s = np.sum(np.sin(ph))**2
-        vs = (1./len(ph))*np.sqrt(c+s)
-        n = len(spikesinwin)
-        R = n*vs
-        Rp = np.exp(-n*vs*vs)
-        return{'r': vs, 'n': n, 'R': R, 'p': Rp, 'ph': ph}
 
 
 prot = SGCInputTestPL()
