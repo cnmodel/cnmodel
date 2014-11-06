@@ -43,9 +43,9 @@ def saveResults(results):
 def retrieveResults():
     pass
 
-RIlevels = np.arange(0, 101, 50)
+RIlevels = np.arange(0, 91, 40)
 nLevels = RIlevels.shape[0]
-CF0 = 5000.
+CF0 = 10000.
 nWorkers = 8
 
 TASKS = [s for s in range(nLevels)]
@@ -58,7 +58,7 @@ with mproc.Parallelize(enumerate(TASKS), results=results, workers=nWorkers) as t
         endbulb[i] = endbulb1.Endbulb()
         endbulb[i].CF = CF0
         endbulb[i].dBSPL = RIlevels[i]
-        endbulb[i].run(seedoffset=12345687*i)
+        endbulb[i].run_precomputed(seedoffset=12345687*i)
         #tres = {'index': i}
         #print tres
         #tasker.results[i] = {'r': tres, 'pars': {'db': RIlevels[i], 'cf': CF0}}

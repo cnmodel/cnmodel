@@ -4,6 +4,7 @@ import pyqtgraph as pg
 from neuron import h
 from nrnlibrary.protocols import Protocol
 from nrnlibrary import cells
+from nrnlibrary.util import get_anspikes
 from nrnlibrary.util import sound
 import pylibrary.pyqtgraphPlotHelpers as pgh
 import pyqtgraph.multiprocess as mproc
@@ -21,6 +22,7 @@ class Endbulb(Protocol):
         self._stimFreq = None  # stim frequency, in Hz
         self._dBSPL = None # dB
         self._stim = None
+        self.spikeTrain = None # when using precomputed spike trains
         self.nconverge = 4
         self.srs = [1]*1+[2]*2+[3]*1
 #        print dir(self)
@@ -132,6 +134,63 @@ class Endbulb(Protocol):
             self.h.fadvance()
         return self.vecs_to_dict()
 
+
+    def run_precomputed(self, temp=34.0, dt=0.025, seed=575982035, seedoffset=0):
+        cfs = np.random.normal(loc=self.CF, scale=20, size=self.nconverge)  # jitter frequencies. 20Hz is adjacent HC at 4k
+        self.pre_cell = [None]*self.nconverge
+        self.synapse = [None]*self.nconverge
+        for i in range(self.nconverge):
+            preCell = cells.DummySGC() # cf=cfs[i], sr=self.srs[i])
+            synapse = preCell.connect(self.post_cell)
+            synapse.terminal.relsite.Dep_Flag = False
+            #synapse.terminal.relsite.nZones = 5
+            synapse.terminal.relsite.dF = 0.2
+            self.pre_cell[i] = preCell
+            self.synapse[i] = synapse
+        # print len(self.synapse[0].psd.ampa_psd)
+        # print dir(self.synapse[0].psd.ampa_psd[0])
+        manager = get_anspikes.ManageANSpikes()
+        self.spikeTrain = manager.getANatFandSPL(spontclass = 'MS', freq=10000., CF=self.CF, SPL=self.dBSPL)
+        sitemax = len(self.synapse[0].psd.ampa_psd)  # for instance...
+        if sitemax > 50:
+            sitemax = 50
+        self.sitemax = sitemax
+        self.vecs={}
+        self.vecs['vm'] = self.h.Vector()
+        self.vecs['vm'].record(self.post_cell.soma(0.5)._ref_v)
+        self.vecs['t'] = self.h.Vector()
+        self.vecs['t'].record(self.h._ref_t)
+        k=2  # monitor the third input
+        self.monitor = k
+        for i, var in enumerate(['xmtr_%d_%d'%(i,k) for i in range(sitemax)]):
+            self.vecs[var] = self.h.Vector()
+            self.vecs[var].record(self.synapse[k].terminal.relsite._ref_XMTR[i])
+        for i, var in enumerate(['gReceptor_%d_%d'%(i,k) for i in range(sitemax)]):
+            self.vecs[var] = self.h.Vector()
+            self.vecs[var].record(self.synapse[k].psd.ampa_psd[i]._ref_g)
+
+        self.maxt = 0
+        for i in range(self.nconverge):
+            self.pre_cell[i].set_spiketrain(1000*self.spikeTrain[i][:])
+           # print i, 1000*self.spikeTrain[i][:]
+            if len(self.spikeTrain[i][:]) > 0:
+                self.maxt = np.max([self.maxt, 1000.*np.max(self.spikeTrain[i][:])])
+
+        self.h.tstop = self.maxt # duration of a run, msec
+        self.h.celsius = temp
+        self.h.dt = dt
+        self.post_cell.vm0 = None  # force initialization
+        self.post_cell.cell_initialize()  # initialize the cell to it's rmp
+        self.custom_init()
+#        Rin, tau, v = self.post_cell.measure_rintau(auto_initialize=False)
+#        print '    *** Rin: %9.0f  tau: %9.1f   v: %6.1f' % (Rin, tau, v)
+#        self.post_cell.cell_initialize()  # re-initialize the cell to it's rmp
+#        self.custom_init()
+        #self.h.run()
+        while self.h.t < self.h.tstop:
+            self.h.fadvance()
+        return self.vecs_to_dict()
+
     def getResults(self):
         return self.vecs_to_dict()  # make sure current
         
@@ -166,7 +225,10 @@ class Endbulb(Protocol):
         dist = 1./self.nconverge
         ytick = np.linspace(0, dist, self.nconverge+1)
         for i in range(self.nconverge):
-            nsp = len(self.pre_cell[i]._spiketrain)
+            try:
+                nsp = len(self.pre_cell[i]._spiketrain)
+            except:
+                nsp = len([self.pre_cell[i]._spiketrain])
             vt = pg.ScatterPlotItem(self.pre_cell[i]._spiketrain, [ytick[i+1]]*nsp, symbol='+', pen=(i,self.nconverge))
             #vt = pg.VTickGroup(self.pre_cell[i]._spiketrain, yrange=[ytick[i],ytick[i+1]], pen=(i,self.nconverge))
             p4.addItem(vt)
@@ -182,9 +244,9 @@ class Endbulb(Protocol):
         layout = pgh.LayoutMaker(cols=1, rows=5, win=self.win, labelEdges=True, ticks='talbot')
 
         layout.title(0, title='Bushy Vm')
-        layout.plot(0, np.array(self.vecs['t']), np.array(self.vecs['vm']), pg.mkPen('k'))
+        layout.plot((0,0), np.array(self.vecs['t']), np.array(self.vecs['vm']), pen=pg.mkPen('k'))
         layout.title(1, title='XMTR')
-       # print 'receptor max: ', np.min(np.array(self.vecs['gReceptor_0_%d'%self.monitor]))
+        # print 'receptor max: ', np.min(np.array(self.vecs['gReceptor_0_%d'%self.monitor]))
         for i in range(self.sitemax):
             layout.plot(1, self.vecs['t'], self.vecs['xmtr_%d_%d'%(i,self.monitor)], pen=(i, 15))
             #p2.plot(np.array(self.vecs['t']), np.array(self.vecs['gReceptor_%d_%d'%(i,self.monitor)]), pen=(i, 15))
@@ -199,13 +261,16 @@ class Endbulb(Protocol):
         dist = 1./self.nconverge
         ytick = np.linspace(0, dist, self.nconverge+1)
         for i in range(self.nconverge):
-            nsp = len(self.pre_cell[i]._spiketrain)
+            try:
+                nsp = len(self.pre_cell[i]._spiketrain)
+            except:
+                nsp = len([self.pre_cell[i]._spiketrain])
             vt = pg.ScatterPlotItem(self.pre_cell[i]._spiketrain, [ytick[i+1]]*nsp, symbol='+', pen=(i,self.nconverge))
             #vt = pg.VTickGroup(self.pre_cell[i]._spiketrain, yrange=[ytick[i],ytick[i+1]], pen=(i,self.nconverge))
             layout.getPlot(3).addItem(vt)
         layout.getPlot(3).setXLink(layout.getPlot(0))
         layout.title(4, title='stim')
-        layout.plot(4, self.stim.time * 1000, self.stim.sound, pg.mkPen('k'))
+        #layout.plot(4, self.stim.time, self.stim.sound, pg.mkPen('k'))
         layout.getPlot(4).setXLink(layout.getPlot(0))
         pgh.show()
 
@@ -213,8 +278,8 @@ if __name__ == '__main__':
     prot = Endbulb()
     prot.CF=4000
     prot.stimFreq = 4000
-    print prot.dBSPL, prot.CF, prot.stimFreq
-    prot.run()
+    print ('dbSPL: {:.1f}  CF: {:.1f}  stim Freq: {:.1f}'.format(prot.dBSPL, prot.CF, prot.stimFreq))
+    prot.run_precomputed()
     prot.show()
 
     import sys
