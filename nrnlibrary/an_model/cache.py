@@ -5,6 +5,7 @@ Utilities for generating and caching spike trains from AN model.
 import os, sys, pickle
 import numpy as np
 from .wrapper import get_matlab, model_ihc, model_synapse, seed_rng
+from ..util.filelock import FileLock
 
 _cache_version = 1
 _cache_path = os.path.join(os.path.dirname(__file__), 'cache')
@@ -31,7 +32,12 @@ def get_spiketrain(cf, sr, stim, seed, **kwds):
     if key in index and "--ignore-an-cache" not in sys.argv:
         data_file = index[key]['file']
         if os.path.exists(data_file):
-            data = np.load(open(data_file, 'rb'))['data']
+            try:
+                data = np.load(open(data_file, 'rb'))['data']
+            except Exception:
+                sys.excepthook(*sys.exc_info())
+                print "Error reading cache file; will re-generate from MATLAB."
+                print "( %s )" % data_file
    
     # Generate new data if needed
     if data is None:
@@ -69,16 +75,25 @@ def make_key(**kwds):
     return '_'.join(['%s=%s' % kv for kv in kwds])
 
 
-def cache_index():
+def cache_index(reload=False):
     """ Return an index that gives the file name for each stored cache entry.
     """
     global _index, _cache_path, _cache_version, _index_file
-    if _index is None:
+    if reload or _index is None:
         if not os.path.isdir(_cache_path):
-            os.mkdir(_cache_path)
+            try:
+                os.mkdir(_cache_path)
+            except OSError:
+                if os.path.isdir(_cache_path):
+                    # In multiprocessing environment, the directory might have 
+                    # been created while we weren't looking
+                    pass
+                else:
+                    raise
             
         if os.path.isfile(_index_file):
-            _index = pickle.load(open(_index_file, 'rb'))
+            with FileLock(_index_file+'.lock'):
+                _index = pickle.load(open(_index_file, 'rb'))
             if _index['_cache_version'] != _cache_version:
                 i = 0
                 while True:
@@ -98,7 +113,13 @@ def save_index():
     """ Write the index to file
     """
     global _index_file, _index
-    pickle.dump(_index, open(_index_file, 'wb'))
+    
+    with FileLock(_index_file+'.lock'):
+        old_index = _index
+        new_index = cache_index(reload=True)
+        new_index.update(old_index)
+        pkl_str = pickle.dumps(new_index)
+        open(_index_file, 'wb').write(pkl_str)
 
 
 def generate_spiketrain(cf, sr, stim, seed, **kwds):
