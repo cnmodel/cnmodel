@@ -9,6 +9,7 @@ def new_cache():
     cdir = tempfile.mkdtemp()
     cache._index_file = os.path.join(cdir, 'index.pk')
     cache._cache_path = os.path.join(cdir, 'cache')
+    cache._index = None
 
 
 def test_cache():
@@ -33,7 +34,7 @@ def test_locking():
     new_cache()  # note that subprocesses will all inherit this new cache 
     p = Pool(10)
     p.map(modify_cache, range(10))
-    index = cache.cache_index()
+    index = cache.cache_index(reload=True)
     for i in range(10):
         assert index[i] == i
 
