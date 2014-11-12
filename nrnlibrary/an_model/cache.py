@@ -33,7 +33,8 @@ def get_spiketrain(cf, sr, stim, seed, **kwds):
         data_file = index[key]['file']
         if os.path.exists(data_file):
             try:
-                data = np.load(open(data_file, 'rb'))['data']
+                with FileLock(data_file+'.lock'):
+                    data = np.load(open(data_file, 'rb'))['data']
             except Exception:
                 sys.excepthook(*sys.exc_info())
                 print "Error reading cache file; will re-generate from MATLAB."
@@ -50,7 +51,8 @@ def get_spiketrain(cf, sr, stim, seed, **kwds):
         
         if not os.path.exists(subdir):
             os.mkdir(subdir)
-        np.savez_compressed(filename, data=data)
+        with FileLock(filename+'.lock'):
+            np.savez_compressed(filename, data=data)
         
         # update the index
         keydata['file'] = filename
