@@ -122,6 +122,21 @@ class Table():
             self.dF = 0.60364
             self.glu = 2.12827
 
+        elif select == 'nodepression':  # hand tuned model
+            print 'no depression'
+            self.F = 0.2
+            self.k0 = 0.45 # 0.52313
+            self.kmax = 18 # 19.33805
+            self.kd = 0.7 # 0.01 # 0.11283
+            self.ks = 0.6 # 11.531
+            self.kf = 5. # 17.78
+            self.ts = 0.015 # 17.912
+            self.tf = 0.1 # 0.00975
+            self.td = self.tf/2. # 0.01516 #  0.01516
+            self.dD = 0.5
+            self.dF = 0.60364
+            self.glu = 2.12827
+
         # self.F = 0.29366
         # self.k0 = 0.52313  #/ 1000.
         # self.kmax = 19.33805  #/ 1000.

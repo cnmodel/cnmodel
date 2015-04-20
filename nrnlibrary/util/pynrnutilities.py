@@ -269,6 +269,30 @@ def mask(x, xm, x0, x1):
     xnew = ma.array(x, mask=ma.getmask(xmask))
     return(xnew.compressed())
 
+def vector_strength(spikes, freq):
+    """
+    Calculate vector strength and related parameters from a spike train, for the specified frequency
+    :param spikes: Spike train, in msec.
+    :param freq: Stimulus frequency in Hz
+    :return: a dictionary containing:
+        r: vector strength
+        n: number of spikes
+        R: Rayleigh coefficient
+        p: p value (is distribution not flat?)
+        ph: the circularized spike train over period of the stimulus freq, freq, in radians
+        d: the "dispersion" computed according to Ashida et al., 2010, etc.
+    """
+    per = 1e3/freq # convert from Hz to period in msec
+    ph = 2*np.pi*np.fmod(spikes, per)/(per) # convert to radians within a cycle
+    c = np.sum(np.cos(ph))**2
+    s = np.sum(np.sin(ph))**2
+    vs = (1./len(ph))*np.sqrt(c+s)  # standard vector strength computation
+    n = len(spikes)
+    R = n*vs  # Raleigh coefficient
+    Rp = np.exp(-n*vs*vs)  # p value for n > 50 (see Ashida et al. 2010).
+    d = np.sqrt(2.*(1-vs))/(2*np.pi*freq)
+    return{'r': vs, 'n': n, 'R': R, 'p': Rp, 'ph': ph, 'd': d}
+
 def isi_cv2(splist, binwidth=1, t0=0, t1=300, tgrace=25):
     """ compute the cv and regularity according to Young et al., J. Neurophys, 60: 1, 1988.
         Analysis is limited to isi's starting at or after t0 but before t1, and ending completely

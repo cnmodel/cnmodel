@@ -9,15 +9,34 @@ class PSD(object):
     modifies the membrane potential and/or ion concentrations of the 
     postsynaptic cell.    
     """
-    def __init__(self, pre_sec, post_sec, terminal):
-        pass
+    def __init__(self, section, terminal):
+        self._section = section
+        self._terminal = terminal
+        
+    @property
+    def section(self):
+        """ The cell section this PSD is attached to.
+        """
+        return self._section
+    
+    @property
+    def cell(self):
+        """ The cell this PSD is attached to.
+        """
+        from ..cells import Cell
+        return Cell.from_section(self.section)
+
+    @property
+    def terminal(self):
+        """ The presynaptic terminal connected to this PSD.
+        """
 
     
 class GluPSD(PSD):
     """
     Glutamatergic PSD with ionotropic AMPA / NMDA receptors
     """
-    def __init__(self, pre_sec, post_sec, terminal,
+    def __init__(self, section, terminal,
                  ampa_gmax,
                  nmda_ampa_ratio,
                  message=None, debug=False,
@@ -42,6 +61,11 @@ class GluPSD(PSD):
         
         *nmda_ampa_ratio* should be the ratio nmda/ampa Po measured at +40 mV.
         """
+        PSD.__init__(self, section, terminal)
+        
+        pre_sec = terminal.section
+        post_sec = section
+        
         from .. import cells
         self.AN_Po_Ratio = 23.2917 # ratio of open probabilities for AMPA and NMDAR's at peak currents
         self.AMPA_Max_Po = 0.44727
@@ -104,7 +128,7 @@ class GlyPSD(PSD):
     """
     Glycinergic PSD
     """
-    def __init__(self, pre_sec, post_sec, terminal,
+    def __init__(self, section, terminal,
                  gmax=1000., psdType='glyfast',
                  message=None, debug=False,
                  gvar=0, eRev=-70):
@@ -128,6 +152,10 @@ class GlyPSD(PSD):
         
         *nmda_ampa_ratio* should be the ratio nmda/ampa contuctance measured at +40 mV.
         """
+        PSD.__init__(self, section, terminal)
+        pre_sec = terminal.section
+        post_sec = section
+        
         from .. import cells
         #self.AN_Po_Ratio = 23.2917 # ratio of open probabilities for AMPA and NMDAR's at peak currents
         #self.AMPA_Max_Po = 0.44727

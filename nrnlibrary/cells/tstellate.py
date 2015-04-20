@@ -22,16 +22,20 @@ class TStellate(Cell):
         else:
             raise ValueError ('DStellate type %s is unknown', type)
 
-    def make_psd(self, pre_sec, post_sec, terminal, **kwds):
+    def make_psd(self, terminal, **kwds):
         from .. import cells
-        pre_cell = cells.cell_from_section(pre_sec)
+        
+        pre_sec = terminal.section
+        pre_cell = terminal.cell
+        post_sec = self.soma
+        
         if isinstance(pre_cell, cells.SGC):
-            return synapses.GluPSD(pre_sec, post_sec, terminal, 
+            return synapses.GluPSD(post_sec, terminal, 
                                    ampa_gmax=4600.,
                                    nmda_ampa_ratio = 1.28,
                                    )
         elif isinstance(pre_cell, cells.DStellate):
-            return synapses.GlyPSD(pre_sec, post_sec, terminal,
+            return synapses.GlyPSD(post_sec, terminal,
                                    psdType='glyfast',
                                    )
         else:
@@ -65,21 +69,9 @@ class TStellateRothman(TStellate):
 
         soma.nseg = 1
 
-        if nach in ['nacn', 'na']:
-            soma.insert('na')
-        elif nach == 'nav11':
-            soma.insert('nav11')
-        elif nach == 'jsrna':
-            soma.insert('jsrna')
-        else:
-            raise ValueError('Sodium channel %s in type 1 cell not known' % nach)
         self.mechanisms = ['kht', 'ka', 'ihvcn', 'leak', nach]
         for mech in self.mechanisms:
             soma.insert(mech)
-        # soma.insert("kht")
-        # soma.insert('ka')
-        # soma.insert('ihvcn')
-        # soma.insert('leak')
         soma.ek = self.e_k
         soma.ena = self.e_na
         soma().ihvcn.eh = self.e_h
@@ -141,10 +133,10 @@ class TStellateRothman(TStellate):
 
         self.status['species'] = species
         self.status['type'] = type
-        self.cell_initialize(showinfo=False)
-        if not silent:
-            print 'set cell as: ', species
-            print ' with Vm rest = %f' % self.vm0
+        # self.cell_initialize(showinfo=False)
+        # if not silent:
+        #     print 'set cell as: ', species
+        #     print ' with Vm rest = %f' % self.vm0
 
     def adjust_na_chans(self, soma, gbar=1000., debug=False):
         """
@@ -168,7 +160,7 @@ class TStellateRothman(TStellate):
             soma.ena = self.e_na
             soma().nav11.vsna = 4.3
             if debug:
-                print "bushy using inva11"
+                print "tstellate using inva11"
             print 'nav11 gbar: ', soma().nav11.gbar
         elif nach == 'na':
             soma().na.gbar = gnabar
@@ -181,7 +173,7 @@ class TStellateRothman(TStellate):
             if debug:
                 print 'nacn gbar: ', soma().nacn.gbar
         else:
-            raise ValueError("Dstellate setting Na channels: channel %s not known" % nach)
+            raise ValueError("tstellate setting Na channels: channel %s not known" % nach)
 
 
     def add_axon(self):

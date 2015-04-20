@@ -128,6 +128,7 @@ class IVCurve(Protocol):
             h.dt = dt
             h.celsius = temp
             h.tstop = tend
+            cell.vm0 = None
             cell.cell_initialize()  # initialize the cell to it's rmp
             if i == 0:
                 self.custom_init()

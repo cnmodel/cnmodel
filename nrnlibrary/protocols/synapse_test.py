@@ -35,11 +35,11 @@ class SynapseTest(Protocol):
         post_cell = cells.cell_from_section(post_sec)
         synapses = []
         for i in range(n_synapses):
-            synapses.append(pre_cell.connect(pre_sec, post_sec))
+            synapses.append(pre_cell.connect(post_cell))
         
         self.synapses = synapses
-        self.pre_sec = pre_sec
-        self.post_sec = post_sec
+        self.pre_sec = synapses[0].terminal.section
+        self.post_sec = synapses[0].psd.section
         self.pre_cell = pre_cell
         self.post_cell = post_cell
         
@@ -77,7 +77,6 @@ class SynapseTest(Protocol):
         # istim current pulse train
         i_stim_vec = h.Vector(secmd)
         i_stim_vec.play(istim._ref_i, dt, 0)
-
 
         # create hoc vectors for each parameter we wish to monitor and display
         synapse = synapses[0]
