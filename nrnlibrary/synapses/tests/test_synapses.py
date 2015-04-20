@@ -13,7 +13,7 @@ import nrnlibrary
 import nrnlibrary.cells as cells
 from nrnlibrary.util import UserTester
 from nrnlibrary.protocols import SynapseTest
-from nrnlibrary.util import random
+from nrnlibrary.util import random, reset
 
 #
 # Synapse tests
@@ -72,14 +72,15 @@ class SynapseTester(UserTester):
         UserTester.__init__(self, "%s_%s" % (pre, post), pre, post)
     
     def run_test(self, pre, post):
+        # Make sure no objects are left over from previous tests
+        reset()
+        
         # seed random generator using the name of this test
         seed = "%s_%s" % (pre, post)
         
-        # Make sure no sections are left over from previous tests
-        assert len(list(neuron.h.allsec())) == 0
-        
         pre_cell = make_cell(pre)
         post_cell = make_cell(post)
+        
         n_term = convergence.get(pre, {}).get(post, None)
         if n_term is None:
             n_term = 1
@@ -95,6 +96,13 @@ class SynapseTester(UserTester):
             event_analysis=st.analyze_events(),
             )
         self.st = st
+        
+        #import weakref
+        #global last_syn
+        #last_syn = weakref.ref(st.synapses[0].terminal.relsi)
+        
+        
+        
         return info
     
     def assert_test_info(self, *args, **kwds):

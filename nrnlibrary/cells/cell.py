@@ -3,13 +3,16 @@ import scipy.optimize
 import numpy as np
 from ..util import nstomho, mho2ns
 from ..synapses import Synapse
+import weakref
 
 
 class Cell(object):
     """
     Base class for all cell types.
     """
-    sec_lookup = {}  # create a lookup table to map sections to their parent cell
+    
+    # create a lookup table to map sections to their parent cell
+    sec_lookup = weakref.WeakValueDictionary()
     
     @classmethod
     def from_section(cls, sec):
