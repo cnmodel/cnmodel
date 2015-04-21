@@ -87,6 +87,7 @@ class UserTester(object):
         
         If *expect* is None, then no previous test results were stored.
         """
+        app = pg.mkQApp()
         print "\n=== New test results for %s: ===\n" % self.key
         pprint.pprint(info)
         win = pg.DiffTreeWidget()

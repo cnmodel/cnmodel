@@ -101,6 +101,10 @@ def reset():
     """Introspect the NEURON kernel to verify that no objects are left over
     from previous simulation runs.
     """
+    # Release objects held by an internal buffer
+    # See https://www.neuron.yale.edu/phpBB/viewtopic.php?f=2&t=3221
+    neuron.h.Vector().size()    
+    
     # Make sure nothing is hanging around in an old exception or because of
     # reference cycles 
     sys.exc_clear()
