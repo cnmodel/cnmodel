@@ -17,6 +17,7 @@ convergence = {
     }
 
 
+
 c = []
 for cellType in sys.argv[1:3]:
     if cellType == 'sgc':
@@ -40,9 +41,14 @@ if nTerminals is None:
     nTerminals = 1
     print "Warning: Unknown convergence for %s => %s, assuming %d" % (sys.argv[1], sys.argv[2], nTerminals)
 
+if sys.argv[1:3] == ['sgc', 'bushy']:
+    niter = 1
+else:
+    niter = 20
+    
 
 st = SynapseTest()
-st.run(preCell, postCell, nTerminals)
+st.run(preCell.soma, postCell.soma, nTerminals, iterations=niter)
 st.show()
 
 

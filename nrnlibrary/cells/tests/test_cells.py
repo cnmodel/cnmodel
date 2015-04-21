@@ -85,6 +85,7 @@ class CellTester(UserTester):
             rm_taum=iv.input_resistance_tau(),
             vpeak=iv.peak_vm(),
             vss=iv.steady_vm(),
+            rmrintau=cell.compute_rmrintau(),
             )
         return info
     
