@@ -29,6 +29,3 @@ class PSD(object):
         """ The presynaptic terminal connected to this PSD.
         """
         return self._terminal
-
-
-
