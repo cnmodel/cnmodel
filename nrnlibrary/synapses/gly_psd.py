@@ -77,19 +77,19 @@ class GlyPSD(PSD):
         # and then make a set of postsynaptic receptor mechanisms
         #        print 'PSDTYPE: ', psdtype
         if self.psdType == 'glyslow':
-            (psd, par) = template_Gly_PSD_State_Gly6S(post_sec, nReceptors=n_rzones,
+            (psd, par) = self.template_Gly_PSD_State_Gly6S(post_sec, nReceptors=n_rzones,
                                                         psdtype=self.psdType)
         elif self.psdType == 'glyfast':
-            (psd, par) = template_Gly_PSD_State_PL(post_sec, nReceptors=n_rzones,
+            (psd, par) = self.template_Gly_PSD_State_PL(post_sec, nReceptors=n_rzones,
                                                     psdtype=self.psdType)
         elif self.psdType == 'glyGC':
-            (psd, par) = template_Gly_PSD_State_GC(post_sec, nReceptors=n_rzones,
+            (psd, par) = self.template_Gly_PSD_State_GC(post_sec, nReceptors=n_rzones,
                                                     psdtype=self.psdType)
         elif self.psdType == 'glya5':
-            (psd, par) = template_Gly_PSD_State_Glya5(post_sec, nReceptors=n_rzones,
+            (psd, par) = self.template_Gly_PSD_State_Glya5(post_sec, nReceptors=n_rzones,
                                                         psdtype=self.psdType)
         elif self.psdType == 'glyexp':
-            (psd, par) = template_Gly_PSD_exp(post_sec, nReceptors=n_rzones,
+            (psd, par) = self.template_Gly_PSD_exp(post_sec, nReceptors=n_rzones,
                                                 psdtype=self.psdType)
         else:
             print "**PSDTYPE IS NOT RECOGNIZED: [%s]\n" % (self.psdType)
@@ -149,7 +149,8 @@ class GlyPSD(PSD):
     # the dictionary selection is made by selectpars in glycine_fit.py.
     #
 
-    def template_Gly_PSD_exp(sec, debug=False, nReceptors=2, cellname=None, message=None):
+    def template_Gly_PSD_exp(self, debug=False, nReceptors=2, cellname=None, message=None):
+        sec = self.section
         psd = []
         sec.push()
         for k in range(0, nReceptors):
@@ -162,7 +163,8 @@ class GlyPSD(PSD):
         return (psd, par, p)
 
 
-    def template_Gly_PSD_State_Glya5(sec, debug=False, nReceptors=2, psdtype=None, message=None):
+    def template_Gly_PSD_State_Glya5(self, debug=False, nReceptors=2, psdtype=None, message=None):
+        sec = self.section
         psd = []
         sec.push()
         for k in range(0, nReceptors):
@@ -179,7 +181,8 @@ class GlyPSD(PSD):
         return (psd, par)
 
 
-    def template_Gly_PSD_State_Gly6S(sec, debug=False, nReceptors=2, psdtype=None, message=None):
+    def template_Gly_PSD_State_Gly6S(self, debug=False, nReceptors=2, psdtype=None, message=None):
+        sec = self.section
         psd = []
         sec.push()
         for k in range(0, nReceptors):
@@ -209,8 +212,9 @@ class GlyPSD(PSD):
         return (psd, par)
 
 
-    def template_Gly_PSD_State_PL(sec, debug=False, nReceptors=2, cellname=None,
+    def template_Gly_PSD_State_PL(self, debug=False, nReceptors=2, cellname=None,
                                 psdtype=None, message=None):
+        sec = self.section
         psd = []
         sec.push()
         for k in range(0, nReceptors):
@@ -247,7 +251,8 @@ class GlyPSD(PSD):
         return (psd, par)
 
 
-    def template_Gly_PSD_State_GC(sec, debug=False, nReceptors=2, psdtype=None, message=None):
+    def template_Gly_PSD_State_GC(self, debug=False, nReceptors=2, psdtype=None, message=None):
+        sec = self.section
         psd = []
         sec.push()
         for k in range(0, nReceptors):
