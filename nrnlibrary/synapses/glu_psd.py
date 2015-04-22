@@ -120,7 +120,6 @@ class GluPSD(PSD):
         psd = []
         psdn = []
         sec.push()
-        AN_Po_Ratio = 23.2917 # ratio of open probabilities for AMPA and NMDAR's at peak currents
         for k in range(0, nReceptors):
             psd.append(h.AMPATRUSSELL(0.5, sec)) # raman/trussell AMPA with rectification
             psdn.append(h.NMDA_Kampa(0.5, sec)) # Kampa state model NMDA receptors
@@ -130,23 +129,17 @@ class GluPSD(PSD):
                 psd[-1].Ro2 = 0.6193
                 psd[-1].Rc1 = 3.678
                 psd[-1].Rc2 = 0.3212
-                gNAR = 0.036 * AN_Po_Ratio * nmda_ratio # 0.36*AN_Po_Ratio*nmda_ratio
-                psdn[-1].gmax = psdn[-1].gmax * gNAR
-                #if k == 0:
-                #    print "Bushy NMDAR set to %8.2f" % psdn[-1].gNAR
             if cellname == 'stellate':
                 psd[-1].Ro1 = 39.25
                 psd[-1].Ro2 = 4.40
                 psd[-1].Rc1 = 0.667
                 psd[-1].Rc2 = 0.237
                 psd[-1].PA = 0.1
-                gNAR = 1 * AN_Po_Ratio * nmda_ratio
-                psdn[-1].gmax = psdn[-1].gmax * gNAR
 
         h.pop_section()
         par = {'Ro1': ('r', psd[0].Ro1),
             'Ro2': ('r', psd[0].Ro2),
             'Rc1': ('r', psd[0].Rc1),
             'Rc2': ('r', psd[0].Rc2), }
-        #parn = {'gNAR': ('4', gNAR), }
+        
         return (psd, psdn, par, {})
