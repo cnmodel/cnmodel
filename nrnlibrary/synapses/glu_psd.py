@@ -37,7 +37,6 @@ class GluPSD(PSD):
         
         self.pre_sec = terminal.section
         self.post_sec = section
-        self.terminal = terminal
         
         from .. import cells
         self.AN_Po_Ratio = 23.2917 # ratio of open probabilities for AMPA and NMDAR's at peak currents
@@ -63,7 +62,7 @@ class GluPSD(PSD):
         
         # and then make a set of postsynaptic receptor mechanisms
         #        print 'PSDTYPE: ', psdtype
-        (ampa_psd, nmda_psd, par, parn) = template_iGluR_PSD(nmda_ratio=nmda_ratio)
+        (ampa_psd, nmda_psd, par, parn) = self.template_iGluR_PSD(nmda_ratio=nmda_ratio)
         
         # Connect terminal to psd (or cleft)
         for k in range(0, n_rzones):

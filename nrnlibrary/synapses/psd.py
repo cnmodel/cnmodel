@@ -28,7 +28,7 @@ class PSD(object):
     def terminal(self):
         """ The presynaptic terminal connected to this PSD.
         """
-
+        return self._terminal
 
 
 
