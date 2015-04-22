@@ -90,7 +90,7 @@ class Toy(Protocol):
                                 ('Octopus, II-o', (cells.Octopus, 'II-o', (-2.5, 2.5))),
                                 ('TStellate, I-c', (cells.TStellate, "I-c", (-0.15, 0.15))), ('TStellate, I-t', (cells.TStellate, "I-t", (-0.15, 0.15))),
                                 ('DStellate, I-II', (cells.DStellate, 'I-II', (-0.2, 0.2))),
-                                ('Pyramidal, I', (cells.Pyramidal, 'I', (-0.1, 0.05))), ('Cartwheel, I', (cells.Cartwheel, 'I', (-0.12, 0.1))),
+                                ('Pyramidal, I', (cells.Pyramidal, 'I', (-0.1, 0.06))), ('Cartwheel, I', (cells.Cartwheel, 'I', (-0.12, 0.1))),
                                 ('SGC, bm', (cells.SGC, "bm", (-0.2, 0.2))),
                                 ])
 

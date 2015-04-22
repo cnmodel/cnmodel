@@ -132,7 +132,8 @@ class IVCurve(Protocol):
             cell.cell_initialize()  # initialize the cell to it's rmp
             if i == 0:
                 self.custom_init()
-                Rin, tau, v = cell.measure_rintau(auto_initialize=False)
+                r = cell.compute_rmrintau(auto_initialize=False)
+                Rin, tau, v = r['Rin'], r['tau'], r['v']
                 print '    *** Rin: %9.0f  tau: %9.1f   v: %6.1f' % (Rin, tau, v)
 
             cell.cell_initialize()  # initialize the cell to it's rmp

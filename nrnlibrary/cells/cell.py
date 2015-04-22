@@ -243,7 +243,7 @@ class Cell(object):
             print '    *** and cell has mechanisms: ', self.mechanisms
         return v0
 
-    def measure_rintau(self, auto_initialize = True):
+    def compute_rmrintau(self, auto_initialize = True):
         """
         Run the model for 2 msec after initialization - then
         compute the inverse of the sum of the conductances to get Rin at rest
@@ -284,7 +284,7 @@ class Cell(object):
         gs = mho2ns(gsum, self.somaarea)
         Rin = 1e3/gs  # convert to megohms
         tau = Rin*self.totcap*1e-3  # convert to msec
-        return Rin, tau, self.soma(0.5).v
+        return {'Rin': Rin, 'tau': tau, 'v': self.soma(0.5).v}
 
     def set_soma_size_from_Cm(self, cap):
         """

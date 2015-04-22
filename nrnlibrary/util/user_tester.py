@@ -73,6 +73,8 @@ class UserTester(object):
             else:
                 for k in info.dtype.fields.keys():
                     self.compare_results(info[k], expect[k])
+        elif np.isscalar(info):
+            assert np.allclose(info, expect)
         else:
             try:
                 assert info == expect

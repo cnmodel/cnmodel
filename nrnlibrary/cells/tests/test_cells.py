@@ -4,7 +4,7 @@ import neuron
 
 import nrnlibrary
 import nrnlibrary.cells as cells
-from nrnlibrary.util import UserTester
+from nrnlibrary.util import UserTester, reset
 from nrnlibrary.protocols import IVCurve
 
 #
@@ -12,52 +12,52 @@ from nrnlibrary.protocols import IVCurve
 #
 
 def test_bushy():
-    assert len(list(neuron.h.allsec())) == 0
+    reset()
     cell = cells.Bushy.create(species='guineapig', type='II')
     CellTester('bushy_guineapig-typeII', cell)
 
 def test_bushy21():
-    assert len(list(neuron.h.allsec())) == 0
+    reset()
     cell = cells.Bushy.create(species='guineapig', type='II-I')
     CellTester('bushy_guineapig-typeII-I', cell)
 
 def test_tstellate():
-    assert len(list(neuron.h.allsec())) == 0
+    reset()
     cell = cells.TStellate.create(species='guineapig', type='I-c')
     CellTester('tstellate_guineapig-typeI-c', cell)
 
 def test_tstellatet():
-    assert len(list(neuron.h.allsec())) == 0
+    reset()
     cell = cells.TStellate.create(species='guineapig', type='I-t')
     CellTester('tstellate_guineapig-typeI-t', cell)
 
 def test_dstellate():
-    assert len(list(neuron.h.allsec())) == 0
+    reset()
     cell = cells.DStellate.create(species='guineapig', type='I-II')
     CellTester('dstellate_guineapig-typeI-II', cell)
 
 def test_octopus():
-    assert len(list(neuron.h.allsec())) == 0
+    reset()
     cell = cells.Octopus.create(species='guineapig', type='II-o')
     CellTester('octopus_guineapig-typeII-o', cell)
 
 def test_pyramidal():
-    assert len(list(neuron.h.allsec())) == 0
+    reset()
     cell = cells.Pyramidal.create(species='rat', type='I')
     CellTester('pyramidal_rat_I', cell)
 
 def test_cartwheel():
-    assert len(list(neuron.h.allsec())) == 0
+    reset()
     cell = cells.Cartwheel.create(species='rat', type='I')
     CellTester('cartwheel_rat_I', cell)
 
 def test_sgc_basal_middle():
-    assert len(list(neuron.h.allsec())) == 0
+    reset()
     cell = cells.SGC.create(species='mouse', type='bm')
     CellTester('SGC_rat_bm', cell)
 
 def test_sgc_apical():
-    assert len(list(neuron.h.allsec())) == 0
+    reset()
     cell = cells.SGC.create(species='mouse', type='a')
     CellTester('SGC_rat_a', cell)
 
@@ -85,6 +85,7 @@ class CellTester(UserTester):
             rm_taum=iv.input_resistance_tau(),
             vpeak=iv.peak_vm(),
             vss=iv.steady_vm(),
+            rmrintau=cell.compute_rmrintau(),
             )
         return info
     
