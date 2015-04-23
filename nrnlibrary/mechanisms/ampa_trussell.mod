@@ -88,6 +88,7 @@ THREADSAFE
     GLOBAL vmin, vmax
 	GLOBAL Q10, Mode
 	GLOBAL zd, Kd0
+	RANGE MaxOpen
     RANGE g, rb, gmax, PA, Erev
     NONSPECIFIC_CURRENT i
 }
@@ -129,6 +130,11 @@ PARAMETER {
     Rc2 = 0.25    (/ms) : closing
 
     Open = 0 (1) : total of all open states
+    MaxOpen = 0.7242 (1)  : Maximum open probability with Mode=0 (no rectification). 
+                          : This is determined empirically by holding XMTR at a large
+                          : value for 100 timesteps and measuring the maximum value
+                          : of Open. This parameter does NOT affect the behavior
+                          : of the channel.
 	aflag = 1 : Flag for control of printout of initial values.....
 
 

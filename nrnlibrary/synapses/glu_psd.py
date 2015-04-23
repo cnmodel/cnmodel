@@ -7,94 +7,86 @@ from .psd import PSD
 class GluPSD(PSD):
     """
     Glutamatergic PSD with ionotropic AMPA / NMDA receptors
+
+    This creates a set of postsynaptoc NMDA and AMPA receptors, one pair
+    per terminal release site. Receptors are connected to the XMTR range
+    variable of the terminal release mechanisms.
+    
+    Parameters
+    ==========
+    section : Section instance
+        The postsynaptic section into which the receptor mechanisms should be
+        attached
+    terminal : Terminal instance
+        The presynaptic terminal that provides input to the receptor XMTR
+        variables. 
+    ampa_gmax : float
+        Maximum conductance of AMPARs
+    nmda_gmax : float
+        Maximum conductance of NMDARs
+    gvar : float
+        Coefficient of variation for randomly adjusting ampa_gmax and nmda_gmax.
+        Note that ampa and nmda maximum conductances will be scaled together,
+        but the scale values will be selected randomly for each pair of 
+        receptor mechanisms.
+    eRev : float
+        Reversal potential to use for both receptor types.
+        
+    Notes
+    =====
+    
+    *ampa_gmax* and *nmda_gmax* should be provided as the maximum *measured*
+    conductances; these will be automatically corrected for the maximum open
+    probability of the receptor mechanisms.
+    
+    GluPSD does not include a cleft mechanism because AMPATRUSSELL implements
+    its own cleft and NMDA_Kampa is slow enough that a cleft would have 
+    insignificant effect.
     """
     def __init__(self, section, terminal,
-                 ampa_gmax,
-                 nmda_ampa_ratio,
-                 message=None, debug=False,
+                 ampa_gmax, nmda_gmax
                  gvar=0, eRev=0,
-                 nmda_ratio=1.0, identifier=0):
-        """ This routine generates the synaptic connections from one presynaptic
-            input onto a postsynaptic cell.
-            Each connection is a stochastic presynaptic synapse ("presynaptic") with
-            depression and facilitation.
-            Each synapse can have  multiple releasesites "releasesites" on the
-            target cell, as set by "NRZones".
-            Each release site releases transmitter using "cleftXmtr"
-            Each release site's transmitter is in turn attached to a PSD at each ending ("psd")
-            Each psd can have a different conductance centered about the mean of
-            gmax, according to a gaussian distribution set by gvar.
-            
-        Notes:
-        
-        *ampa_gmax* should be provided as the maximum *measured* AMPA conductance;
-        this will be automatically corrected for the maximum open probability of
-        the AMPA mechanism.
-        
-        *nmda_ampa_ratio* should be the ratio nmda/ampa Po measured at +40 mV.
-        """
+                 identifier=0):
         PSD.__init__(self, section, terminal)
         
         self.pre_sec = terminal.section
         self.post_sec = section
         
         from .. import cells
-        self.AN_Po_Ratio = 23.2917 # ratio of open probabilities for AMPA and NMDAR's at peak currents
-        self.AMPA_Max_Po = 0.44727
-        self.NMDARatio = 0.0
         
         self.pre_cell = cells.cell_from_section(self.pre_sec)
         self.post_cell = cells.cell_from_section(self.post_sec)
 
-        # get AMPA gmax corrected for max open probability
-        gmax = ampa_gmax / self.AMPA_Max_Po
-        
         relzone = terminal.relsite
         n_rzones = terminal.n_rzones
         
-        #
-        # Create cleft mechanisms
-        # 
-        clefts = []
-        for k in range(0, n_rzones):
-            cl = h.cleftXmtr(0.5, sec=self.post_sec)
-            clefts.append(cl) # cleft
-        
         # and then make a set of postsynaptic receptor mechanisms
-        #        print 'PSDTYPE: ', psdtype
-        (ampa_psd, nmda_psd, par, parn) = self.template_iGluR_PSD(nmda_ratio=nmda_ratio)
+        (ampa_psd, nmda_psd, par, parn) = self.template_iGluR_PSD()
         
-        # Connect terminal to psd (or cleft)
         for k in range(0, n_rzones):
-            # Note: cleft kinetics is implemented in the AMPA mechanism
+            # Connect terminal to psd
             relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', ampa_psd[k])
+            relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', nmda_psd[k])
             
-            # Note: NMDA has no cleft mechanism, but it has a slow response that
-            # would not be strongly affected by the relatively fast cleft kinetics.
-            relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', nmda_psd[k]) # include NMDAR's as well at same release site
-            
+            # add a little variability - gvar is CV of amplitudes
             v = 1.0 + gvar * np.random.standard_normal()
-            ampa_psd[k].gmax = gmax * v # add a little variability - gvar is CV of amplitudes
-            ampa_psd[k].Erev = eRev # set the reversal potential
             
-            # also adjust the nmda receptors at the same synapse
-            gNAR = nmda_ampa_ratio * self.AN_Po_Ratio * self.NMDARatio
-            nmda_psd[k].gmax = gmax * v * gNAR
+            # set gmax and eRev for each postsynaptic receptor mechanism
+            ampa_psd[k].gmax = ampa_gmax * v 
+            ampa_psd[k].Erev = eRev
+            nmda_psd[k].gmax = nmda_gmax * v
             nmda_psd[k].Erev = eRev
             nmda_psd[k].vshift = 0
         
         par = list(par)
         par.extend(parn)
-        if message is not None:
-            print message
                 
         self.ampa_psd = ampa_psd
         self.nmda_psd = nmda_psd
         self.all_psd = nmda_psd + ampa_psd
-        self.clefts = clefts
         self.par = par
 
-    def template_iGluR_PSD(self, debug=False, cellname=None, message=None, nmda_ratio=1):
+    def template_iGluR_PSD(self, cellname=None):
         """
         Create an ionotropic Glutamate receptor "PSD"
         Each PSD has receptors for each active zone, which must be matched (connected) to presynaptic
@@ -102,10 +94,7 @@ class GluPSD(PSD):
         Inputs:
             sec: The template requires a segment to insert the receptors into
             nReceptors: The number of receptor sites to insert
-            debug: flag for debugging (prints extra information)
             cellname: Bushy/MNTB/stellate: determines ampa receptor kinetics
-            message: Not used.
-            nmda_ratio: The relative conductance of the open NMDA receptors to the open AMPA receptors.
         Outputs:
             (psd, psdn, par, parn)
             psd is the list of PSDs that were created (AMPA)

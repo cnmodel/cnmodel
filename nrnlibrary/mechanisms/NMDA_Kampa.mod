@@ -69,7 +69,7 @@ THREADSAFE
 	GLOBAL Rmd1b,Rmd1u,Rmd2b,Rmd2u,rmd1b,rmd1u,rmd2b,rmd2u
 	GLOBAL Rmc1b,Rmc1u,Rmc2b,Rmc2u
 	GLOBAL vmin, vmax, valence, memb_fraction
-
+    GLOBAL MaxOpen
 	NONSPECIFIC_CURRENT i
 }
 
@@ -124,6 +124,11 @@ PARAMETER {
 	Rr1Mg		= 0.87e-3	(/ms)	: fast resensitisation with Mg
 	Rd2Mg		= 0.26e-3	(/ms)	: slow desensitisation with Mg
 	Rr2Mg		= 0.42e-3	(/ms)	: slow resensitisation with Mg
+    MaxOpen = 0.01989 (1) : Maximum open probability with Mode=0 (no rectification). 
+                          : This is determined empirically by holding XMTR at a large
+                          : value and v=40mV for 100 timesteps and measuring the 
+                          : maximum value of Open. This parameter does NOT affect 
+                          : the behavior of the channel.
 }
 
 ASSIGNED {
