@@ -32,7 +32,13 @@ class TStellate(Cell):
         if isinstance(pre_cell, cells.SGC):
             return synapses.GluPSD(post_sec, terminal, 
                                    ampa_gmax=4600.,
-                                   nmda_ampa_ratio = 1.28,  # yields correct AMPA, NMDA ratio of 1.13 at +40 mV
+                                   nmda_gmax=4600. / 1.28,  # yields correct AMPA, NMDA ratio of 1.13 at +40 mV
+                                   ampa_params=dict(
+                                        Ro1 = 39.25,
+                                        Ro2 = 4.40,  
+                                        Rc1 = 0.667,
+                                        Rc2 = 0.237,
+                                        PA = 0.1)
                                    )
         elif isinstance(pre_cell, cells.DStellate):
             return synapses.GlyPSD(post_sec, terminal,

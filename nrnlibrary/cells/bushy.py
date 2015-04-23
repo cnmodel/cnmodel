@@ -28,7 +28,12 @@ class Bushy(Cell):
         if isinstance(pre_cell, cells.SGC):
             return synapses.GluPSD(post_sec, terminal,
                                    ampa_gmax=1700.,
-                                   nmda_ampa_ratio = 0.36,  # yields correct AMPA, NMDA ratio of 0.429 at +40 mV
+                                   nmda_gmax=1700. * 0.36,  # yields correct AMPA, NMDA ratio of 0.429 at +40 mV
+                                   ampa_params=dict(
+                                        Ro1 = 107.85,  # from Xie & Manis 2013
+                                        Ro2 = 0.6193,
+                                        Rc1 = 3.678,
+                                        Rc2 = 0.3212)
                                    )
         elif isinstance(pre_cell, cells.DStellate):
             return synapses.GlyPSD(post_sec, terminal,
