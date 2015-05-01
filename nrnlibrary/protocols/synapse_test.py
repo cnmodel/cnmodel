@@ -17,12 +17,16 @@ class SynapseTest(Protocol):
     def reset(self):
         super(SynapseTest, self).reset()
 
-    def run(self, pre_sec, post_sec, n_synapses, temp=34.0, dt=0.025, iterations=1, **kwds):
+    def run(self, pre_sec, post_sec, n_synapses, temp=34.0, dt=0.025, 
+            vclamp=40.0, iterations=1, tstop=200.0, stim_params=None, **kwds):
         """ 
         Basic synapse test. Connects sections of two cells with *n_synapses*.
         The cells are allowed to negotiate the details of the connecting 
         synapse. The presynaptic soma is then driven with a pulse train
         followed by a recovery pulse of varying delay.
+        
+        *stim_params* is an optional dictionary with keys 'NP', 'Sfreq', 'delay',
+        'dur', 'amp'.
         
         Analyses:
         
@@ -46,7 +50,7 @@ class SynapseTest(Protocol):
         #
         # voltage clamp the target cell
         #
-        clampV = 40.0
+        clampV = vclamp
         vccontrol = h.VClamp(0.5, sec=post_cell.soma)
         vccontrol.dur[0] = 10.0
         vccontrol.amp[0] = clampV
@@ -58,17 +62,23 @@ class SynapseTest(Protocol):
         #
         # set up stimulation of the presynaptic axon/terminal
         #
+        
         istim = h.iStim(0.5, sec=pre_cell.soma)
-        stim = {}
-        stim['NP'] = 10
-        stim['Sfreq'] = 100.0 # stimulus frequency
-        stim['delay'] = 10.0
-        stim['dur'] = 0.5
-        stim['amp'] = 10.0
-        stim['PT'] = 0.0
-        stim['dt'] = dt
+        stim = {
+            'NP': 10,
+            'Sfreq': 100.0,
+            'delay': 10.0,
+            'dur': 0.5,
+            'amp': 10.0,
+            'PT': 0.0,
+            'dt': dt,
+        }
+        stim.update(stim_params)
         (secmd, maxt, tstims) = util.make_pulse(stim)
         self.stim = stim
+
+        if tstop is None:
+            tstop = len(secmd) * dt
         
         istim.delay = 0
         istim.dur = 1e9 # these actually do not matter...
@@ -96,12 +106,13 @@ class SynapseTest(Protocol):
         #
         # Run simulation
         #
-        h.tstop = 200.0 # duration of a run
+        h.tstop = tstop # duration of a run
         h.celsius = temp
         h.dt = dt
         self.temp = temp
         self.dt = dt
         self.isoma = []
+        self.currents = {'ampa': [], 'nmda': []}
         self.all_releases = []
         self.all_release_events = []
         for nrep in xrange(iterations): # could do multiple runs.... 
@@ -117,16 +128,18 @@ class SynapseTest(Protocol):
                 self.all_ampa = []
                 for syn in synapses:
                     # collect all PSDs across all synapses
-                    self.all_nmda.extend(syn.psd.nmda_psd)
                     self.all_ampa.extend(syn.psd.ampa_psd)
+                    self.all_nmda.extend(syn.psd.nmda_psd)
+                    
+                    # Record current through all PSDs individually
+                    syn.psd.record('i', 'g', 'Open')
             
-                #  Record current through all PSDs individually
-                for k,p in enumerate(self.all_nmda):
-                    self['iNMDA%03d' % k] = p._ref_i
-                    self['opNMDA%03d' % k] = p._ref_Open
-                for k,p in enumerate(self.all_ampa):
-                    self['iAMPA%03d' % k] = p._ref_i
-                    self['opAMPA%03d' % k] = p._ref_Open
+                #for k,p in enumerate(self.all_nmda):
+                    #self['iNMDA%03d' % k] = p._ref_i
+                    #self['opNMDA%03d' % k] = p._ref_Open
+                #for k,p in enumerate(self.all_ampa):
+                    #self['iAMPA%03d' % k] = p._ref_i
+                    #self['opAMPA%03d' % k] = p._ref_Open
         
             elif isinstance(synapse.psd, GlyPSD):
                 #  Record current through all PSDs individually
@@ -158,19 +171,23 @@ class SynapseTest(Protocol):
             for i, s in enumerate(synapses):
                 s.terminal.relsite.rseed = nrep
             h.run()
-            print 'iteration: ', nrep
+
             # add up psd current across all runs
             if isinstance(synapse.psd, GluPSD):
-                isoma = np.zeros_like(self['iAMPA000'])
-                for k in range(len(self.all_ampa)):
-                    isoma += self['iAMPA%03d'%k]
-                for k in range(len(self.all_nmda)):
-                    isoma += self['iNMDA%03d'%k]
+                iampa = np.zeros_like(synapse.psd.get_vector('ampa', 'i'))
+                inmda = iampa.copy()
+                for syn in self.synapses:
+                    for i in range(syn.psd.n_psd):
+                        iampa += syn.psd.get_vector('ampa', 'i', i)
+                        inmda += syn.psd.get_vector('nmda', 'i', i)
+                isoma = iampa + inmda
+                self.currents['ampa'].append(iampa)
+                self.currents['nmda'].append(inmda)
             elif isinstance(synapse.psd, GlyPSD):
                 isoma = np.zeros_like(self['iGLY000'])
                 for k in range(len(self.all_psd)):
                     isoma += self['iGLY%03d'%k]
-            self.isoma.append(isoma.copy())  # copy is necessary to avoid just filling array with the same result every time
+            self.isoma.append(isoma)
             self.all_releases.append(self.release_timings())
             self.all_release_events.append(self.release_events())
             # if nrep > 0:
@@ -254,26 +271,18 @@ class SynapseTest(Protocol):
             nmOmax = 0
             amOmax = 0
             #self.win.nextRow()
-            for i in range(len(self.all_ampa)):
-                nm = np.abs(self['iNMDA%03d'%i]).max()
-                am = np.abs(self['iAMPA%03d'%i]).max()
-                opnm = np.abs(self['opNMDA%03d'%i]).max()
-                opam = np.abs(self['opAMPA%03d'%i]).max()
-                #plt = self.win.addPlot()
-                #plt.plot(self['iNMDA%03d'%i])
-                #plt = self.win.addPlot()
-                #plt.plot(self['iAMPA%03d'%i])
-                #plt = self.win.addPlot()
-                #plt.plot(self['opNMDA%03d'%i])
-                #plt = self.win.addPlot()
-                #plt.plot(self['opAMPA%03d'%i])
-                #self.win.nextRow()
-                if nm != 0 or am != 0:
-                    nmImax = nm
-                    amImax = am
-                    nmOmax = opnm
-                    amOmax = opam
-                    break
+            for syn in self.synapses:
+                for i in range(syn.psd.n_psd):
+                    nm = np.abs(syn.psd.get_vector('nmda', 'i', i)).max()
+                    am = np.abs(syn.psd.get_vector('ampa', 'i', i)).max()
+                    opnm = np.abs(syn.psd.get_vector('nmda', 'Open', i)).max()
+                    opam = np.abs(syn.psd.get_vector('ampa', 'Open', i)).max()
+                    if nm != 0 or am != 0:
+                        nmImax = nm
+                        amImax = am
+                        nmOmax = opnm
+                        amOmax = opam
+                        break
             
             return {'nmda': (nmImax, nmOmax), 'ampa': (amImax, amOmax)}
         

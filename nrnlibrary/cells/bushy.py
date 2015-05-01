@@ -28,12 +28,16 @@ class Bushy(Cell):
         post_sec = self.soma
         
         if isinstance(pre_cell, cells.SGC):
-            params = data.get('sgc_synapse', species='mouse', post_type='bushy'
-                              field=['AMPA_gmax', 'NMDA_gmax', 'Ro1', 'Ro2',
-                                     'Rc1', 'Rc2'])
+            # Max conductances for the glu mechanisms are calibrated by 
+            # running `synapses/tests/test_psd.py`
+            AMPA_gmax = 2.816056
+            NMDA_gmax = 0.384381
+            
+            params = data.get('sgc_synapse', species='mouse', post_type='bushy',
+                              field=['Ro1', 'Ro2', 'Rc1', 'Rc2'])
             return synapses.GluPSD(post_sec, terminal,
-                                   ampa_gmax=params['AMPA_gmax'],
-                                   nmda_gmax=params['NMDA_gmax'],
+                                   ampa_gmax=AMPA_gmax,
+                                   nmda_gmax=NMDA_gmax,
                                    ampa_params=dict(
                                         Ro1=params['Ro1'],
                                         Ro2=params['Ro2'],

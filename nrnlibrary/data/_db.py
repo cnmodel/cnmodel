@@ -33,6 +33,7 @@ def _lookup(ind, *args, **kwds):
         data = {}
         for k,key in key.items():
             data[k] = DATA[key][ind]
+        return data
     else:
         return DATA[key][ind]
     
