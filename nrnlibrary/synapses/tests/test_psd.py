@@ -7,7 +7,7 @@ from nrnlibrary.util import random, reset
 
 
 def test_glu_psd():
-    """Check that NMDA / AMPA current ratio agrees with Cao & Oertel 2010
+    """Check that Glu synapses have correct AMPA and NMDA peak conductances.
     """
     random.set_seed(34783)
     reset()

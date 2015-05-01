@@ -6,8 +6,10 @@ import scipy.optimize
 from .cell import Cell
 from .. import synapses
 from ..util import nstomho
+from .. import data
 
 __all__ = ['Bushy', 'BushyRothman']
+
 
 class Bushy(Cell):
 
@@ -26,14 +28,17 @@ class Bushy(Cell):
         post_sec = self.soma
         
         if isinstance(pre_cell, cells.SGC):
+            params = data.get('sgc_synapse', species='mouse', post_type='bushy'
+                              field=['AMPA_gmax', 'NMDA_gmax', 'Ro1', 'Ro2',
+                                     'Rc1', 'Rc2'])
             return synapses.GluPSD(post_sec, terminal,
-                                   ampa_gmax=1700.,
-                                   nmda_gmax=1700. * 0.36,  # yields correct AMPA, NMDA ratio of 0.429 at +40 mV
+                                   ampa_gmax=params['AMPA_gmax'],
+                                   nmda_gmax=params['NMDA_gmax'],
                                    ampa_params=dict(
-                                        Ro1 = 107.85,  # from Xie & Manis 2013
-                                        Ro2 = 0.6193,
-                                        Rc1 = 3.678,
-                                        Rc2 = 0.3212)
+                                        Ro1=params['Ro1'],
+                                        Ro2=params['Ro2'],
+                                        Rc1=params['Rc1'],
+                                        Rc2=params['Rc2'],)
                                    )
         elif isinstance(pre_cell, cells.DStellate):
             return synapses.GlyPSD(post_sec, terminal,
