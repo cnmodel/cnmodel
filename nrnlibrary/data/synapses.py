@@ -8,19 +8,20 @@ AMPA_gmax and NMDA_gmax are the estimated average peak conductances (in nS)
 resulting from an action potential in a single auditory nerve terminal, under 
 conditions that minimize the effects of short-term plasticity.
 
-Ro1, Ro2, Rc1, and Rc2 are kinetic constants affecting the AMPA receptor
+Ro1, Ro2, Rc1, Rc2, and PA are kinetic constants affecting the AMPA receptor
 mechanism.
 
 -------------------------------------------------------------------------------
              bushy        tstellate   dstellate  pyramidal    octopus         tuberculoventral
+
 AMPA_gmax    15.0±6.5 [1] 2.2±1.5 [2]                         0.87±0.23 [3]
 NMDA_gmax    10.8±4.6 [1] 2.4±1.6 [2]                         0.17±0.046 [3]
-Ro1          107.85 [4]
-Ro2          0.6193 [4]
-Rc1          3.678 [4]
-Rc2          0.3212 [4]
 
-
+Ro1          107.85 [4]   39.25 [4]
+Ro2          0.6193 [4]   4.40 [4] 
+Rc1          3.678 [4]    0.667 [4]
+Rc2          0.3212 [4]   0.237 [4]
+PA                        0.1 [4]
 
 -------------------------------------------------------------------------------
 
