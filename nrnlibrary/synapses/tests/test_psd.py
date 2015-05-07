@@ -16,7 +16,7 @@ def test_sgc_bushy_psd(plot=False):
     reset()
     bc = cells.Bushy.create(ttx=True)
         
-    (ampa_gmax, nmda_gmax) = test_gmax(bc, skip_failures=False, n_syn=20, tstop=4.0, plot=plot)
+    (ampa_gmax, nmda_gmax) = measure_gmax(bc, skip_failures=False, n_syn=20, tstop=4.0, plot=plot)
 
     exp_ampa_gmax = data.get('sgc_synapse', species='mouse', post_type='bushy', field='AMPA_gmax')[0]
     exp_nmda_gmax = data.get('sgc_synapse', species='mouse', post_type='bushy', field='NMDA_gmax')[0] 
@@ -31,14 +31,14 @@ def test_sgc_tstellate_psd(plot=False):
     random.set_seed(34754398)
     reset()
     tsc = cells.TStellate.create(ttx=True)
-    (ampa_gmax, nmda_gmax) = test_gmax(tsc, skip_failures=True, n_syn=20, tstop=5.0, plot=plot)
+    (ampa_gmax, nmda_gmax) = measure_gmax(tsc, skip_failures=True, n_syn=20, tstop=5.0, plot=plot)
     
     exp_ampa_gmax = data.get('sgc_synapse', species='mouse', post_type='tstellate', field='AMPA_gmax')[0]
     exp_nmda_gmax = data.get('sgc_synapse', species='mouse', post_type='tstellate', field='NMDA_gmax')[0]
     assert np.allclose((exp_ampa_gmax, exp_nmda_gmax), (ampa_gmax, nmda_gmax))
 
 
-def test_gmax(cell, skip_failures=False, n_syn=20, tstop=5.0, plot=False):
+def measure_gmax(cell, skip_failures=False, n_syn=20, tstop=5.0, plot=False):
     sgc = cells.SGC.create()
     prot = SynapseTest()
     
@@ -81,5 +81,5 @@ def test_gmax(cell, skip_failures=False, n_syn=20, tstop=5.0, plot=False):
 
     
 if __name__ == '__main__':
-    #test_sgc_bushy_psd()
+    test_sgc_bushy_psd(plot=True)
     test_sgc_tstellate_psd(plot=True)

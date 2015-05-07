@@ -12,16 +12,18 @@ Ro1, Ro2, Rc1, Rc2, and PA are kinetic constants affecting the AMPA receptor
 mechanism.
 
 -------------------------------------------------------------------------------
-             bushy        tstellate   dstellate  pyramidal    octopus         tuberculoventral
+             bushy        tstellate   dstellate   pyramidal    octopus         tuberculoventral
 
-AMPA_gmax    15.0±6.5 [1] 2.2±1.5 [2]                         0.87±0.23 [3]
-NMDA_gmax    10.8±4.6 [1] 2.4±1.6 [2]                         0.17±0.046 [3]
+AMPA_gmax    15.0±6.5 [1] 2.2±1.5 [2] 2.2±1.5 [7]              0.87±0.23 [3]   2.2±1.5 [7]
+NMDA_gmax    10.8±4.6 [1] 2.4±1.6 [2] 2.4±1.6 [7]              0.17±0.046 [3]  2.4±1.6 [7]
 
-Ro1          107.85 [4]   39.25 [4]
-Ro2          0.6193 [4]   4.40 [4] 
-Rc1          3.678 [4]    0.667 [4]
-Rc2          0.3212 [4]   0.237 [4]
-PA                        0.1 [4]
+Ro1          107.85 [4]   39.25 [4]   39.25 [7]                                39.25 [7]
+Ro2          0.6193 [4]   4.40 [4]    4.40 [7]                                 4.40 [7] 
+Rc1          3.678 [4]    0.667 [4]   0.667 [7]                                0.667 [7]
+Rc2          0.3212 [4]   0.237 [4]   0.237 [7]                                0.237 [7]
+PA                        0.1 [4]     0.1 [7]                                  0.1 [7]
+
+n_rsites     100 [5]        1 [6]       1 [7]                                    1 [7]
 
 -------------------------------------------------------------------------------
 
@@ -47,5 +49,13 @@ PA                        0.1 [4]
     Age>p17, Temperature=33C, [Mg2+]=1.3mM, [Ca2+]=2.4mM
 
 [4] Xie & Manis (2013)
+
+[5] Oleskevich & Walmsley ~2002, Wang & Manis 2005
+
+[6] Thin air
+
+[7] Data copied from t-stellate column (no literature on these cells)
+
+[10] Lu, Harris, & Rubel 2007
 
 """)
