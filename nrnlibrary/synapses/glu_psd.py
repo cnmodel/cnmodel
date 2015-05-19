@@ -7,139 +7,112 @@ from .psd import PSD
 class GluPSD(PSD):
     """
     Glutamatergic PSD with ionotropic AMPA / NMDA receptors
+
+    This creates a set of postsynaptoc NMDA and AMPA receptors, one pair
+    per terminal release site. Receptors are connected to the XMTR range
+    variable of the terminal release mechanisms.
+    
+    Parameters
+    ==========
+    section : Section instance
+        The postsynaptic section into which the receptor mechanisms should be
+        attached
+    terminal : Terminal instance
+        The presynaptic terminal that provides input to the receptor XMTR
+        variables. 
+    ampa_gmax : float
+        Maximum conductance of AMPARs
+    nmda_gmax : float
+        Maximum conductance of NMDARs
+    gvar : float
+        Coefficient of variation for randomly adjusting ampa_gmax and nmda_gmax.
+        Note that ampa and nmda maximum conductances will be scaled together,
+        but the scale values will be selected randomly for each pair of 
+        receptor mechanisms.
+    eRev : float
+        Reversal potential to use for both receptor types.
+    ampa_params : dict
+        Dictionary containing kinetic parameters for AMPA mechanism. Suggested
+        keys are Ro1, Ro2, Rc1, Rc2, and PA.
+        
+    Notes
+    =====
+    
+    *ampa_gmax* and *nmda_gmax* should be provided as the maximum *measured*
+    conductances; these will be automatically corrected for the maximum open
+    probability of the receptor mechanisms.
+    
+    GluPSD does not include a cleft mechanism because AMPATRUSSELL implements
+    its own cleft and NMDA_Kampa is slow enough that a cleft would have 
+    insignificant effect.
     """
-    def __init__(self, section, terminal,
-                 ampa_gmax,
-                 nmda_ampa_ratio,
-                 message=None, debug=False,
-                 gvar=0, eRev=0,
-                 nmda_ratio=1.0, identifier=0):
-        """ This routine generates the synaptic connections from one presynaptic
-            input onto a postsynaptic cell.
-            Each connection is a stochastic presynaptic synapse ("presynaptic") with
-            depression and facilitation.
-            Each synapse can have  multiple releasesites "releasesites" on the
-            target cell, as set by "NRZones".
-            Each release site releases transmitter using "cleftXmtr"
-            Each release site's transmitter is in turn attached to a PSD at each ending ("psd")
-            Each psd can have a different conductance centered about the mean of
-            gmax, according to a gaussian distribution set by gvar.
-            
-        Notes:
-        
-        *ampa_gmax* should be provided as the maximum *measured* AMPA conductance;
-        this will be automatically corrected for the maximum open probability of
-        the AMPA mechanism.
-        
-        *nmda_ampa_ratio* should be the ratio nmda/ampa Po measured at +40 mV.
-        """
+    def __init__(self, section, terminal, ampa_gmax, nmda_gmax,
+                 gvar=0, eRev=0, ampa_params={}):
         PSD.__init__(self, section, terminal)
         
-        self.pre_sec = terminal.section
-        self.post_sec = section
-        
-        from .. import cells
-        self.AN_Po_Ratio = 23.2917 # ratio of open probabilities for AMPA and NMDAR's at peak currents
-        self.AMPA_Max_Po = 0.44727
-        self.NMDARatio = 0.0
-        
-        self.pre_cell = cells.cell_from_section(self.pre_sec)
-        self.post_cell = cells.cell_from_section(self.post_sec)
-
-        # get AMPA gmax corrected for max open probability
-        gmax = ampa_gmax / self.AMPA_Max_Po
-        
-        relzone = terminal.relsite
-        n_rzones = terminal.n_rzones
-        
-        #
-        # Create cleft mechanisms
-        # 
-        clefts = []
-        for k in range(0, n_rzones):
-            cl = h.cleftXmtr(0.5, sec=self.post_sec)
-            clefts.append(cl) # cleft
-        
         # and then make a set of postsynaptic receptor mechanisms
-        #        print 'PSDTYPE: ', psdtype
-        (ampa_psd, nmda_psd, par, parn) = self.template_iGluR_PSD(nmda_ratio=nmda_ratio)
-        
-        # Connect terminal to psd (or cleft)
-        for k in range(0, n_rzones):
-            # Note: cleft kinetics is implemented in the AMPA mechanism
-            relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', ampa_psd[k])
+        ampa_psd = []
+        nmda_psd = []
+        relsite = terminal.relsite
+        self.section.push()
+        for i in range(0, terminal.n_rzones):
+            # create mechanisms
+            ampa = h.AMPATRUSSELL(0.5, self.section) # raman/trussell AMPA with rectification
+            nmda = h.NMDA_Kampa(0.5, self.section) # Kampa state model NMDA receptors
+
+            # Connect terminal to psd
+            relsite.setpointer(relsite._ref_XMTR[i], 'XMTR', ampa)
+            relsite.setpointer(relsite._ref_XMTR[i], 'XMTR', nmda)
             
-            # Note: NMDA has no cleft mechanism, but it has a slow response that
-            # would not be strongly affected by the relatively fast cleft kinetics.
-            relzone.setpointer(relzone._ref_XMTR[k], 'XMTR', nmda_psd[k]) # include NMDAR's as well at same release site
+            # Set any extra ampa parameters provided by the caller
+            # (Ro1, Ro2, Rc1, Rc2, PA, ...)
+            for k,v in ampa_params.items():
+                setattr(ampa, k, v)
             
+            # add a little variability - gvar is CV of amplitudes
             v = 1.0 + gvar * np.random.standard_normal()
-            ampa_psd[k].gmax = gmax * v # add a little variability - gvar is CV of amplitudes
-            ampa_psd[k].Erev = eRev # set the reversal potential
             
-            # also adjust the nmda receptors at the same synapse
-            gNAR = nmda_ampa_ratio * self.AN_Po_Ratio * self.NMDARatio
-            nmda_psd[k].gmax = gmax * v * gNAR
-            nmda_psd[k].Erev = eRev
-            nmda_psd[k].vshift = 0
+            # set gmax and eRev for each postsynaptic receptor mechanism
+            ampa.gmax = ampa_gmax * v
+            ampa.Erev = eRev
+            nmda.gmax = nmda_gmax * v
+            nmda.Erev = eRev
+            nmda.vshift = 0
+            
+            ampa_psd.append(ampa)
+            nmda_psd.append(nmda)
         
-        par = list(par)
-        par.extend(parn)
-        if message is not None:
-            print message
-                
+        h.pop_section()
+        
         self.ampa_psd = ampa_psd
         self.nmda_psd = nmda_psd
         self.all_psd = nmda_psd + ampa_psd
-        self.clefts = clefts
-        self.par = par
 
-    def template_iGluR_PSD(self, debug=False, cellname=None, message=None, nmda_ratio=1):
+    @property
+    def n_psd(self):
+        """The number of postsynaptic densities represented by this object.
         """
-        Create an ionotropic Glutamate receptor "PSD"
-        Each PSD has receptors for each active zone, which must be matched (connected) to presynaptic
-        terminals. Each PSD recetpor consists of an AMPATRUSSELL and an NMDA_KAMPA receptor
-        Inputs:
-            sec: The template requires a segment to insert the receptors into
-            nReceptors: The number of receptor sites to insert
-            debug: flag for debugging (prints extra information)
-            cellname: Bushy/MNTB/stellate: determines ampa receptor kinetics
-            message: Not used.
-            nmda_ratio: The relative conductance of the open NMDA receptors to the open AMPA receptors.
-        Outputs:
-            (psd, psdn, par, parn)
-            psd is the list of PSDs that were created (AMPA)
-            psdn is the list of NMDA PSDs (same number as psd, just the NMDARs)
-            par: dictionary of AMPAR kinetics as inserted
-            parn: NMDA ratio
-        Side Effecdts: None
+        return len(self.ampa_psd)
+
+    def record(self, *args):
+        """Create a new set of vectors to record parameters for each release
+        site. Allowed parameters are 'i', 'g', and 'Open'.
         """
-        sec = self.post_sec
-        nReceptors = self.terminal.n_rzones
+        self.vectors = {'ampa': [], 'nmda': []}
+        for receptor in self.vectors:
+            for mech in getattr(self, receptor+'_psd'):
+                vec = {}
+                for var in args:
+                    vec[var] = h.Vector()
+                    vec[var].record(getattr(mech, '_ref_'+var))
+                self.vectors[receptor].append(vec)
         
-        psd = []
-        psdn = []
-        sec.push()
-        for k in range(0, nReceptors):
-            psd.append(h.AMPATRUSSELL(0.5, sec)) # raman/trussell AMPA with rectification
-            psdn.append(h.NMDA_Kampa(0.5, sec)) # Kampa state model NMDA receptors
-
-            if cellname in ['bushy', 'MNTB']:
-                psd[-1].Ro1 = 107.85
-                psd[-1].Ro2 = 0.6193
-                psd[-1].Rc1 = 3.678
-                psd[-1].Rc2 = 0.3212
-            if cellname == 'stellate':
-                psd[-1].Ro1 = 39.25
-                psd[-1].Ro2 = 4.40
-                psd[-1].Rc1 = 0.667
-                psd[-1].Rc2 = 0.237
-                psd[-1].PA = 0.1
-
-        h.pop_section()
-        par = {'Ro1': ('r', psd[0].Ro1),
-            'Ro2': ('r', psd[0].Ro2),
-            'Rc1': ('r', psd[0].Rc1),
-            'Rc2': ('r', psd[0].Rc2), }
+    def get_vector(self, receptor, var, i=0):
+        """Return an array from a previously recorded vector. 
         
-        return (psd, psdn, par, {})
+        *receptor* may be 'ampa' or 'nmda'
+        *var* may be 'i', 'g', or 'Open'
+        *i* is the integer index of the psd (if this is a multi-site synapse)
+        """
+        v = self.vectors[receptor][i][var]
+        return np.array(v)

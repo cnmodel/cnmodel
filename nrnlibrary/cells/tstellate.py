@@ -5,6 +5,7 @@ import neuron as nrn
 from .cell import Cell
 from .. import synapses
 from ..util import nstomho
+from .. import data
 
 __all__ = ['TStellate', 'TStellateNav11', 'TStellateFast'] 
 
@@ -30,9 +31,25 @@ class TStellate(Cell):
         post_sec = self.soma
         
         if isinstance(pre_cell, cells.SGC):
-            return synapses.GluPSD(post_sec, terminal, 
-                                   ampa_gmax=4600.,
-                                   nmda_ampa_ratio = 1.28,
+            # Max conductances for the glu mechanisms are calibrated by 
+            # running `synapses/tests/test_psd.py`. The test should fail
+            # if these values are incorrect:
+            AMPA_gmax = 1.116294373190818
+            NMDA_gmax = 0.18993944366251217
+            
+            # Get AMPAR kinetic constants from database 
+            params = data.get('sgc_synapse', species='mouse', post_type='tstellate',
+                              field=['Ro1', 'Ro2', 'Rc1', 'Rc2', 'PA'])
+            
+            return synapses.GluPSD(post_sec, terminal,
+                                   ampa_gmax=AMPA_gmax,
+                                   nmda_gmax=NMDA_gmax,
+                                   ampa_params=dict(
+                                        Ro1=params['Ro1'],
+                                        Ro2=params['Ro2'],
+                                        Rc1=params['Rc1'],
+                                        Rc2=params['Rc2'],
+                                        PA=params['PA'])
                                    )
         elif isinstance(pre_cell, cells.DStellate):
             return synapses.GlyPSD(post_sec, terminal,

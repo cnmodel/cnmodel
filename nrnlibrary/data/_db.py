@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 from collections import OrderedDict
 import re
 
@@ -9,16 +10,32 @@ DATA = OrderedDict()
 def get(*args, **kwds):
     """ Get a single value from the database using the supplied arguments
     to query. 
+    
+    Optionally, one keyword argument may be a list of values, in which case
+    a dict will be returned containing {listval: dbval} pairs for each value in
+    the list.
     """
-    key = mk_key(*args, **kwds)
-    return DATA[key][0]
+    return _lookup(0, *args, **kwds)
     
 def get_source(*args, **kwds):
     """ Get the source of a single value from the database using the supplied 
-    arguments to query. 
+    arguments to query.
+    
+    Optionally, one keyword argument may be a list of values, in which case
+    a dict will be returned containing {listval: dbval} pairs for each value in
+    the list.
     """
+    return _lookup(1, *args, **kwds)
+
+def _lookup(ind, *args, **kwds):
     key = mk_key(*args, **kwds)
-    return DATA[key][1]
+    if isinstance(key, dict):
+        data = {}
+        for k,key in key.items():
+            data[k] = DATA[key][ind]
+        return data
+    else:
+        return DATA[key][ind]
     
 def setval(val, *args, **kwds):
     key = mk_key(*args, **kwds)
@@ -27,6 +44,30 @@ def setval(val, *args, **kwds):
     DATA[key] = val
     
 def mk_key(*args, **kwds):
+    # Make a unique key (or list of keys) used to access values from the 
+    # database. The generated key is independent of the order that arguments
+    # are specified.
+    # 
+    # Optionally, one keyword argument may have a list of values, in which case
+    # the function will return a dict containing {listval: key} pairs for each
+    # value in the list.
+    listkey = None
+    for k,v in kwds.items():
+        if isinstance(v, (list, tuple)):
+            if listkey is not None:
+                raise TypeError("May only specify a list of values for one key.")
+            listkey = k
+
+    if listkey is None:
+        return _mk_key(*args, **kwds)
+    else:
+        keys = {}
+        for v in kwds[listkey]:
+            kwds[listkey] = v
+            keys[v] = _mk_key(*args, **kwds)
+        return keys
+        
+def _mk_key(*args, **kwds):
     key = list(args) + list(kwds.items())
     key.sort(key=lambda a: a[0] if isinstance(a, tuple) else a)
     return tuple(key)
@@ -54,6 +95,10 @@ def add_table_data(name, row_key, col_key, data, **kwds):
     
     
     """
+    if isinstance(data, str) and '\xc2' in data:
+        raise TypeError('Data table appears to contain unicode characters but'
+                        'was not defined as unicode.')
+    
     lines = data.split('\n')
     
     # First, split into description, table, and sources using ----- lines
@@ -115,22 +160,34 @@ def add_table_data(name, row_key, col_key, data, **kwds):
     for i in range(len(cells)):
         for j in range(len(cells[0])):
             cell = cells[i][j].strip()
+            
             m = re.match(r'([^\[]*)(\[([^\]]+)\])?', cell)  # match like "0.7 [3]"
             if m is None:
                 raise ValueError("Table cell (%d, %d) has bad format: '%s'" % (i, j, cell))
             
             # parse value
+            # If the value contains '±' then a tuple is returned containing the values
+            # on either side.
             val, _, source = m.groups()
+            val = unicode(val)
             if val.strip() == '':
                 val = None
             else:
-                try:
-                    val = int(val)
-                except ValueError:
+                parts = val.split(u'±')
+                vals = []
+                for p in parts:
                     try:
-                        val = float(val)
+                        p = int(p)
                     except ValueError:
-                        raise ValueError("Table cell (%d, %d) value has bad format: '%s'" % (i, j, val))
+                        try:
+                            p = float(p)
+                        except ValueError:
+                            raise ValueError("Table cell (%d, %d) value has bad format: '%s'" % (i, j, val))
+                    vals.append(p)
+                if len(vals) == 1:
+                    val = vals[0]
+                else:
+                    val = tuple(vals)
             
             # parse source
             if source is not None:

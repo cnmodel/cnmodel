@@ -6,8 +6,10 @@ import scipy.optimize
 from .cell import Cell
 from .. import synapses
 from ..util import nstomho
+from .. import data
 
 __all__ = ['Bushy', 'BushyRothman']
+
 
 class Bushy(Cell):
 
@@ -26,9 +28,24 @@ class Bushy(Cell):
         post_sec = self.soma
         
         if isinstance(pre_cell, cells.SGC):
+            # Max conductances for the glu mechanisms are calibrated by 
+            # running `synapses/tests/test_psd.py`. The test should fail
+            # if these values are incorrect:
+            AMPA_gmax = 3.8464893273630003
+            NMDA_gmax = 0.5235051864406698
+            
+            # Get AMPAR kinetic constants from database 
+            params = data.get('sgc_synapse', species='mouse', post_type='bushy',
+                              field=['Ro1', 'Ro2', 'Rc1', 'Rc2'])
+            
             return synapses.GluPSD(post_sec, terminal,
-                                   ampa_gmax=1700.,
-                                   nmda_ampa_ratio = 0.36,
+                                   ampa_gmax=AMPA_gmax,
+                                   nmda_gmax=NMDA_gmax,
+                                   ampa_params=dict(
+                                        Ro1=params['Ro1'],
+                                        Ro2=params['Ro2'],
+                                        Rc1=params['Rc1'],
+                                        Rc2=params['Rc2'],)
                                    )
         elif isinstance(pre_cell, cells.DStellate):
             return synapses.GlyPSD(post_sec, terminal,
