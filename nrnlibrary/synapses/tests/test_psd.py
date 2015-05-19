@@ -16,29 +16,33 @@ def test_sgc_bushy_psd(plot=False):
     reset()
     bc = cells.Bushy.create(ttx=True)
         
-    (ampa_gmax, nmda_gmax) = measure_gmax(bc, skip_failures=False, n_syn=20, tstop=4.0, plot=plot)
+    (ampa_gmax, nmda_gmax, epsc_cv) = measure_gmax(bc, n_syn=20, tstop=4.0, plot=plot)
 
     exp_ampa_gmax = data.get('sgc_synapse', species='mouse', post_type='bushy', field='AMPA_gmax')[0]
     exp_nmda_gmax = data.get('sgc_synapse', species='mouse', post_type='bushy', field='NMDA_gmax')[0] 
+    exp_epsc_cv = data.get('sgc_synapse', species='mouse', post_type='bushy', field='EPSC_cv')
+    
     assert np.allclose((exp_ampa_gmax, exp_nmda_gmax), (ampa_gmax, nmda_gmax))
+    assert abs(exp_epsc_cv / epsc_cv - 1) < 0.1
 
     
 def test_sgc_tstellate_psd(plot=False):
     """Check that sgc-bushy synapses have correct AMPA and NMDA peak conductances.
-    
-    Note that for this test, we ignore synapses that fail to release. 
     """
     random.set_seed(34754398)
     reset()
     tsc = cells.TStellate.create(ttx=True)
-    (ampa_gmax, nmda_gmax) = measure_gmax(tsc, skip_failures=True, n_syn=20, tstop=5.0, plot=plot)
+    (ampa_gmax, nmda_gmax, epsc_cv) = measure_gmax(tsc, n_syn=20, tstop=5.0, plot=plot)
     
     exp_ampa_gmax = data.get('sgc_synapse', species='mouse', post_type='tstellate', field='AMPA_gmax')[0]
     exp_nmda_gmax = data.get('sgc_synapse', species='mouse', post_type='tstellate', field='NMDA_gmax')[0]
+    exp_epsc_cv = data.get('sgc_synapse', species='mouse', post_type='tstellate', field='EPSC_cv')
+    
     assert np.allclose((exp_ampa_gmax, exp_nmda_gmax), (ampa_gmax, nmda_gmax))
+    assert abs(exp_epsc_cv / epsc_cv - 1) < 0.1
 
 
-def measure_gmax(cell, skip_failures=False, n_syn=20, tstop=5.0, plot=False):
+def measure_gmax(cell, n_syn=20, tstop=5.0, plot=False):
     sgc = cells.SGC.create()
     prot = SynapseTest()
     
@@ -56,6 +60,7 @@ def measure_gmax(cell, skip_failures=False, n_syn=20, tstop=5.0, plot=False):
         plt = pg.plot()
     ampa_gmax = []
     nmda_gmax = []
+    epsc_gmax = []
     for syn in prot.synapses:
         ampa = np.zeros_like(syn.psd.get_vector('ampa', 'g'))
         nmda = ampa.copy()
@@ -63,23 +68,20 @@ def measure_gmax(cell, skip_failures=False, n_syn=20, tstop=5.0, plot=False):
             ampa += syn.psd.get_vector('ampa', 'g', i)
             nmda += syn.psd.get_vector('nmda', 'g', i)
             if nmda[-1] - nmda[-2] > 0.001:
-                print nmda
                 raise Exception("Did not reach nmda gmax; need longer run.")
         amax = ampa.max()
-        if skip_failures:
-            if amax < 0.01:
-                # no release; skip this synapse
-                continue
         ampa_gmax.append(amax)
         nmda_gmax.append(nmda.max())
+        epsc_gmax.append((ampa+nmda).max())
         if plot:
             plt.plot(ampa, pen='g')
             plt.plot(nmda, pen='y')
     
-    return (np.mean(ampa_gmax), np.mean(nmda_gmax))
+    return (np.mean(ampa_gmax), np.mean(nmda_gmax), 
+            np.std(epsc_gmax) / np.mean(epsc_gmax))
 
 
     
 if __name__ == '__main__':
-    test_sgc_bushy_psd(plot=True)
+    #test_sgc_bushy_psd(plot=True)
     test_sgc_tstellate_psd(plot=True)

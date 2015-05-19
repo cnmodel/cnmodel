@@ -167,9 +167,9 @@ class SynapseTest(Protocol):
                     self['O1'] = psd[0]._ref_O1
                     self['O2'] = psd[0]._ref_O2
 
-            self.custom_init()
             for i, s in enumerate(synapses):
-                s.terminal.relsite.rseed = nrep
+                s.terminal.relsite.rseed = util.random.current_seed() + nrep
+            self.custom_init()
             h.run()
 
             # add up psd current across all runs

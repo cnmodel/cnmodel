@@ -17,7 +17,7 @@ class StochasticTerminal(Terminal):
     """
     def __init__(self, pre_sec, target_cell, nzones=1, celltype='bushy', message=None,
                 type='lognormal', identifier=0, stochastic_pars=None, calcium_pars=None,
-                delay=0, debug=False, psdtype=None, select=None, spike_source=None, dep_flag=1):
+                delay=0, debug=False, select=None, spike_source=None, dep_flag=1):
         """
         This routine creates a (potentially) multisite synapse with:
             A MultiSiteSynapse release mechanism that includes stochastic release, with a lognormal
@@ -141,8 +141,7 @@ class StochasticTerminal(Terminal):
         self.netcon.threshold = -30.0
         h.pop_section()
 
-        if psdtype is not None:
-            self.setPsdType(target_cell, select)
+        self.setPsdType(target_cell, select)
 
     def setPsdType(self, target_cell, select=None):
         # TODO: must resurrect this for inhibitory synapses.

@@ -34,8 +34,8 @@ class TStellate(Cell):
             # Max conductances for the glu mechanisms are calibrated by 
             # running `synapses/tests/test_psd.py`. The test should fail
             # if these values are incorrect:
-            AMPA_gmax = 7.9653182
-            NMDA_gmax = 1.3612572
+            AMPA_gmax = 1.116294373190818
+            NMDA_gmax = 0.18993944366251217
             
             # Get AMPAR kinetic constants from database 
             params = data.get('sgc_synapse', species='mouse', post_type='tstellate',
