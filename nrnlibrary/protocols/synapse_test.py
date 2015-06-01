@@ -1,6 +1,6 @@
+from collections import OrderedDict
 from scipy import interpolate
 import numpy as np
-#import matplotlib.pylab as mpl
 import pyqtgraph as pg
 
 from neuron import h
@@ -9,8 +9,6 @@ import nrnlibrary.util as util
 from .protocol import Protocol
 from .. import cells
 from ..synapses import GluPSD, GlyPSD
-
-#mpl.rcParams['interactive'] = False
 
 
 class SynapseTest(Protocol):
@@ -73,7 +71,8 @@ class SynapseTest(Protocol):
             'PT': 0.0,
             'dt': dt,
         }
-        stim.update(stim_params)
+        if stim_params is not None:
+            stim.update(stim_params)
         (secmd, maxt, tstims) = util.make_pulse(stim)
         self.stim = stim
 
@@ -277,14 +276,17 @@ class SynapseTest(Protocol):
                     am = np.abs(syn.psd.get_vector('ampa', 'i', i)).max()
                     opnm = np.abs(syn.psd.get_vector('nmda', 'Open', i)).max()
                     opam = np.abs(syn.psd.get_vector('ampa', 'Open', i)).max()
-                    if nm != 0 or am != 0:
+                    if nm > 1e-6 or am > 1e-6:
                         nmImax = nm
                         amImax = am
                         nmOmax = opnm
                         amOmax = opam
                         break
+                if nmImax != 0:
+                    break
             
-            return {'nmda': (nmImax, nmOmax), 'ampa': (amImax, amOmax)}
+            return {'nmda': OrderedDict([('Imax', nmImax), ('Omax', nmOmax)]), 
+                    'ampa': OrderedDict([('Imax', amImax), ('Omax', amOmax)])}
         
         elif isinstance(synapse.psd, GlyPSD) and len(synapse.psd.all_psd) > 0:
             # find a psd with ampa and nmda currents
@@ -363,17 +365,18 @@ class SynapseTest(Protocol):
             events['peak'][i] = pkval
             events['peak index'][i] = psc_pk
             
-            lat20 = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.2, direction='left', 
-                                            limits=(minLat, ipi + t_extend, self.dt))
-            lat80 = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.8, direction='left', 
-                                            limits=(minLat, ipi + t_extend, self.dt))
+            # Find 20% and 80% crossing points to the left of the PSC peak
+            pscmin = ipsc[i, :psc_pk].min()
+            lat20 = np.argwhere(ipsc[i, :psc_pk] < pscmin + (pkval-pscmin) * 0.2)[-1, 0] * self.dt
+            lat80 = np.argwhere(ipsc[i, :psc_pk] < pscmin + (pkval-pscmin) * 0.8)[-1, 0] * self.dt
+            
             events['20% latency'][i] = lat20
             events['80% latency'][i] = lat80
             
-            psc_50l = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.5, direction='left', 
-                                    limits=(minLat, ipi + t_extend, self.dt))
-            psc_50r = util.find_point(tpsc, ipsc[i, :], psc_pk, 0.5, direction='right', 
-                                    limits=(minLat, ipi + t_extend, self.dt))
+            # Find 50% crossing points on either side of the PSC peak
+            psc_50l = np.argwhere(ipsc[i, :psc_pk] < pscmin + (pkval-pscmin) * 0.5)[-1, 0] * self.dt
+            psc_50r = (np.argwhere(ipsc[i, psc_pk:] < pscmin + (pkval-pscmin) * 0.5)[0, 0] + psc_pk) * self.dt
+            
             events['half left'] = psc_50l
             events['half right'] = psc_50r
             
@@ -426,8 +429,8 @@ class SynapseTest(Protocol):
             print 'Max GLYR Open Prob: %f' % (glyOPmax,)
             print 'Max GLYR I: %f' % (glyImax,)
         else:
-            nmImax, nmOPmax = oprob['nmda']
-            amImax, amOPmax = oprob['ampa']
+            nmImax, nmOPmax = oprob['nmda'].values()
+            amImax, amOPmax = oprob['ampa'].values()
             print 'Max NMDAR Open Prob: %f   AMPA Open Prob: %f' % (nmOPmax, amOPmax)
             print 'Max NMDAR I: %f   AMPA I: %f' % (nmImax, amImax)
             if nmImax + amImax != 0.0:
