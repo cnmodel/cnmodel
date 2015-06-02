@@ -12,7 +12,7 @@ if len(sys.argv) < 3:
 
 
 convergence = {
-    'sgc': {'bushy': 3, 'tstellate': 6, 'dstellate': 10, 'dstellate_eager': 10},
+    'sgc': {'bushy': 1, 'tstellate': 6, 'dstellate': 10, 'dstellate_eager': 10},
     'dstellate': {'bushy': 10, 'tstellate': 15, 'dstellate': 5},
     }
 
