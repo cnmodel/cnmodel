@@ -54,7 +54,7 @@ NEURON {
 THREADSAFE
 	POINT_PROCESS MultiSiteSynapse
 	RANGE F, k0, kmax, taud, kd, tauf, kf, taus, ks
-	RANGE nZones, nVesicles, rseed, latency, latstd, debug
+	RANGE nZones, multisite, nVesicles, rseed, latency, latstd, debug
 	RANGE dD, dF, XMTR, glu, CaDi, CaFi
 	RANGE Fn, Dn
 	RANGE TTotal
@@ -63,9 +63,7 @@ THREADSAFE
 	RANGE TDur, TAmp
 	: Distributions for stochastic release and testing (Sept, Oct, 2011):
 	RANGE EventLatencies, EventTime : returns the first EVENT_N latencies and absolute times at which they were used
-	RANGE ScopDist : returns the first EVENT_N random numbers generated and checked.
 	RANGE ev_index : count in the EventLatencies (in case we are "short")
-	RANGE sc_index : count in the ScopDist (in case we are "short")
 	: parameters for latency shift during repetitive stimulation (Oct 19, 2011)
 	RANGE Dep_Flag : Depression flag (0 to remove depression; 1 to allow DKR control of facilitation and depression)
     RANGE Lat_Flag, Lat_t0, Lat_A0, Lat_tau : Lat_Flag  = 0 means fixed latency (set by "latency" above)
@@ -75,6 +73,9 @@ THREADSAFE
 	RANGE LN_Flag, LN_t0, LN_A0, LN_tau : LN_Flag  = 0 means fixed sigma as well
 											: otherwise, sigma = latstd for t < LN_t0
 											:            sigma = latstd + LN_A0*(1-exp(-(t-LN_t0)/LN_tau))
+
+    : externally assigned pointers to RNG functions
+    POINTER binomial_rng  : for deciding the number of active synapses when multisite==0
 }
 
 UNITS {
@@ -124,11 +125,11 @@ PARAMETER {
 ASSIGNED {
 	: Externally set assignments
 	nZones (1)    : number of zones in the model
+	multisite (1)  : whether zones are modeled individualy (1) or as a single, variable-amplitude zone (0)
 	nRequests (1) 
 	nReleases (1)
 	EventLatencies[EVENT_N] (0)
 	EventTime[EVENT_N] (0)
-	ScopDist[EVENT_N] (0)
 
 	: Internal calculated variables
 	Fn (1)
@@ -155,9 +156,34 @@ ASSIGNED {
 	iZone (1)
 	gindex (0)
 	ev_index (0)
-	sc_index(0)
 	scrand (0)	
+	
+	binomial_rng
 }
+
+: Function prototypes needed to assign RNG function pointers
+VERBATIM
+double nrn_random_pick(void* r);
+void* nrn_random_arg(int argpos);
+ENDVERBATIM
+
+: Return a pick from binomial distribution
+FUNCTION rand_binomial() {
+VERBATIM
+    _lrand_binomial = nrn_random_pick(_p_binomial_rng);
+ENDVERBATIM
+}
+
+: Function to allow RNG to be externaly set
+PROCEDURE setBinomialRNG() {
+VERBATIM
+ {
+    void** pv = (void**)(&_p_binomial_rng);
+    *pv = nrn_random_arg(1);
+ }
+ENDVERBATIM
+}
+
 
 STATE {
 	nVesicles[MAX_ZONES]	(1) : vesicles in RRVP
@@ -188,7 +214,6 @@ INITIAL {
 	vesicleLatency = 0.0
 	gindex = 0
 	ev_index = 0
-	sc_index = 0
 	scrand = 0.0
 	CaDi = 1.0
 	CaFi = 0.0
@@ -228,15 +253,12 @@ PROCEDURE release() {
 
 	iZone = 0
 	FROM i = 0 TO (nZones-1) { : for each zone in the synapse
-		scrand = scop_random()
-		if (sc_index < EVENT_N) {
-					ScopDist[sc_index] = scrand : draw from uniform distribution for release P determination
-					sc_index = sc_index + 1
-		}
+		
 		: now handle vesicle release...
 		if(relThisSpike[iZone] == 0 && (tRelease[iZone] < tSpike)) {
-		: look to make release if we have not already (single vesicle per zone per spike)
-		: check for release and release probability - assume infinite supply of vesicles
+            scrand = scop_random()
+            : look to make release if we have not already (single vesicle per zone per spike)
+            : check for release and release probability - assume infinite supply of vesicles
 			if (scrand  < Fn*Dn) { 
 				nReleases = nReleases + 1 : count number of releases since inception
 				tRelease[iZone] = tSpike	 : time of release

@@ -45,12 +45,12 @@ class Bushy(Cell):
                                         Ro1=params['Ro1'],
                                         Ro2=params['Ro2'],
                                         Rc1=params['Rc1'],
-                                        Rc2=params['Rc2'],)
-                                   )
+                                        Rc2=params['Rc2'],),
+                                   **kwds)
         elif isinstance(pre_cell, cells.DStellate):
             return synapses.GlyPSD(post_sec, terminal,
                                    psdType='glyslow',
-                                   )
+                                   **kwds)
         else:
             raise TypeError("Cannot make PSD for %s => %s" % 
                             (pre_cell.__class__.__name__, 

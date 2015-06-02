@@ -30,12 +30,12 @@ class DStellate(Cell):
             psd = synapses.GluPSD(post_sec, terminal,
                                    ampa_gmax=4600.,
                                    nmda_ampa_ratio = 1.28,
-                                   )
+                                   **kwds)
             return psd
         elif isinstance(pre_cell, cells.DStellate):
             psd = synapses.GlyPSD(post_sec, terminal,
                                    psdType='glyfast',
-                                   )
+                                   **kwds)
             return psd
         else:
             raise TypeError("Cannot make PSD for %s => %s" % 
@@ -60,7 +60,8 @@ class DStellate(Cell):
         
         pre_sec = self.soma
         
-        return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, delay=delay)
+        return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, 
+                                           delay=delay, **kwds)
 
 
 class DStellateRothman(DStellate):

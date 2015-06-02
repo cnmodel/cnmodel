@@ -49,12 +49,12 @@ class TStellate(Cell):
                                         Ro2=params['Ro2'],
                                         Rc1=params['Rc1'],
                                         Rc2=params['Rc2'],
-                                        PA=params['PA'])
-                                   )
+                                        PA=params['PA']),
+                                   **kwds)
         elif isinstance(pre_cell, cells.DStellate):
             return synapses.GlyPSD(post_sec, terminal,
                                    psdType='glyfast',
-                                   )
+                                   **kwds)
         else:
             raise TypeError("Cannot make PSD for %s => %s" % 
                             (pre_cell.__class__.__name__, 
