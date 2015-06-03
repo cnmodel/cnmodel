@@ -18,7 +18,6 @@ such as the Trussell-Raman model)
 Range variables:
 nZones: is the number of active zones simulated in this calyx model. Each zone
         can be connected to a separate PSD.
-nVesicles: the size of the release pool in the presynaptic terminal
 F (0.4): The base release probability
 k0 (1/1.75): /s, baseline recovery rate from depletion (slow rate)
 kmax (1/0.025): /s, maximal recovery rate from depletion (fast rate)
@@ -54,7 +53,7 @@ NEURON {
     THREADSAFE
     POINT_PROCESS MultiSiteSynapse
     RANGE F, k0, kmax, taud, kd, tauf, kf, taus, ks
-    RANGE nZones, multisite, nVesicles, rseed, latency, latstd, debug
+    RANGE nZones, multisite, rseed, latency, latstd, debug
     RANGE dD, dF, XMTR, glu, CaDi, CaFi
     RANGE Fn, Dn
     RANGE TTotal
@@ -75,7 +74,7 @@ NEURON {
                                             :            sigma = latstd + LN_A0*(1-exp(-(t-LN_t0)/LN_tau))
 
     : externally assigned pointers to RNG functions
-    POINTER binomial_rng  : for deciding the number of active synapses when multisite==0
+    POINTER uniform_rng  : for deciding the number of active synapses when multisite==0
 }
 
 UNITS {
@@ -87,7 +86,6 @@ UNITS {
 
 PARAMETER {
     dt      (ms)
-    n0 = 1      (1)        : initial size of RRVP at each release site
     TAmp = 1.0 (mM)          : amplitude of transmitter pulse
     TDur = 0.5    (ms)    : duration of transmitter pulse
     dD = 0.02 (1)       : calcium influx driving recovery per AP
@@ -105,6 +103,7 @@ PARAMETER {
     rseed (1)        : random number generator seed (for SCOP module)
     latency = 0.0 (ms)
     latstd = 0.0 (ms)
+    
     : Time course of latency shift in release during repetitive stimulation
     Lat_Flag = 0 (1) : 0 means fixed latency, 1 means lognormal distribution
     Lat_t0 = 0.0 (ms) : minimum time since simulation start before changes in latency are calculated
@@ -130,6 +129,8 @@ ASSIGNED {
     nReleases (1)
     EventLatencies[EVENT_N] (0)
     EventTime[EVENT_N] (0)
+    tRelease[MAX_ZONES] (ms)    : time of last release
+    releaseAmplitude (mM)          : per-site, peak transmitter amplitude
 
     : Internal calculated variables
     Fn (1)
@@ -141,9 +142,7 @@ ASSIGNED {
     eta (1)
     tSpike (ms)            : time of last spike
     tstep(ms)
-    tRelease[MAX_ZONES] (ms)    : time of last release
     TTotal(0)
-    tz(1)
     tspike (ms)
     latzone (ms)
     vesicleLatency (ms)
@@ -152,7 +151,7 @@ ASSIGNED {
     ev_index (0)
     scrand (0)    
     
-    binomial_rng
+    uniform_rng
 }
 
 : Function prototypes needed to assign RNG function pointers
@@ -161,18 +160,19 @@ double nrn_random_pick(void* r);
 void* nrn_random_arg(int argpos);
 ENDVERBATIM
 
-: Return a pick from binomial distribution
-FUNCTION rand_binomial() {
+: Return a pick from uniform distribution.
+: (distribution parameters are set externally)
+FUNCTION rand_uniform() {
 VERBATIM
-    _lrand_binomial = nrn_random_pick(_p_binomial_rng);
+    _lrand_uniform = nrn_random_pick(_p_uniform_rng);
 ENDVERBATIM
 }
 
 : Function to allow RNG to be externaly set
-PROCEDURE setBinomialRNG() {
+PROCEDURE setUniformRNG() {
 VERBATIM
  {
-    void** pv = (void**)(&_p_binomial_rng);
+    void** pv = (void**)(&_p_uniform_rng);
     *pv = nrn_random_arg(1);
  }
 ENDVERBATIM
@@ -180,7 +180,6 @@ ENDVERBATIM
 
 
 STATE {
-    nVesicles[MAX_ZONES]    (1) : vesicles in RRVP
     XMTR[MAX_ZONES]       (mM)       : pulse of neurotransmitter
 }
 
@@ -193,7 +192,6 @@ INITIAL {
 :    VERBATIM
 :        fprintf(stdout, "MultiSiteSynapse: Calyx #%d Initialized with Random Seed: %d\n", (int)Identifier, (int)rseed);
 :    ENDVERBATIM
-    nVesicles[0] = n0
     tSpike = -1000.0
     latzone = 0.0
     sigma = 0.0
@@ -208,17 +206,17 @@ INITIAL {
     Fn = F
     Dn = 1.0
     FROM i = 0 TO (nZones-1) {
-        nVesicles[i] = n0
         XMTR[i] = 0
         tRelease[i] = 0
     }
-    update(t-tSpike)
+    update_dkr(t-tSpike)
 }
 
 BREAKPOINT {
     SOLVE release
 }
 
+LOCAL tz
 PROCEDURE release() {
     : Control the release process and transmitter concentration. 
     : The syanpse can release one vesicle per AP per zone, with a probabiliyt 0<p<1.
@@ -228,7 +226,6 @@ PROCEDURE release() {
     : distribution, plus a fixed latency.
     : Once released, the transmitter packet has a defined smooth time course in the "cleft"
     : represented by the product of rising and falling exponentials.
-    tz = 0
     : update glutamate in cleft
     FROM i = 0 TO (nZones-1) { : for each zone in the synapse
         if (t >= tRelease[i] && t < tRelease[i] + 5.0 * TDur) {
@@ -243,7 +240,7 @@ PROCEDURE release() {
 }
 
 
-PROCEDURE update(tstep (ms)) {
+PROCEDURE update_dkr(tstep (ms)) {
     : update the facilitation and depletion variables
     : from the Dittman-Regehr model. 
     : Updates are done with each new presynaptic AP event.
@@ -280,18 +277,28 @@ PROCEDURE update(tstep (ms)) {
 
 NET_RECEIVE(weight) {
     : A spike has been received; process synaptic release
-:    VERBATIM
-:      if (debug == 1) {
-:        fprintf(stderr, "  ---> Spike at t = %9.3f\n", t);
-:      }
-:    ENDVERBATIM
     
     : First, update DKR state to determine new release probability
-    update(t - tSpike)
+    update_dkr(t - tSpike)
     tSpike = t      : save the time of spike
     
     TTotal = 0 : reset total transmitter from this calyx for each release
     nRequests = nRequests + 1 : count the number of inputs that we received
+    
+    : Next, process vesicle release using new release probability
+    if (multisite == 1) {
+        release_multisite()
+    }
+    else {
+        release_singlesite()
+    }
+}
+
+
+PROCEDURE release_multisite() {
+    : Vesicle release procedure for multi-site terminal.
+    : Loops over multiple zones using release probability Fn*Dn to decide whether
+    : each site will release, and selecting an appropriate release latency. 
     FROM i = 0 TO (nZones-1) { : for each zone in the synapse
         if(tRelease[i] < t) {
             scrand = scop_random()
@@ -340,7 +347,15 @@ NET_RECEIVE(weight) {
                 
                 : release time for this event
                 tRelease[i] = t + latzone
+                releaseAmplitude = TAmp
             }
         }
     }
+}
+
+
+LOCAL x
+PROCEDURE release_singlesite() {
+    tRelease[0] = t
+    releaseAmplitude = rand_uniform() * TAmp
 }

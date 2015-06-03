@@ -15,7 +15,7 @@ class StochasticTerminal(Terminal):
     """
     Axon terminal with multi-site sctochastic release mechanism.
     """
-    def __init__(self, pre_sec, target_cell, nzones=1, multisite=False, 
+    def __init__(self, pre_sec, target_cell, nzones=1, multisite=True, 
                  celltype='bushy', message=None, type='lognormal', identifier=0,
                  stochastic_pars=None, calcium_pars=None, delay=0, debug=False,
                  select=None, spike_source=None, dep_flag=1):
