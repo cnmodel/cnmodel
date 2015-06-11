@@ -86,10 +86,19 @@ class StochasticTerminal(Terminal):
         # Create point process to simulate multiple independent release zones.
         relsite = h.MultiSiteSynapse(0.5, sec=terminal)
         relsite.nZones = nzones
-        relsite.multisite = 1 if multisite else 0
-        relsite.rseed = random.current_seed()  # use global random seed
-        relsite.latency = stochastic_pars.latency
-        relsite.latstd = stochastic_pars.LN_std
+        if multisite:
+            relsite.multisite = 1
+            relsite.rseed = random.current_seed()  # use global random seed
+            relsite.latency = stochastic_pars.latency
+            relsite.latstd = stochastic_pars.LN_std
+            self.n_rzones = nzones
+        else:
+            relsite.multisite = 0
+            self.release_rng = h.Random(random.current_seed())
+            self.release_rng.uniform(0, 1)
+            relsite.setUniformRNG(self.release_rng)
+            self.n_rzones = 1
+        
         relsite.Dep_Flag = dep_flag  # control synaptic dynamics
         if debug is True:
             relsite.debug = 1
@@ -135,7 +144,6 @@ class StochasticTerminal(Terminal):
             relsite.TAmp = 1.56625
         h.pop_section()
         self.relsite = relsite
-        self.n_rzones = nzones
 
         if spike_source is None:
             spike_source = pre_sec(0.5)._ref_v

@@ -130,7 +130,6 @@ ASSIGNED {
     EventLatencies[EVENT_N] (0)
     EventTime[EVENT_N] (0)
     tRelease[MAX_ZONES] (ms)    : time of last release
-    releaseAmplitude (mM)          : per-site, peak transmitter amplitude
 
     : Internal calculated variables
     Fn (1)
@@ -180,18 +179,19 @@ ENDVERBATIM
 
 
 STATE {
-    XMTR[MAX_ZONES]       (mM)       : pulse of neurotransmitter
+    XMTR[MAX_ZONES]       (mM)       : per-zone neurotransmitter concentration
+    N_ACTIVE[MAX_ZONES]       (1)    : number of zones actively releasing
 }
 
 INITIAL {
+:    VERBATIM
+:        fprintf(stdout, "MultiSiteSynapse: Calyx #%d Initialized with Random Seed: %d\n", (int)Identifier, (int)rseed);
+:    ENDVERBATIM
 
     TTotal = 0
     nRequests = 0
     nReleases = 0
     set_seed(rseed)
-:    VERBATIM
-:        fprintf(stdout, "MultiSiteSynapse: Calyx #%d Initialized with Random Seed: %d\n", (int)Identifier, (int)rseed);
-:    ENDVERBATIM
     tSpike = -1000.0
     latzone = 0.0
     sigma = 0.0
@@ -207,6 +207,7 @@ INITIAL {
     Dn = 1.0
     FROM i = 0 TO (nZones-1) {
         XMTR[i] = 0
+        N_ACTIVE[i] = 1
         tRelease[i] = 0
     }
     update_dkr(t-tSpike)
@@ -216,17 +217,20 @@ BREAKPOINT {
     SOLVE release
 }
 
-LOCAL tz
+LOCAL tz, n_relzones, amp
 PROCEDURE release() {
-    : Control the release process and transmitter concentration. 
-    : The syanpse can release one vesicle per AP per zone, with a probabiliyt 0<p<1.
-    : The probability, p, is defined by the time evolution of a Dittman-Regher model
-    : of release, whose parameters are set during initialization.
-    : The vesicle can be released over a variable time interval defined by a lognormal
-    : distribution, plus a fixed latency.
     : Once released, the transmitter packet has a defined smooth time course in the "cleft"
     : represented by the product of rising and falling exponentials.
     : update glutamate in cleft
+    if (multisite == 1) {
+        : Update glutamate waveform for each active release zone
+        n_relzones = nZones
+    }
+    else {
+        : Update aggregate glutamate waveform for only the first release zone
+        n_relzones = 1
+    }
+    
     FROM i = 0 TO (nZones-1) { : for each zone in the synapse
         if (t >= tRelease[i] && t < tRelease[i] + 5.0 * TDur) {
             tz = t - tRelease[i] : time since onset of release
@@ -299,6 +303,13 @@ PROCEDURE release_multisite() {
     : Vesicle release procedure for multi-site terminal.
     : Loops over multiple zones using release probability Fn*Dn to decide whether
     : each site will release, and selecting an appropriate release latency. 
+    
+    : The syanpse can release one vesicle per AP per zone, with a probabiliyt 0<p<1.
+    : The probability, p, is defined by the time evolution of a Dittman-Regher model
+    : of release, whose parameters are set during initialization.
+    : The vesicle can be released over a variable time interval defined by a lognormal
+    : distribution, plus a fixed latency.
+    
     FROM i = 0 TO (nZones-1) { : for each zone in the synapse
         if(tRelease[i] < t) {
             scrand = scop_random()
@@ -347,15 +358,22 @@ PROCEDURE release_multisite() {
                 
                 : release time for this event
                 tRelease[i] = t + latzone
-                releaseAmplitude = TAmp
             }
         }
     }
 }
 
 
-LOCAL x
 PROCEDURE release_singlesite() {
+    LOCAL pr
     tRelease[0] = t
-    releaseAmplitude = rand_uniform() * TAmp
+    pr = Fn * Dn
+    FROM i = 0 TO (nZones-1) {
+        if (rand_uniform() < pr) { 
+            TTotal = TTotal + 1     : count total releases this trial.
+        }
+    }
+    : Tell PSD to multiply its final current by the number of active zones
+    N_ACTIVE[0] = TTotal
+    printf("Release: %f\n", TTotal)
 }
