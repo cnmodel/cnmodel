@@ -17,7 +17,7 @@ such as the Trussell-Raman model)
 
 Range variables:
 nZones: is the number of active zones simulated in this calyx model. Each zone
-		can be connected to a separate PSD.
+        can be connected to a separate PSD.
 nVesicles: the size of the release pool in the presynaptic terminal
 F (0.4): The base release probability
 k0 (1/1.75): /s, baseline recovery rate from depletion (slow rate)
@@ -52,108 +52,108 @@ INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}
 
 NEURON {
 THREADSAFE
-	POINT_PROCESS MultiSiteSynapse
-	RANGE F, k0, kmax, taud, kd, tauf, kf, taus, ks
-	RANGE nZones, multisite, nVesicles, rseed, latency, latstd, debug
-	RANGE dD, dF, XMTR, glu, CaDi, CaFi
-	RANGE Fn, Dn
-	RANGE TTotal
-	RANGE nRequests, nReleases
-	RANGE Identifier : just a number so we can report which instance is active
-	RANGE TDur, TAmp
-	: Distributions for stochastic release and testing (Sept, Oct, 2011):
-	RANGE EventLatencies, EventTime : returns the first EVENT_N latencies and absolute times at which they were used
-	RANGE ev_index : count in the EventLatencies (in case we are "short")
-	: parameters for latency shift during repetitive stimulation (Oct 19, 2011)
-	RANGE Dep_Flag : Depression flag (0 to remove depression; 1 to allow DKR control of facilitation and depression)
+    POINT_PROCESS MultiSiteSynapse
+    RANGE F, k0, kmax, taud, kd, tauf, kf, taus, ks
+    RANGE nZones, multisite, nVesicles, rseed, latency, latstd, debug
+    RANGE dD, dF, XMTR, glu, CaDi, CaFi
+    RANGE Fn, Dn
+    RANGE TTotal
+    RANGE nRequests, nReleases
+    RANGE Identifier : just a number so we can report which instance is active
+    RANGE TDur, TAmp
+    : Distributions for stochastic release and testing (Sept, Oct, 2011):
+    RANGE EventLatencies, EventTime : returns the first EVENT_N latencies and absolute times at which they were used
+    RANGE ev_index : count in the EventLatencies (in case we are "short")
+    : parameters for latency shift during repetitive stimulation (Oct 19, 2011)
+    RANGE Dep_Flag : Depression flag (0 to remove depression; 1 to allow DKR control of facilitation and depression)
     RANGE Lat_Flag, Lat_t0, Lat_A0, Lat_tau : Lat_Flag  = 0 means fixed latency (set by "latency" above)
-											: otherwise, latency = latency for t < Lat_t0
-											:            latency = latency + Lat_A0*(1-exp(-(t-Lat_t0)/Lat_tau))
-	: parameters for lognorm distribution shift during repetitive stimulation (Oct 19, 2011)
-	RANGE LN_Flag, LN_t0, LN_A0, LN_tau : LN_Flag  = 0 means fixed sigma as well
-											: otherwise, sigma = latstd for t < LN_t0
-											:            sigma = latstd + LN_A0*(1-exp(-(t-LN_t0)/LN_tau))
+                                            : otherwise, latency = latency for t < Lat_t0
+                                            :            latency = latency + Lat_A0*(1-exp(-(t-Lat_t0)/Lat_tau))
+    : parameters for lognorm distribution shift during repetitive stimulation (Oct 19, 2011)
+    RANGE LN_Flag, LN_t0, LN_A0, LN_tau : LN_Flag  = 0 means fixed sigma as well
+                                            : otherwise, sigma = latstd for t < LN_t0
+                                            :            sigma = latstd + LN_A0*(1-exp(-(t-LN_t0)/LN_tau))
 
     : externally assigned pointers to RNG functions
     POINTER binomial_rng  : for deciding the number of active synapses when multisite==0
 }
 
 UNITS {
-	(mA) = (milliamp)
-	(mV) = (millivolt)
-	(mM) = (milli/liter)
-	(uM) = (micro/liter)
+    (mA) = (milliamp)
+    (mV) = (millivolt)
+    (mM) = (milli/liter)
+    (uM) = (micro/liter)
 }
 
 PARAMETER {
-	dt	  (ms)
-	n0 = 1	  (1)		: initial size of RRVP at each release site
-	TAmp = 1.0 (mM)		  : amplitude of transmitter pulse
-	TDur = 0.5	(ms)	: duration of transmitter pulse
-	dD = 0.02 (1)	   : calcium influx driving recovery per AP
-	dF = 0.02 (1)	   : calcium influx driving facilitation per AP
-	F  = 0.5 (1)		: basal facilitaiton
-	k0 = 0.0005714(/ms)	   : slow recovery from depletion (1.0/1.75)
-	kmax = 0.040 (/ms)	  : fast recovery from depletion (1/0.025)
-	taud = 50.0 (ms)		: time constant for fast calcium dependent recovery
-	kd = 0.7 (1)	   : affinity of fast recovery process for calcium sensor
-	tauf = 10.0 (ms)		: rate of slow facilitiation process
-	kf = 0.5 (1)	   : affinity of slow facilitation process
-	taus = 1 (ms)
-	ks = 0.5 (1)	  : not used but defined anyway
-	glu = 1 (mM)
-    rseed (1)		: random number generator seed (for SCOP module)
-	latency = 0.0 (ms)
-	latstd = 0.0 (ms)
-	: Time course of latency shift in release during repetitive stimulation
-	Lat_Flag = 0 (1) : 0 means fixed latency, 1 means lognormal distribution
-	Lat_t0 = 0.0 (ms) : minimum time since simulation start before changes in latency are calculated
-	Lat_A0 = 0.0 (ms) : size of latency shift from t0 to infinity
-	Lat_tau = 100.0 (ms) : rate of change of latency shift (from fit of a+b(1-exp(-t/tau)))
-	: Statistical control of log-normal release shape over time during repetive stimulation
-	LN_Flag = 0 (1) : 0 means fixed values for all time
-	LN_t0 = 0.0 (ms) : : minimum time since simulation start before changes in distribution are calculated
-	LN_A0 = 0.0 (ms) : size of change in sigma from t0 to infinity
-	LN_tau = 100.0 (ms) : rate of change of sigma over time (from fit of a+b*(1-exp(-t/tau)))
-	
-	: control flags	 - if debug is 1, show all, if 2, just "some"
-	debug = 0
-	Identifier = 0
+    dt      (ms)
+    n0 = 1      (1)        : initial size of RRVP at each release site
+    TAmp = 1.0 (mM)          : amplitude of transmitter pulse
+    TDur = 0.5    (ms)    : duration of transmitter pulse
+    dD = 0.02 (1)       : calcium influx driving recovery per AP
+    dF = 0.02 (1)       : calcium influx driving facilitation per AP
+    F  = 0.5 (1)        : basal facilitaiton
+    k0 = 0.0005714(/ms)       : slow recovery from depletion (1.0/1.75)
+    kmax = 0.040 (/ms)      : fast recovery from depletion (1/0.025)
+    taud = 50.0 (ms)        : time constant for fast calcium dependent recovery
+    kd = 0.7 (1)       : affinity of fast recovery process for calcium sensor
+    tauf = 10.0 (ms)        : rate of slow facilitiation process
+    kf = 0.5 (1)       : affinity of slow facilitation process
+    taus = 1 (ms)
+    ks = 0.5 (1)      : not used but defined anyway
+    glu = 1 (mM)
+    rseed (1)        : random number generator seed (for SCOP module)
+    latency = 0.0 (ms)
+    latstd = 0.0 (ms)
+    : Time course of latency shift in release during repetitive stimulation
+    Lat_Flag = 0 (1) : 0 means fixed latency, 1 means lognormal distribution
+    Lat_t0 = 0.0 (ms) : minimum time since simulation start before changes in latency are calculated
+    Lat_A0 = 0.0 (ms) : size of latency shift from t0 to infinity
+    Lat_tau = 100.0 (ms) : rate of change of latency shift (from fit of a+b(1-exp(-t/tau)))
+    : Statistical control of log-normal release shape over time during repetive stimulation
+    LN_Flag = 0 (1) : 0 means fixed values for all time
+    LN_t0 = 0.0 (ms) : : minimum time since simulation start before changes in distribution are calculated
+    LN_A0 = 0.0 (ms) : size of change in sigma from t0 to infinity
+    LN_tau = 100.0 (ms) : rate of change of sigma over time (from fit of a+b*(1-exp(-t/tau)))
+    
+    : control flags     - if debug is 1, show all, if 2, just "some"
+    debug = 0
+    Identifier = 0
     Dep_Flag = 1 (1) : 1 means use depression calculations; 0 means always set release probability to F
 }
 
 ASSIGNED {
-	: Externally set assignments
-	nZones (1)    : number of zones in the model
-	multisite (1)  : whether zones are modeled individualy (1) or as a single, variable-amplitude zone (0)
-	nRequests (1) 
-	nReleases (1)
-	EventLatencies[EVENT_N] (0)
-	EventTime[EVENT_N] (0)
+    : Externally set assignments
+    nZones (1)    : number of zones in the model
+    multisite (1)  : whether zones are modeled individualy (1) or as a single, variable-amplitude zone (0)
+    nRequests (1) 
+    nReleases (1)
+    EventLatencies[EVENT_N] (0)
+    EventTime[EVENT_N] (0)
 
-	: Internal calculated variables
-	Fn (1)
-	Dn (1)
-	CaDn (1)
-	CaFn (1)
-	CaDi (1)
-	CaFi (1)
-	eta (1)
-	tSpike (ms)			: time of last spike
-	tstep(ms)
-	tRelease[MAX_ZONES] (ms)	: time of last release
-	ZoneLatency[MAX_ZONES] (ms) : latency to release in this zone
-	TTotal(0)
-	tz(1)
-	tspike (ms)
-	latzone (ms)
-	vesicleLatency (ms)
-	sigma (ms)
-	gindex (0)
-	ev_index (0)
-	scrand (0)	
-	
-	binomial_rng
+    : Internal calculated variables
+    Fn (1)
+    Dn (1)
+    CaDn (1)
+    CaFn (1)
+    CaDi (1)
+    CaFi (1)
+    eta (1)
+    tSpike (ms)            : time of last spike
+    tstep(ms)
+    tRelease[MAX_ZONES] (ms)    : time of last release
+    ZoneLatency[MAX_ZONES] (ms) : latency to release in this zone
+    TTotal(0)
+    tz(1)
+    tspike (ms)
+    latzone (ms)
+    vesicleLatency (ms)
+    sigma (ms)
+    gindex (0)
+    ev_index (0)
+    scrand (0)    
+    
+    binomial_rng
 }
 
 : Function prototypes needed to assign RNG function pointers
@@ -181,46 +181,46 @@ ENDVERBATIM
 
 
 STATE {
-	nVesicles[MAX_ZONES]	(1) : vesicles in RRVP
-	XMTR[MAX_ZONES]	   (mM)	   : pulse of neurotransmitter
-	TCount[MAX_ZONES] (1)  : timesteps remaining before zone becomes inactive
+    nVesicles[MAX_ZONES]    (1) : vesicles in RRVP
+    XMTR[MAX_ZONES]       (mM)       : pulse of neurotransmitter
+    TCount[MAX_ZONES] (1)  : timesteps remaining before zone becomes inactive
 }
 
 INITIAL {
 
-	TTotal = 0
-	nRequests = 0
-	nReleases = 0
-	set_seed(rseed)
-:	VERBATIM
-:		fprintf(stdout, "MultiSiteSynapse: Calyx #%d Initialized with Random Seed: %d\n", (int)Identifier, (int)rseed);
-:	ENDVERBATIM
-	nVesicles[0] = n0
-	XMTR[0] = 0
-	tRelease[0] = 0
-	tSpike = -1000.0
-	latzone = 0.0
-	sigma = 0.0
-	vesicleLatency = 0.0
-	gindex = 0
-	ev_index = 0
-	scrand = 0.0
-	CaDi = 1.0
-	CaFi = 0.0
-	CaDn = 1.0
-	CaFn = 0.0
-	Fn = F
-	Dn = 1.0
-	FROM i = 0 TO (nZones-1) {
-		nVesicles[i] = n0
-		XMTR[i] = 0
-		tRelease[i] = 0
-	}
-	update(t-tSpike)
+    TTotal = 0
+    nRequests = 0
+    nReleases = 0
+    set_seed(rseed)
+:    VERBATIM
+:        fprintf(stdout, "MultiSiteSynapse: Calyx #%d Initialized with Random Seed: %d\n", (int)Identifier, (int)rseed);
+:    ENDVERBATIM
+    nVesicles[0] = n0
+    XMTR[0] = 0
+    tRelease[0] = 0
+    tSpike = -1000.0
+    latzone = 0.0
+    sigma = 0.0
+    vesicleLatency = 0.0
+    gindex = 0
+    ev_index = 0
+    scrand = 0.0
+    CaDi = 1.0
+    CaFi = 0.0
+    CaDn = 1.0
+    CaFn = 0.0
+    Fn = F
+    Dn = 1.0
+    FROM i = 0 TO (nZones-1) {
+        nVesicles[i] = n0
+        XMTR[i] = 0
+        tRelease[i] = 0
+    }
+    update(t-tSpike)
 }
 
 BREAKPOINT {
-	SOLVE release
+    SOLVE release
 }
 
 PROCEDURE release() {
@@ -232,16 +232,16 @@ PROCEDURE release() {
     : distribution, plus a fixed latency.
     : Once released, the transmitter packet has a defined smooth time course in the "cleft"
     : represented by the product of rising and falling exponentials.
-	tz = 0
+    tz = 0
     : update glutamate in cleft
     FROM i = 0 TO (nZones-1) { : for each zone in the synapse
-		if (TCount[i] > 0 && t >= tRelease[i]) {
+        if (TCount[i] > 0 && t >= tRelease[i]) {
             TCount[i] = TCount[i] - 1
             if (TCount[i] < 0) { : count down and done
                 XMTR[i] = 0.0
                 TTotal = 0
                 TCount[i] = 0
-            }	 : end of transmitter release pulse
+            }     : end of transmitter release pulse
             else {
                 tz = t-(tRelease[i]+ZoneLatency[i]) : time since onset of release
                 if (tz < 0) {
@@ -252,8 +252,8 @@ PROCEDURE release() {
                     XMTR[i] = TAmp * (1.0-exp(-tz/(TDur/3.0))) * exp(-(tz-(TDur/3.0))/TDur) 
                 } : done updating transmitter concentration
             }
-		}
-	}
+        }
+    }
 }
 
 
@@ -261,7 +261,7 @@ PROCEDURE update(tstep (ms)) {
     : update the facilitation and depletion variables
     : from the Dittman-Regehr model. 
     : Updates are done with each new presynaptic AP event.
-	if(tstep > 0.0) {
+    if(tstep > 0.0) {
         CaDi = CaDi + dD
         CaFi = CaFi + dF
         CaDn = CaDi * exp (-tstep/taud)
@@ -272,37 +272,37 @@ PROCEDURE update(tstep (ms)) {
         Fn = F + (1.0-F)/(1.0+kf/CaFn)
         CaDi = CaDn
         CaFi = CaFn
-	}
+    }
     if (Dep_Flag == 0) { : no depression
         Dn = 1.0  : set to 1
         Fn = F   : set to initial value to set release probability constant
     }
-:	VERBATIM
-:		if (debug >= 2 ){
-:			fprintf(stdout, "update start t = %f ts=%f: F=%7.2f CaDi = %g CaFi = %g\n", \
-:			t, tstep, F, CaDi, CaFi);
-:			fprintf(stdout, "	vars:  taud=%g: tauf=%g kd = %g kmax= %g\n", taud, tauf, kd, kmax);
-:			fprintf(stdout, "    CaDi = %g CaFi = %g\n", CaDi, CaFi);
-:			fprintf(stdout, "    CaDn = %g CaFn = %g\n", CaDn, CaFn);
-:			fprintf(stdout, "    eta: %g\n", eta);
-:			fprintf(stdout, "    Fn=%7.2f Dn: %7.2f  CaDi = %g CaFi = %g,\n", \
-:			Fn, Dn, CaDi, CaFi);
-:		}
-:	ENDVERBATIM
+:    VERBATIM
+:        if (debug >= 2 ){
+:            fprintf(stdout, "update start t = %f ts=%f: F=%7.2f CaDi = %g CaFi = %g\n", \
+:            t, tstep, F, CaDi, CaFi);
+:            fprintf(stdout, "    vars:  taud=%g: tauf=%g kd = %g kmax= %g\n", taud, tauf, kd, kmax);
+:            fprintf(stdout, "    CaDi = %g CaFi = %g\n", CaDi, CaFi);
+:            fprintf(stdout, "    CaDn = %g CaFn = %g\n", CaDn, CaFn);
+:            fprintf(stdout, "    eta: %g\n", eta);
+:            fprintf(stdout, "    Fn=%7.2f Dn: %7.2f  CaDi = %g CaFi = %g,\n", \
+:            Fn, Dn, CaDi, CaFi);
+:        }
+:    ENDVERBATIM
 }
 
 
 NET_RECEIVE(weight) {
     : Connect to here when a spike occurs...
-	update(t - tSpike) : see if we need to do an update on the event
-	tSpike = t	  : save the time of spike
-	TTotal = 0 : reset total transmitter from this calyx for each release
-:	VERBATIM
-:	  if (debug == 1) {
-:	    fprintf(stderr, "  ---> Spike at t = %9.3f\n", tSpike);
-:	  }
-:	ENDVERBATIM
-	nRequests = nRequests + 1 : count the number of inputs that we received
+    update(t - tSpike) : see if we need to do an update on the event
+    tSpike = t      : save the time of spike
+    TTotal = 0 : reset total transmitter from this calyx for each release
+:    VERBATIM
+:      if (debug == 1) {
+:        fprintf(stderr, "  ---> Spike at t = %9.3f\n", tSpike);
+:      }
+:    ENDVERBATIM
+    nRequests = nRequests + 1 : count the number of inputs that we received
     
     latzone = 0.0
     FROM i = 0 TO (nZones-1) { : for each zone in the synapse
