@@ -51,7 +51,7 @@ DEFINE EVENT_N 10000   : number of entries in the Event Distribution (e.g., as s
 INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}
 
 NEURON {
-THREADSAFE
+    THREADSAFE
     POINT_PROCESS MultiSiteSynapse
     RANGE F, k0, kmax, taud, kd, tauf, kf, taus, ks
     RANGE nZones, multisite, nVesicles, rseed, latency, latstd, debug
@@ -142,7 +142,6 @@ ASSIGNED {
     tSpike (ms)            : time of last spike
     tstep(ms)
     tRelease[MAX_ZONES] (ms)    : time of last release
-    ZoneLatency[MAX_ZONES] (ms) : latency to release in this zone
     TTotal(0)
     tz(1)
     tspike (ms)
@@ -183,7 +182,6 @@ ENDVERBATIM
 STATE {
     nVesicles[MAX_ZONES]    (1) : vesicles in RRVP
     XMTR[MAX_ZONES]       (mM)       : pulse of neurotransmitter
-    TCount[MAX_ZONES] (1)  : timesteps remaining before zone becomes inactive
 }
 
 INITIAL {
@@ -196,8 +194,6 @@ INITIAL {
 :        fprintf(stdout, "MultiSiteSynapse: Calyx #%d Initialized with Random Seed: %d\n", (int)Identifier, (int)rseed);
 :    ENDVERBATIM
     nVesicles[0] = n0
-    XMTR[0] = 0
-    tRelease[0] = 0
     tSpike = -1000.0
     latzone = 0.0
     sigma = 0.0
@@ -235,23 +231,13 @@ PROCEDURE release() {
     tz = 0
     : update glutamate in cleft
     FROM i = 0 TO (nZones-1) { : for each zone in the synapse
-        if (TCount[i] > 0 && t >= tRelease[i]) {
-            TCount[i] = TCount[i] - 1
-            if (TCount[i] < 0) { : count down and done
-                XMTR[i] = 0.0
-                TTotal = 0
-                TCount[i] = 0
-            }     : end of transmitter release pulse
-            else {
-                tz = t-(tRelease[i]+ZoneLatency[i]) : time since onset of release
-                if (tz < 0) {
-                    XMTR[i] = 0
-                }
-                else {
-                    : calculate glutamate waveform
-                    XMTR[i] = TAmp * (1.0-exp(-tz/(TDur/3.0))) * exp(-(tz-(TDur/3.0))/TDur) 
-                } : done updating transmitter concentration
-            }
+        if (t >= tRelease[i] && t < tRelease[i] + 5.0 * TDur) {
+            tz = t - tRelease[i] : time since onset of release
+            : calculate glutamate waveform
+            XMTR[i] = TAmp * (1.0-exp(-tz/(TDur/3.0))) * exp(-(tz-(TDur/3.0))/TDur) 
+        }
+        else {
+            XMTR[i] = 0
         }
     }
 }
@@ -293,28 +279,26 @@ PROCEDURE update(tstep (ms)) {
 
 
 NET_RECEIVE(weight) {
-    : Connect to here when a spike occurs...
-    update(t - tSpike) : see if we need to do an update on the event
-    tSpike = t      : save the time of spike
-    TTotal = 0 : reset total transmitter from this calyx for each release
+    : A spike has been received; process synaptic release
 :    VERBATIM
 :      if (debug == 1) {
-:        fprintf(stderr, "  ---> Spike at t = %9.3f\n", tSpike);
+:        fprintf(stderr, "  ---> Spike at t = %9.3f\n", t);
 :      }
 :    ENDVERBATIM
-    nRequests = nRequests + 1 : count the number of inputs that we received
     
-    latzone = 0.0
+    : First, update DKR state to determine new release probability
+    update(t - tSpike)
+    tSpike = t      : save the time of spike
+    
+    TTotal = 0 : reset total transmitter from this calyx for each release
+    nRequests = nRequests + 1 : count the number of inputs that we received
     FROM i = 0 TO (nZones-1) { : for each zone in the synapse
-        
-        : now handle vesicle release...
-        if(tRelease[i] < tSpike) {
+        if(tRelease[i] < t) {
             scrand = scop_random()
             : look to make release if we have not already (single vesicle per zone per spike)
             : check for release and release probability - assume infinite supply of vesicles
             if (scrand  < Fn*Dn) { 
                 nReleases = nReleases + 1 : count number of releases since inception
-                tRelease[i] = tSpike     : time of release
                 TTotal = TTotal + 1     : count total releases this trial.
 
 :               Compute the median latency for this vesicle.
@@ -353,8 +337,9 @@ NET_RECEIVE(weight) {
                     EventTime[ev_index] = t
                     ev_index = ev_index + 1
                 }
-                TCount[i] = (latzone / dt) + (5.0*TDur / dt) :
-                ZoneLatency[i] = latzone : save the current zone latency... 
+                
+                : release time for this event
+                tRelease[i] = t + latzone
             }
         }
     }
