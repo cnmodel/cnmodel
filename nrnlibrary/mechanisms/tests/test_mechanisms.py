@@ -4,7 +4,6 @@ from nrnlibrary.util import reset
 
 
 def test_max_open_probability():
-    global term
     reset()
     sec = h.Section()
     
@@ -20,9 +19,6 @@ def test_max_open_probability():
     term.setpointer(term._ref_XMTR[0], 'XMTR', apsd)
     term.setpointer(term._ref_XMTR[0], 'XMTR', npsd)
     
-    v = h.Vector()
-    v.record(apsd._ref_XMTR)
-
     h.celsius = 34.0
     h.finitialize()
     op = [[], []]
@@ -34,8 +30,6 @@ def test_max_open_probability():
         op[0].append(apsd.Open)
         op[1].append(npsd.Open)
         
-    import pyqtgraph as pg
-    pg.plot(np.array(v))
     assert np.allclose(max(op[0]), apsd.MaxOpen)
     assert np.allclose(max(op[1]), npsd.MaxOpen)
     
