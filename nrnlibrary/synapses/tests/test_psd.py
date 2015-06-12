@@ -38,8 +38,8 @@ def test_sgc_tstellate_psd(plot=False):
     exp_nmda_gmax = data.get('sgc_synapse', species='mouse', post_type='tstellate', field='NMDA_gmax')[0]
     exp_epsc_cv = data.get('sgc_synapse', species='mouse', post_type='tstellate', field='EPSC_cv')
     
-    assert np.allclose((exp_ampa_gmax, exp_nmda_gmax), (ampa_gmax, nmda_gmax))
     assert abs(exp_epsc_cv / epsc_cv - 1) < 0.1
+    assert np.allclose((exp_ampa_gmax, exp_nmda_gmax), (ampa_gmax, nmda_gmax))
 
 
 def measure_gmax(cell, n_syn=20, tstop=5.0, plot=False):
@@ -83,5 +83,5 @@ def measure_gmax(cell, n_syn=20, tstop=5.0, plot=False):
 
     
 if __name__ == '__main__':
-    #test_sgc_bushy_psd(plot=True)
-    test_sgc_tstellate_psd(plot=True)
+    test_sgc_bushy_psd(plot=True)
+    #test_sgc_tstellate_psd(plot=True)
