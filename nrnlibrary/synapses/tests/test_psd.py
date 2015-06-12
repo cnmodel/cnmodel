@@ -8,35 +8,33 @@ from nrnlibrary.protocols import SynapseTest
 from nrnlibrary.util import random, reset
 from nrnlibrary import data
 
+"""
+Check that sgc PSDs have correct AMPA and NMDA peak conductances / CV.
+"""
 
 def test_sgc_bushy_psd(plot=False):
-    """Check that sgc-bushy synapses have correct AMPA and NMDA peak conductances.
-    """
-    random.set_seed(23572385)
-    reset()
-    bc = cells.Bushy.create(ttx=True)
-        
-    (ampa_gmax, nmda_gmax, epsc_cv) = measure_gmax(bc, n_syn=20, tstop=4.0, plot=plot)
-
-    exp_ampa_gmax = data.get('sgc_synapse', species='mouse', post_type='bushy', field='AMPA_gmax')[0]
-    exp_nmda_gmax = data.get('sgc_synapse', species='mouse', post_type='bushy', field='NMDA_gmax')[0] 
-    exp_epsc_cv = data.get('sgc_synapse', species='mouse', post_type='bushy', field='EPSC_cv')
-    
-    assert np.allclose((exp_ampa_gmax, exp_nmda_gmax), (ampa_gmax, nmda_gmax))
-    assert abs(exp_epsc_cv / epsc_cv - 1) < 0.1
+    sgc_psd_test(cells.Bushy, seed=23572385, tstop=4.0, plot=plot)
 
     
 def test_sgc_tstellate_psd(plot=False):
-    """Check that sgc-bushy synapses have correct AMPA and NMDA peak conductances.
-    """
-    random.set_seed(34754398)
-    reset()
-    tsc = cells.TStellate.create(ttx=True)
-    (ampa_gmax, nmda_gmax, epsc_cv) = measure_gmax(tsc, n_syn=20, tstop=5.0, plot=plot)
+    sgc_psd_test(cells.TStellate, seed=34754398, plot=plot)
+
+
+def test_sgc_dstellate_psd(plot=False):
+    sgc_psd_test(cells.DStellate, seed=54743998, plot=plot, n_syn=50)
+
+
+def sgc_psd_test(cell_class, seed, plot=False, tstop=5.0, n_syn=20):
+    celltyp = cell_class.__name__.lower()
     
-    exp_ampa_gmax = data.get('sgc_synapse', species='mouse', post_type='tstellate', field='AMPA_gmax')[0]
-    exp_nmda_gmax = data.get('sgc_synapse', species='mouse', post_type='tstellate', field='NMDA_gmax')[0]
-    exp_epsc_cv = data.get('sgc_synapse', species='mouse', post_type='tstellate', field='EPSC_cv')
+    random.set_seed(seed)
+    reset()
+    tsc = cell_class.create(ttx=True)
+    (ampa_gmax, nmda_gmax, epsc_cv) = measure_gmax(tsc, n_syn=n_syn, tstop=tstop, plot=plot)
+    
+    exp_ampa_gmax = data.get('sgc_synapse', species='mouse', post_type=celltyp, field='AMPA_gmax')[0]
+    exp_nmda_gmax = data.get('sgc_synapse', species='mouse', post_type=celltyp, field='NMDA_gmax')[0]
+    exp_epsc_cv = data.get('sgc_synapse', species='mouse', post_type=celltyp, field='EPSC_cv')
     
     assert abs(exp_epsc_cv / epsc_cv - 1) < 0.1
     assert np.allclose((exp_ampa_gmax, exp_nmda_gmax), (ampa_gmax, nmda_gmax))

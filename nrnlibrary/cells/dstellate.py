@@ -1,9 +1,10 @@
+import numpy as np
 from neuron import h
 import neuron as nrn
 from ..util import nstomho
-import numpy as np
 from .cell import Cell
 from .. import synapses
+from .. import data
 
 __all__ = ['DStellate', 'DStellateRothman', 'DStellateEager']
 
@@ -27,11 +28,26 @@ class DStellate(Cell):
         post_sec = self.soma
         
         if isinstance(pre_cell, cells.SGC):
-            psd = synapses.GluPSD(post_sec, terminal,
-                                   ampa_gmax=4600.,
-                                   nmda_ampa_ratio = 1.28,
+            # Max conductances for the glu mechanisms are calibrated by 
+            # running `synapses/tests/test_psd.py`. The test should fail
+            # if these values are incorrect:
+            AMPA_gmax = 2.586054917809132
+            NMDA_gmax = 0.4402414337493641
+            
+            # Get AMPAR kinetic constants from database 
+            params = data.get('sgc_synapse', species='mouse', post_type='dstellate',
+                              field=['Ro1', 'Ro2', 'Rc1', 'Rc2', 'PA'])
+            
+            return synapses.GluPSD(post_sec, terminal,
+                                   ampa_gmax=AMPA_gmax,
+                                   nmda_gmax=NMDA_gmax,
+                                   ampa_params=dict(
+                                        Ro1=params['Ro1'],
+                                        Ro2=params['Ro2'],
+                                        Rc1=params['Rc1'],
+                                        Rc2=params['Rc2'],
+                                        PA=params['PA']),
                                    **kwds)
-            return psd
         elif isinstance(pre_cell, cells.DStellate):
             psd = synapses.GlyPSD(post_sec, terminal,
                                    psdType='glyfast',
