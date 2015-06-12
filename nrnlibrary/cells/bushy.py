@@ -31,8 +31,8 @@ class Bushy(Cell):
             # Max conductances for the glu mechanisms are calibrated by 
             # running `synapses/tests/test_psd.py`. The test should fail
             # if these values are incorrect:
-            AMPA_gmax = 3.8464893273630003
-            NMDA_gmax = 0.5235051864406698
+            AMPA_gmax = 3.314707700918133
+            NMDA_gmax = 0.4531929783503451
             
             # Get AMPAR kinetic constants from database 
             params = data.get('sgc_synapse', species='mouse', post_type='bushy',
@@ -45,12 +45,12 @@ class Bushy(Cell):
                                         Ro1=params['Ro1'],
                                         Ro2=params['Ro2'],
                                         Rc1=params['Rc1'],
-                                        Rc2=params['Rc2'],)
-                                   )
+                                        Rc2=params['Rc2'],),
+                                   **kwds)
         elif isinstance(pre_cell, cells.DStellate):
             return synapses.GlyPSD(post_sec, terminal,
                                    psdType='glyslow',
-                                   )
+                                   **kwds)
         else:
             raise TypeError("Cannot make PSD for %s => %s" % 
                             (pre_cell.__class__.__name__, 

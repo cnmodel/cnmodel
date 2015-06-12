@@ -18,12 +18,13 @@ def test_max_open_probability():
     term.nZones = 1
     term.setpointer(term._ref_XMTR[0], 'XMTR', apsd)
     term.setpointer(term._ref_XMTR[0], 'XMTR', npsd)
-
+    
     h.celsius = 34.0
     h.finitialize()
-    term.XMTR[0] = 10000
     op = [[], []]
     for i in range(100):
+        # force very high transmitter concentration for every timestep
+        term.XMTR[0] = 10000
         sec.v = 40.0
         h.fadvance()
         op[0].append(apsd.Open)
@@ -33,3 +34,5 @@ def test_max_open_probability():
     assert np.allclose(max(op[1]), npsd.MaxOpen)
     
     
+if __name__ == '__main__':
+    test_max_open_probability()

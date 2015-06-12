@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 __author__ = "Paul B. Manis"
+
+try:
+    import faulthandler
+    faulthandler.enable()
+except ImportError:
+    pass
+
 import os
 dirname = os.path.abspath(os.path.dirname(__file__))
 libpath = os.path.join(dirname, '..')

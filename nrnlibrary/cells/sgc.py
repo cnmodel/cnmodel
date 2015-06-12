@@ -61,7 +61,8 @@ class SGC(Cell):
         # this can be modified prior to the run by setting the terminal(s) so that dep_flag is 0
         # (no DKR: constant release probability)
         return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones,
-                                           delay=0, spike_source=self.spike_source, dep_flag=1)
+                                           delay=0, spike_source=self.spike_source, dep_flag=1,
+                                           **kwds)
 
     
 
