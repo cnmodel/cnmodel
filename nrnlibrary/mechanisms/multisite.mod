@@ -192,7 +192,7 @@ INITIAL {
     nRequests = 0
     nReleases = 0
     set_seed(rseed)
-    tSpike = -1000.0
+    tSpike = -1e9
     latzone = 0.0
     sigma = 0.0
     vesicleLatency = 0.0
@@ -208,7 +208,7 @@ INITIAL {
     FROM i = 0 TO (nZones-1) {
         XMTR[i] = 0
         N_ACTIVE[i] = 1
-        tRelease[i] = 0
+        tRelease[i] = tSpike
     }
     update_dkr(t-tSpike)
 }
