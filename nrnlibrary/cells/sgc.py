@@ -38,35 +38,26 @@ class SGC(Cell):
         return self._sr
         
     def make_terminal(self, post_cell, **kwds):
-        from .. import cells
-        #
-        # set parameters according to the target cell type
-        #
-        
-        if isinstance(post_cell, cells.Bushy):
-            params = data.get('sgc_synapse', species='mouse', post_type='bushy',
-                              field=['n_rsites', 'tau_g', 'A'])
-        elif isinstance(post_cell, cells.TStellate):
-            params = data.get('sgc_synapse', species='mouse', post_type='tstellate',
-                              field=['n_rsites', 'tau_g', 'A'])
-        elif isinstance(post_cell, cells.DStellate):
-            params = data.get('sgc_synapse', species='mouse', post_type='dstellate',
-                              field=['n_rsites', 'tau_g', 'A'])
-        else:
-            raise NotImplementedError("Cannot connect SGC to cell type %s" % 
-                                      type(post_cell))
-        
+        """Create a StochasticTerminal and configure it according to the 
+        postsynaptic cell type.
+        """
         pre_sec = self.soma
-        nzones = params.pop('n_rsites')
-        TAmp = params.pop('A')
-        TDur = params.pop('tau_g')
+        n_rsites = data.get('sgc_synapse', species='mouse', post_type=post_cell.type,
+                          field='n_rsites')
+        
         # when created, depflag is set True (1) so that we compute the DKR D*F to get release
         # this can be modified prior to the run by setting the terminal(s) so that dep_flag is 0
         # (no DKR: constant release probability)
-        term = synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones,
-                                           delay=0, spike_source=self.spike_source, dep_flag=1,
-                                           TAmp=TAmp, TDur=TDur)
-
+        term = synapses.StochasticTerminal(pre_sec, post_cell, nzones=n_rsites,
+                                           delay=0, spike_source=self.spike_source, dep_flag=1)
+        
+        kinetics = data.get('sgc_ampa_kinetics', species='mouse', post_type=post_cell.type,
+                          field=['tau_g', 'amp_g'])
+        term.set_params(**kinetics)
+        dynamics = data.get('sgc_release_dynamics', species='mouse', post_type=post_cell.type,
+                            field=['F', 'k0', 'kmax', 'kd', 'kf', 'taud', 'tauf', 'dD', 'dF'])
+        term.set_params(**dynamics)
+        
         return term
     
 

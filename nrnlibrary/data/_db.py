@@ -155,6 +155,10 @@ def add_table_data(name, row_key, col_key, data, **kwds):
     # Extract row/column names
     col_names = cells.pop(0)[1:]
     row_names = [cells[i].pop(0) for i in range(len(cells))]
+    if len(set(row_names)) != len(row_names):
+        for n in set(row_names):
+            row_names.remove(n)
+        raise NameError('Duplicate row names: %s' % row_names)
     
     # Parse cell values
     for i in range(len(cells)):

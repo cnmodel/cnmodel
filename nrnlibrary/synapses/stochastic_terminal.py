@@ -18,7 +18,7 @@ class StochasticTerminal(Terminal):
     def __init__(self, pre_sec, target_cell, nzones=1, multisite=True, 
                  message=None, type='lognormal', identifier=0,
                  stochastic_pars=None, calcium_pars=None, delay=0, debug=False,
-                 select=None, spike_source=None, dep_flag=1, TDur=None, TAmp=None):
+                 select=None, spike_source=None, dep_flag=1):
         """
         This routine creates a (potentially) multisite synapse with:
             A MultiSiteSynapse release mechanism that includes stochastic release, with a lognormal
@@ -137,11 +137,6 @@ class StochasticTerminal(Terminal):
         relsite.Lat_tau = stochastic_pars.Lat_tau
             #mpl.figure(2)
             
-        if TDur is not None:
-            relsite.TDur = TDur
-        if TAmp is not None:
-            relsite.TAmp = TAmp
-        
         h.pop_section()
         self.relsite = relsite
 
@@ -158,6 +153,7 @@ class StochasticTerminal(Terminal):
 
     def setPsdType(self, target_cell, select=None):
         # TODO: must resurrect this for inhibitory synapses.
+        # (and move constants out to their respective synapse locations)
         #elif psdtype.startswith('gly'):
             #self.setDF(target_cell, 'ipsc', select) # set the parameters for release
         self.setDF(target_cell, 'epsc') # set the parameters for release
@@ -177,49 +173,20 @@ class StochasticTerminal(Terminal):
         """
         from .. import cells
         if isinstance(target_cell, cells.Bushy):
-            if synapsetype == 'epsc':
-                self.bushy_epsc()
             if synapsetype == 'ipsc':
                 if select is None:
                     self.bushy_ipsc_average()
                 else:
                     self.bushy_ipsc_single(select=select)
         elif isinstance(target_cell, cells.TStellate):
-            if synapsetype == 'epsc':
-                self.stellate_epsc()
             if synapsetype == 'ipsc':
                 self.stellate_ipsc()
 
-    def bushy_epsc(self):
-        """ data is average of 3 cells studied with recovery curves and individually fit """
-        self.relsite.F = 0.29366
-        self.relsite.k0 = 0.52313 / 1000.0
-        self.relsite.kmax = 19.33805 / 1000.0
-        self.relsite.taud = 15.16
-        self.relsite.kd = 0.11283
-        self.relsite.taus = 17912.2
-        self.relsite.ks = 11.531
-        self.relsite.kf = 17.78
-        self.relsite.tauf = 9.75
-        self.relsite.dD = 0.57771
-        self.relsite.dF = 0.60364
-        self.relsite.glu = 2.12827
-
-    def stellate_epsc(self):
-        """ data is average of 3 cells studied with recovery curves and individually fit """
-        self.relsite.F = 0.43435
-        self.relsite.k0 = 0.06717 / 1000.0
-        self.relsite.kmax = 52.82713 / 1000.0
-        self.relsite.taud = 3.98
-        self.relsite.kd = 0.08209
-        self.relsite.taus = 16917.120
-        self.relsite.ks = 14.24460
-        self.relsite.kf = 18.16292
-        self.relsite.tauf = 11.38
-        self.relsite.dD = 2.46535
-        self.relsite.dF = 1.44543
-        self.relsite.glu = 5.86564
-
+    def set_params(self, **params):
+        """Set arbitrary parameters on the release mechanism.
+        """
+        for k, v in params.items():
+            setattr(self.relsite, k, v)
 
     def stellate_ipsc(self):
         """ data is average of 3 cells studied with recovery curves and individually fit, 100 Hz """

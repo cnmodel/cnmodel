@@ -52,14 +52,14 @@ INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}
 NEURON {
     THREADSAFE
     POINT_PROCESS MultiSiteSynapse
-    RANGE F, k0, kmax, taud, kd, tauf, kf, taus, ks
+    RANGE F, k0, kmax, taud, kd, tauf, kf
     RANGE nZones, multisite, rseed, latency, latstd, debug
     RANGE dD, dF, XMTR, glu, CaDi, CaFi
     RANGE Fn, Dn
     RANGE TTotal
     RANGE nRequests, nReleases
     RANGE Identifier : just a number so we can report which instance is active
-    RANGE TDur, TAmp
+    RANGE tau_g, amp_g
     : Distributions for stochastic release and testing (Sept, Oct, 2011):
     RANGE EventLatencies, EventTime : returns the first EVENT_N latencies and absolute times at which they were used
     RANGE ev_index : count in the EventLatencies (in case we are "short")
@@ -86,8 +86,8 @@ UNITS {
 
 PARAMETER {
     dt      (ms)
-    TAmp = 1.0 (mM)          : amplitude of transmitter pulse
-    TDur = 0.5    (ms)    : duration of transmitter pulse
+    amp_g = 1.0 (mM)          : amplitude of transmitter pulse
+    tau_g = 0.5    (ms)    : duration of transmitter pulse
     dD = 0.02 (1)       : calcium influx driving recovery per AP
     dF = 0.02 (1)       : calcium influx driving facilitation per AP
     F  = 0.5 (1)        : basal facilitaiton
@@ -97,9 +97,9 @@ PARAMETER {
     kd = 0.7 (1)       : affinity of fast recovery process for calcium sensor
     tauf = 10.0 (ms)        : rate of slow facilitiation process
     kf = 0.5 (1)       : affinity of slow facilitation process
-    taus = 1 (ms)
-    ks = 0.5 (1)      : not used but defined anyway
-    glu = 1 (mM)
+    : taus = 1 (ms)    : defined by DKR but not used here 
+    : ks = 0.5 (1)     
+    : glu = 1 (mM)
     rseed (1)        : random number generator seed (for SCOP module)
     latency = 0.0 (ms)
     latstd = 0.0 (ms)
@@ -232,10 +232,10 @@ PROCEDURE release() {
     }
     
     FROM i = 0 TO (nZones-1) { : for each zone in the synapse
-        if (t >= tRelease[i] && t < tRelease[i] + 5.0 * TDur) {
+        if (t >= tRelease[i] && t < tRelease[i] + 5.0 * tau_g) {
             tz = t - tRelease[i] : time since onset of release
-            : calculate glutamate waveform
-            XMTR[i] = TAmp * (1.0-exp(-tz/(TDur/3.0))) * exp(-(tz-(TDur/3.0))/TDur) 
+            : calculate glutamate waveform (Xie & Manis 2013 Supplementary Eq. 1)
+            XMTR[i] = amp_g * (1.0-exp(-tz/(tau_g/3.0))) * exp(-(tz-(tau_g/3.0))/tau_g) 
         }
         else {
             XMTR[i] = 0

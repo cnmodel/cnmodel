@@ -12,13 +12,15 @@ __all__ = ['Bushy', 'BushyRothman']
 
 
 class Bushy(Cell):
+    
+    type = 'bushy'
 
     @classmethod
     def create(cls, model='RM03', **kwds):
         if model == 'RM03':
             return BushyRothman(**kwds)
         else:
-            raise ValueError ('DStellate type %s is unknown', type)
+            raise ValueError ('Bushy type %s is unknown', type)
 
     def make_psd(self, terminal, **kwds):
         from .. import cells
@@ -35,8 +37,8 @@ class Bushy(Cell):
             NMDA_gmax = 0.4531929783503451
             
             # Get AMPAR kinetic constants from database 
-            params = data.get('sgc_synapse', species='mouse', post_type='bushy',
-                              field=['Ro1', 'Ro2', 'Rc1', 'Rc2'])
+            params = data.get('sgc_ampa_kinetics', species='mouse', post_type='bushy',
+                              field=['Ro1', 'Ro2', 'Rc1', 'Rc2', 'PA'])
             
             return synapses.GluPSD(post_sec, terminal,
                                    ampa_gmax=AMPA_gmax,

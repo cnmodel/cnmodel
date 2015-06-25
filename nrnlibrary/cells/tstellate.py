@@ -11,6 +11,8 @@ __all__ = ['TStellate', 'TStellateNav11', 'TStellateFast']
 
 
 class TStellate(Cell):
+    
+    type = 'tstellate'
 
     @classmethod
     def create(cls, model='RM03', **kwds):
@@ -38,7 +40,7 @@ class TStellate(Cell):
             NMDA_gmax = 0.12281291946623739
             
             # Get AMPAR kinetic constants from database 
-            params = data.get('sgc_synapse', species='mouse', post_type='tstellate',
+            params = data.get('sgc_ampa_kinetics', species='mouse', post_type='tstellate',
                               field=['Ro1', 'Ro2', 'Rc1', 'Rc2', 'PA'])
             
             return synapses.GluPSD(post_sec, terminal,

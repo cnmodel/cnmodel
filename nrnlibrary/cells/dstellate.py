@@ -10,6 +10,8 @@ __all__ = ['DStellate', 'DStellateRothman', 'DStellateEager']
 
 
 class DStellate(Cell):
+    
+    type = 'dstellate'
 
     @classmethod
     def create(cls, model='RM03', **kwds):
@@ -31,11 +33,11 @@ class DStellate(Cell):
             # Max conductances for the glu mechanisms are calibrated by 
             # running `synapses/tests/test_psd.py`. The test should fail
             # if these values are incorrect:
-            AMPA_gmax = 0.6199239053611962
-            NMDA_gmax = 0.338761151639892
+            AMPA_gmax = 0.526015135636368
+            NMDA_gmax = 0.28738714531937265
             
             # Get AMPAR kinetic constants from database 
-            params = data.get('sgc_synapse', species='mouse', post_type='dstellate',
+            params = data.get('sgc_ampa_kinetics', species='mouse', post_type='dstellate',
                               field=['Ro1', 'Ro2', 'Rc1', 'Rc2', 'PA'])
             
             return synapses.GluPSD(post_sec, terminal,
