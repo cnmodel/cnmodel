@@ -9,6 +9,7 @@ import nrnlibrary.util as util
 from .protocol import Protocol
 from .. import cells
 from ..synapses import GluPSD, GlyPSD
+from ..util.find_point import find_crossing
 
 
 class SynapseTest(Protocol):
@@ -367,15 +368,19 @@ class SynapseTest(Protocol):
             
             # Find 20% and 80% crossing points to the left of the PSC peak
             pscmin = ipsc[i, :psc_pk].min()
-            lat20 = np.argwhere(ipsc[i, :psc_pk] < pscmin + (pkval-pscmin) * 0.2)[-1, 0] * self.dt
-            lat80 = np.argwhere(ipsc[i, :psc_pk] < pscmin + (pkval-pscmin) * 0.8)[-1, 0] * self.dt
             
+            lat20 = find_crossing(ipsc[i], start=psc_pk, direction=-1,
+                                  threshold=(pscmin + (pkval-pscmin) * 0.2)) * self.dt
+            lat80 = find_crossing(ipsc[i], start=psc_pk, direction=-1,
+                                  threshold=(pscmin + (pkval-pscmin) * 0.8)) * self.dt
             events['20% latency'][i] = lat20
             events['80% latency'][i] = lat80
             
             # Find 50% crossing points on either side of the PSC peak
-            psc_50l = np.argwhere(ipsc[i, :psc_pk] < pscmin + (pkval-pscmin) * 0.5)[-1, 0] * self.dt
-            psc_50r = (np.argwhere(ipsc[i, psc_pk:] < pscmin + (pkval-pscmin) * 0.5)[0, 0] + psc_pk) * self.dt
+            psc_50l = find_crossing(ipsc[i], start=psc_pk, direction=-1,
+                                    threshold=(pscmin + (pkval-pscmin) * 0.5)) * self.dt
+            psc_50r = find_crossing(ipsc[i], start=psc_pk, direction=1,
+                                    threshold=(pscmin + (pkval-pscmin) * 0.5)) * self.dt
             
             events['half left'] = psc_50l
             events['half right'] = psc_50r

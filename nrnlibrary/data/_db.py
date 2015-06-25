@@ -214,22 +214,18 @@ def parse_sources(lines):
     key = None
     val = []
     for l in lines:
-        m = re.match(r'\s*\[([^\]])+\]\s+(.*)$', l)
+        l = l.lstrip()
+        m = re.match(r'\s*\[([^\]]+)\]\s+(.*)$', l)
         if m is not None:
-            if key is not None:
-                sources[key] = '\n'.join(val)
-            elif len(val) > 0:
-                raise ValueError('Incorrect sources format--got text without '
-                                 'citation index "[N]": "%s".' % val)
-            val = [m.groups()[1]]
             key = m.groups()[0]
-        elif len(l.strip()) > 0:
-            val.append(l)
-    if key is not None:
-        sources[key] = '\n'.join(val)
-    elif len(val) > 0:
-        raise ValueError('Incorrect sources format--got text without '
-                         'citation index "[N]": "%s".' % val)
+            sources[key] = m.groups()[1].strip()
+        else:
+            if key is None:
+                if l == '':
+                    continue
+                raise ValueError('Incorrect sources format--got text without '
+                                 'citation index: "%s".' % l)
+            sources[key] += '\n' + l
     return sources
 
 #parse_sources('''\n\n[1] source 1\n    it's cool.\n[2] source 2 is not\n'''.split('\n'))

@@ -16,9 +16,9 @@ class StochasticTerminal(Terminal):
     Axon terminal with multi-site sctochastic release mechanism.
     """
     def __init__(self, pre_sec, target_cell, nzones=1, multisite=True, 
-                 celltype='bushy', message=None, type='lognormal', identifier=0,
+                 message=None, type='lognormal', identifier=0,
                  stochastic_pars=None, calcium_pars=None, delay=0, debug=False,
-                 select=None, spike_source=None, dep_flag=1):
+                 select=None, spike_source=None, dep_flag=1, TDur=None, TAmp=None):
         """
         This routine creates a (potentially) multisite synapse with:
             A MultiSiteSynapse release mechanism that includes stochastic release, with a lognormal
@@ -136,12 +136,12 @@ class StochasticTerminal(Terminal):
         relsite.Lat_A0 = stochastic_pars.Lat_A0
         relsite.Lat_tau = stochastic_pars.Lat_tau
             #mpl.figure(2)
-        if celltype in ['bushy', 'MNTB']:
-            relsite.TDur = 0.10
-            relsite.TAmp = 0.770
-        else: # stellate
-            relsite.TDur = 0.25
-            relsite.TAmp = 1.56625
+            
+        if TDur is not None:
+            relsite.TDur = TDur
+        if TAmp is not None:
+            relsite.TAmp = TAmp
+        
         h.pop_section()
         self.relsite = relsite
 

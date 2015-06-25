@@ -44,26 +44,30 @@ class SGC(Cell):
         #
         
         if isinstance(post_cell, cells.Bushy):
-            nzones = data.get('sgc_synapse', species='mouse', post_type='bushy',
-                              field='n_rsites')
+            params = data.get('sgc_synapse', species='mouse', post_type='bushy',
+                              field=['n_rsites', 'tau_g', 'A'])
         elif isinstance(post_cell, cells.TStellate):
-            nzones = data.get('sgc_synapse', species='mouse', post_type='tstellate',
-                              field='n_rsites')
+            params = data.get('sgc_synapse', species='mouse', post_type='tstellate',
+                              field=['n_rsites', 'tau_g', 'A'])
         elif isinstance(post_cell, cells.DStellate):
-            nzones = data.get('sgc_synapse', species='mouse', post_type='dstellate',
-                              field='n_rsites')
+            params = data.get('sgc_synapse', species='mouse', post_type='dstellate',
+                              field=['n_rsites', 'tau_g', 'A'])
         else:
             raise NotImplementedError("Cannot connect SGC to cell type %s" % 
                                       type(post_cell))
         
         pre_sec = self.soma
+        nzones = params.pop('n_rsites')
+        TAmp = params.pop('A')
+        TDur = params.pop('tau_g')
         # when created, depflag is set True (1) so that we compute the DKR D*F to get release
         # this can be modified prior to the run by setting the terminal(s) so that dep_flag is 0
         # (no DKR: constant release probability)
-        return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones,
+        term = synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones,
                                            delay=0, spike_source=self.spike_source, dep_flag=1,
-                                           **kwds)
+                                           TAmp=TAmp, TDur=TDur)
 
+        return term
     
 
 class DummySGC(SGC):
