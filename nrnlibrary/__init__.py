@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 __author__ = "Paul B. Manis"
 
+#import util
 try:
     import faulthandler
     faulthandler.enable()
