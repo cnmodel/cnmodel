@@ -47,8 +47,10 @@ class GluPSD(PSD):
     insignificant effect.
     """
     def __init__(self, section, terminal, ampa_gmax, nmda_gmax,
-                 gvar=0, eRev=0, ampa_params={}):
+                 gvar=0, eRev=0, ampa_params=None):
         PSD.__init__(self, section, terminal)
+        
+        ampa_params = {} if ampa_params is None else ampa_params
         
         # and then make a set of postsynaptic receptor mechanisms
         ampa_psd = []

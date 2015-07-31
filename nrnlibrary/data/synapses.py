@@ -145,3 +145,25 @@ dF           0.60364 [1]       1.44543 [1]       1.44543 [2]
 """)
 
 
+
+add_table_data('gly_kinetics', row_key='field', col_key='post_type', 
+               species='mouse', data=u"""
+
+Kinetic parameters for glycine receptor mechanisms.
+
+These are currently used for both DS and TV synapses, but should probably be 
+separated in the future.
+
+KV, KU, and XMax are kinetic parameters for the cleft transmitter mechanism.
+
+
+------------------------------------------------------------------------------------------------
+             bushy              tstellate        dstellate        pyramidal    octopus         tuberculoventral
+                                                                  
+KV           1e9                531.0            531.0
+KU           4.46               4.17             4.17
+XMax         0.733              0.731            0.731
+
+------------------------------------------------------------------------------------------------
+
+""")

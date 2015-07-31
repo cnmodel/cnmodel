@@ -51,6 +51,9 @@ class DStellate(Cell):
                                         PA=params['PA']),
                                    **kwds)
         elif isinstance(pre_cell, cells.DStellate):
+            # Get GLY kinetic constants from database 
+            params = data.get('gly_kinetics', species='mouse', post_type='dstellate',
+                              field=['KU', 'KV', 'XMax'])
             psd = synapses.GlyPSD(post_sec, terminal,
                                    psdType='glyfast',
                                    **kwds)

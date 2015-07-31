@@ -50,9 +50,11 @@ class Bushy(Cell):
                                         Rc2=params['Rc2'],),
                                    **kwds)
         elif isinstance(pre_cell, cells.DStellate):
-            return synapses.GlyPSD(post_sec, terminal,
-                                   psdType='glyslow',
-                                   **kwds)
+            # Get GLY kinetic constants from database 
+            params = data.get('gly_kinetics', species='mouse', post_type='bushy',
+                              field=['KU', 'KV', 'XMax'])
+            return synapses.GlyPSD(post_sec, terminal, params=params,
+                                   psdType='glyslow', **kwds)
         else:
             raise TypeError("Cannot make PSD for %s => %s" % 
                             (pre_cell.__class__.__name__, 
