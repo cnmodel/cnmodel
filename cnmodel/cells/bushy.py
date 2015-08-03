@@ -33,8 +33,8 @@ class Bushy(Cell):
             # Max conductances for the glu mechanisms are calibrated by 
             # running `synapses/tests/test_psd.py`. The test should fail
             # if these values are incorrect:
-            AMPA_gmax = 3.314707700918133
-            NMDA_gmax = 0.4531929783503451
+            AMPA_gmax = 3.314707700918133*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
+            NMDA_gmax = 0.4531929783503451*1e3
             
             # Get AMPAR kinetic constants from database 
             params = data.get('sgc_ampa_kinetics', species='mouse', post_type='bushy',

@@ -63,8 +63,8 @@ def measure_gmax(cell, n_syn=20, tstop=5.0, plot=False):
         ampa = np.zeros_like(syn.psd.get_vector('ampa', 'g'))
         nmda = ampa.copy()
         for i in range(syn.psd.n_psd):
-            ampa += syn.psd.get_vector('ampa', 'g', i)
-            nmda += syn.psd.get_vector('nmda', 'g', i)
+            ampa += syn.psd.get_vector('ampa', 'g', i)*1e-3  # convert pS from mechanism to nS
+            nmda += syn.psd.get_vector('nmda', 'g', i)*1e-3
             if nmda[-1] - nmda[-2] > 0.001:
                 raise Exception("Did not reach nmda gmax; need longer run.")
         amax = ampa.max()

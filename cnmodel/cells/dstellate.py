@@ -33,8 +33,8 @@ class DStellate(Cell):
             # Max conductances for the glu mechanisms are calibrated by 
             # running `synapses/tests/test_psd.py`. The test should fail
             # if these values are incorrect:
-            AMPA_gmax = 0.526015135636368
-            NMDA_gmax = 0.28738714531937265
+            AMPA_gmax = 0.526015135636368*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
+            NMDA_gmax = 0.28738714531937265*1e3
             
             # Get AMPAR kinetic constants from database 
             params = data.get('sgc_ampa_kinetics', species='mouse', post_type='dstellate',
