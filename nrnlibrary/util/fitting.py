@@ -25,7 +25,7 @@ class FitModel(lmfit.Model):
         # double exponential fit with tau ratio constraint
         # note that 'tau_ratio' does not appear in the exp2 model; 
         # we can define new parameters here.
-        fit = expfitting.Exp1.fit(data, 
+        fit = expfitting.Exp2.fit(data, 
                 x=time_vals,
                 xoffset=(0, 'fixed'),
                 yoffset=(yoff_guess, -120, 0),
