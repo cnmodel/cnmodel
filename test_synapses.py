@@ -12,9 +12,10 @@ if len(sys.argv) < 3:
 
 
 convergence = {
-    'sgc': {'bushy': 3, 'tstellate': 6, 'dstellate': 10, 'dstellate_eager': 10},
+    'sgc': {'bushy': 1, 'tstellate': 6, 'dstellate': 10, 'dstellate_eager': 10},
     'dstellate': {'bushy': 10, 'tstellate': 15, 'dstellate': 5},
     }
+
 
 
 c = []
@@ -40,9 +41,14 @@ if nTerminals is None:
     nTerminals = 1
     print "Warning: Unknown convergence for %s => %s, assuming %d" % (sys.argv[1], sys.argv[2], nTerminals)
 
+if sys.argv[1:3] == ['sgc', 'bushy']:
+    niter = 1
+else:
+    niter = 20
+    
 
 st = SynapseTest()
-st.run(preCell, postCell, nTerminals)
+st.run(preCell.soma, postCell.soma, nTerminals, iterations=niter)
 st.show()
 
 

@@ -73,9 +73,13 @@ class UserTester(object):
             else:
                 for k in info.dtype.fields.keys():
                     self.compare_results(info[k], expect[k])
+        elif np.isscalar(info):
+            assert np.allclose(info, expect)
         else:
             try:
                 assert info == expect
+            except AssertionError:
+                raise
             except Exception:
                 raise NotImplementedError("Cannot compare objects of type %s" % type(info))
 
@@ -85,9 +89,11 @@ class UserTester(object):
         
         If *expect* is None, then no previous test results were stored.
         """
+        app = pg.mkQApp()
         print "\n=== New test results for %s: ===\n" % self.key
         pprint.pprint(info)
         win = pg.DiffTreeWidget()
+        win.resize(800, 800)
         win.setData(expect, info)
         win.show()
         print "Store new test results? [y/n]",

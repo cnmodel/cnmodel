@@ -6,17 +6,21 @@ import scipy.optimize
 from .cell import Cell
 from .. import synapses
 from ..util import nstomho
+from .. import data
 
 __all__ = ['Bushy', 'BushyRothman']
 
+
 class Bushy(Cell):
+    
+    type = 'bushy'
 
     @classmethod
     def create(cls, model='RM03', **kwds):
         if model == 'RM03':
             return BushyRothman(**kwds)
         else:
-            raise ValueError ('DStellate type %s is unknown', type)
+            raise ValueError ('Bushy type %s is unknown', type)
 
     def make_psd(self, terminal, **kwds):
         from .. import cells
@@ -26,14 +30,31 @@ class Bushy(Cell):
         post_sec = self.soma
         
         if isinstance(pre_cell, cells.SGC):
+            # Max conductances for the glu mechanisms are calibrated by 
+            # running `synapses/tests/test_psd.py`. The test should fail
+            # if these values are incorrect:
+            AMPA_gmax = 3.314707700918133
+            NMDA_gmax = 0.4531929783503451
+            
+            # Get AMPAR kinetic constants from database 
+            params = data.get('sgc_ampa_kinetics', species='mouse', post_type='bushy',
+                              field=['Ro1', 'Ro2', 'Rc1', 'Rc2', 'PA'])
+            
             return synapses.GluPSD(post_sec, terminal,
-                                   ampa_gmax=1700.,
-                                   nmda_ampa_ratio = 0.36,
-                                   )
+                                   ampa_gmax=AMPA_gmax,
+                                   nmda_gmax=NMDA_gmax,
+                                   ampa_params=dict(
+                                        Ro1=params['Ro1'],
+                                        Ro2=params['Ro2'],
+                                        Rc1=params['Rc1'],
+                                        Rc2=params['Rc2'],),
+                                   **kwds)
         elif isinstance(pre_cell, cells.DStellate):
-            return synapses.GlyPSD(post_sec, terminal,
-                                   psdType='glyslow',
-                                   )
+            # Get GLY kinetic constants from database 
+            params = data.get('gly_kinetics', species='mouse', post_type='bushy',
+                              field=['KU', 'KV', 'XMax'])
+            return synapses.GlyPSD(post_sec, terminal, params=params,
+                                   psdType='glyslow', **kwds)
         else:
             raise TypeError("Cannot make PSD for %s => %s" % 
                             (pre_cell.__class__.__name__, 
@@ -53,7 +74,6 @@ class BushyRothman(Bushy):
         Modifications to the cell can be made by calling methods below.
         """
         super(BushyRothman, self).__init__()
-        print "\n>>>>Creating Bushy Cell"
         if type == None:
             type = 'II'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,

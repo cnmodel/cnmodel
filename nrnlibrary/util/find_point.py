@@ -57,3 +57,37 @@ def find_point(x, y, peakindex, val, direction='left', limits=None):
     else:
         res = float(res) # make sure is just a simple number (no arrays)
     return (res)
+
+
+
+def find_crossing(data, start=0, direction=1, threshold=0):
+    """Return the index at which *data* crosses *threshold*, starting
+    at index *start* and proceeding in *direction* (+/-1).
+    
+    The value returned is a float indicating the interpolated index
+    position where the data crosses threshold, or NaN if the threshold was
+    never crossed.
+    """
+    
+    # Note: this function is very similar in purpose to find_point, but was
+    # added due to issues with interpolate.UnivariateSpline
+    
+    assert direction in (1, -1)
+    cross_rising = data[start] < threshold
+    def test(x):
+        if cross_rising:
+            return x > threshold
+        else:
+            return x < threshold
+    while True:
+        next_ind = start + direction
+        if next_ind < 0 or next_ind >= len(data):
+            return np.nan
+        
+        if test(data[next_ind]):
+            # crossed; return interpolated value
+            s1 = data[next_ind] - threshold
+            s2 = threshold = data[start]
+            return (next_ind * s2 + start * s1) / (s2 + s1)
+        
+        start = next_ind

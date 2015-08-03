@@ -47,7 +47,7 @@ class PyramidalKanold(Pyramidal, Cell):
             try:
                 soma.insert(mech)
             except ValueError:
-                print 'Mechanism %s not found' % mech
+                print 'WARNING: Mechanism %s not found' % mech
         soma().kif.kif_ivh = -89.6
         self.add_section(soma, 'soma')
         self.species_scaling(silent=False, species=species, type=type)  # set the default type I-c  cell parameters

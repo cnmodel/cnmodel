@@ -1,14 +1,17 @@
+import numpy as np
 from neuron import h
 import neuron as nrn
 from ..util import nstomho
-import numpy as np
 from .cell import Cell
 from .. import synapses
+from .. import data
 
 __all__ = ['DStellate', 'DStellateRothman', 'DStellateEager']
 
 
 class DStellate(Cell):
+    
+    type = 'dstellate'
 
     @classmethod
     def create(cls, model='RM03', **kwds):
@@ -27,15 +30,33 @@ class DStellate(Cell):
         post_sec = self.soma
         
         if isinstance(pre_cell, cells.SGC):
-            psd = synapses.GluPSD(post_sec, terminal,
-                                   ampa_gmax=4600.,
-                                   nmda_ampa_ratio = 1.28,
-                                   )
-            return psd
+            # Max conductances for the glu mechanisms are calibrated by 
+            # running `synapses/tests/test_psd.py`. The test should fail
+            # if these values are incorrect:
+            AMPA_gmax = 0.526015135636368
+            NMDA_gmax = 0.28738714531937265
+            
+            # Get AMPAR kinetic constants from database 
+            params = data.get('sgc_ampa_kinetics', species='mouse', post_type='dstellate',
+                              field=['Ro1', 'Ro2', 'Rc1', 'Rc2', 'PA'])
+            
+            return synapses.GluPSD(post_sec, terminal,
+                                   ampa_gmax=AMPA_gmax,
+                                   nmda_gmax=NMDA_gmax,
+                                   ampa_params=dict(
+                                        Ro1=params['Ro1'],
+                                        Ro2=params['Ro2'],
+                                        Rc1=params['Rc1'],
+                                        Rc2=params['Rc2'],
+                                        PA=params['PA']),
+                                   **kwds)
         elif isinstance(pre_cell, cells.DStellate):
+            # Get GLY kinetic constants from database 
+            params = data.get('gly_kinetics', species='mouse', post_type='dstellate',
+                              field=['KU', 'KV', 'XMax'])
             psd = synapses.GlyPSD(post_sec, terminal,
                                    psdType='glyfast',
-                                   )
+                                   **kwds)
             return psd
         else:
             raise TypeError("Cannot make PSD for %s => %s" % 
@@ -60,7 +81,8 @@ class DStellate(Cell):
         
         pre_sec = self.soma
         
-        return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, delay=delay)
+        return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, 
+                                           delay=delay, **kwds)
 
 
 class DStellateRothman(DStellate):

@@ -5,6 +5,7 @@ import numpy as np
 from .cell import Cell
 from .. import synapses
 from .. import an_model
+from .. import data
 
 __all__ = ['SGC', 'SGC_TypeI', 'DummySGC']
 
@@ -37,28 +38,27 @@ class SGC(Cell):
         return self._sr
         
     def make_terminal(self, post_cell, **kwds):
-        from .. import cells
-        #
-        # set parameters according to the target cell type
-        #
-        
-        if isinstance(post_cell, cells.Bushy):
-            nzones, delay = 100, 0
-        elif isinstance(post_cell, cells.TStellate):
-            nzones, delay = 1, 0
-        elif isinstance(post_cell, cells.DStellate):
-            nzones, delay = 1, 0
-        else:
-            raise NotImplementedError("Cannot connect SGC to cell type %s" % 
-                                      type(post_cell))
-        
+        """Create a StochasticTerminal and configure it according to the 
+        postsynaptic cell type.
+        """
         pre_sec = self.soma
+        n_rsites = data.get('sgc_synapse', species='mouse', post_type=post_cell.type,
+                          field='n_rsites')
+        
         # when created, depflag is set True (1) so that we compute the DKR D*F to get release
         # this can be modified prior to the run by setting the terminal(s) so that dep_flag is 0
         # (no DKR: constant release probability)
-        return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones,
-                                           delay=delay, spike_source=self.spike_source, dep_flag=1)
-
+        term = synapses.StochasticTerminal(pre_sec, post_cell, nzones=n_rsites,
+                                           delay=0, spike_source=self.spike_source, dep_flag=1)
+        
+        kinetics = data.get('sgc_ampa_kinetics', species='mouse', post_type=post_cell.type,
+                          field=['tau_g', 'amp_g'])
+        term.set_params(**kinetics)
+        dynamics = data.get('sgc_release_dynamics', species='mouse', post_type=post_cell.type,
+                            field=['F', 'k0', 'kmax', 'kd', 'kf', 'taud', 'tauf', 'dD', 'dF'])
+        term.set_params(**dynamics)
+        
+        return term
     
 
 class DummySGC(SGC):
@@ -103,7 +103,7 @@ class SGC_TypeI(SGC):
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'SGC'}
 
-        self.i_test_range=(-0.3, 0.3, 0.02)
+        self.i_test_range=[(-0.3, 0.3, 0.02), (-0.03, 0., 0.005)]
 
         soma = h.Section(name="SGC_Soma_%x" % id(self)) # one compartment of about 29000 um2
 
