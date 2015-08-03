@@ -2,9 +2,9 @@ import sys
 import numpy as np
 import pyqtgraph as pg
 from neuron import h
-from nrnlibrary.protocols import Protocol
-from nrnlibrary import cells
-from nrnlibrary.util import sound
+from cnmodel.protocols import Protocol
+from cnmodel import cells
+from cnmodel.util import sound
 
 
 class SGCInputTest(Protocol):

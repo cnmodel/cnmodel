@@ -2,10 +2,10 @@ import os, pickle, pprint
 import numpy as np
 import neuron
 
-import nrnlibrary
-import nrnlibrary.cells as cells
-from nrnlibrary.util import UserTester, reset
-from nrnlibrary.protocols import IVCurve
+import cnmodel
+import cnmodel.cells as cells
+from cnmodel.util import UserTester, reset
+from cnmodel.protocols import IVCurve
 
 #
 # Cell-type tests
@@ -131,7 +131,7 @@ class CellTester(UserTester):
     #Test *cell* and raise exception if the results do not match prior
     #data.
     #"""
-    #audit = nrnlibrary.AUDIT_TESTS
+    #audit = cnmodel.AUDIT_TESTS
     
     ## run I/V test on cell
     #iv = IVCurve()

@@ -1,4 +1,4 @@
-from nrnlibrary.util import ExpFitting
+from cnmodel.util import ExpFitting
 import numpy as np
 
 

@@ -7,8 +7,8 @@ Adapted from Manis (makeANF_CF_RI.m)
 import time
 import numpy as np
 import pyqtgraph as pg
-from nrnlibrary import an_model
-from nrnlibrary.util import sound
+from cnmodel import an_model
+from cnmodel.util import sound
 
 # model fiber parameters
 CF    = 1.5e3   # CF in Hz   

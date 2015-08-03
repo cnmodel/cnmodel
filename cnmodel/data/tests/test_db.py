@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 import pytest
-from nrnlibrary import data
+from cnmodel import data
 
 
 table = u"""

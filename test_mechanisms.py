@@ -15,7 +15,7 @@ import gc
 import faulthandler
 import numpy as np
 #import scipy as sp
-import nrnlibrary.util
+import cnmodel.util
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
 import pylibrary.Utility as Util
@@ -85,14 +85,14 @@ class ChannelKinetics():
         else:
             tstep = [200., 50.]
         tdelay = 5.0
-        Channel = nrnlibrary.util.Mechanism(modfile)
-        leak = nrnlibrary.util.Mechanism('leak')
+        Channel = cnmodel.util.Mechanism(modfile)
+        leak = cnmodel.util.Mechanism('leak')
         if modfile != 'cap':
             Channel.set_parameters({'gbar': 1})
         else:
             pass
         leak.set_parameters({'gbar': 1e-12})
-        self.soma = nrnlibrary.util.Section(L=10, diam=10, mechanisms=[Channel, leak])
+        self.soma = cnmodel.util.Section(L=10, diam=10, mechanisms=[Channel, leak])
         if modfile == 'bkpjk':
             ca_init = 100e-6
             self.soma().cai = ca_init

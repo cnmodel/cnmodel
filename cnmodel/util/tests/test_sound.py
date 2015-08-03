@@ -1,5 +1,5 @@
 import numpy as np
-from nrnlibrary.util import sound
+from cnmodel.util import sound
 
 def test_conversions():
     pa = np.array([3990.5, 20, 0.3639, 2e-5])

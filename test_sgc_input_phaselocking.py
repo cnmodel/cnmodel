@@ -2,10 +2,10 @@ import sys
 import numpy as np
 import pyqtgraph as pg
 from neuron import h
-from nrnlibrary.protocols import Protocol
-from nrnlibrary import cells
-from nrnlibrary.util import sound
-import nrnlibrary.util.pynrnutilities as PU
+from cnmodel.protocols import Protocol
+from cnmodel import cells
+from cnmodel.util import sound
+import cnmodel.util.pynrnutilities as PU
 
 
 class SGCInputTestPL(Protocol):

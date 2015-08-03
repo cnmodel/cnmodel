@@ -2,11 +2,11 @@ import numpy as np
 import pyqtgraph as pg
 import neuron
 
-import nrnlibrary
-import nrnlibrary.cells as cells
-from nrnlibrary.protocols import SynapseTest
-from nrnlibrary.util import random, reset
-from nrnlibrary import data
+import cnmodel
+import cnmodel.cells as cells
+from cnmodel.protocols import SynapseTest
+from cnmodel.util import random, reset
+from cnmodel import data
 
 """
 Check that sgc PSDs have correct AMPA and NMDA peak conductances / CV.

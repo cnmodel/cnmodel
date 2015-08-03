@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
 # utilities for NEURON, in Python
-# Module neuron for nrnlibrary
+# Module neuron for cnmodel
 
 import numpy as np
 import numpy.ma as ma # masked array
