@@ -23,7 +23,7 @@ def get_matlab():
                 raise RuntimeError(
                     "An error occurred while compiling the auditory periphery model.\n" +
                     "The complete output is printed above. " +
-                    "See nrnlibrary/an_model/model/readme.txt for more information.")
+                    "See cnmodel/an_model/model/readme.txt for more information.")
             print "Done."
     return _proc
 

@@ -7,8 +7,8 @@ Basic test of initialization of multiple cells in the model, and running multipl
 import sys
 from neuron import h
 import numpy as np
-import nrnlibrary.cells as cells
-from nrnlibrary.protocols import Protocol
+import cnmodel.cells as cells
+from cnmodel.protocols import Protocol
 from collections import OrderedDict
 import re
 try:
@@ -20,7 +20,7 @@ except ImportError:
 if HAVE_PG:
     from PyQt4 import QtGui
 
-from nrnlibrary.util.stim import make_pulse
+from cnmodel.util.stim import make_pulse
 
 def autorowcol(n):
     """

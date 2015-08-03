@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_raises
 
-from nrnlibrary.util import stim
+from cnmodel.util import stim
 from neuron import h
 
 h.dt = 0.025

@@ -9,11 +9,11 @@ import os, pickle, pprint
 import numpy as np
 import neuron
 
-import nrnlibrary
-import nrnlibrary.cells as cells
-from nrnlibrary.util import UserTester
-from nrnlibrary.protocols import SynapseTest
-from nrnlibrary.util import random, reset
+import cnmodel
+import cnmodel.cells as cells
+from cnmodel.util import UserTester
+from cnmodel.protocols import SynapseTest
+from cnmodel.util import random, reset
 
 #
 # Synapse tests

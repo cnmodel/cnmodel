@@ -1,21 +1,21 @@
 """
-Run unit tests for nrnlibrary
+Run unit tests for cnmodel
 """
 
 import os, sys
 import pytest
 
-# Make sure we look for nrnlibrary here first.
+# Make sure we look for cnmodel here first.
 path = os.path.dirname(__file__)
 sys.path.insert(0, path)
 
 
 # Allow user to audit tests with --audit flag
-import nrnlibrary
+import cnmodel
 if '--audit' in sys.argv:
     sys.argv.remove('--audit')
     sys.argv.append('-s') # needed for cli-based user interaction
-    nrnlibrary.AUDIT_TESTS = True
+    cnmodel.AUDIT_TESTS = True
 
 # generate test flags
 flags = sys.argv[1:]
@@ -30,7 +30,7 @@ for flag in flags:
         add_path = False
         break
 if add_path:
-    flags.append('nrnlibrary/')
+    flags.append('cnmodel/')
 
 # Start tests.
 print "Testing with flags: %s" % " ".join(flags)

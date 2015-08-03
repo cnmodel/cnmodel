@@ -3,8 +3,8 @@ Test using sound stimulation to generate input to bushy cell
 """
 import numpy as np
 import pyqtgraph as pg
-from nrnlibrary import an_model
-from nrnlibrary.util import sound
+from cnmodel import an_model
+from cnmodel.util import sound
 
 cf = 1.5e3
 levels = range(-10, 101, 10)

@@ -5,7 +5,7 @@ import pyqtgraph as pg
 
 from neuron import h
 
-import nrnlibrary.util as util
+import cnmodel.util as util
 from .protocol import Protocol
 from .. import cells
 from ..synapses import GluPSD, GlyPSD

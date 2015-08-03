@@ -1,7 +1,7 @@
 import pyqtgraph as pg
-from nrnlibrary.protocols import SynapseTest
-from nrnlibrary import cells
-from nrnlibrary.synapses import Synapse
+from cnmodel.protocols import SynapseTest
+from cnmodel import cells
+from cnmodel.synapses import Synapse
 
 
 import sys

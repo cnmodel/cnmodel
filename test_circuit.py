@@ -3,7 +3,7 @@ Test construction of a complete circuit build from cell populations.
 
 """
 
-from nrnlibrary import populations
+from cnmodel import populations
 
 # Create cell populations.
 # This creates a complete set of _virtual_ cells for each population. No 

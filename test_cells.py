@@ -2,9 +2,9 @@ import argparse
 import os, sys
 from neuron import h
 
-import nrnlibrary
-import nrnlibrary.cells as cells
-from nrnlibrary.protocols import IVCurve, VCCurve
+import cnmodel
+import cnmodel.cells as cells
+from cnmodel.protocols import IVCurve, VCCurve
 
 debugFlag = True
 parser = argparse.ArgumentParser(description=('test_cells.py:',
@@ -83,7 +83,7 @@ else:
     print 'celltypes: ', cellinfo['types']
     sys.exit(1)
 
-path = os.path.dirname(nrnlibrary.__file__)
+path = os.path.dirname(cnmodel.__file__)
 #h.nrn_load_dll(os.path.join(path, 'i386/special'))
 h.load_file("stdrun.hoc")
 h.load_file(os.path.join(path, "custom_init.hoc"))

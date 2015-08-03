@@ -1,6 +1,6 @@
 import numpy as np
 from neuron import h
-from nrnlibrary.util import reset
+from cnmodel.util import reset
 
 
 def test_max_open_probability():

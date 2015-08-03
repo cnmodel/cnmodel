@@ -5,8 +5,8 @@
 4. Automatically generate presynaptic cells and synapses from pop1
 5. Stimulate presynaptic cells and record postsynaptically
 """
-from nrnlibrary import populations
-from nrnlibrary.protocols import PopulationTest
+from cnmodel import populations
+from cnmodel.protocols import PopulationTest
 
 import sys
 if len(sys.argv) < 3:

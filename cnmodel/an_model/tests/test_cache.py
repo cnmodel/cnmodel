@@ -1,8 +1,8 @@
 import os, tempfile
 from multiprocessing import Pool
-import nrnlibrary.an_model.cache as cache
-import nrnlibrary.util.sound as sound
-from nrnlibrary import an_model
+import cnmodel.an_model.cache as cache
+import cnmodel.util.sound as sound
+from cnmodel import an_model
 
 def new_cache():
     # Do all cache testing on a temporary cache directory
