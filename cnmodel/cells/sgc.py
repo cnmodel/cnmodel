@@ -42,14 +42,17 @@ class SGC(Cell):
         postsynaptic cell type.
         """
         pre_sec = self.soma
+        
         n_rsites = data.get('sgc_synapse', species='mouse', post_type=post_cell.type,
                           field='n_rsites')
         
+        opts = {'nzones': n_rsites, 'delay': 0, 'dep_flag' : 1}
+        opts.update(kwds)
         # when created, depflag is set True (1) so that we compute the DKR D*F to get release
         # this can be modified prior to the run by setting the terminal(s) so that dep_flag is 0
         # (no DKR: constant release probability)
-        term = synapses.StochasticTerminal(pre_sec, post_cell, nzones=n_rsites,
-                                           delay=0, spike_source=self.spike_source, dep_flag=1)
+        term = synapses.StochasticTerminal(pre_sec, post_cell,
+                spike_source=self.spike_source, **opts)
         
         kinetics = data.get('sgc_ampa_kinetics', species='mouse', post_type=post_cell.type,
                           field=['tau_g', 'amp_g'])

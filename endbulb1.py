@@ -89,9 +89,9 @@ class Endbulb(Protocol):
         self.synapse = [None]*self.nconverge
         for i in range(self.nconverge):
             preCell = cells.DummySGC(cf=cfs[i], sr=self.srs[i])
-            synapse = preCell.connect(self.post_cell)
-            synapse.terminal.relsite.Dep_Flag = False
-            #synapse.terminal.relsite.nZones = 5
+            synapse = preCell.connect(self.post_cell, pre_opts={'dep_flag': False, 'nzones': 1})
+            # synapse.terminal.relsite.Dep_Flag = False
+            # synapse.terminal.relsite.nZones = 1
             synapse.terminal.relsite.dF = 0.2
             self.pre_cell[i] = preCell
             self.synapse[i] = synapse
@@ -141,8 +141,8 @@ class Endbulb(Protocol):
         self.synapse = [None]*self.nconverge
         for i in range(self.nconverge):
             preCell = cells.DummySGC() # cf=cfs[i], sr=self.srs[i])
-            synapse = preCell.connect(self.post_cell)
-            synapse.terminal.relsite.Dep_Flag = False
+            synapse = preCell.connect(self.post_cell, pre_opts={'dep_flag': False, 'nzones': 100})
+            #synapse.terminal.relsite.Dep_Flag = False
             #synapse.terminal.relsite.nZones = 5
             synapse.terminal.relsite.dF = 0.2
             self.pre_cell[i] = preCell

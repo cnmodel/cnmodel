@@ -192,8 +192,8 @@ class Toy(Protocol):
         self.custom_init()
         for cell in netcells:
             cell.vm0 = cell.soma.v
-            Rin, tau, v = cell.measure_rintau(auto_initialize=False)
-            print(u'{0:>14s}   *** Rin = {1:6.1f} M\u03A9  \u03C4 = {2:6.1f} ms   Vm = {3:6.1f} mV'.format(cell.status['name'], Rin, tau, v))
+            pars = cell.compute_rmrintau(auto_initialize=False)
+            print(u'{0:>14s}   *** Rin = {1:6.1f} M\u03A9  \u03C4 = {2:6.1f} ms   Vm = {3:6.1f} mV'.format(cell.status['name'], pars['Rin'], pars['tau'], pars['v']))
 
 
 if __name__ == "__main__":
