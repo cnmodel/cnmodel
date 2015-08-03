@@ -44,7 +44,7 @@ run time.
 
 ENDCOMMENT
 
-DEFINE MAX_ZONES 100  : maximum number of zones in this model
+DEFINE MAX_ZONES 1000  : maximum number of zones in this model
 DEFINE EVENT_N 10000   : number of entries in the Event Distribution (e.g., as sampled)
 
 INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}
