@@ -6,7 +6,7 @@ from .. import cells
 
 
 class Bushy(Population):
-    def __init__(self, species='mouse'):
+    def __init__(self, species='mouse', **kwds):
         # Completely fabricated cell distribution: uniform from 4kHz to 90kHz.
         # Note that `cf` is the mean value used when selecting SGCs to connect;
         # it is NOT the measured CF of the cell (although it should be close).
@@ -15,7 +15,7 @@ class Bushy(Population):
             ('cf', float),
             ('sgc_sr', int),   # preferred SR group for SGC inputs
         ]
-        super(Bushy, self).__init__(species, size, fields=fields)
+        super(Bushy, self).__init__(species, size, fields=fields, **kwds)
         self._cells['cf'] = 4000 * 2**np.linspace(0, 4.5, size)
         self._cells['sgc_sr'] = np.arange(size) % 3
     
@@ -24,7 +24,7 @@ class Bushy(Population):
         *cell_rec* argument is the row from self.cells that describes the cell 
         to be created.
         """
-        return cells.Bushy.create(species=self.species)
+        return cells.Bushy.create(species=self.species, **self._cell_args)
         
     def connection_stats(self, pop, cell_rec):
         """ The population *pop* is being connected to the cell described in 

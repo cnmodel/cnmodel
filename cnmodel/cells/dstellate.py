@@ -100,7 +100,6 @@ class DStellateRothman(DStellate):
             Shifting model type
         """
         super(DStellateRothman, self).__init__()
-        print 'rm03 model'
         if type == None:  # allow us to pass None to get the default
             type = 'I-II'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,

@@ -6,7 +6,7 @@ from .. import cells
 
 
 class DStellate(Population):
-    def __init__(self, species='mouse'):
+    def __init__(self, species='mouse', **kwds):
         # Completely fabricated cell distribution: uniform from 4kHz to 90kHz.
         # Note that `cf` is the mean value used when selecting SGCs to connect;
         # it is NOT the measured CF of the cell (although it should be close).
@@ -14,7 +14,7 @@ class DStellate(Population):
         fields = [
             ('cf', float),
         ]
-        super(DStellate, self).__init__(species, size, fields=fields)
+        super(DStellate, self).__init__(species, size, fields=fields, **kwds)
         self._cells['cf'] = 4000 * 2**np.linspace(0, 4.5, size)
     
     def create_cell(self, cell_rec):
@@ -22,7 +22,7 @@ class DStellate(Population):
         *cell_rec* argument is the row from self.cells that describes the cell 
         to be created.
         """
-        return cells.DStellate.create(species=self.species)
+        return cells.DStellate.create(species=self.species, **self._cell_args)
 
     def connection_stats(self, pop, cell_rec):
         """ The population *pop* is being connected to the cell described in 

@@ -4,7 +4,7 @@ from .population import Population
 from .. import cells
 
 class SGC(Population):
-    def __init__(self, species='mouse'):
+    def __init__(self, species='mouse', **kwds):
         # Completely fabricated cell distribution: uniform from 4kHz to 90kHz.
         # Evenly divided between SR groups
         size = 10000
@@ -12,7 +12,7 @@ class SGC(Population):
             ('cf', float),
             ('sr', int),  # 0=low sr, 1=mid sr, 2=high sr
         ]
-        super(SGC, self).__init__(species, size, fields=fields)
+        super(SGC, self).__init__(species, size, fields=fields, **kwds)
         self._cells['cf'] = 4000 * 2**np.linspace(0, 4.5, size)
         self._cells['sr'] = np.arange(size) % 3
     
@@ -21,7 +21,7 @@ class SGC(Population):
         *cell_rec* argument is the row from self.cells that describes the cell 
         to be created.
         """
-        return cells.SGC.create(species=self.species)
+        return cells.SGC.create(species=self.species, **self._cell_args)
         
     def connect_pop_to_cell(self, pop, index):
         # SGC does not support any inputs
