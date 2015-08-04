@@ -2,6 +2,7 @@
 Utilities for generating and caching spike trains from AN model.
 """
 
+import logging
 import os, sys, pickle
 import numpy as np
 from .wrapper import get_matlab, model_ihc, model_synapse, seed_rng
@@ -35,13 +36,15 @@ def get_spiketrain(cf, sr, stim, seed, **kwds):
             try:
                 with FileLock(data_file+'.lock'):
                     data = np.load(open(data_file, 'rb'))['data']
+                    logging.info("Loaded AN spike train from cache: %s", key)
             except Exception:
                 sys.excepthook(*sys.exc_info())
-                print "Error reading cache file; will re-generate from MATLAB."
-                print "( %s )" % data_file
+                logging.error("Error reading AN spike train cache file; will "
+                    "re-generate from MATLAB. File: %s  Key: %s", data_file, key)
    
     # Generate new data if needed
     if data is None:
+        logging.info("AN spike train cache miss; generate for key: %s", key)
         data = generate_spiketrain(cf, sr, stim, seed, **kwds)
         
         # store new data to cache

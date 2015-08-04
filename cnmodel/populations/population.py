@@ -1,6 +1,6 @@
+import logging
 import scipy.stats
 import numpy as np
-import logging
 
 """
 Todo: 
@@ -78,6 +78,17 @@ class Population(object):
         unresolved = self._cells['input_resolved'] == False
         return np.argwhere(real & unresolved)[:,0]
 
+    def real_cells(self):
+        """ Return indexes of all real cells in this population.
+        
+        Initially, all cells in the population are virtual--they are accounted
+        for, but not actually instantiated as part of the NEURON simulation.
+        Virtual cells can be made real by calling `get_cell()`. This method
+        returns the indexes of all cells for which `get_cell()` has already
+        been invoked.
+        """
+        return np.argwhere(self._cells['cell'] != 0)[:,0]
+
     def connect(self, *pops):
         """ Connect this population to any number of other populations. 
         
@@ -115,13 +126,13 @@ class Population(object):
         """
         for i in self.unresolved_cells():
             cell = self._cells[i]['cell']
-            print "Resolving inputs for", i, cell
+            logging.info("Resolving inputs for %s %d", self, i)
             self._cells[i]['connections'] = {}
             
             # select cells from each population to connect to this cell
             for pop in self._pre_connections:
                 pre_cells = self.connect_pop_to_cell(pop, i)
-                print "  connected %d cells from %s" % (len(pre_cells), pop)
+                logging.info("  connected %d cells from %s", len(pre_cells), pop)
                 assert pre_cells is not None
                 self._cells[i]['connections'][pop] = pre_cells
             self._cells[i]['input_resolved'] = True
