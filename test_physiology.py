@@ -74,37 +74,76 @@ class CNSoundStim(Protocol):
         while h.t < h.tstop:
             h.fadvance()
             print "%0.2f / %0.2f" % (h.t, h.tstop)
+            
+
+class NetworkSimDisplay(pg.QtGui.QWidget):
+    def __init__(self, prot):
+        pg.QtGui.QWidget.__init__(self)
         
-    def plot_vsoma(self):
-        self.plot = pg.plot()
-        real = self.bushy.real_cells()
+        self.selected = None
+        
+        self.prot = prot
+        self.layout = pg.QtGui.QGridLayout()
+        self.setLayout(self.layout)
+        self.pw = pg.GraphicsLayoutWidget()
+        self.layout.addWidget(self.pw, 0, 0)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        
+        self.cell_plot = self.pw.addPlot()
+        real = self.prot.bushy.real_cells()
         for i, ind in enumerate(real):
-            cell = self.bushy.get_cell(ind)
-            self.plot.plot(self['t'], self[cell], pen=(i, len(real)*1.5))
+            cell = self.prot.bushy.get_cell(ind)
+            p = self.cell_plot.plot(self.prot['t'], self.prot[cell], pen=(i, len(real)*1.5), name='bushy-%d' % ind)
+            p.curve.setClickable(True)
+            p.sigClicked.connect(self.cell_curve_clicked)
+            p.cell_ind = ind
+        self.cell_plot.addLegend()
+
+        self.input_plot = self.pw.addPlot(row=1, col=0)
+        self.input_plot.setXLink(self.cell_plot)
         
-        # plot ticks for first cell's SGC input
-        sgc_ind = self.bushy._cells[real[0]]['connections'][self.sgc]
-        self.plot.ticks = []
-        for i, ind in enumerate(sgc_ind):
-            cell = self.sgc.get_cell(ind)
-            spikes = cell._spiketrain
-            vticks = pg.VTickGroup(spikes, pen=(i, len(sgc_ind)*1.5), yrange=(0.9, 1))
-            self.plot.ticks.append(vticks)
-            self.plot.addItem(vticks)
+    def cell_curve_clicked(self, c):
+        if self.selected is not None:
+            pen = self.selected.curve.opts['pen']
+            pen.setWidth(1)
+            self.selected.setPen(pen)
             
-        ds_ind = self.bushy._cells[real[0]]['connections'][self.dstellate]
-        for i, ind in enumerate(ds_ind):
-            cell = self.dstellate.get_cell(ind)
-            vm = self[cell]
-            spike_inds = np.argwhere((vm[1:]>-20) & (vm[:-1]<=-20))[:,0]
-            spikes = self['t'][spike_inds]
-            vticks = pg.VTickGroup(spikes, pen=(i, len(ds_ind)*1.5), yrange=(0.8, 0.9))
-            self.plot.ticks.append(vticks)
-            self.plot.addItem(vticks)
-            
+        pen = c.curve.opts['pen']
+        pen.setWidth(3)
+        c.setPen(pen)
+        self.selected = c
+        print c, c.cell_ind
+
+        self.show_cell(c.cell_ind)
+        
+    def show_cell(self, ind):
+        """Show spike trains of inputs to selected cell.
+        """
+        self.input_plot.clear()
+        rec = self.prot.bushy._cells[ind]
+        i = 0
+        plots = []
+        for j, pop in enumerate((self.prot.dstellate, self.prot.sgc)):
+            if pop not in rec['connections']:
+                continue
+            pre_inds = rec['connections'][pop]
+            for ind in pre_inds:
+                cell = pop.get_cell(ind)
+                if hasattr(cell, '_spiketrain'):
+                    spikes = cell._spiketrain
+                else:
+                    vm = self.prot[cell]
+                    spike_inds = np.argwhere((vm[1:]>-20) & (vm[:-1]<=-20))[:,0]
+                    spikes = self.prot['t'][spike_inds]
+                y = np.ones(len(spikes)) * i
+                self.input_plot.plot(spikes, y, pen=None, symbol=['o', 't'][j], symbolBrush=(i, 30))
+                i += 1
+                    
         
         
 if __name__ == '__main__':
+    app = pg.mkQApp()
+    
     # Create a sound stimulus and use it to generate spike trains for the SGC
     # population
     stim = sound.TonePip(rate=100e3, duration=0.1, f0=16e3, dbspl=80,
@@ -114,4 +153,6 @@ if __name__ == '__main__':
     prot = CNSoundStim(stim, seed=34657845)
     prot.run()
 
-    prot.plot_vsoma()
+    #prot.plot_vsoma()
+    nd = NetworkSimDisplay(prot)
+    nd.show()

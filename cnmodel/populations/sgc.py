@@ -36,4 +36,4 @@ class SGC(Population):
         for i, ind in enumerate(real):
             logging.info("Assigning spike train to SGC %d (%d/%d)", ind, i, len(real))
             cell = self.get_cell(ind)
-            cell.set_sound_stim(stim, seed)
+            cell.set_sound_stim(stim, seed+i)
