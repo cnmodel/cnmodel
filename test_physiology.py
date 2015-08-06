@@ -2,6 +2,7 @@
 Test physiological response properties.
 """
 
+import time
 import numpy as np
 import pyqtgraph as pg
 from cnmodel import populations
@@ -11,11 +12,11 @@ from neuron import h
 
 
 class CNSoundStim(Protocol):
-    def __init__(self, stim, seed, temp=34.0, dt=0.025):
+    def __init__(self, stims, seed, temp=34.0, dt=0.025):
         Protocol.__init__(self)
         
         random.set_seed(seed)
-        self.stim = stim
+        self.stims = stims
         self.temp = temp
         self.dt = dt
 
@@ -31,13 +32,13 @@ class CNSoundStim(Protocol):
         # This only defines the connections between populations; no synapses are 
         # created at this stage.
         self.sgc.connect(self.bushy, self.dstellate)#, self.tstellate)
-        self.dstellate.connect(self.bushy)#, self.tstellate)
+        #self.dstellate.connect(self.bushy)#, self.tstellate)
         #self.tstellate.connect(self.bushy)
 
         # Select cells to record from.
         # At this time, we actually instantiate the selected cells.
         # select 10 bushy cells closest to 16kHz
-        bushy_cell_ids = self.bushy.select(10, cf=16e3, create=True)  
+        bushy_cell_ids = self.bushy.select(2, cf=16e3, create=True)  
         # select 10 stellate cells closest to 16kHz
         #tstel_cell_ids = self.tstellate.select(10, cf=16e3, create=True)  
 
@@ -50,31 +51,48 @@ class CNSoundStim(Protocol):
         # resolving inputs. For example, resolving inputs for the bushy cell population
         # (level 1) creates presynaptic cells in the dstellate population, and resolving
         # inputs for the dstellate population (level 2) creates presynaptic cells in the
-        # sgc population. 
+        # sgc population.
 
-        self.sgc.set_sound_stim(stim, seed=seed)
+        self.sgc.set_seed(seed)
 
     def run(self):
-        self.reset()
-        
-        # set up recording vectors
-        for pop in self.bushy, self.dstellate:
-            for ind in pop.real_cells():
-                cell = pop.get_cell(ind)
-                self[cell] = cell.soma(0.5)._ref_v
-        self['t'] = h._ref_t
+        self.results = []
+        for stim in self.stims:
+            print "Start run:", stim
+            self.reset()
+            self.sgc.set_sound_stim(stim)
             
-        h.tstop = self.stim.duration * 1000
-        h.celsius = self.temp
-        h.dt = self.dt
-        
-        print "init.."
-        self.custom_init()
-        print "start.."
-        while h.t < h.tstop:
-            h.fadvance()
-            print "%0.2f / %0.2f" % (h.t, h.tstop)
+            # set up recording vectors
+            for pop in self.bushy, self.dstellate:
+                for ind in pop.real_cells():
+                    cell = pop.get_cell(ind)
+                    self[cell] = cell.soma(0.5)._ref_v
+            self['t'] = h._ref_t
+                
+            h.tstop = stim.duration * 1000
+            h.celsius = self.temp
+            h.dt = self.dt
             
+            print "init.."
+            self.custom_init()
+            print "start.."
+            last_update = time.time()
+            while h.t < h.tstop:
+                h.fadvance()
+                now = time.time()
+                if now - last_update > 1.0:
+                    print "%0.2f / %0.2f" % (h.t, h.tstop)
+                    last_update = now
+            
+            # record SGC spike trains
+            vec = self._vectors
+            for ind in self.sgc.real_cells():
+                cell = self.sgc.get_cell(ind)
+                vec[cell] = cell._spiketrain
+            
+            
+            self.results.append((stim, vec))
+
 
 class NetworkSimDisplay(pg.QtGui.QWidget):
     def __init__(self, prot):
@@ -85,11 +103,27 @@ class NetworkSimDisplay(pg.QtGui.QWidget):
         self.prot = prot
         self.layout = pg.QtGui.QGridLayout()
         self.setLayout(self.layout)
+        self.stim_combo = pg.QtGui.QComboBox()
+        self.layout.addWidget(self.stim_combo, 0, 0)
+        self.results = {}
+        for stim, results in self.prot.results:
+           self.results[str(stim.key())] = results
+           self.stim_combo.addItem(str(stim.key()))
+        self.stim_combo.currentItemChanged.connect(self.load_stim)
+        
         self.pw = pg.GraphicsLayoutWidget()
-        self.layout.addWidget(self.pw, 0, 0)
+        self.layout.addWidget(self.pw, 1, 0)
         self.layout.setContentsMargins(0, 0, 0, 0)
         
         self.cell_plot = self.pw.addPlot()
+        self.cell_plot.addLegend()
+
+        self.input_plot = self.pw.addPlot(row=1, col=0)
+        self.input_plot.setXLink(self.cell_plot)
+
+    def load_stim(self, key):
+        results = self.results[key]
+        
         real = self.prot.bushy.real_cells()
         for i, ind in enumerate(real):
             cell = self.prot.bushy.get_cell(ind)
@@ -97,10 +131,6 @@ class NetworkSimDisplay(pg.QtGui.QWidget):
             p.curve.setClickable(True)
             p.sigClicked.connect(self.cell_curve_clicked)
             p.cell_ind = ind
-        self.cell_plot.addLegend()
-
-        self.input_plot = self.pw.addPlot(row=1, col=0)
-        self.input_plot.setXLink(self.cell_plot)
         
     def cell_curve_clicked(self, c):
         if self.selected is not None:
@@ -146,11 +176,15 @@ if __name__ == '__main__':
     
     # Create a sound stimulus and use it to generate spike trains for the SGC
     # population
-    stim = sound.TonePip(rate=100e3, duration=0.1, f0=16e3, dbspl=80,
-                         ramp_duration=2.5e-3, pip_duration=0.04, 
-                         pip_start=[0.02])
+    stims = []
+    for f in (8e3, 16e3):
+        for db in (80, 100):
+            stim = sound.TonePip(rate=100e3, duration=0.1, f0=f, dbspl=db,
+                                 ramp_duration=2.5e-3, pip_duration=0.04, 
+                                 pip_start=[0.02])
+            stims.append(stim)
 
-    prot = CNSoundStim(stim, seed=34657845)
+    prot = CNSoundStim(stims, seed=34657845)
     prot.run()
 
     #prot.plot_vsoma()
