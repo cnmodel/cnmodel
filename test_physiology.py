@@ -84,15 +84,26 @@ class CNSoundStim(Protocol):
                     print "%0.2f / %0.2f" % (h.t, h.tstop)
                     last_update = now
             
+            # record vsoma and spike times for all cells
+            vec = {}
+            for k in self._vectors:
+                v = self[k].copy()
+                if k == 't':
+                    vec[k] = v
+                    continue
+                spike_inds = np.argwhere((v[1:]>-20) & (v[:-1]<=-20))[:,0]
+                spikes = self['t'][spike_inds]
+                vec[k] = [v, spikes]
+            
             # record SGC spike trains
-            vec = self._vectors
             for ind in self.sgc.real_cells():
                 cell = self.sgc.get_cell(ind)
-                vec[cell] = cell._spiketrain
+                vec[cell] = [None, cell._spiketrain]
             
-            
+            # results contains (stim, vec) pairs, where vec is a dict of
+            # {cell: [vsoma, spiketimes]}
             self.results.append((stim, vec))
-
+        
 
 class NetworkSimDisplay(pg.QtGui.QWidget):
     def __init__(self, prot):
@@ -107,27 +118,38 @@ class NetworkSimDisplay(pg.QtGui.QWidget):
         self.layout.addWidget(self.stim_combo, 0, 0)
         self.results = {}
         for stim, results in self.prot.results:
-           self.results[str(stim.key())] = results
-           self.stim_combo.addItem(str(stim.key()))
-        self.stim_combo.currentItemChanged.connect(self.load_stim)
+            self.results[str(stim.key())] = (stim, results)
+            self.stim_combo.addItem(str(stim.key()))
+        self.stim_combo.currentIndexChanged.connect(self.load_stim)
         
         self.pw = pg.GraphicsLayoutWidget()
         self.layout.addWidget(self.pw, 1, 0)
         self.layout.setContentsMargins(0, 0, 0, 0)
         
-        self.cell_plot = self.pw.addPlot()
-        self.cell_plot.addLegend()
-
-        self.input_plot = self.pw.addPlot(row=1, col=0)
-        self.input_plot.setXLink(self.cell_plot)
-
-    def load_stim(self, key):
-        results = self.results[key]
+        self.matrix_plot = self.pw.addPlot()
+        self.matrix_plot.setLogMode(x=True, y=False)
+        self.level_line = self.matrix_plot.addLine(y=50, movable=True)
+        self.freq_line = self.matrix_plot.addLine(x=2, movable=True)
         
+        self.pw.nextRow()
+        self.cell_plot = self.pw.addPlot()
+
+        self.pw.nextRow()
+        self.input_plot = self.pw.addPlot()
+        self.input_plot.setXLink(self.cell_plot)
+        
+    def load_stim(self):
+        key = str(self.stim_combo.currentText())
+        results = self.results[key]
+        self.selected_results = results[1]
+        self.selected_stim = results[0]
+        self.cell_plot.clear()
         real = self.prot.bushy.real_cells()
         for i, ind in enumerate(real):
             cell = self.prot.bushy.get_cell(ind)
-            p = self.cell_plot.plot(self.prot['t'], self.prot[cell], pen=(i, len(real)*1.5), name='bushy-%d' % ind)
+            p = self.cell_plot.plot(self.selected_results['t'], 
+                                    self.selected_results[cell][0], 
+                                    pen=(i, len(real)*1.5), name='bushy-%d' % ind)
             p.curve.setClickable(True)
             p.sigClicked.connect(self.cell_curve_clicked)
             p.cell_ind = ind
@@ -142,7 +164,6 @@ class NetworkSimDisplay(pg.QtGui.QWidget):
         pen.setWidth(3)
         c.setPen(pen)
         self.selected = c
-        print c, c.cell_ind
 
         self.show_cell(c.cell_ind)
         
@@ -150,6 +171,7 @@ class NetworkSimDisplay(pg.QtGui.QWidget):
         """Show spike trains of inputs to selected cell.
         """
         self.input_plot.clear()
+        cell = self.prot.bushy.get_cell(ind)
         rec = self.prot.bushy._cells[ind]
         i = 0
         plots = []
@@ -158,20 +180,37 @@ class NetworkSimDisplay(pg.QtGui.QWidget):
                 continue
             pre_inds = rec['connections'][pop]
             for ind in pre_inds:
-                cell = pop.get_cell(ind)
-                if hasattr(cell, '_spiketrain'):
-                    spikes = cell._spiketrain
-                else:
-                    vm = self.prot[cell]
-                    spike_inds = np.argwhere((vm[1:]>-20) & (vm[:-1]<=-20))[:,0]
-                    spikes = self.prot['t'][spike_inds]
+                precell = pop.get_cell(ind)
+                spikes = self.selected_results[precell][1]
                 y = np.ones(len(spikes)) * i
                 self.input_plot.plot(spikes, y, pen=None, symbol=['o', 't'][j], symbolBrush=(i, 30))
                 i += 1
                     
+        # update matrix image
+        self.matrix_plot.clear()
+        fvals = set()
+        lvals = set()
+        for stim, vec in self.results.values():
+            fvals.add(stim.key()['f0'])
+            lvals.add(stim.key()['dbspl'])
+        fvals = sorted(list(fvals))
+        lvals = sorted(list(lvals))
+        matrix = np.zeros((len(fvals), len(lvals)))
+        for stim, vec in self.results.values():
+            spikes = vec[cell][1]            
+            i = fvals.index(stim.key()['f0'])
+            j = lvals.index(stim.key()['dbspl'])
+            matrix[i, j] = len(spikes)
+        self.matrix_img = pg.ImageItem(matrix)
+        self.matrix_plot.addItem(self.matrix_img)
+        self.matrix_img.setPos(np.log10(min(fvals)), min(lvals))
+        self.matrix_img.scale((np.log10(max(fvals)) - np.log10(min(fvals))) / len(fvals), 
+                              (max(lvals) - min(lvals)) / len(lvals))
+        
         
         
 if __name__ == '__main__':
+    import os, pickle
     app = pg.mkQApp()
     
     # Create a sound stimulus and use it to generate spike trains for the SGC
@@ -185,7 +224,12 @@ if __name__ == '__main__':
             stims.append(stim)
 
     prot = CNSoundStim(stims, seed=34657845)
-    prot.run()
+    #cachefile = 'test_physiology_cache.pk'
+    #if not os.path.isfile(cachefile):
+        #prot.run()
+        #pickle.dump(prot.results, open(cachefile, 'wb'))
+    #else:
+        #prot.results = pickle.load(open(cachefile, 'rb'))
 
     #prot.plot_vsoma()
     nd = NetworkSimDisplay(prot)
