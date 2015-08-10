@@ -224,6 +224,7 @@ if __name__ == '__main__':
             stims.append(stim)
 
     prot = CNSoundStim(stims, seed=34657845)
+    prot.run()
     #cachefile = 'test_physiology_cache.pk'
     #if not os.path.isfile(cachefile):
         #prot.run()

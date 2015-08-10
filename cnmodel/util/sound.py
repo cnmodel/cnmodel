@@ -77,6 +77,8 @@ class Sound(object):
         raise NotImplementedError()
 
     def __getattr__(self, name):
+        if 'opts' not in self.__dict__:
+            raise AttributeError(name)
         if name in self.opts:
             return self.opts[name]
         else:
