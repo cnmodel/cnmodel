@@ -52,7 +52,7 @@ class Population(object):
             ('connections', object),  # {pop: [cells], ...}
         ] + fields
         self._cells = np.zeros(size, dtype=fields)
-        
+        self._cell_indexes = {}
         self._cell_args = kwds
 
     @property
@@ -244,6 +244,11 @@ class Population(object):
         if create and self._cells[i]['cell'] == 0:
             self.create_cells([i])
         return self._cells[i]['cell']
+    
+    def get_cell_index(self, cell):
+        """Return the index of *cell*.
+        """
+        return self._cell_indexes[cell]
         
     def create_cells(self, cell_inds):
         """ Instantiate each cell in *cell_inds*, which is a list of indexes into
@@ -252,7 +257,9 @@ class Population(object):
         for i in cell_inds:
             if self._cells[i]['cell'] != 0:
                 continue
-            self._cells[i]['cell'] = self.create_cell(self._cells[i])
+            cell = self.create_cell(self._cells[i])
+            self._cells[i]['cell'] = cell
+            self._cell_indexes[cell] = i
             
     def create_cell(self, cell_rec):
         """ Return a single new cell to be used in this population. The 
@@ -265,3 +272,17 @@ class Population(object):
 
     def __str__(self):
         return "<Population %s (%d/%d real)>" % (type(self).__name__, (self._cells['cell'] != 0).sum(), len(self._cells))
+
+    def __getstate__(self):
+        """Return a picklable copy of self.__dict__. 
+        
+        Note that we remove references to the actual cells in order to allow pickling.
+        """
+        state = self.__dict__.copy()
+        state['_cells'] = state['_cells'].copy()
+        mask = state['_cells']['cell'] != 0
+        state['_cells'][mask] = [str(cell) for cell in state['_cells'][mask]]
+        
+        return state
+        
+        

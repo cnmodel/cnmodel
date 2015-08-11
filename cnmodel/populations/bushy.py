@@ -6,6 +6,8 @@ from .. import cells
 
 
 class Bushy(Population):
+    type = 'bushy'
+    
     def __init__(self, species='mouse', **kwds):
         # Completely fabricated cell distribution: uniform from 4kHz to 90kHz.
         # Note that `cf` is the mean value used when selecting SGCs to connect;

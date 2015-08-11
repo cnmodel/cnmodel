@@ -6,6 +6,8 @@ from .. import cells
 
 
 class SGC(Population):
+    type = 'sgc'
+    
     def __init__(self, species='mouse', model='dummy', **kwds):
         # Completely fabricated cell distribution: uniform from 4kHz to 90kHz.
         # Evenly divided between SR groups
