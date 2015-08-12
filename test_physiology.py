@@ -2,22 +2,21 @@
 Test physiological response properties.
 """
 
-import time
+import os, time
 import numpy as np
+from neuron import h
 import pyqtgraph as pg
 import pyqtgraph.multiprocess as mp
 from cnmodel import populations
 from cnmodel.util import sound, random
 from cnmodel.protocols import Protocol
-from neuron import h
 
 
 class CNSoundStim(Protocol):
-    def __init__(self, stims, seed, temp=34.0, dt=0.025):
+    def __init__(self, seed, temp=34.0, dt=0.025):
         Protocol.__init__(self)
         
         random.set_seed(seed)
-        self.stims = stims
         self.temp = temp
         self.dt = dt
 
@@ -33,7 +32,7 @@ class CNSoundStim(Protocol):
         # This only defines the connections between populations; no synapses are 
         # created at this stage.
         self.sgc.connect(self.bushy, self.dstellate)#, self.tstellate)
-        self.dstellate.connect(self.bushy)#, self.tstellate)
+        #self.dstellate.connect(self.bushy)#, self.tstellate)
         #self.tstellate.connect(self.bushy)
 
         # Select cells to record from.
@@ -56,28 +55,7 @@ class CNSoundStim(Protocol):
 
         self.sgc.set_seed(seed)
 
-    def run(self):
-        # results contains (stim, vec) pairs, where vec is a dict of
-        # {(population, cell_id): [vsoma, spiketimes]}
-        self.results = []
-        
-        for i, stim in enumerate(self.stims):
-            print("=== Start run %d/%d ===" % (i+1, len(stims)))
-            vec = self.run_stim(stim)
-            self.results.append((stim, vec))
-
-    def run_parallel(self, workers=4):
-        self.results = [None] * len(self.stims)
-        par = mp.Parallelize(enumerate(self.stims), 
-                                results=self.results, 
-                                workers=workers, 
-                                progressDialog='Invoking singularity...')
-        with par as tasker:
-            for i, stim in tasker:
-                vec = self.run_stim(stim)
-                tasker.results[i] = (stim, vec)
-            
-    def run_stim(self, stim):
+    def run(self, stim):
         self.reset()
         self.sgc.set_sound_stim(stim)
         
@@ -125,19 +103,20 @@ class CNSoundStim(Protocol):
 
 
 class NetworkSimDisplay(pg.QtGui.QWidget):
-    def __init__(self, prot):
+    def __init__(self, prot, results):
         pg.QtGui.QWidget.__init__(self)
         
         self.selected = None
         
         self.prot = prot
+        
         self.layout = pg.QtGui.QGridLayout()
         self.setLayout(self.layout)
         self.stim_combo = pg.QtGui.QComboBox()
         self.layout.addWidget(self.stim_combo, 0, 0)
         self.results = {}
-        for stim, results in self.prot.results:
-            self.results[str(stim.key())] = (stim, results)
+        for stim, result in results:
+            self.results[str(stim.key())] = (stim, result)
             self.stim_combo.addItem(str(stim.key()))
         self.stim_combo.currentIndexChanged.connect(self.load_stim)
         
@@ -244,25 +223,37 @@ if __name__ == '__main__':
     fmax = 40e3
     fn = 10
     fvals = fmin * (fmax/fmin)**(np.arange(fn) / (fn-1.))
-    levels = np.linspace(0, 100, 11)
+    #levels = np.linspace(0, 100, 11)
+    levels = [90, 100]
     print("Frequencies:", fvals/1000.)
     print("Levels:", levels)
     
+    path = os.path.dirname(__file__)
+    cachepath = os.path.join(path, 'cache')
+    if not os.path.isdir(cachepath):
+        os.mkdir(cachepath)
+    
+    seed = 34657845
+    prot = CNSoundStim(seed=seed)
+    i = 0
+    results = []
     for f in fvals:
         for db in levels:
             stim = sound.TonePip(rate=100e3, duration=0.1, f0=f, dbspl=db,
                                  ramp_duration=2.5e-3, pip_duration=0.04, 
                                  pip_start=[0.02])
-            stims.append(stim)
+        
+            print("=== Start run %d/%d ===" % (i+1, len(fvals)*len(levels)))
+            cachefile = os.path.join(cachepath, 'seed=%d_f0=%f_dbspl=%f.pk' % (seed, f, db))
+            if not os.path.isfile(cachefile):
+                result = prot.run(stim)
+                pickle.dump(result, open(cachefile, 'wb'))
+            else:
+                print("  (Loading cached results)")
+                result = pickle.load(open(cachefile, 'rb'))
+            
+            results.append((stim, result))
+            i += 1
 
-    prot = CNSoundStim(stims, seed=34657845)
-    cachefile = 'test_physiology_cache.pk'
-    if not os.path.isfile(cachefile):
-        prot.run()
-        pickle.dump(prot.results, open(cachefile, 'wb'))
-    else:
-        print("=== Loading cached results ===")
-        prot.results = pickle.load(open(cachefile, 'rb'))
-
-    nd = NetworkSimDisplay(prot)
+    nd = NetworkSimDisplay(prot, results)
     nd.show()
