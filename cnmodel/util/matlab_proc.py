@@ -9,6 +9,7 @@ import numpy as np
 import tempfile
 import os, sys, glob, signal
 import weakref
+import atexit
 
 
 class MatlabProcess(object):
@@ -105,6 +106,8 @@ class MatlabProcess(object):
             line = self.__proc.stdout.readline()
             if line == '::ready\n':
                 break
+            
+        atexit.register(self.close)
         
     def __call__(self, cmd, parse_result=True):
         """
@@ -248,9 +251,6 @@ class MatlabProcess(object):
             return
         self('exit;\n', parse_result=False)
         self.__closed = True
-    
-    def __del__(self):
-        self.close()
 
 
 class MatlabReference(object):
