@@ -99,9 +99,7 @@ class Cell(object):
         if post_opts is None:
             post_opts = {}
         
-        terminal = self.make_terminal(post_cell, **pre_opts)
-        psd = post_cell.make_psd(terminal, **post_opts)
-        synapse = Synapse(terminal, psd)
+        synapse = Synapse(self, pre_opts, post_cell, post_opts)
         self.outputs.append(synapse)
         post_cell.inputs.append(synapse)
         
