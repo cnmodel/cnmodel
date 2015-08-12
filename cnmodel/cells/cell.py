@@ -1,15 +1,17 @@
-from neuron import h
-import scipy.optimize
-import numpy as np
-from ..util import nstomho, mho2ns
-from ..synapses import Synapse
 import weakref
+import numpy as np
+import scipy.optimize
+from neuron import h
+from ..util import nstomho, mho2ns
+from .. import synapses
+from .. import data
 
 
 class Cell(object):
     """
     Base class for all cell types.
     """
+    type = None
     
     # create a lookup table to map sections to their parent cell
     sec_lookup = weakref.WeakValueDictionary()
@@ -24,6 +26,8 @@ class Cell(object):
         # the following section types (parts) are known to us:
         for k in ['soma', 'maindend', 'secdend', 'internode', 'initialsegment', 'axonnode', 'axon']:
             self.all_sections[k] = []  # initialize to an empty list
+        
+        self.species = 'mouse'
         
         # Record synaptic inputs and projections
         self.inputs = []
@@ -84,7 +88,7 @@ class Cell(object):
         """
         return self.all_sections['soma'][0]
 
-    def connect(self, post_cell, pre_opts=None, post_opts=None):
+    def connect(self, post_cell, pre_opts=None, post_opts=None, **kwds):
         """
         Create a new synapse connecting this cell to a postsynaptic cell. 
         The synapse is automatically created using 
@@ -99,7 +103,7 @@ class Cell(object):
         if post_opts is None:
             post_opts = {}
         
-        synapse = Synapse(self, pre_opts, post_cell, post_opts)
+        synapse = synapses.Synapse(self, pre_opts, post_cell, post_opts, **kwds)
         self.outputs.append(synapse)
         post_cell.inputs.append(synapse)
         
@@ -122,6 +126,34 @@ class Cell(object):
         raise NotImplementedError("Cannot make PSD connecting %s => %s" %
                                   (pre_cell.__class__.__name__, 
                                    self.__class__.__name__))
+
+    def make_glu_psd(self, post_sec, terminal, AMPA_gmax, NMDA_gmax, **kwds):
+        # Get AMPAR kinetic constants from database 
+        params = data.get('sgc_ampa_kinetics', species=self.species, post_type=self.type,
+                            field=['Ro1', 'Ro2', 'Rc1', 'Rc2', 'PA'])
+        
+        return synapses.GluPSD(post_sec, terminal,
+                                ampa_gmax=AMPA_gmax,
+                                nmda_gmax=NMDA_gmax,
+                                ampa_params=dict(
+                                    Ro1=params['Ro1'],
+                                    Ro2=params['Ro2'],
+                                    Rc1=params['Rc1'],
+                                    Rc2=params['Rc2'],
+                                    PA=params['PA']),
+                                **kwds)
+
+    def make_gly_psd(self, post_sec, terminal, type, **kwds):
+        # Get GLY kinetic constants from database 
+        params = data.get('gly_kinetics', species=self.species, post_type=self.type,
+                            field=['KU', 'KV', 'XMax'])
+        psd = synapses.GlyPSD(post_sec, terminal,
+                                psdType=type,
+                                **kwds)
+        return psd
+
+    def make_exp2_psd(self, post_sec, terminal):
+        return synapses.Exp2PSD(post_sec, terminal)
 
     def print_status(self):
         print("\nCell model: %s" % self.__class__.__name__)

@@ -143,7 +143,7 @@ class StochasticTerminal(Terminal):
         if spike_source is None:
             spike_source = pre_sec(0.5)._ref_v
             
-        self.netcon = h.NetCon(spike_source, relsite, thresh, delay, 1.0)
+        self.netcon = h.NetCon(spike_source, relsite, thresh, delay, 1.0, sec=pre_sec)
         self.netcon.weight[0] = 1
         self.netcon.threshold = -30.0
 

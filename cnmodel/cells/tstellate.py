@@ -25,45 +25,30 @@ class TStellate(Cell):
         else:
             raise ValueError ('DStellate type %s is unknown', type)
 
-    def make_psd(self, terminal, **kwds):
-        from .. import cells
-        
+    def make_psd(self, terminal, psd_type, **kwds):
         pre_sec = terminal.section
         pre_cell = terminal.cell
         post_sec = self.soma
+
+        if psd_type == 'simple':
+            return self.make_exp2_psd(post_sec, terminal)
         
-        if isinstance(pre_cell, cells.SGC):
-            # Max conductances for the glu mechanisms are calibrated by 
-            # running `synapses/tests/test_psd.py`. The test should fail
-            # if these values are incorrect:
-            AMPA_gmax = 0.22479596944138733*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
-            NMDA_gmax = 0.12281291946623739*1e3
-            
-            # Get AMPAR kinetic constants from database 
-            params = data.get('sgc_ampa_kinetics', species='mouse', post_type='tstellate',
-                              field=['Ro1', 'Ro2', 'Rc1', 'Rc2', 'PA'])
-            
-            return synapses.GluPSD(post_sec, terminal,
-                                   ampa_gmax=AMPA_gmax,
-                                   nmda_gmax=NMDA_gmax,
-                                   ampa_params=dict(
-                                        Ro1=params['Ro1'],
-                                        Ro2=params['Ro2'],
-                                        Rc1=params['Rc1'],
-                                        Rc2=params['Rc2'],
-                                        PA=params['PA']),
-                                   **kwds)
-        elif isinstance(pre_cell, cells.DStellate):
-            # Get GLY kinetic constants from database 
-            params = data.get('gly_kinetics', species='mouse', post_type='tstellate',
-                              field=['KU', 'KV', 'XMax'])
-            return synapses.GlyPSD(post_sec, terminal,
-                                   psdType='glyfast',
-                                   **kwds)
+        elif psd_type == 'multisite':
+            if pre_cell.type == 'sgc':
+                # Max conductances for the glu mechanisms are calibrated by 
+                # running `synapses/tests/test_psd.py`. The test should fail
+                # if these values are incorrect:
+                AMPA_gmax = 0.22479596944138733*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
+                NMDA_gmax = 0.12281291946623739*1e3
+                return self.make_glu_psd(post_sec, terminal, AMPA_gmax, NMDA_gmax)
+            elif pre_cell.type == 'dstellate':
+                # Get GLY kinetic constants from database 
+                return self.make_gly_psd(post_sec, terminal, type='glyfast')
+            else:
+                raise TypeError("Cannot make PSD for %s => %s" % 
+                                (pre_cell.type, self.type))
         else:
-            raise TypeError("Cannot make PSD for %s => %s" % 
-                            (pre_cell.__class__.__name__, 
-                             self.__class__.__name__))
+            raise ValueError("Unsupported psd type %s" % psd_type)
 
 
 class TStellateRothman(TStellate):

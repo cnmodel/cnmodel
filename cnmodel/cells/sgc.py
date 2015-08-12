@@ -11,6 +11,7 @@ __all__ = ['SGC', 'SGC_TypeI', 'DummySGC']
 
 
 class SGC(Cell):
+    type = 'sgc'
 
     @classmethod
     def create(cls, model='I', species='mouse', **kwds):
@@ -39,7 +40,7 @@ class SGC(Cell):
         """
         return self._sr
         
-    def make_terminal(self, post_cell, term_type='stochastic', **kwds):
+    def make_terminal(self, post_cell, term_type, **kwds):
         """Create a StochasticTerminal and configure it according to the 
         postsynaptic cell type.
         """
@@ -49,7 +50,7 @@ class SGC(Cell):
         if term_type == 'simple':
             return synapses.SimpleTerminal(pre_sec, post_cell, 
                                            spike_source=self.spike_source, **kwds)
-        elif term_type == 'stochastic':
+        elif term_type == 'multisite':
             n_rsites = data.get('sgc_synapse', species='mouse', post_type=post_cell.type,
                             field='n_rsites')
             
@@ -67,10 +68,9 @@ class SGC(Cell):
             dynamics = data.get('sgc_release_dynamics', species='mouse', post_type=post_cell.type,
                                 field=['F', 'k0', 'kmax', 'kd', 'kf', 'taud', 'tauf', 'dD', 'dF'])
             term.set_params(**dynamics)
+            return term
         else:
             raise ValueError("Unsupported terminal type %s" % term_type)
-        
-        return term
     
 
 class DummySGC(SGC):

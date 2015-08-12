@@ -22,47 +22,28 @@ class Bushy(Cell):
         else:
             raise ValueError ('Bushy type %s is unknown', type)
 
-    def make_psd(self, terminal, psd_type='ampa_nmda', **kwds):
-        from .. import cells
-        
+    def make_psd(self, terminal, psd_type, **kwds):
         pre_sec = terminal.section
         pre_cell = terminal.cell
         post_sec = self.soma
         
-        if psd_type == 'exp2':
-            return synapses.Exp2PSD(post_sec, terminal)
+        if psd_type == 'simple':
+            return self.make_exp2_psd(post_sec, terminal)
         
-        elif psd_type == 'ampa_nmda':
-            if isinstance(pre_cell, cells.SGC):
+        elif psd_type == 'multisite':
+            if pre_cell.type == 'sgc':
                 # Max conductances for the glu mechanisms are calibrated by 
                 # running `synapses/tests/test_psd.py`. The test should fail
                 # if these values are incorrect:
                 AMPA_gmax = 3.314707700918133*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
                 NMDA_gmax = 0.4531929783503451*1e3
-                
-                # Get AMPAR kinetic constants from database 
-                params = data.get('sgc_ampa_kinetics', species='mouse', post_type='bushy',
-                                field=['Ro1', 'Ro2', 'Rc1', 'Rc2', 'PA'])
-                
-                return synapses.GluPSD(post_sec, terminal,
-                                    ampa_gmax=AMPA_gmax,
-                                    nmda_gmax=NMDA_gmax,
-                                    ampa_params=dict(
-                                            Ro1=params['Ro1'],
-                                            Ro2=params['Ro2'],
-                                            Rc1=params['Rc1'],
-                                            Rc2=params['Rc2'],),
-                                    **kwds)
-            elif isinstance(pre_cell, cells.DStellate):
+                return self.make_glu_psd(post_sec, terminal, AMPA_gmax, NMDA_gmax)
+            elif pre_cell.type == 'dstellate':
                 # Get GLY kinetic constants from database 
-                params = data.get('gly_kinetics', species='mouse', post_type='bushy',
-                                field=['KU', 'KV', 'XMax'])
-                return synapses.GlyPSD(post_sec, terminal, params=params,
-                                    psdType='glyslow', **kwds)
+                return self.make_gly_psd(post_sec, terminal, type='glyslow')
             else:
                 raise TypeError("Cannot make PSD for %s => %s" % 
-                                (pre_cell.__class__.__name__, 
-                                self.__class__.__name__))
+                                (pre_cell.type, self.type))
         else:
             raise ValueError("Unsupported psd type %s" % psd_type)
 
