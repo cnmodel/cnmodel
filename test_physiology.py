@@ -213,7 +213,7 @@ class NetworkSimDisplay(pg.QtGui.QWidget):
         
         
 if __name__ == '__main__':
-    import os, pickle
+    import pickle, os, sys
     app = pg.mkQApp()
     
     # Create a sound stimulus and use it to generate spike trains for the SGC
@@ -223,8 +223,8 @@ if __name__ == '__main__':
     fmax = 40e3
     fn = 10
     fvals = fmin * (fmax/fmin)**(np.arange(fn) / (fn-1.))
-    #levels = np.linspace(0, 100, 11)
-    levels = [90, 100]
+    levels = np.linspace(0, 100, 11)
+    #levels = map(int, sys.argv[1:])
     print("Frequencies:", fvals/1000.)
     print("Levels:", levels)
     
