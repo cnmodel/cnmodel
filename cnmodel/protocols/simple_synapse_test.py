@@ -18,7 +18,7 @@ class SimpleSynapseTest(Protocol):
         
         pre_cell = cells.cell_from_section(pre_sec)
         post_cell = cells.cell_from_section(post_sec)
-        synapse = pre_cell.connect(post_cell, type='multisite')
+        synapse = pre_cell.connect(post_cell, type='simple')
         self.synapse = synapse
         self.pre_sec = synapse.terminal.section
         self.post_sec = synapse.psd.section
