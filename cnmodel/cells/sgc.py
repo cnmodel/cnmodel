@@ -11,6 +11,7 @@ __all__ = ['SGC', 'SGC_TypeI', 'DummySGC']
 
 
 class SGC(Cell):
+    type = 'sgc'
 
     @classmethod
     def create(cls, model='I', species='mouse', **kwds):
@@ -39,31 +40,37 @@ class SGC(Cell):
         """
         return self._sr
         
-    def make_terminal(self, post_cell, **kwds):
+    def make_terminal(self, post_cell, term_type, **kwds):
         """Create a StochasticTerminal and configure it according to the 
         postsynaptic cell type.
         """
         pre_sec = self.soma
         
-        n_rsites = data.get('sgc_synapse', species='mouse', post_type=post_cell.type,
-                          field='n_rsites')
-        
-        opts = {'nzones': n_rsites, 'delay': 0, 'dep_flag' : 1}
-        opts.update(kwds)
-        # when created, depflag is set True (1) so that we compute the DKR D*F to get release
-        # this can be modified prior to the run by setting the terminal(s) so that dep_flag is 0
-        # (no DKR: constant release probability)
-        term = synapses.StochasticTerminal(pre_sec, post_cell,
-                spike_source=self.spike_source, **opts)
-        
-        kinetics = data.get('sgc_ampa_kinetics', species='mouse', post_type=post_cell.type,
-                          field=['tau_g', 'amp_g'])
-        term.set_params(**kinetics)
-        dynamics = data.get('sgc_release_dynamics', species='mouse', post_type=post_cell.type,
-                            field=['F', 'k0', 'kmax', 'kd', 'kf', 'taud', 'tauf', 'dD', 'dF'])
-        term.set_params(**dynamics)
-        
-        return term
+        # Return a simple terminal unless a stochastic terminal was requested.
+        if term_type == 'simple':
+            return synapses.SimpleTerminal(pre_sec, post_cell, 
+                                           spike_source=self.spike_source, **kwds)
+        elif term_type == 'multisite':
+            n_rsites = data.get('sgc_synapse', species='mouse', post_type=post_cell.type,
+                            field='n_rsites')
+            
+            opts = {'nzones': n_rsites, 'delay': 0, 'dep_flag' : 1}
+            opts.update(kwds)
+            # when created, depflag is set True (1) so that we compute the DKR D*F to get release
+            # this can be modified prior to the run by setting the terminal(s) so that dep_flag is 0
+            # (no DKR: constant release probability)
+            term = synapses.StochasticTerminal(pre_sec, post_cell,
+                    spike_source=self.spike_source, **opts)
+            
+            kinetics = data.get('sgc_ampa_kinetics', species='mouse', post_type=post_cell.type,
+                            field=['tau_g', 'amp_g'])
+            term.set_params(**kinetics)
+            dynamics = data.get('sgc_release_dynamics', species='mouse', post_type=post_cell.type,
+                                field=['F', 'k0', 'kmax', 'kd', 'kf', 'taud', 'tauf', 'dD', 'dF'])
+            term.set_params(**dynamics)
+            return term
+        else:
+            raise ValueError("Unsupported terminal type %s" % term_type)
     
 
 class DummySGC(SGC):

@@ -22,67 +22,54 @@ class DStellate(Cell):
         else:
             raise ValueError ('DStellate type %s is unknown', type)
 
-    def make_psd(self, terminal, **kwds):
-        from .. import cells
-
+    def make_psd(self, terminal, psd_type, **kwds):
         pre_sec = terminal.section
         pre_cell = terminal.cell
         post_sec = self.soma
-        
-        if isinstance(pre_cell, cells.SGC):
-            # Max conductances for the glu mechanisms are calibrated by 
-            # running `synapses/tests/test_psd.py`. The test should fail
-            # if these values are incorrect:
-            AMPA_gmax = 0.526015135636368*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
-            NMDA_gmax = 0.28738714531937265*1e3
-            
-            # Get AMPAR kinetic constants from database 
-            params = data.get('sgc_ampa_kinetics', species='mouse', post_type='dstellate',
-                              field=['Ro1', 'Ro2', 'Rc1', 'Rc2', 'PA'])
-            
-            return synapses.GluPSD(post_sec, terminal,
-                                   ampa_gmax=AMPA_gmax,
-                                   nmda_gmax=NMDA_gmax,
-                                   ampa_params=dict(
-                                        Ro1=params['Ro1'],
-                                        Ro2=params['Ro2'],
-                                        Rc1=params['Rc1'],
-                                        Rc2=params['Rc2'],
-                                        PA=params['PA']),
-                                   **kwds)
-        elif isinstance(pre_cell, cells.DStellate):
-            # Get GLY kinetic constants from database 
-            params = data.get('gly_kinetics', species='mouse', post_type='dstellate',
-                              field=['KU', 'KV', 'XMax'])
-            psd = synapses.GlyPSD(post_sec, terminal,
-                                   psdType='glyfast',
-                                   **kwds)
-            return psd
-        else:
-            raise TypeError("Cannot make PSD for %s => %s" % 
-                            (pre_cell.__class__.__name__, 
-                             self.__class__.__name__))
 
-    def make_terminal(self, post_cell, **kwds):
-        from .. import cells
-        #
-        # set parameters according to the target cell type
-        #
-
-        if isinstance(post_cell, cells.Bushy):
-            nzones, delay = 10, 0
-        elif isinstance(post_cell, cells.TStellate):
-            nzones, delay = 5, 0
-        elif isinstance(post_cell, cells.DStellate):
-            nzones, delay = 5, 0
+        if psd_type == 'simple':
+            return self.make_exp2_psd(post_sec, terminal)
+        
+        elif psd_type == 'multisite':
+            if pre_cell.type == 'sgc':
+                # Max conductances for the glu mechanisms are calibrated by 
+                # running `synapses/tests/test_psd.py`. The test should fail
+                # if these values are incorrect:
+                AMPA_gmax = 0.526015135636368*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
+                NMDA_gmax = 0.28738714531937265*1e3
+                return self.make_glu_psd(post_sec, terminal, AMPA_gmax, NMDA_gmax)
+            elif pre_cell.type == 'dstellate':
+                # Get GLY kinetic constants from database 
+                return self.make_gly_psd(post_sec, terminal, type='glyfast')
+            else:
+                raise TypeError("Cannot make PSD for %s => %s" % 
+                                (pre_cell.type, self.type))
         else:
-            raise NotImplementedError("No knowledge as to how to connect DStellate to cell type %s" %
-                                      type(post_cell))
-        
-        pre_sec = self.soma
-        
-        return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, 
-                                           delay=delay, **kwds)
+            raise ValueError("Unsupported psd type %s" % psd_type)
+
+
+
+
+    def make_terminal(self, post_cell, term_type, **kwds):
+        if term_type == 'simple':
+            return synapses.SimpleTerminal(pre_sec, post_cell, 
+                                           spike_source=self.spike_source, **kwds)
+        elif term_type == 'multisite':
+            if post_cell.type == 'bushy':
+                nzones, delay = 10, 0
+            elif post_cell.type == 'tstellate':
+                nzones, delay = 5, 0
+            elif post_cell.type == 'dstellate':
+                nzones, delay = 5, 0
+            else:
+                raise NotImplementedError("No knowledge as to how to connect DStellate to cell type %s" %
+                                        type(post_cell))
+            
+            pre_sec = self.soma
+            return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, 
+                                            delay=delay, **kwds)
+        else:
+            raise ValueError("Unsupported terminal type %s" % term_type)
 
 
 class DStellateRothman(DStellate):

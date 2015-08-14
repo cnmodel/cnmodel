@@ -18,3 +18,5 @@ from .psd import PSD
 from .glu_psd import GluPSD
 from .gly_psd import GlyPSD
 from .stochastic_terminal import StochasticTerminal
+from .simple_terminal import SimpleTerminal
+from .exp2_psd import Exp2PSD
