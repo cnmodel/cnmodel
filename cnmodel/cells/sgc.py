@@ -13,9 +13,11 @@ __all__ = ['SGC', 'SGC_TypeI', 'DummySGC']
 class SGC(Cell):
 
     @classmethod
-    def create(cls, model='I', **kwds):
-        if model == 'I':
-            return SGC_TypeI(**kwds)
+    def create(cls, model='I', species='mouse', **kwds):
+        if model == 'dummy':
+            return DummySGC(**kwds)
+        elif model == 'I':
+            return SGC_TypeI(species=species, **kwds)
         else:
             raise ValueError ('SGC type %s is unknown', type)
         

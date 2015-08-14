@@ -2,13 +2,14 @@
 __author__ = "Paul B. Manis"
 __version__ = "0.2"
 
-#import util
 try:
     import faulthandler
     faulthandler.enable()
 except ImportError:
     pass
 
+import logging
+logging.basicConfig(level=logging.INFO, format="[%(process)s] %(message)s")
 import os
 dirname = os.path.abspath(os.path.dirname(__file__))
 libpath = os.path.join(dirname, '..')

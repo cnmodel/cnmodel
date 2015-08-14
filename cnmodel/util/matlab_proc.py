@@ -8,6 +8,8 @@ import scipy.io
 import numpy as np
 import tempfile
 import os, sys, glob, signal
+import weakref
+import atexit
 
 
 class MatlabProcess(object):
@@ -58,7 +60,8 @@ class MatlabProcess(object):
     """
     
     def __init__(self, executable=None, **kwds):
-        self.__refs = {}
+        self.__closed = False
+        self.__refs = weakref.WeakValueDictionary()
         
         # Decide which executables to try
         if executable is not None:
@@ -103,21 +106,26 @@ class MatlabProcess(object):
             line = self.__proc.stdout.readline()
             if line == '::ready\n':
                 break
+            
+        atexit.register(self.close)
         
-    def __call__(self, cmd, timeout=5.0):
+    def __call__(self, cmd, parse_result=True):
         """
         Execute the specified statement(s) on the MATLAB interpreter and return
         the output string or raise an exception if there was an error.
         """
+        assert not self.__closed, "MATLAB process has already closed."
         if cmd[-1] != '\n':
             cmd += '\n'
         cmd += "::cmd_done\n"
         self.__proc.stdout.read()
         self.__proc.stdin.write(cmd)
         
-        return self._parse_result()
+        if parse_result:
+            return self._parse_result()
     
     def _parse_result(self):
+        assert not self.__closed, "MATLAB process has already closed."
         output = []
         while True:
             line = self.__proc.stdout.readline()
@@ -181,6 +189,7 @@ class MatlabProcess(object):
         
         This method sends data over the pipe, but is less reliable than set().
         """
+        assert not self.__closed, "MATLAB process has already closed."
         io = StringIO()
         scipy.io.savemat(io, kwds)
         io.seek(0)
@@ -215,10 +224,13 @@ class MatlabProcess(object):
             ex = self.exist(name)
             if ex == 0:
                 raise AttributeError("No object named '%s' in matlab workspace." % name)
-            if ex in (2, 3, 5):
+            elif ex in (2, 3, 5):
                 r = MatlabFunction(self, name)
             elif ex == 1:
                 r = self._mkref(name)
+            else:
+                typ = {4: 'library file', 6: 'P-file', 7: 'folder', 8: 'class'}[ex]
+                raise TypeError("Variable '%s' has unsupported type '%s'" % (name, typ))
             self.__refs[name] = r
         return self.__refs[name]
         
@@ -233,6 +245,12 @@ class MatlabProcess(object):
             object.__setattr__(self, name, value)
         else:
             self._set(**{name:value})
+            
+    def close(self):
+        if self.__closed:
+            return
+        self('exit;\n', parse_result=False)
+        self.__closed = True
 
 
 class MatlabReference(object):
@@ -251,6 +269,9 @@ class MatlabReference(object):
 
     def clear(self):
         self._proc("clear %s;" % self._name)
+
+    def __del__(self):
+        self.clear()
 
 
 class MatlabFunction(object):
@@ -323,6 +344,7 @@ class MatlabFunction(object):
             self._proc(cmd)
             if _transfer:
                 ret = [self._proc._get(var) for var in retvars]
+                self._proc('clear %s;' % (' '.join(retvars)))
             else:
                 ret = [self._proc._mkref(name) for name in retvars]
             if len(ret) == 1:

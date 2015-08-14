@@ -49,6 +49,10 @@ class Sound(object):
         """ The sample period (time step between samples).
         """
         return 1.0 / self.opts['rate']
+    
+    @property
+    def duration(self):
+        return self.opts['duration']
 
     def key(self):
         """ Return dict of parameters needed to completely describe this sound.
@@ -73,6 +77,8 @@ class Sound(object):
         raise NotImplementedError()
 
     def __getattr__(self, name):
+        if 'opts' not in self.__dict__:
+            raise AttributeError(name)
         if name in self.opts:
             return self.opts[name]
         else:

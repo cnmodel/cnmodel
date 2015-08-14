@@ -1,3 +1,4 @@
+import logging
 import scipy.stats
 import numpy as np
 
@@ -38,7 +39,7 @@ class Population(object):
     requests a recording of the neuron.
     
     """
-    def __init__(self, species, size, fields):
+    def __init__(self, species, size, fields, **kwds):
         self._species = species
         self._post_connections = []  # populations this one connects to
         self._pre_connections = []  # populations connecting to this one
@@ -51,6 +52,8 @@ class Population(object):
             ('connections', object),  # {pop: [cells], ...}
         ] + fields
         self._cells = np.zeros(size, dtype=fields)
+        self._cell_indexes = {}
+        self._cell_args = kwds
 
     @property
     def cells(self):
@@ -75,6 +78,17 @@ class Population(object):
         unresolved = self._cells['input_resolved'] == False
         return np.argwhere(real & unresolved)[:,0]
 
+    def real_cells(self):
+        """ Return indexes of all real cells in this population.
+        
+        Initially, all cells in the population are virtual--they are accounted
+        for, but not actually instantiated as part of the NEURON simulation.
+        Virtual cells can be made real by calling `get_cell()`. This method
+        returns the indexes of all cells for which `get_cell()` has already
+        been invoked.
+        """
+        return np.argwhere(self._cells['cell'] != 0)[:,0]
+
     def connect(self, *pops):
         """ Connect this population to any number of other populations. 
         
@@ -89,10 +103,10 @@ class Population(object):
             pop._pre_connections.append(self)
 
     @property
-    def connections(self):
+    def pre_connections(self):
         """ The list of populations connected to this one.
         """
-        return self._connections[:]
+        return self._pre_connections[:]
 
     def cell_connections(self, index):
         """ Return a dictionary containing, for each population, a list of 
@@ -112,18 +126,20 @@ class Population(object):
         """
         for i in self.unresolved_cells():
             cell = self._cells[i]['cell']
+            logging.info("Resolving inputs for %s %d", self, i)
             self._cells[i]['connections'] = {}
             
             # select cells from each population to connect to this cell
             for pop in self._pre_connections:
                 pre_cells = self.connect_pop_to_cell(pop, i)
+                logging.info("  connected %d cells from %s", len(pre_cells), pop)
                 assert pre_cells is not None
                 self._cells[i]['connections'][pop] = pre_cells
             self._cells[i]['input_resolved'] = True
 
         # recursively resolve inputs in connected populations
         if depth > 1:
-            for pop in self.connections:
+            for pop in self.pre_connections:
                 pop.resolve_inputs(depth-1)
 
     def connect_pop_to_cell(self, pop, cell_index):
@@ -147,9 +163,7 @@ class Population(object):
         for j in pre_cells:
             pre_cell = pop.get_cell(j)
             # use default settings for connecting these. 
-            # todo: connect from sgc axon instead of soma
-            # (maybe the cell should handle this?)
-            pre_cell.connect(pre_cell.soma, cell.soma)
+            pre_cell.connect(cell)
         return pre_cells
     
     def select(self, size, create=False, **kwds):
@@ -230,6 +244,11 @@ class Population(object):
         if create and self._cells[i]['cell'] == 0:
             self.create_cells([i])
         return self._cells[i]['cell']
+    
+    def get_cell_index(self, cell):
+        """Return the index of *cell*.
+        """
+        return self._cell_indexes[cell]
         
     def create_cells(self, cell_inds):
         """ Instantiate each cell in *cell_inds*, which is a list of indexes into
@@ -238,7 +257,9 @@ class Population(object):
         for i in cell_inds:
             if self._cells[i]['cell'] != 0:
                 continue
-            self._cells[i]['cell'] = self.create_cell(self._cells[i])
+            cell = self.create_cell(self._cells[i])
+            self._cells[i]['cell'] = cell
+            self._cell_indexes[cell] = i
             
     def create_cell(self, cell_rec):
         """ Return a single new cell to be used in this population. The 
@@ -248,3 +269,20 @@ class Population(object):
         Subclasses must reimplement this method.
         """
         raise NotImplementedError()
+
+    def __str__(self):
+        return "<Population %s (%d/%d real)>" % (type(self).__name__, (self._cells['cell'] != 0).sum(), len(self._cells))
+
+    def __getstate__(self):
+        """Return a picklable copy of self.__dict__. 
+        
+        Note that we remove references to the actual cells in order to allow pickling.
+        """
+        state = self.__dict__.copy()
+        state['_cells'] = state['_cells'].copy()
+        mask = state['_cells']['cell'] != 0
+        state['_cells'][mask] = [str(cell) for cell in state['_cells'][mask]]
+        
+        return state
+        
+        
