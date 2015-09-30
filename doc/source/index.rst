@@ -11,9 +11,9 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   architecture
+   api_ref
 
-.. automodule:: nrnlibrary.util.stim
-    :members:
 
 Indices and tables
 ==================
