@@ -2,6 +2,11 @@
 Test the embedded auditory nerve model with a set of tone pips.
 (Zilany et al. 2014; requires MATLAB)
 
+This demonstrates the lowest-level access to the auditory nerve model that is
+available in the cnmodel API. For higher-level tools, see test_sound_stim.py
+(which uses an_model.get_spiketrain) and test_sgc_input.py (which uses 
+cells.DummySGC).
+
 Adapted from Manis (makeANF_CF_RI.m)
 """
 import time

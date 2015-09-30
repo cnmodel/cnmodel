@@ -1,5 +1,11 @@
 """
-Test using sound stimulation to generate input to bushy cell
+Test using sound stimulation to generate SGC spike trains.
+
+This script uses an_model.get_spiketrain(), which internally calls MATLAB to 
+generate spike trains and caches the output. A higher-level approach is to use
+DummySGC, which will automatically feed the spike train into a synapse for 
+input to downstream neurons (see test_sgc_input.py). Lower-level access to the
+auditory nerve model is demonstrated in test_an_model.py.
 """
 import numpy as np
 import pyqtgraph as pg
