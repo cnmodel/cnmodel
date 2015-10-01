@@ -68,6 +68,21 @@ Protocols
     :members:
 
 
+Sound generation
+----------------
+
+.. autofunction:: cnmodel.util.sound.create
+
+.. autoclass:: cnmodel.util.sound.Sound
+    :members:
+
+.. autoclass:: cnmodel.util.sound.TonePip
+    :members:
+
+.. autoclass:: cnmodel.util.sound.NoisePip
+    :members:
+
+
 Utilities
 ---------
 

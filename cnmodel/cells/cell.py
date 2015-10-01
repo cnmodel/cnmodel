@@ -278,8 +278,8 @@ class Cell(object):
         Run the model for 2 msec after initialization - then
         compute the inverse of the sum of the conductances to get Rin at rest
         compute Cm*Rin to get tau at rest
-        :param none:
-        :return Rin (Mohm), tau (ms) and Vm (mV):
+        
+        Returns a tuple ``(Rin (Mohm), tau (ms), Vm (mV))``.
         """
         if auto_initialize:
             self.cell_initialize()
