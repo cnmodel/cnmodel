@@ -24,7 +24,7 @@ class Cell(object):
         # dictionary of all sections associated with this cell
         self.all_sections = {}
         # the following section types (parts) are known to us:
-        for k in ['soma', 'maindend', 'secdend', 'internode', 'initialsegment', 'axonnode', 'axon']:
+        for k in ['soma', 'maindend', 'secdend', 'dend', 'dendrite', 'internode', 'initialsegment', 'axonnode', 'axon']:
             self.all_sections[k] = []  # initialize to an empty list
         
         self.species = 'mouse'
@@ -41,6 +41,8 @@ class Cell(object):
         self.internode = None  # hold internode sections
         self.maindend = None  # hold main dendrite sections
         self.secdend = None  # hold secondary dendrite sections
+        self.dendrite = None
+        self.axon = None
         self.axonsf = None  # axon diameter scale factor
         # define defaults for these parameters (RM03 model defaults)
         self.e_k = -70  # potassium reversal potential, mV
@@ -80,6 +82,18 @@ class Cell(object):
         self.all_sections[sec_type].extend(sec)
         for s in sec:
             Cell.sec_lookup[s.name()] = self
+    
+    def list_sections(self):
+        # print self.all_sections
+        for sec in self.all_sections:
+            print 'Sections named: %s' % sec
+            print '------------------------------------------'
+            s = self.all_sections[sec]
+            # print 's: ', s
+            if len(s) > 0:
+                for u in s:
+                    print 'Section type %s (%s): %s' % (sec, u.name(), Cell.sec_lookup[u.name()])
+
     
     @property
     def soma(self):
@@ -202,15 +216,29 @@ class Cell(object):
         """
         print '\n    Installed mechanisms:'
         self.get_mechs(section)
+        print eval('section().nav11.gbar')
+ 
+        print 'self mechs: ', self.mechs
         for m in self.mechs:
             try:
                 gx=eval('section().'+m+'.gbar')
-                #print gx
+                print 'gx: ', gx
+                print 'self.somaarea: ', self.somaarea
+                print 'ns: ', mho2ns(gx, self.somaarea)
                 print('{0:>12s} : {1:<7.3g} mho/cm2  {2:<7.3g} nS '.format(m, gx, mho2ns(gx, self.somaarea)))
+                quit()
             except:
                 print('{0:>12s} : <no gbar> '.format(m))
         print '-'*32
-
+        
+    def print_all_mechs(self):
+        print 'all mechanisms in all sections: '
+        for part in self.all_sections.keys():
+            print 'Cell part: %s' % part 
+            for sec in self.all_sections[part]:
+                print '   Section: ', sec
+                print '        ', self.get_mechs(sec)
+                print '            ', dir(sec)
 
     def i_currents(self, V):
         """
@@ -223,13 +251,15 @@ class Cell(object):
         for part in self.all_sections.keys():
             for sec in self.all_sections[part]:
                 sec.v = V
-
         h.t = 0.
         h.finitialize()  # force variables to steady-state values in mod file
         self.ix = {}
         if 'na' in self.mechanisms:
             #print dir(self.soma().na)
-            self.ix['na'] = self.soma().na.gna*(V - self.soma().ena)
+            try:
+                self.ix['na'] = self.soma().na.gna*(V - self.soma().ena)
+            except:
+                self.ix['na'] = self.soma().nav11.gna*(V - self.soma().ena)
         if 'jsrna' in self.mechanisms:
             #print dir(self.soma().na)
             self.ix['jsrna'] = self.soma().jsrna.gna*(V - self.soma().ena)
@@ -339,6 +369,12 @@ class Cell(object):
     #    lstd = diam # 1E4 * ((self.somaarea / np.pi) ** 0.5)  # convert from cm to um
         self.soma.diam = diam
         self.soma.L = diam
+        
+    def set_soma_size_from_Section(self, soma):
+        self.soma.diam = soma.diam
+        self.soma.L = soma.L
+        self.somaarea = 1e-8*np.pi*soma.diam*soma.L
+        self.totcap = self.c_m * self.somaarea * 1e6
 
     def add_axon(self, c_m=1.0, R_a=150, axonsf=1.0, nodes=5, debug=False, dia=None, len=None, seg=None):
         """

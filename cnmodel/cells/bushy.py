@@ -8,7 +8,7 @@ from .. import synapses
 from ..util import nstomho
 from .. import data
 
-__all__ = ['Bushy', 'BushyRothman']
+__all__ = ['Bushy', 'BushyRothman', 'BushyHoc']
 
 
 class Bushy(Cell):
@@ -19,33 +19,99 @@ class Bushy(Cell):
     def create(cls, model='RM03', **kwds):
         if model == 'RM03':
             return BushyRothman(**kwds)
+        if model in ['hoc']:
+            return BushyHoc(**kwds)
         else:
             raise ValueError ('Bushy type %s is unknown', type)
 
-    def make_psd(self, terminal, psd_type, **kwds):
+    def make_psd(self, terminal, **kwds):
+        from .. import cells
+        
         pre_sec = terminal.section
         pre_cell = terminal.cell
         post_sec = self.soma
         
-        if psd_type == 'simple':
-            return self.make_exp2_psd(post_sec, terminal)
-        
-        elif psd_type == 'multisite':
-            if pre_cell.type == 'sgc':
-                # Max conductances for the glu mechanisms are calibrated by 
-                # running `synapses/tests/test_psd.py`. The test should fail
-                # if these values are incorrect:
-                AMPA_gmax = 3.314707700918133*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
-                NMDA_gmax = 0.4531929783503451*1e3
-                return self.make_glu_psd(post_sec, terminal, AMPA_gmax, NMDA_gmax)
-            elif pre_cell.type == 'dstellate':
-                # Get GLY kinetic constants from database 
-                return self.make_gly_psd(post_sec, terminal, type='glyslow')
-            else:
-                raise TypeError("Cannot make PSD for %s => %s" % 
-                                (pre_cell.type, self.type))
+        if isinstance(pre_cell, cells.SGC):
+            # Max conductances for the glu mechanisms are calibrated by 
+            # running `synapses/tests/test_psd.py`. The test should fail
+            # if these values are incorrect:
+            AMPA_gmax = 3.314707700918133*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
+            NMDA_gmax = 0.4531929783503451*1e3
+            
+            # Get AMPAR kinetic constants from database 
+            params = data.get('sgc_ampa_kinetics', species='mouse', post_type='bushy',
+                              field=['Ro1', 'Ro2', 'Rc1', 'Rc2', 'PA'])
+            for key, value in kwds.iteritems():
+                        print "make_psd: keywords  %s == %s" %(key,value)
+            return synapses.GluPSD(post_sec, terminal,
+                                   ampa_gmax=AMPA_gmax,
+                                   nmda_gmax=NMDA_gmax,
+                                   ampa_params=dict(
+                                        Ro1=params['Ro1'],
+                                        Ro2=params['Ro2'],
+                                        Rc1=params['Rc1'],
+                                        Rc2=params['Rc2'],),
+                                   **kwds)
+        elif isinstance(pre_cell, cells.DStellate):
+            # Get GLY kinetic constants from database 
+            params = data.get('gly_kinetics', species='mouse', post_type='bushy',
+                              field=['KU', 'KV', 'XMax'])
+            return synapses.GlyPSD(post_sec, terminal, params=params,
+                                   psdType='glyslow', **kwds)
         else:
-            raise ValueError("Unsupported psd type %s" % psd_type)
+            raise TypeError("Cannot make PSD for %s => %s" % 
+                            (pre_cell.__class__.__name__, 
+                             self.__class__.__name__))
+
+class BushyHoc(Bushy):
+    """
+    VCN bushy cell model - with dendritic structure from a hoc file
+    The model dendritic structure will have been read in HocReader
+    The model structures should be passed to the first parameter, hoc
+    Ion channels are likely alread decorated, so this routine only inserts the
+    model sections into the scaffolding of the cell class, so we can use that class.
+    
+    Based on Rothman and Manis, 2003abc (Type II, Type II-I)
+    """
+
+    def __init__(self, hoc=None, nach='na', ttx=False, debug=False, species='guineapig', modeltype=None, decorator=None):
+        """
+        initialize the bushy cell, using the default parameters for guinea pig from
+        R&M2003, as a type II cell.
+        Modifications to the cell can be made by calling methods below.
+        """
+        super(BushyHoc, self).__init__()
+        print "<< bushy: Creating Bushy model from HOC file >>"
+        if modeltype == None:
+            modeltype = 'II'
+        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+                       'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'Bushy'}
+        self.i_test_range=(-0.5, 0.5, 0.05)
+        self.spike_threshold = -40
+        self.vrange = [-70., -57.]  # set a default vrange for searching for rmp
+
+        self.mechanisms = ['klt', 'kht', 'ihvcn', 'leak', nach]
+        nach = self.status['na']
+        if decorator is not None:
+            self.cd = decorator(hoc, celltype='Bushy', modeltype=modeltype,
+                             parMap=None)
+        hf = self.cd.hf  # get the hoc information
+        self.cd.channelValidate(hf, verify=False)
+        hf._read_section_info()  # this should populate the section channel densities as well from an neurovis read file
+            # these were not instantiated when the file was read, but when the decorator was run.
+        for s in hf.sec_groups.keys():
+            for sec in hf.sec_groups[s]:
+                section = hf.get_section(sec)
+                mechs = hf.get_mechanisms(sec)
+                self.add_section(section, s) # add the section to the cell.
+               # print '\nmechanisms for section: %s', section
+               # self.print_mechs(section)
+        soma = hf.get_section('sections[0]')
+        self.set_soma_size_from_Section(soma)  # this is used for reporting and setting g values...
+        self.cell_initialize(vrange=self.vrange)
+#        if debug:
+        print "<< bushy: Bushy model created from HOC file >>"
+        #print 'Cell created: ', self.status
 
 
 class BushyRothman(Bushy):
@@ -61,6 +127,8 @@ class BushyRothman(Bushy):
         Modifications to the cell can be made by calling methods below.
         """
         super(BushyRothman, self).__init__()
+        print "<< Bushy model: Creating point cell using JSR parameters >>"
+
         if type == None:
             type = 'II'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
@@ -84,7 +152,8 @@ class BushyRothman(Bushy):
         self.get_mechs(soma)
         self.cell_initialize(vrange=self.vrange)
         if debug:
-            print "<< bushy: JSR bushy cell model created >>"
+            pass
+        print "<< Bushy model created, point cell using JSR parameters >>"
         #print 'Cell created: ', self.status
 
     def species_scaling(self, species='guineapig', type='II', silent=True):
