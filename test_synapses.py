@@ -1,3 +1,22 @@
+"""
+Test synaptic connections between two different cell types. 
+
+Usage:  python test_synapses.py <pre_celltype> <post_celltype>
+
+This script:
+
+1. Creates single pre- and postsynaptic cells
+2. Creates multiple synaptic terminals between the two cells.
+   (the convergence is hard-coded below).
+3. Stimulates the presynaptic cell by current injection.
+4. Records and analyzes the resulting post-synaptic events.
+
+This is used mainly to check that the strength, kinetics, and dynamics of 
+each synapse type is working as expected. A higher-level approach is
+demonstrated in test_populations.py, in which the presynaptic cells are 
+automatically generated using expected patterns of connectivity.
+"""
+
 import pyqtgraph as pg
 from cnmodel.protocols import SynapseTest
 from cnmodel import cells

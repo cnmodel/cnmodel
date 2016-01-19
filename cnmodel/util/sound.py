@@ -56,7 +56,7 @@ class Sound(object):
 
     def key(self):
         """ Return dict of parameters needed to completely describe this sound.
-        The sound can be recreated using ``Sound.create(**key)``.
+        The sound can be recreated using ``create(**key)``.
         """
         k = self.opts.copy()
         k['type'] = self.__class__.__name__
@@ -181,29 +181,38 @@ def modtone(t, rt, Fs, F0, dBSPL, FMod, DMod, phaseshift):
     """
     Generate an amplitude-modulated tone with linear ramps.
     
-    t: waveform time values
-    rt: ramp duration
-    Fs: sample rate
-    F0: tone frequency
-    FMod : modulation frequency
-    DMod : modulation depth percent
-    phaseshift : modulation phase
+    Parameters
+    ----------
+    t : array
+        array of waveform time values
+    rt : float
+        ramp duration
+    Fs : float
+        sample rate
+    F0 : float
+        tone frequency
+    FMod : float
+        modulation frequency
+    DMod : float
+        modulation depth percent
+    phaseshift : float
+        modulation phase
     
-    Original (adapted from Manis; makeANF_CF_RI.m): 
+    Original (adapted from Manis; makeANF_CF_RI.m)::
     
-    function [pin, env] = modtone(t, rt, Fs, F0, dBSPL, FMod, DMod, phaseshift)
-        % fprintf(1, 'Phase: %f\n', phaseshift)
-        irpts = rt*Fs;
-        mxpts = length(t);
-        env = (1 + (DMod/100.0)*sin((2*pi*FMod*t)-pi/2+phaseshift)); % envelope...
-        pin = sqrt(2)*20e-6*10^(dBSPL/20)*(sin((2*pi*F0*t)-pi/2).*env); % unramped stimulus
+        function [pin, env] = modtone(t, rt, Fs, F0, dBSPL, FMod, DMod, phaseshift)
+            % fprintf(1, 'Phase: %f\n', phaseshift)
+            irpts = rt*Fs;
+            mxpts = length(t);
+            env = (1 + (DMod/100.0)*sin((2*pi*FMod*t)-pi/2+phaseshift)); % envelope...
+            pin = sqrt(2)*20e-6*10^(dBSPL/20)*(sin((2*pi*F0*t)-pi/2).*env); % unramped stimulus
 
-        pin = ramp(pin, mxpts, irpts);
-        env = ramp(env, mxpts, irpts);
-        %pin(1:irpts)=pin(1:irpts).*(0:(irpts-1))/irpts;
-        %pin((mxpts-irpts):mxpts)=pin((mxpts-irpts):mxpts).*(irpts:-1:0)/irpts;
-        return
-    end
+            pin = ramp(pin, mxpts, irpts);
+            env = ramp(env, mxpts, irpts);
+            %pin(1:irpts)=pin(1:irpts).*(0:(irpts-1))/irpts;
+            %pin((mxpts-irpts):mxpts)=pin((mxpts-irpts):mxpts).*(irpts:-1:0)/irpts;
+            return
+        end
     """
     irpts = rt * Fs
     mxpts = len(t)
@@ -222,14 +231,14 @@ def ramp(pin, mxpts, irpts):
     """
     Apply linear ramps to *pin*.
     
-    Original (adapted from Manis; makeANF_CF_RI.m): 
+    Original (adapted from Manis; makeANF_CF_RI.m)::
     
-    function [out] = ramp(pin, mxpts, irpts)
-        out = pin;
-        out(1:irpts)=pin(1:irpts).*(0:(irpts-1))/irpts;
-        out((mxpts-irpts):mxpts)=pin((mxpts-irpts):mxpts).*(irpts:-1:0)/irpts;
-        return;
-    end
+        function [out] = ramp(pin, mxpts, irpts)
+            out = pin;
+            out(1:irpts)=pin(1:irpts).*(0:(irpts-1))/irpts;
+            out((mxpts-irpts):mxpts)=pin((mxpts-irpts):mxpts).*(irpts:-1:0)/irpts;
+            return;
+        end
     """
     out = pin.copy()
     r = np.linspace(0, 1, irpts)
@@ -242,13 +251,22 @@ def pipnoise(t, rt, Fs, dBSPL, pip_dur, pip_start, seed):
     Create a waveform with multiple sine-ramped noise pips. Output is in 
     Pascals.
     
-    t: array of time values
-    rt: ramp duration 
-    Fs: sample rate
-    dBSPL: maximum sound pressure level of pip
-    pip_dur: duration of pip including ramps
-    pip_start: list of starting times for multiple pips
-    seed: random seed
+    Parameters
+    ----------
+    t : array
+        array of time values
+    rt : float
+        ramp duration 
+    Fs : float
+        sample rate
+    dBSPL : float
+        maximum sound pressure level of pip
+    pip_dur : float
+        duration of pip including ramps
+    pip_start : float
+        list of starting times for multiple pips
+    seed : int
+        random seed
     """
     rng = np.random.RandomState(seed)
     pin = np.zeros(t.size)
@@ -274,13 +292,22 @@ def piptone(t, rt, Fs, F0, dBSPL, pip_dur, pip_start):
     Create a waveform with multiple sine-ramped tone pips. Output is in 
     Pascals.
     
-    t: array of time values
-    rt: ramp duration 
-    Fs: sample rate
-    F0: pip frequency
-    dBSPL: maximum sound pressure level of pip
-    pip_dur: duration of pip including ramps
-    pip_start: list of starting times for multiple pips
+    Parameters
+    ----------
+    t : array
+        array of time values
+    rt : float
+        ramp duration 
+    Fs : float
+        sample rate
+    F0 : float
+        pip frequency
+    dBSPL : float
+        maximum sound pressure level of pip
+    pip_dur : float
+        duration of pip including ramps
+    pip_start : float
+        list of starting times for multiple pips
     """
     # make pip template
     pip_pts = int(pip_dur * Fs) + 1

@@ -6,6 +6,11 @@ from .. import cells
 
 
 class SGC(Population):
+    """A population of spiral ganglion cells.
+    
+    The cell distribution is uniform from 4kHz to 90kHz, evenly divided between
+    spontaneous rate groups.
+    """
     type = 'sgc'
     
     def __init__(self, species='mouse', model='dummy', **kwds):
@@ -37,6 +42,9 @@ class SGC(Population):
         assert len(self.connections) == 0
 
     def set_sound_stim(self, stim):
+        """Set a sound stimulus to generate spike trains for all (real) cells
+        in this population.
+        """
         real = self.real_cells()
         logging.info("Assigning spike trains to %d SGC cells..", len(real))
         for i, ind in enumerate(real):
