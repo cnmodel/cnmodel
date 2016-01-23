@@ -14,10 +14,6 @@ Todo:
     - record all Vm for all real neurons
     - record spike trains
     - record per-synapse currents
-    
-
-
-
 """
 
 class Population(object):
@@ -38,6 +34,8 @@ class Population(object):
     synaptic input to another non-virtual neuron, or if the user explicitly 
     requests a recording of the neuron.
     
+    Subclasses represent populations for a specific cell type, and at least
+    need to reimplement the `create_cell` and `connection_stats` methods.
     """
     def __init__(self, species, size, fields, **kwds):
         self._species = species
@@ -125,6 +123,7 @@ class Population(object):
         populations before making any calls to ``resolve_inputs``.
         """
         for i in self.unresolved_cells():
+            # loop over all cells whose presynaptic inputs have not been resolved
             cell = self._cells[i]['cell']
             logging.info("Resolving inputs for %s %d", self, i)
             self._cells[i]['connections'] = {}
@@ -147,9 +146,10 @@ class Population(object):
         population at *cell_index*, and return the presynaptic indexes of cells
         that were connected.
         
-        This method may be overridden in subclasses.
+        This method is responsible for choosing pairs of cells to be connected
+        by synapses, and may be overridden in subclasses.
         
-        The default implementation calls self.connection_stats to determine
+        The default implementation calls `self.connection_stats()` to determine
         the number and selection criteria of presynaptic cells.
         """
         cell_rec = self._cells[cell_index]
@@ -165,6 +165,29 @@ class Population(object):
             # use default settings for connecting these. 
             pre_cell.connect(cell)
         return pre_cells
+
+    def connection_stats(self, pop, cell_rec):
+        """ The population *pop* is being connected to the cell described in 
+        *cell_rec*.
+        
+        This method is responsible for deciding the distributions of presynaptic
+        cell properties for any given postsynaptic cell (for example, a cell 
+        with cf=10kHz might receive SGC input from 10 cells selected from a 
+        normal distribution centered at 10kHz). 
+        
+        Most subclasses of Population should reimplement this method with the
+        appropriate connectivity statistics for that cell type.
+        
+        Return a tuple (size, dist) with the following values:
+        
+        * size: integer giving the number of cells that should be selected from
+          the presynaptic population and connected to the postsynaptic cell.
+        * dist: dictionary of {property_name: distribution} pairs that describe
+          how cells should be selected from the presynaptic population. See
+          keyword arguments to `select()` for more information on the content
+          of this dictionary.
+        """
+        raise NotImplementedError()
     
     def select(self, size, create=False, **kwds):
         """ Return a list of indexes for cells matching the selection criteria.
@@ -176,6 +199,7 @@ class Population(object):
         
         Each keyword argument must be the name of a field in self.cells. Values
         may be:
+        
         * A distribution (see scipy.stats), in which case the distribution 
           influences the selection of cells
         * An array giving the probability to assign to each cell in the

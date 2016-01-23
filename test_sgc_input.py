@@ -1,3 +1,18 @@
+"""
+Test generating a series of EPSPs in a bushy cell in response to tone pip.
+
+This script:
+
+1. Creates one SGC and one bushy cell.
+2. Connects the two cells with a synapse.
+3. Specifies a tone pip input to the SGC cell.
+4. Records the bushy cell Vm.
+
+The auditory nerve spike train is generated automatically by the DummySGC class
+using the tone pip. For lower-level access to the auditory nerve model, see the
+test_an_model.py and test_sound_stim.py examples.
+
+"""
 import sys
 import numpy as np
 import pyqtgraph as pg

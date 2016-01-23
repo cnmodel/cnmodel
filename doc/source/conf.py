@@ -19,7 +19,7 @@ import os
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 path = os.path.abspath(os.path.dirname(__file__))
-sys.path.insert(0, os.path.join(path, '..', '..'))
+sys.path.insert(0, os.path.abspath(os.path.join(path, '..', '..')))
 sys.path.insert(0, os.path.join(path, '..', 'numpydoc-0.5'))
 
 # -- General configuration ------------------------------------------------
@@ -33,8 +33,12 @@ sys.path.insert(0, os.path.join(path, '..', 'numpydoc-0.5'))
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
-    'numpydoc'
+    'numpydoc',
+    'sphinx.ext.autosummary',
 ]
+
+# See: http://stackoverflow.com/questions/20334804/sphinx-autodoc-and-numpydoc
+numpydoc_show_class_members = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

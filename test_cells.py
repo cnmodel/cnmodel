@@ -1,3 +1,13 @@
+"""
+Test the basic membrane physiology of cell types.
+
+Usage:   python test_cells.py celltype species [--cc | --vc]
+
+This script generates a cell of the specified type and species, then tests the
+cell with a series of current/voltage pulses to produce I/V, F/I, and spike
+latency analyses.
+"""
+
 import argparse
 import os, sys
 from neuron import h

@@ -1,6 +1,15 @@
 """
 Test construction of a complete circuit build from cell populations.
 
+This script:
+
+1. Creates populations of sgc, bushy, and stellate cells.
+2. Connects the populations together.
+3. Instantiates 10 bushy and 10 t-stellate cells near 16kHz.
+4. Resolves all required synaptic dependencies.
+
+No simulation is executed; this is meant to be run interactively to allow 
+introspection of the circuit that was generated.
 """
 
 from cnmodel import populations

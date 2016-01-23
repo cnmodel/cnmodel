@@ -202,13 +202,18 @@ class IVCurve(Protocol):
         return spikes
 
     def spike_filter(self, spikes, window=(0., np.inf)):
-        """
-        filter the spikes to only those occurring in a defined window.
+        """Filter the spikes to only those occurring in a defined window.
+        
         Required to compute input resistance in traces with no spikes during
         the stimulus, because some traces will have anodal break spikes.
-        :param spikes: the list of spike trains returned from the spike_times method
-        :param window: the window over which to look for spikes (in msec: default is
-        the entire trace).
+        
+        Parameters
+        ----------
+        spikes : list
+            the list of spike trains returned from the spike_times method
+        window : (start, stop)
+            the window over which to look for spikes (in msec: default is
+            the entire trace).
 
         return the spikes in a list
         """
@@ -246,6 +251,7 @@ class IVCurve(Protocol):
         -------
         dict :
             Dict containing:
+            
             * 'slope' and 'intercept' keys giving linear 
               regression for subthreshold traces near rest
             * 'tau' giving the average first-exponential fit time constant
