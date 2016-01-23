@@ -14,7 +14,7 @@ class Pyramidal(Cell):
         if model == 'POK':
             return PyramidalKanold(**kwds)
         else:
-            raise ValueError ('DStellate type %s is unknown', type)
+            raise ValueError ('Pyramidal model %s is unknown', model)
 
 
 class PyramidalKanold(Pyramidal, Cell):
@@ -22,7 +22,8 @@ class PyramidalKanold(Pyramidal, Cell):
     DCN pyramidal cell
     Kanold and Manis, 1999, 2001, 2005
     """
-    def __init__(self, nach='napyr', ttx=False, debug=False, species='rat', type=None):
+    def __init__(self,  morphology=None, decorator=None, nach='napyr', ttx=False,
+                debug=False, species='rat', modelType=None):
         """
         initialize a planar stellate (T-stellate) cell, using the default parameters for guinea pig from
         R&M2003, as a type I cell.
@@ -31,34 +32,53 @@ class PyramidalKanold(Pyramidal, Cell):
             Changing "species" to mouse or cat (scales conductances)
         """
         super(PyramidalKanold, self).__init__()
-        if type == None:
-            type = 'I'
+        if modelType == None:
+            modelType = 'POK'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'Pyramidal'}
+                       'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Pyramidal',
+                       'morphology': morphology, 'decorator': decorator,
+                   }
 
         self.i_test_range=(-0.15, 0.15, 0.01)
 
-        soma = h.Section(name="Pyramidal_Soma_%x" % id(self)) # one compartment of about 29000 um2
+        if morphology is None:
+            """
+            instantiate a basic soma-only ("point") model
+            """
+            soma = h.Section(name="Pyramidal_Soma_%x" % id(self)) # one compartment of about 29000 um2
+            soma.nseg = 1
+        else:
+            """
+            instantiate a structured model with the morphology as specified by 
+            the morphology file
+            """
+            soma = self.morphology_from_hoc(morphology=morphology, somasection='sections[0]')
 
-        soma.nseg = 1
-
-        self.mechanisms = ['napyr', 'kdpyr', 'kif', 'kis', 'ihpyr', 'ihvcn', 'leak', 'kcnq', 'nap']
-        for mech in self.mechanisms:
-            try:
-                soma.insert(mech)
-            except ValueError:
-                print 'WARNING: Mechanism %s not found' % mech
-        soma().kif.kif_ivh = -89.6
-        self.add_section(soma, 'soma')
-        self.species_scaling(silent=False, species=species, type=type)  # set the default type I-c  cell parameters
+        # decorate the morphology with ion channels
+        if decorator is None:   # basic model, only on the soma
+            self.mechanisms = ['napyr', 'kdpyr', 'kif', 'kis', 'ihpyr', 'ihvcn', 'leak', 'kcnq', 'nap']
+            for mech in self.mechanisms:
+                try:
+                    soma.insert(mech)
+                except ValueError:
+                    print 'WARNING: Mechanism %s not found' % mech
+            soma().kif.kif_ivh = -89.6
+            self.add_section(soma, 'soma')
+            self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type I-c  cell parameters
+        else:  # decorate according to a defined set of rules on all cell compartments
+            self.decorated = decorator(self.hr, cellType='Pyramidal', modelType=modelType,
+                                 parMap=None)
+            self.decorated.channelValidate(self.hr, verify=False)
+            self.mechanisms = self.decorated.hf.mechanisms  # copy out all of the mechanisms that were inserted
+#        print 'Mechanisms inserted: ', self.mechanisms
         self.get_mechs(soma)
-#        self.cell_initialize()
+        self.cell_initialize()
         if debug:
             print "<< PYR: POK Pyramidal Cell created >>"
 
-    def species_scaling(self, silent=True, species='rat', type='I'):
+    def species_scaling(self, silent=True, species='rat', modelType='I'):
         soma = self.soma
-        if species == 'rat' and type == 'I':  # canonical K&M2001 model cell
+        if species == 'rat' and modelType in ['I', 'POK']:  # canonical K&M2001 model cell
             self.set_soma_size_from_Cm(12.0)
             soma().napyr.gbar = nstomho(350, self.somaarea)
             soma().nap.gbar = 0.0
@@ -75,7 +95,7 @@ class PyramidalKanold(Pyramidal, Cell):
             soma().ihpyr.eh = -43
             soma().ihvcn.eh = -43
 
-        elif species == 'rat' and type == 'II':
+        elif species == 'rat' and modelType == 'II':
             """
             Modified canonical K&M2001 model cell
             In this model version, the specific membrane capacitance is modified
@@ -108,13 +128,13 @@ class PyramidalKanold(Pyramidal, Cell):
                 self.add_dendrites()
 
         else:
-            raise ValueError('Species %s or species-type %s is not recognized for Pyramidal cells' % (species, type))
+            raise ValueError('Species %s or species-modelType %s is not recognized for Pyramidal cells' % (species, modelType))
 
         self.status['species'] = species
-        self.status['type'] = type
+        self.status['modelType'] = modelType
         self.cell_initialize(showinfo=True)
         if not silent:
-            print 'set cell as: ', species, type
+            print 'set cell as: ', species, modelType
             print ' with Vm rest = %f' % self.vm0
             print self.status
             for m in self.mechanisms:

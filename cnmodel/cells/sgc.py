@@ -20,7 +20,7 @@ class SGC(Cell):
         elif model == 'I':
             return SGC_TypeI(species=species, **kwds)
         else:
-            raise ValueError ('SGC type %s is unknown', type)
+            raise ValueError ('SGC model %s is unknown', model)
         
     def __init__(self, cf=None, sr=None):
         Cell.__init__(self)
@@ -106,41 +106,59 @@ class SGC_TypeI(SGC):
     """
     Spiral ganglion cell model
     """
-    def __init__(self, nach='jsrna', ttx=False, debug=False, species='guineapig', 
-                 type='bm', cf=None, sr=None):
+    def __init__(self, morphology=None, decorator=None, nach='jsrna', ttx=False,
+                 debug=False, species='guineapig', 
+                 modelType='bm', cf=None, sr=None):
         super(SGC_TypeI, self).__init__(cf=cf, sr=sr)
 
-        if type == None:
-            type = 'bm'  # types are: a (apical), bm (basal middle)
+        if modelType == None:
+            modelType = 'bm'  # modelTypes are: a (apical), bm (basal middle)
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'SGC'}
+                       'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'SGC',
+                        'morphology': morphology, 'decorator': decorator}
 
         self.i_test_range=[(-0.3, 0.3, 0.02), (-0.03, 0., 0.005)]
 
-        soma = h.Section(name="SGC_Soma_%x" % id(self)) # one compartment of about 29000 um2
-
-        soma.nseg = 1
-
-        self.mechanisms = [nach, 'klt', 'kht', 'leak']
-        if type == 'a':
-            self.mechanisms.append('ihsgcApical')
-        elif type == 'bm':
-            self.mechanisms.append('ihsgcBasalMiddle')
+        if morphology is None:
+            """
+            instantiate a basic soma-only ("point") model
+            """
+            soma = h.Section(name="SGC_Soma_%x" % id(self)) # one compartment of about 29000 um2
+            soma.nseg = 1
         else:
-            raise ValueError ('Type %s not know for SGC model' % type)
-        for mech in self.mechanisms:
-            soma.insert(mech)
-        soma.ek = self.e_k
-        soma().leak.erev = self.e_leak
+            """
+            instantiate a structured model with the morphology as specified by 
+            the morphology file
+            """
+            soma = self.morphology_from_hoc(morphology=morphology, somasection='sections[0]')
 
-        self.add_section(soma, 'soma')
-        self.species_scaling(silent=True, species=species, type=type)  # set the default type I-c  cell parameters
+        # decorate the morphology with ion channels
+        if decorator is None:   # basic model, only on the soma
+            self.mechanisms = [nach, 'klt', 'kht', 'leak']
+            if modelType == 'a':
+                self.mechanisms.append('ihsgcApical')
+            elif modelType == 'bm':
+                self.mechanisms.append('ihsgcBasalMiddle')
+            else:
+                raise ValueError ('Type %s not know for SGC model' % modelType)
+            for mech in self.mechanisms:
+                soma.insert(mech)
+            soma.ek = self.e_k
+            soma().leak.erev = self.e_leak
+            self.add_section(soma, 'soma')
+            self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
+        else:  # decorate according to a defined set of rules on all cell compartments
+            self.decorated = decorator(self.hr, cellType='Bushy', modelType=modelType,
+                                 parMap=None)
+            self.decorated.channelValidate(self.hr, verify=False)
+            self.mechanisms = self.decorated.hf.mechanisms  # copy out all of the mechanisms that were inserted
+#        print 'Mechanisms inserted: ', self.mechanisms
         self.get_mechs(soma)
-#        self.cell_initialize()
+        self.cell_initialize()
         if debug:
             print "<< SGC: Spiral Ganglion Cell created >>"
 
-    def species_scaling(self, silent=True, species='guineapig', type='a'):
+    def species_scaling(self, silent=True, species='guineapig', modelType='a'):
         soma = self.soma
         if species == 'mouse':
             self.set_soma_size_from_Cm(12.0)
@@ -148,38 +166,38 @@ class SGC_TypeI(SGC):
             soma().kht.gbar = nstomho(58.0, self.somaarea)
             soma().klt.gbar = nstomho(80.0, self.somaarea)
                 # nstomho(200.0, somaarea) * scalefactor
-            if type == 'a':
+            if modelType == 'a':
                 soma().ihsgcApical.gbar = nstomho(3.0, self.somaarea)
                 soma().ihsgcApical.eh = -41
-            elif type == 'bm':
+            elif modelType == 'bm':
                 soma().ihsgcBasalMiddle.gbar = nstomho(3.0, self.somaarea)
                 soma().ihsgcBasalMiddle.eh = -41
             else:
-                raise ValueError('Ihsgc type %s not recognized for species %s' % (species, type))
+                raise ValueError('Ihsgc modelType %s not recognized for species %s' % (species, modelType))
             soma().leak.gbar = nstomho(2.0, self.somaarea)
 
         elif species == 'guineapig':
-            # guinea pig data from Rothman and Manis, 2003, type II
+            # guinea pig data from Rothman and Manis, 2003, modelType II
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma, gbar=1000.)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
             soma().klt.gbar = nstomho(200.0, self.somaarea)
                 # nstomho(200.0, somaarea) * scalefactor
-            if type == 'a':
+            if modelType == 'a':
                 soma().ihsgcApical.gbar = nstomho(3.0, self.somaarea)
                 soma().ihsgcApical.eh = -41
-            elif type == 'bm':
+            elif modelType == 'bm':
                 soma().ihsgcBasalMiddle.gbar = nstomho(3.0, self.somaarea)
                 soma().ihsgcBasalMiddle.eh = -41
             else:
-                raise ValueError('Ihsgc type %s not recognized for species %s' % (species, type))
+                raise ValueError('Ihsgc modelType %s not recognized for species %s' % (species, modelType))
             soma().leak.gbar = nstomho(2.0, self.somaarea)
 
         else:
-            raise ValueError('Species %s or species-type %s is not recognized for SGC cells' % (species, type))
+            raise ValueError('Species %s or species-modelType %s is not recognized for SGC cells' % (species, modelType))
 
         self.status['species'] = species
-        self.status['type'] = type
+        self.status['modelType'] = modelType
         self.cell_initialize(showinfo=False)
         if not silent:
             print 'set cell as: ', species

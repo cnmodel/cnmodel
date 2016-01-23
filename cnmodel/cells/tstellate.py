@@ -56,7 +56,8 @@ class TStellateRothman(TStellate):
     VCN T-stellate base model.
     Rothman and Manis, 2003abc (Type I-c, Type I-t)
     """
-    def __init__(self, nach='na', ttx=False, debug=False, species='guineapig', type=None):
+    def __init__(self, morphology=None, decorator=None, nach='na', ttx=False,
+                debug=False, species='guineapig', modelType=None):
         """
         initialize a planar stellate (T-stellate) cell, using the default parameters for guinea pig from
         R&M2003, as a type I cell.
@@ -65,37 +66,56 @@ class TStellateRothman(TStellate):
             Changing "species" to mouse or cat (scales conductances)
         """
         super(TStellateRothman, self).__init__()
-        if type == None:
-            type = 'I-c'
+        if modelType == None:
+            modelType = 'I-c'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'TStellate'}
+                       'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'TStellate',
+                       'morphology': morphology, 'decorator': decorator}
 
         self.i_test_range=(-0.15, 0.15, 0.01)
+        
+        if morphology is None:
+            """
+            instantiate a basic soma-only ("point") model
+            """
+            soma = h.Section(name="TStellate_Soma_%x" % id(self))  # one compartment of about 29000 um2
+            soma.nseg = 1
+        else:
+            """
+            instantiate a structured model with the morphology as specified by 
+            the morphology file
+            """
+            soma = self.morphology_from_hoc(morphology=morphology, somasection='sections[0]')
 
-        soma = h.Section(name="TStellate_Soma_%x" % id(self)) # one compartment of about 29000 um2
-
-        soma.nseg = 1
-
-        self.mechanisms = ['kht', 'ka', 'ihvcn', 'leak', nach]
-        for mech in self.mechanisms:
-            soma.insert(mech)
-        soma.ek = self.e_k
-        soma.ena = self.e_na
-        soma().ihvcn.eh = self.e_h
-        soma().leak.erev = self.e_leak
-        self.add_section(soma, 'soma')
-        self.species_scaling(silent=True, species=species, type=type)  # set the default type I-c  cell parameters
+        # decorate the morphology with ion channels
+        if decorator is None:   # basic model, only on the soma
+            self.mechanisms = ['kht', 'ka', 'ihvcn', 'leak', nach]
+            for mech in self.mechanisms:
+                soma.insert(mech)
+            soma.ek = self.e_k
+            soma.ena = self.e_na
+            soma().ihvcn.eh = self.e_h
+            soma().leak.erev = self.e_leak
+            self.add_section(soma, 'soma')
+            self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
+        else:  # decorate according to a defined set of rules on all cell compartments
+            self.decorated = decorator(self.hr, cellType='TStellate', modelType=modelType,
+                                 parMap=None)
+            self.decorated.channelValidate(self.hr, verify=False)
+            self.mechanisms = self.decorated.hf.mechanisms  # copy out all of the mechanisms that were inserted
+#        print 'Mechanisms inserted: ', self.mechanisms
+        
         self.get_mechs(soma)
         self.cell_initialize()
         if debug:
                 print "<< T-stellate: JSR Stellate Type 1 cell model created >>"
 
-    def species_scaling(self, species='guineapig', type='I-c', silent=True):
+    def species_scaling(self, species='guineapig', modelType='I-c', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
         """
         soma = self.soma
-        if species == 'mouse' and type == 'I-c':
+        if species == 'mouse' and modelType == 'I-c':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
             #print 'Mouse Tstellate cell'
             self.set_soma_size_from_Cm(25.0)
@@ -107,7 +127,7 @@ class TStellateRothman(TStellate):
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             soma().leak.erev = -65.0
             self.axonsf = 0.5
-        elif species == 'guineapig' and type == 'I-c':  # values from R&M 2003, Type I
+        elif species == 'guineapig' and modelType == 'I-c':  # values from R&M 2003, Type I
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
@@ -116,7 +136,7 @@ class TStellateRothman(TStellate):
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             soma().leak.erev = -65.0
             self.axonsf = 0.5
-        elif species == 'guineapig' and type =='I-t':
+        elif species == 'guineapig' and modelType =='I-t':
             # guinea pig data from Rothman and Manis, 2003, type It
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma)
@@ -126,7 +146,7 @@ class TStellateRothman(TStellate):
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             soma().leak.erev = -65.0
             self.axonsf = 0.5
-        elif species == 'cat' and type == 'I-c':  # a cat is a big guinea pig Type I
+        elif species == 'cat' and modelType == 'I-c':  # a cat is a big guinea pig Type I
             self.set_soma_size_from_Cm(30.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
@@ -139,7 +159,7 @@ class TStellateRothman(TStellate):
             raise ValueError('Species %s or species-type %s is not recognized for T-stellate cells' % (species, type))
 
         self.status['species'] = species
-        self.status['type'] = type
+        self.status['modelType'] = modelType
         # self.cell_initialize(showinfo=False)
         # if not silent:
         #     print 'set cell as: ', species

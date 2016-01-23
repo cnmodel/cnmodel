@@ -1,14 +1,11 @@
 from neuron import h
-import neuron as nrn
-import numpy as np
-import scipy.optimize
 
 from .cell import Cell
 from .. import synapses
 from ..util import nstomho
 from .. import data
 
-__all__ = ['Bushy', 'BushyRothman', 'BushyHoc']
+__all__ = ['Bushy', 'BushyRothman']
 
 
 class Bushy(Cell):
@@ -19,10 +16,8 @@ class Bushy(Cell):
     def create(cls, model='RM03', **kwds):
         if model == 'RM03':
             return BushyRothman(**kwds)
-        if model in ['hoc']:
-            return BushyHoc(**kwds)
         else:
-            raise ValueError ('Bushy type %s is unknown', type)
+            raise ValueError ('Bushy model %s is unknown', model)
 
     def make_psd(self, terminal, **kwds):
         from .. import cells
@@ -63,56 +58,6 @@ class Bushy(Cell):
                             (pre_cell.__class__.__name__, 
                              self.__class__.__name__))
 
-class BushyHoc(Bushy):
-    """
-    VCN bushy cell model - with dendritic structure from a hoc file
-    The model dendritic structure will have been read in HocReader
-    The model structures should be passed to the first parameter, hoc
-    Ion channels are likely alread decorated, so this routine only inserts the
-    model sections into the scaffolding of the cell class, so we can use that class.
-    
-    Based on Rothman and Manis, 2003abc (Type II, Type II-I)
-    """
-
-    def __init__(self, hoc=None, nach='na', ttx=False, debug=False, species='guineapig', modeltype=None, decorator=None):
-        """
-        initialize the bushy cell, using the default parameters for guinea pig from
-        R&M2003, as a type II cell.
-        Modifications to the cell can be made by calling methods below.
-        """
-        super(BushyHoc, self).__init__()
-        print "<< bushy: Creating Bushy model from HOC file >>"
-        if modeltype == None:
-            modeltype = 'II'
-        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'Bushy'}
-        self.i_test_range=(-0.5, 0.5, 0.05)
-        self.spike_threshold = -40
-        self.vrange = [-70., -57.]  # set a default vrange for searching for rmp
-
-        self.mechanisms = ['klt', 'kht', 'ihvcn', 'leak', nach]
-        nach = self.status['na']
-        if decorator is not None:
-            self.cd = decorator(hoc, celltype='Bushy', modeltype=modeltype,
-                             parMap=None)
-        hf = self.cd.hf  # get the hoc information
-        self.cd.channelValidate(hf, verify=False)
-        hf._read_section_info()  # this should populate the section channel densities as well from an neurovis read file
-            # these were not instantiated when the file was read, but when the decorator was run.
-        for s in hf.sec_groups.keys():
-            for sec in hf.sec_groups[s]:
-                section = hf.get_section(sec)
-                mechs = hf.get_mechanisms(sec)
-                self.add_section(section, s) # add the section to the cell.
-               # print '\nmechanisms for section: %s', section
-               # self.print_mechs(section)
-        soma = hf.get_section('sections[0]')
-        self.set_soma_size_from_Section(soma)  # this is used for reporting and setting g values...
-        self.cell_initialize(vrange=self.vrange)
-#        if debug:
-        print "<< bushy: Bushy model created from HOC file >>"
-        #print 'Cell created: ', self.status
-
 
 class BushyRothman(Bushy):
     """
@@ -120,49 +65,117 @@ class BushyRothman(Bushy):
     Rothman and Manis, 2003abc (Type II, Type II-I)
     """
 
-    def __init__(self, nach='na', ttx=False, debug=False, species='guineapig', type=None):
+    def __init__(self, morphology=None, decorator=None, nach='na',
+            ttx=False, species='guineapig', modelType=None, debug=False):
         """
-        initialize the bushy cell, using the default parameters for guinea pig from
+        Initialize the bushy cell, using the default parameters for guinea pig from
         R&M2003, as a type II cell.
-        Modifications to the cell can be made by calling methods below.
+        Additional modifications to the cell can be made by calling methods below.
+        
+        Parameters
+        ----------
+        morphology : string (default: None)
+            a file name to read the cell morphology from. If a valid file is found, a cell is constructed
+            as a cable model from the hoc file.
+            If None (default), the only a point model is made, exactly according to RM03.
+            
+        decorator : Python function (default: None)
+            decorator is a function that "decorates" the morphology with ion channels according
+            to a set of rules.
+            If None, a default set of channels aer inserted into the first soma section, and the
+            rest of the structure is "bare".
+            
+        nach : string (default: 'na')
+            nach selects the type of sodium channel that will be used in the model. A channel mechanims
+            by that name must exist. 
+        
+        ttx : Boolean (default: False)
+            If ttx is True, then the sodium channel conductance is set to 0 everywhere in the cell.
+            Currently, this is not implemented.
+        
+        species: string (default 'guineapig')
+            species defines the channel density that will be inserted for different models. Note that
+            if a decorator function is specified, this argument is ignored.
+            
+        modelType: string (default: None)
+            modelType specifies the type of the model that will be used (e.g., "II", "II-I", etc).
+            modelType is passed to the decorator, or to species_scaling to adjust point models.
+            
+        debug: boolean (default: False)
+            debug is a boolean flag. When set, there will be multiple printouts of progress and parameters.
+            
+        Returns
+        -------
+            Nothing
         """
         super(BushyRothman, self).__init__()
         print "<< Bushy model: Creating point cell using JSR parameters >>"
 
-        if type == None:
-            type = 'II'
+        if modelType == None:
+            modelType = 'II'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'Bushy'}
+                       'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Bushy',
+                       'morphology': morphology, 'decorator': decorator}
         self.i_test_range=(-0.5, 0.5, 0.05)
         self.spike_threshold = -40
         self.vrange = [-70., -57.]  # set a default vrange for searching for rmp
+        
+        if morphology is None:
+            """
+            instantiate a basic soma-only ("point") model
+            """
+            soma = h.Section(name="Bushy_Soma_%x" % id(self))  # one compartment of about 29000 um2
+            soma.nseg = 1
+        else:
+            """
+            instantiate a structured model with the morphology as specified by 
+            the morphology file
+            """
+            soma = self.morphology_from_hoc(morphology=morphology, somasection='sections[0]')
 
-        soma = h.Section(name="Bushy_Soma_%x" % id(self))  # one compartment of about 29000 um2
-        soma.nseg = 1
-
-        self.mechanisms = ['klt', 'kht', 'ihvcn', 'leak', nach]
-        for mech in self.mechanisms:
-            soma.insert(mech)
-        soma.ena = self.e_na
-        soma.ek = self.e_k
-        soma().ihvcn.eh = self.e_h
-        soma().leak.erev = self.e_leak
-        self.add_section(soma, 'soma')
-        self.species_scaling(silent=True, species=species, type=type)  # set the default type II cell parameters
+        # decorate the morphology with ion channels
+        if decorator is None:   # basic model, only on the soma
+            self.mechanisms = ['klt', 'kht', 'ihvcn', 'leak', nach]
+            for mech in self.mechanisms:
+                soma.insert(mech)
+            soma.ena = self.e_na
+            soma.ek = self.e_k
+            soma().ihvcn.eh = self.e_h
+            soma().leak.erev = self.e_leak
+            self.add_section(soma, 'soma')
+            self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
+        else:  # decorate according to a defined set of rules on all cell compartments
+            self.decorated = decorator(self.hr, cellType='Bushy', modelType=modelType,
+                                 parMap=None)
+            self.decorated.channelValidate(self.hr, verify=False)
+            self.mechanisms = self.decorated.hf.mechanisms  # copy out all of the mechanisms that were inserted
+#        print 'Mechanisms inserted: ', self.mechanisms
         self.get_mechs(soma)
         self.cell_initialize(vrange=self.vrange)
         if debug:
-            pass
-        print "<< Bushy model created, point cell using JSR parameters >>"
-        #print 'Cell created: ', self.status
+            print "<< Bushy model created, point cell using JSR parameters >>"
 
-    def species_scaling(self, species='guineapig', type='II', silent=True):
+    def species_scaling(self, species='guineapig', modelType='II', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
+        Used only for point models.
+        
+        Parameters
+        ----------
+        species : string (default: 'guineapig')
+            name of the species to use for scaling the conductances in the base point model
+            Must be one of mouse, cat, guineapig
+        
+        modelType: string (default: 'II')
+            definition of model type from RM03 models, type II or type II-I
+        
+        silent : boolean (default: True)
+            run silently (True) or verbosely (False)
         """
         #print '\nSpecies scaling: %s   %s' % (species, type)
+        knownspecies = ['mouse', 'guineapig', 'cat']
         soma = self.soma
-        if species == 'mouse' and type == 'II':
+        if species == 'mouse' and modelType == 'II':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
            # print 'Mouse bushy cell'
             self.set_soma_size_from_Cm(26.0)
@@ -173,7 +186,7 @@ class BushyRothman(Bushy):
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             self.vrange = [-70., -55.]  # need to specify non-default range for convergence
             self.axonsf = 0.57
-        elif species == 'guineapig' and type =='II':
+        elif species == 'guineapig' and modelType =='II':
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
@@ -181,7 +194,7 @@ class BushyRothman(Bushy):
             soma().ihvcn.gbar = nstomho(20.0, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             self.axonsf = 0.57
-        elif species == 'guineapig' and type =='II-I':
+        elif species == 'guineapig' and modelType =='II-I':
             # guinea pig data from Rothman and Manis, 2003, type II=I
             self.i_test_range=(-0.4, 0.4, 0.02)
             self.set_soma_size_from_Cm(12.0)
@@ -191,7 +204,7 @@ class BushyRothman(Bushy):
             soma().ihvcn.gbar = nstomho(3.5, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             self.axonsf = 0.57
-        elif species == 'cat' and type == 'II':  # a cat is a big guinea pig
+        elif species == 'cat' and modelType == 'II':  # a cat is a big guinea pig
             self.set_soma_size_from_Cm(35.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
@@ -200,13 +213,17 @@ class BushyRothman(Bushy):
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             self.axonsf = 1.0
         else:
-            raise ValueError('Species "%s" or species-type "%s" is not recognized for Bushy cells' %  (species, type))
+            errmsg = 'Species "%s" or species-type "%s" is not recognized for Bushy cells' %  (species, modelType)
+            errmsg += 'Valid species are: \n'
+            for s in knownspecies:
+                errmsg += '   %s\n' % s
+            errmsg += '-'*40
+            raise ValueError(errmsg)
         self.status['species'] = species
-        self.status['type'] = type
-#        self.cell_initialize(showinfo=False)
-#        if not silent:
-#            print 'set cell as: ', species
-#            print ' with Vm rest = %6.3f' % self.vm0
+        self.status['modelType'] = modelType
+        if not silent:
+           print ' set cell as: ', species
+           print ' with Vm rest = %6.3f' % self.vm0
 
 
        # print 'Rescaled, status: ', self.status
@@ -214,9 +231,21 @@ class BushyRothman(Bushy):
     def adjust_na_chans(self, soma, gbar=1000., debug=False):
         """
         adjust the sodium channel conductance
-        :param soma: a soma object whose sodium channel complement will have it's 
-        conductances adjusted depending on the channel type
-        :return nothing:
+        Parameters
+        ----------
+        soma : neuron section object
+            a soma object whose sodium channel complement will have it's 
+            conductances adjusted depending on the channel type
+        
+        gbar : float (default: 1000.)
+            the maximal conductance for the sodium channel
+        
+        debug : boolean (false):
+            verbose printing
+            
+        Returns
+        -------
+            nothing
         """
         if self.status['ttx']:
             gnabar = 0.0

@@ -39,42 +39,63 @@ class OctopusRothman(Octopus, Cell):
     Rothman and Manis, 2003abc (Type II, with high gklt and hcno - octopus cell h current).
     """
 
-    def __init__(self, nach='jsrna', ttx=False, debug=False, species='guineapig', type=None):
+    def __init__(self, morphology=None, decorator=None, nach='jsrna', ttx=False,
+                debug=False, species='guineapig', modelType=None):
         """
         initialize the octopus cell, using the default parameters for guinea pig from
         R&M2003, as a type II cell with modified conductances.
         Modifications to the cell can be made by calling methods below.
         """
         super(OctopusRothman, self).__init__()
-        if type == None:
-            type = 'II-o'
+        if modelType == None:
+            modelType = 'II-o'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'Octopus'}
+                       'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'Octopus',
+                        'morphology': morphology, 'decorator': decorator}
         self.i_test_range=(-4.0, 4.0, 0.2)
         self.spike_threshold = -50
-        # overrides:
-        self.e_leak = -62
-        self.e_h = -38
-        self.R_a = 100
-        soma = h.Section(name="octopus_Soma_%x" % id(self))  # one compartment of about 29000 um2
-        soma.nseg = 1
-        self.mechanisms = ['klt', 'kht', 'hcno', 'leak', nach]
-        for mech in self.mechanisms:
-            soma.insert(mech)
-        soma.ek = self.e_k
-        soma.ena = self.e_na
-        soma().hcno.eh = self.e_h
-        soma().leak.erev = self.e_leak
-        soma.Ra = self.R_a
+        if morphology is None:
+            """
+            instantiate a basic soma-only ("point") model
+            """
+            soma = h.Section(name="octopus_Soma_%x" % id(self))  # one compartment of about 29000 um2
+            soma.nseg = 1
+        else:
+            """
+            instantiate a structured model with the morphology as specified by 
+            the morphology file
+            """
+            soma = self.morphology_from_hoc(morphology=morphology, somasection='sections[0]')
 
-        self.add_section(soma, 'soma')
-        self.species_scaling(silent=True, species=species, type=type)  # set the default type II cell parameters
+        # decorate the morphology with ion channels
+        if decorator is None:   # basic model, only on the soma
+            self.e_leak = -62
+            self.e_h = -38
+            self.R_a = 100
+            soma = h.Section(name="Octopus_Soma_%x" % id(self))  # one compartment of about 29000 um2
+            soma.nseg = 1
+            self.mechanisms = ['klt', 'kht', 'hcno', 'leak', nach]
+            for mech in self.mechanisms:
+                soma.insert(mech)
+            soma.ek = self.e_k
+            soma.ena = self.e_na
+            soma().hcno.eh = self.e_h
+            soma().leak.erev = self.e_leak
+            soma.Ra = self.R_a
+            self.add_section(soma, 'soma')
+            self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
+        else:  # decorate according to a defined set of rules on all cell compartments
+            self.decorated = decorator(self.hr, cellType='Octopus', modelType=modelType,
+                                 parMap=None)
+            self.decorated.channelValidate(self.hr, verify=False)
+            self.mechanisms = self.decorated.hf.mechanisms  # copy out all of the mechanisms that were inserted
+#        print 'Mechanisms inserted: ', self.mechanisms
         self.get_mechs(soma)
         if debug:
             print "<< octopus: octopus cell model created >>"
         #print 'Cell created: ', self.status
 
-    def species_scaling(self, species='guineapig', type='II-o', silent=True):
+    def species_scaling(self, species='guineapig', modelType='II-o', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
         """
@@ -91,7 +112,7 @@ class OctopusRothman(Octopus, Cell):
         #     soma().leak.gbar = nstomho(2.0, self.somaarea)
         #     self.vm0 = self.find_i0()
         #     self.axonsf = 0.57
-        if species == 'guineapig' and type =='II-o':
+        if species == 'guineapig' and modelType =='II-o':
             self.set_soma_size_from_Cm(25.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = 0.0061  # nstomho(150.0, self.somaarea)  # 6.1 mmho/cm2
@@ -120,7 +141,7 @@ class OctopusRothman(Octopus, Cell):
         else:
             raise ValueError('Species "%s" or species-type "%s" is not recognized for octopus cells' %  (species, type))
         self.status['species'] = species
-        self.status['type'] = type
+        self.status['modelType'] = modelType
         self.cell_initialize(showinfo=False)
         if not silent:
             print 'set cell as: ', species

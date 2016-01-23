@@ -103,46 +103,46 @@ if args.configuration in cellinfo['configs']:
 #
 
 if args.celltype == 'sgc':
-    cell = cells.SGC.create(debug=debugFlag, species=args.species, nach=args.nav, ttx=args.ttx, type=args.type)
+    cell = cells.SGC.create(debug=debugFlag, species=args.species, nach=args.nav, ttx=args.ttx, modelType=args.type)
 #
 # T-stellate tests
 #
 elif args.celltype == 'stellate':
-    cell = cells.TStellate.create(debug=debugFlag, species=args.species, nach=args.nav, type=args.type, ttx=args.ttx)
+    cell = cells.TStellate.create(debug=debugFlag, species=args.species, nach=args.nav, modelType=args.type, ttx=args.ttx)
 #
 # Bushy tests
 #
 elif args.celltype == 'bushy' and args.configuration == 'waxon':
-    cell = cells.Bushy.create(debug=debugFlag, species=args.species, nach=args.nav, type=args.type, ttx=args.ttx)
+    cell = cells.Bushy.create(debug=debugFlag, species=args.species, nach=args.nav, modelType=args.type, ttx=args.ttx)
     cell.add_axon()
 
 elif args.celltype == 'bushy' and args.configuration == 'std':
-    cell = cells.Bushy.create(debug=debugFlag, species=args.species, nach=args.nav, type=args.type, ttx=args.ttx)
+    cell = cells.Bushy.create(debug=debugFlag, species=args.species, nach=args.nav, modelType=args.type, ttx=args.ttx)
 #
 # Ocotpus tests
 #
 elif args.celltype == 'octopus' and args.configuration == 'std':
-    cell = cells.Octopus.create(debug=debugFlag, species=args.species, nach='jsrna', type=args.type, ttx=args.ttx)
+    cell = cells.Octopus.create(debug=debugFlag, species=args.species, nach='jsrna', modelType=args.type, ttx=args.ttx)
 #
 # D-stellate tests
 #
 elif args.celltype == 'dstellate':
-    cell = cells.DStellate.create(debug=debugFlag, ttx=args.ttx, type=args.type)
+    cell = cells.DStellate.create(debug=debugFlag, ttx=args.ttx, modelType=args.type)
 
 elif args.celltype == 'dstellateeager':
-    cell = cells.DStellateEager.create(debug=debugFlag, ttx=args.ttx, type=args.type)
+    cell = cells.DStellateEager.create(debug=debugFlag, ttx=args.ttx, modelType=args.type)
 
 #
 # DCN pyramidal cell tests
 #
 elif args.celltype == 'pyramidal':
-    cell = cells.Pyramidal.create(debug=debugFlag, ttx=args.ttx, type=args.type)
+    cell = cells.Pyramidal.create(debug=debugFlag, ttx=args.ttx, modelType=args.type)
 
 #
 # DCN cartwheel cell tests
 #
 elif args.celltype == 'cartwheel':
-    cell = cells.Cartwheel.create(debug=debugFlag, ttx=args.ttx, type=args.type)
+    cell = cells.Cartwheel.create(debug=debugFlag, ttx=args.ttx, modelType=args.type)
 
 else:
     print ("Cell Type %s and configurations nav=%s or config=%s are not available" % (args.celltype, args.nav, args.configuration))

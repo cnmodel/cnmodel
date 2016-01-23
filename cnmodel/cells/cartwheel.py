@@ -9,49 +9,75 @@ __all__ = ['Cartwheel', 'CartwheelDefault']
 class Cartwheel(Cell):
 
     @classmethod
-    def create(cls, model='RM03', **kwds):
-        if model == 'RM03':
+    def create(cls, model='CW', **kwds):
+        if model == 'CW':
             return CartwheelDefault(**kwds)
         else:
-            raise ValueError ('DStellate type %s is unknown', type)
+            raise ValueError ('Carthweel model is unknown', model)
 
 class CartwheelDefault(Cartwheel, Cell):
     """
     DCN cartwheel cell model.
     
     """
-    def __init__(self, debug=False, ttx=False, nach='naRsg', species='rat', type=None):
+    def __init__(self, morphology=None, decorator=None, debug=False, ttx=False,
+                nach='naRsg', species='rat', modelType=None):
         super(CartwheelDefault, self).__init__()
-        if type == None:
-            type = 'I'
+        if modelType == None:
+            modelType = 'I'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'Cartwheel'}
+                       'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Cartwheel',
+                       'morphology': morphology, 'decorator': decorator,}
 
         self.i_test_range=(-0.2, 0.2, 0.02)
+        self.spike_threshold = 0
+        self.vrange = [-75., -52.]  # set a default vrange for searching for rmp
 
-        soma = h.Section(name="Cartwheel_Soma_%x" % id(self)) # one compartment of about 29000 um2
-        cm = 1
-        v_potassium = -80       # potassium reversal potential
-        v_sodium = 50           # sodium reversal potential
+        if morphology is None:
+            """
+            instantiate a basic soma-only ("point") model
+            """
+            soma = h.Section(name="Cartwheel_Soma_%x" % id(self)) # one compartment of about 29000 um2
+            cm = 1
+            soma.nseg = 1
+        else:
+            """
+            instantiate a structured model with the morphology as specified by 
+            the morphology file
+            """
+            soma = self.morphology_from_hoc(morphology=morphology, somasection='sections[0]')
 
-        self.mechanisms = ['naRsg', 'bkpkj', 'hpkj', 'kpkj', 'kpkj2',
-                           'kpkjslow', 'kpksk', 'lkpkj', 'cap']
-        for mech in self.mechanisms:
-            soma.insert(mech)
-        soma.insert('cadiff')
+        # decorate the morphology with ion channels
+        if decorator is None:   # basic model, only on the soma
+            v_potassium = -80       # potassium reversal potential
+            v_sodium = 50           # sodium reversal potential
 
-       # soma().kpksk.gbar = 0.002
-       # soma().lkpkj.gbar = 3e-4
-        self.add_section(soma, 'soma')
-        self.species_scaling(silent=True, species=species, type=type)  # set the default type I-c  cell parameters
+            self.mechanisms = ['naRsg', 'bkpkj', 'hpkj', 'kpkj', 'kpkj2',
+                               'kpkjslow', 'kpksk', 'lkpkj', 'cap']
+            for mech in self.mechanisms:
+                soma.insert(mech)
+            soma.insert('cadiff')
+           # soma().kpksk.gbar = 0.002
+           # soma().lkpkj.gbar = 3e-4
+
+            self.add_section(soma, 'soma')
+            self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
+        else:  # decorate according to a defined set of rules on all cell compartments
+            self.decorated = decorator(self.hr, cellType='Cartwheel', modelType=modelType,
+                                 parMap=None)
+            self.decorated.channelValidate(self.hr, verify=False)
+            self.mechanisms = self.decorated.hf.mechanisms  # copy out all of the mechanisms that were inserted
+#        print 'Mechanisms inserted: ', self.mechanisms
         self.get_mechs(soma)
+        self.cell_initialize(vrange=self.vrange)
+        
         if debug:
             print "<< cartwheel: Raman Purkinje cell model (modified) created >>"
 
-    def species_scaling(self, silent=True, species='rat', type='I'):
+    def species_scaling(self, silent=True, species='rat', modelType='I'):
         soma = self.soma
         dia = 18.
-        self.set_soma_size_from_Diam(dia)# if species == 'rat' and type == 'I':
+        self.set_soma_size_from_Diam(dia)# if species == 'rat' and modelType == 'I':
         #self.print_mechs(self.soma)
         #     self.set_soma_size_from_Cm(12.0)
         self.soma().bkpkj.gbar = nstomho(2., self.somaarea) # 2030
@@ -69,10 +95,10 @@ class CartwheelDefault(Cartwheel, Cell):
         self.soma().hpkj.eh = -43
         self.soma().eca = 50
         # else:
-        #     raise ValueError('Species %s or species-type %s is not recognized for T-stellate cells' % (species, type))
+        #     raise ValueError('Species %s or species-modelType %s is not recognized for T-stellate cells' % (species, modelType))
 
         self.status['species'] = species
-        self.status['type'] = type
+        self.status['modelType'] = modelType
         self.cell_initialize(showinfo=False)
         if not silent:
             print 'set cell as: ', species

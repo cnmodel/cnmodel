@@ -77,7 +77,8 @@ class DStellateRothman(DStellate):
     VCN D-stellate model:
     as a type I-II from Rothman and Manis, 2003
     """
-    def __init__(self, nach='na', ttx=False, debug=False, species='guineapig', type=None):
+    def __init__(self, morphology=None, decorator=None, nach='na', ttx=False,
+                debug=False, species='guineapig', modelType=None):
         """
         initialize a radial stellate (D-stellate) cell, using the default parameters for guinea pig from
         R&M2003, as a type I-II cell.
@@ -87,45 +88,55 @@ class DStellateRothman(DStellate):
             Shifting model type
         """
         super(DStellateRothman, self).__init__()
-        if type == None:  # allow us to pass None to get the default
-            type = 'I-II'
+        if modelType == None:  # allow us to pass None to get the default
+            modelType = 'I-II'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'DStellate'}
+                       'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'DStellate',
+                       'morphology': morphology, 'decorator': decorator}
         self.i_test_range=(-0.25, 0.25, 0.025)  # set range for ic command test
 
-        soma = h.Section(name="DStellate_Soma_%x" % id(self)) # one compartment
-
-        soma.nseg = 1
-
-        if nach in ['nacn', 'na']:
-            soma.insert('na')
-        elif nach == 'nav11':
-            soma.insert('nav11')
-        elif nach == 'jsrna':
-            soma.insert('jsrna')
+        if morphology is None:
+            """
+            instantiate a basic soma-only ("point") model
+            """
+            soma = h.Section(name="DStellate_Soma_%x" % id(self))  # one compartment of about 29000 um2
+            soma.nseg = 1
         else:
-            raise ValueError('Sodium channel %s in type 1 cell not known' % nach)
+            """
+            instantiate a structured model with the morphology as specified by 
+            the morphology file
+            """
+            soma = self.morphology_from_hoc(morphology=morphology, somasection='sections[0]')
 
-        soma.insert("kht")
-        soma.insert('klt')
-        soma.insert('ihvcn')
-        soma.insert('leak')
-        soma.ek = self.e_k
-        soma().leak.erev = self.e_leak
-        self.add_section(soma, 'soma')
-        self.set_soma_size_from_Cm(12.0)
-        self.mechanisms = ['kht', 'klt', 'ihvcn', 'leak', nach]
+        # decorate the morphology with ion channels
+        if decorator is None:   # basic model, only on the soma
+            self.mechanisms = ['klt', 'kht', 'ihvcn', 'leak', nach]
+            for mech in self.mechanisms:
+                soma.insert(mech)
+            soma.ena = self.e_na
+            soma.ek = self.e_k
+            soma().ihvcn.eh = self.e_h
+            soma().leak.erev = self.e_leak
+            self.add_section(soma, 'soma')
+            self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
+        else:  # decorate according to a defined set of rules on all cell compartments
+            self.decorated = decorator(self.hr, cellType='DStellate', modelType=modelType,
+                                 parMap=None)
+            self.decorated.channelValidate(self.hr, verify=False)
+            self.mechanisms = self.decorated.hf.mechanisms  # copy out all of the mechanisms that were inserted
+    #        print 'Mechanisms inserted: ', self.mechanisms
         self.get_mechs(soma)
-        self.species_scaling(species=species, type=type)  # set the default type II cell parameters
-        if debug:
-                print "<< D-stellate: JSR Stellate Type I-II cell model created >>"
+        self.cell_initialize()
 
-    def species_scaling(self, species='guineapig', type='I-II', silent=True):
+        if debug:
+            print "<< D-stellate: JSR Stellate Type I-II cell model created >>"
+
+    def species_scaling(self, species='guineapig', modelType='I-II', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
         """
         soma = self.soma
-        if species == 'mouse' and type == 'I-II':
+        if species == 'mouse' and modelType == 'I-II':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
             self.set_soma_size_from_Cm(25.0)
             self.adjust_na_chans(soma, gbar=800.)
@@ -135,7 +146,7 @@ class DStellateRothman(DStellate):
             soma().ihvcn.eh = -43 # Rodrigues and Oertel, 2006
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             self.axonsf = 0.5
-        elif species == 'guineapig' and type == 'I-II':  # values from R&M 2003, Type II-I
+        elif species == 'guineapig' and modelType == 'I-II':  # values from R&M 2003, Type II-I
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma, gbar=1000.)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
@@ -143,7 +154,7 @@ class DStellateRothman(DStellate):
             soma().ihvcn.gbar = nstomho(2.0, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             self.axonsf = 0.5
-        elif species == 'cat' and type == 'I=II':  # a cat is a big guinea pig Type I
+        elif species == 'cat' and modelType == 'I=II':  # a cat is a big guinea pig Type I
             self.set_soma_size_from_Cm(35.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
@@ -152,9 +163,9 @@ class DStellateRothman(DStellate):
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             self.axonsf = 1.0
         else:
-            raise ValueError('Species %s or species-type %s is not recognized for D-Stellate cells' %  (species, type))
+            raise ValueError('Species %s or species-modelType %s is not recognized for D-Stellate cells' %  (species, modelType))
         self.status['species'] = species
-        self.status['type'] = type
+        self.status['modelType'] = modelType
         self.cell_initialize(showinfo=False)
         if not silent:
             print 'set cell as: ', species

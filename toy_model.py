@@ -78,7 +78,7 @@ class Toy(Protocol):
         return '%.3f' % self.celltypes[name][2][n]
 
     def getname(self, cell, ninj):
-        name = cell.status['name'] + ', ' + cell.status['type']
+        name = cell.status['name'] + ', ' + cell.status['modelType']
         iname = self.current_name(name, ninj)
         nname = name + iname
         return name, nname
@@ -112,11 +112,11 @@ class Toy(Protocol):
             g = sre.match(c)
             cellname = g.group('cell')
             print cellname
-            type = g.group('type')
+            modelType = g.group('type')
             if g.group('type') == '':
                 netcells.append(self.celltypes[c][0].create())
             else:
-                netcells.append(self.celltypes[c][0].create(type=type))
+                netcells.append(self.celltypes[c][0].create(modelType=modelType))
         istim = {}
 
         #
@@ -154,7 +154,7 @@ class Toy(Protocol):
        # Build injection arrays for each stimulus level
        #
         for cell in netcells:
-            name = cell.status['name'] + ', ' + cell.status['type']
+            name = cell.status['name'] + ', ' + cell.status['modelType']
             print 'building for: ', name
             for ninj in range(len(self.celltypes[name][2])):
                 name, nname  = self.getname(cell, ninj)

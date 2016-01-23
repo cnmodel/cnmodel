@@ -6,7 +6,6 @@ from ..util import nstomho, mho2ns
 from .. import synapses
 from .. import data
 
-
 class Cell(object):
     """
     Base class for all cell types.
@@ -28,7 +27,7 @@ class Cell(object):
             self.all_sections[k] = []  # initialize to an empty list
         
         self.species = 'mouse'
-        
+        self.HocReader = None  # points to the routine that will 
         # Record synaptic inputs and projections
         self.inputs = []
         self.outputs = []
@@ -61,6 +60,46 @@ class Cell(object):
         # Resting potential for this cell, determined by calling
         # self.find_i0()
         self.vm0 = None
+
+    def set_reader(self, hocreader):
+            self.HocReader = hocreader
+
+    def morphology_from_hoc(self, morphology=None, somasection='sections[0]'):
+        """
+        Populate the section channel densities as well from an neurovis read file
+        
+        Parameters
+        ----------
+        morphology : string (default: None)
+            File name/path for the morphology file (.hoc file)
+        
+        somasection : string (default: 'sections[0]')
+            Name of the section that should be assigned as the main soma section.
+        
+        Returns
+        -------
+        soma : neuron section object
+            soma is the neuron section object in this cell model
+            that was idenfied as the primary "soma" section
+            
+        """
+        if self.HocReader is None:
+            raise ValueError("No HocReader was set for this cell: cannot read morphology files")
+        self.hr = self.HocReader(morphology)
+        self.hr._read_section_info()  
+        # these were not instantiated when the file was read, but when the decorator was run.
+        for s in self.hr.sec_groups.keys():
+            for sec in self.hr.sec_groups[s]:
+                section =self. hr.get_section(sec)
+                mechs = self.hr.get_mechanisms(sec)
+                self.add_section(section, s) # add the section to the cell.
+               # print '\nmechanisms for section: %s', section
+               # self.print_mechs(section)
+        soma = self.hr.get_section(somasection)  # we need a better way to do this.
+        self.set_soma_size_from_Section(soma)  # this is used for reporting and setting g values...
+        self.distances(soma)
+        self.hr.distanceMap = self.distanceMap
+        return soma
 
     def add_section(self, sec, sec_type):
         """
@@ -131,7 +170,7 @@ class Cell(object):
         raise NotImplementedError("Cannot make Terminal connecting %s => %s" % 
                                   (self.__class__.__name__, 
                                    post_cell.__class__.__name__))
-    
+
     def make_psd(self, terminal, **kwds):
         """
         Create a PSD suitable for synaptic input from pre_sec.
@@ -254,6 +293,7 @@ class Cell(object):
         h.t = 0.
         h.finitialize()  # force variables to steady-state values in mod file
         self.ix = {}
+
         if 'na' in self.mechanisms:
             #print dir(self.soma().na)
             try:
@@ -297,7 +337,7 @@ class Cell(object):
             raise ValueError('vrange not good for %s : %f at %6.1f, %f at %6.1f' %
                              (self.status['name'], i0, vrange[0], i1, vrange[1]))
         if showinfo:
-            print '\n  [soma] find_i0  Species: %s  cell type: %s' % (self.status['species'], self.status['type'])
+            print '\n  [soma] find_i0  Species: %s  cell type: %s' % (self.status['species'], self.status['modelType'])
             print '    *** found V0 = %f' % v0
             print '    *** using conductances: ', self.ix.keys()
             print '    *** and cell has mechanisms: ', self.mechanisms
@@ -375,6 +415,17 @@ class Cell(object):
         self.soma.L = soma.L
         self.somaarea = 1e-8*np.pi*soma.diam*soma.L
         self.totcap = self.c_m * self.somaarea * 1e6
+        
+    def distances(self, section):
+        self.distanceMap = {}
+        self.hr.h('access %s' % section.name()) # reference point
+        d = self.hr.h.distance()
+        for sec in self.all_sections:
+            s = self.all_sections[sec]
+            if len(s) > 0:
+                for u in s:
+                    self.hr.h('access %s' % u.name())
+                    self.distanceMap[u.name()] = self.hr.h.distance(0.5) # should be distance from first point
 
     def add_axon(self, c_m=1.0, R_a=150, axonsf=1.0, nodes=5, debug=False, dia=None, len=None, seg=None):
         """
