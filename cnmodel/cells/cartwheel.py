@@ -72,7 +72,7 @@ class CartwheelDefault(Cartwheel, Cell):
         self.cell_initialize(vrange=self.vrange)
         
         if debug:
-            print "<< cartwheel: Raman Purkinje cell model (modified) created >>"
+            print "<< Cartwheel: Modified version of Raman Purkinje cell model created >>"
 
     def species_scaling(self, silent=True, species='rat', modelType='I'):
         soma = self.soma
