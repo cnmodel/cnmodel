@@ -77,7 +77,7 @@ class DStellateRothman(DStellate):
     VCN D-stellate model:
     as a type I-II from Rothman and Manis, 2003
     """
-    def __init__(self, morphology=None, decorator=None, nach='na', ttx=False,
+    def __init__(self, morphology=None, decorator=None, hocReader=None, nach='na', ttx=False,
                 debug=False, species='guineapig', modelType=None):
         """
         initialize a radial stellate (D-stellate) cell, using the default parameters for guinea pig from
@@ -86,8 +86,51 @@ class DStellateRothman(DStellate):
             changing the sodium channel
             Changing "species" to mouse or cat (scales conductances)
             Shifting model type
+        Parameters
+        ----------
+        morphology : string (default: None)
+            a file name to read the cell morphology from. If a valid file is found, a cell is constructed
+            as a cable model from the hoc file.
+            If None (default), the only a point model is made, exactly according to RM03.
+            
+        decorator : Python function (default: None)
+            decorator is a function that "decorates" the morphology with ion channels according
+            to a set of rules.
+            If None, a default set of channels aer inserted into the first soma section, and the
+            rest of the structure is "bare".
+        
+        hocReader : Python function (default: None)
+            hocReader is the reader that will be used to parse the morphology file, generate
+            and connect NEURON sections for the model. The standard hocReader will be the HocReader
+            class from neuronvis.
+            
+        nach : string (default: 'na')
+            nach selects the type of sodium channel that will be used in the model. A channel mechanims
+            by that name must exist. 
+        
+        ttx : Boolean (default: False)
+            If ttx is True, then the sodium channel conductance is set to 0 everywhere in the cell.
+            Currently, this is not implemented.
+        
+        species: string (default 'guineapig')
+            species defines the channel density that will be inserted for different models. Note that
+            if a decorator function is specified, this argument is ignored.
+            
+        modelType: string (default: None)
+            modelType specifies the type of the model that will be used (e.g., "II", "II-I", etc).
+            modelType is passed to the decorator, or to species_scaling to adjust point models.
+            
+        debug: boolean (default: False)
+            debug is a boolean flag. When set, there will be multiple printouts of progress and parameters.
+            
+        Returns
+        -------
+            Nothing
         """
+        
         super(DStellateRothman, self).__init__()
+        if hocReader is not None:
+            self.set_reader(hocReader)
         if modelType == None:  # allow us to pass None to get the default
             modelType = 'I-II'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
@@ -113,11 +156,12 @@ class DStellateRothman(DStellate):
             self.mechanisms = ['klt', 'kht', 'ihvcn', 'leak', nach]
             for mech in self.mechanisms:
                 soma.insert(mech)
-            soma.ena = self.e_na
+            # soma.ena = self.e_na
             soma.ek = self.e_k
-            soma().ihvcn.eh = self.e_h
+            # ().ihvcn.eh = self.e_h
             soma().leak.erev = self.e_leak
             self.add_section(soma, 'soma')
+            self.set_soma_size_from_Cm(12.0)
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
             self.decorated = decorator(self.hr, cellType='DStellate', modelType=modelType,

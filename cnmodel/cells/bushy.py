@@ -49,7 +49,7 @@ class BushyRothman(Bushy):
     Rothman and Manis, 2003abc (Type II, Type II-I)
     """
 
-    def __init__(self, morphology=None, decorator=None, nach='na',
+    def __init__(self, morphology=None, decorator=None, hocReader=None, nach='na',
             ttx=False, species='guineapig', modelType=None, debug=False):
         """
         Initialize the bushy cell, using the default parameters for guinea pig from
@@ -68,6 +68,11 @@ class BushyRothman(Bushy):
             to a set of rules.
             If None, a default set of channels aer inserted into the first soma section, and the
             rest of the structure is "bare".
+        
+        hocReader : Python function (default: None)
+            hocReader is the reader that will be used to parse the morphology file, generate
+            and connect NEURON sections for the model. The standard hocReader will be the HocReader
+            class from neuronvis.
             
         nach : string (default: 'na')
             nach selects the type of sodium channel that will be used in the model. A channel mechanims
@@ -94,7 +99,8 @@ class BushyRothman(Bushy):
         """
         super(BushyRothman, self).__init__()
         print "<< Bushy model: Creating point cell using JSR parameters >>"
-
+        if hocReader is not None:
+            self.set_reader(hocReader)
         if modelType == None:
             modelType = 'II'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,

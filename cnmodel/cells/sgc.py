@@ -140,7 +140,7 @@ class SGC_TypeI(SGC):
             elif modelType == 'bm':
                 self.mechanisms.append('ihsgcBasalMiddle')
             else:
-                raise ValueError ('Type %s not know for SGC model' % modelType)
+                raise ValueError ('Type %s not known for SGC model' % modelType)
             for mech in self.mechanisms:
                 soma.insert(mech)
             soma.ek = self.e_k
