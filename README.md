@@ -22,6 +22,7 @@ This package depends on the following:
    3. A C compiler (gcc). Needed for compilation of C files for matlab, and compilation of the mechanisms for NEURON.
    4. Matlab (2011 or later). Matlab is needed for the auditory nerve model to run. The C compiler is needed to compile the C files in the auditory nerve model. 
    5. neuronvis (available at https://github.com/campagnola/neuronvis). This provides a library that can read and visualize hoc files.
+   6. lmfit (avaliable at https://lmfit.github.io/lmfit-py/index.html). You need to use a version < 0.9.0 (the code works with 0.8.0); API changes in lmfit for 0.9.0 break the handling of the fit parameters. This is not fixed yet. Install with "pip install 'lmfit==0.8.0'" and check that the correct version is imported when running Python (import lmfit; print lmfit.__version__). 
 
 It is easiest to set up a model using a separate directory, with links (ln -s) to cnmodel and neuronvis, rather than installing those as libraries in the Python environment.
 
