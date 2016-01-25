@@ -49,7 +49,7 @@ class BushyRothman(Bushy):
     Rothman and Manis, 2003abc (Type II, Type II-I)
     """
 
-    def __init__(self, morphology=None, decorator=None, hocReader=None, nach='na',
+    def __init__(self, morphology=None, decorator=None, morphology_reader=None, nach='na',
             ttx=False, species='guineapig', modelType=None, debug=False):
         """
         Initialize the bushy cell, using the default parameters for guinea pig from
@@ -69,10 +69,9 @@ class BushyRothman(Bushy):
             If None, a default set of channels aer inserted into the first soma section, and the
             rest of the structure is "bare".
         
-        hocReader : Python function (default: None)
-            hocReader is the reader that will be used to parse the morphology file, generate
-            and connect NEURON sections for the model. The standard hocReader will be the HocReader
-            class from neuronvis.
+        morphology_reader : Python class (default: None)
+            morphology_reader is the reader class that will be used to parse the morphology file, generate
+            and connect NEURON sections for the model.
             
         nach : string (default: 'na')
             nach selects the type of sodium channel that will be used in the model. A channel mechanims
@@ -99,8 +98,7 @@ class BushyRothman(Bushy):
         """
         super(BushyRothman, self).__init__()
         print "<< Bushy model: Creating point cell using JSR parameters >>"
-        if hocReader is not None:
-            self.set_reader(hocReader)
+        self.set_morphology_reader(morphology_reader)
         if modelType == None:
             modelType = 'II'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
@@ -116,23 +114,23 @@ class BushyRothman(Bushy):
             """
             soma = h.Section(name="Bushy_Soma_%x" % id(self))  # one compartment of about 29000 um2
             soma.nseg = 1
+            self.add_section(soma, 'soma')
         else:
             """
             instantiate a structured model with the morphology as specified by 
             the morphology file
             """
-            soma = self.morphology_from_hoc(morphology=morphology, somasection='sections[0]')
+            self.set_morphology(morphology=morphology)
 
         # decorate the morphology with ion channels
         if decorator is None:   # basic model, only on the soma
             self.mechanisms = ['klt', 'kht', 'ihvcn', 'leak', nach]
             for mech in self.mechanisms:
-                soma.insert(mech)
-            soma.ena = self.e_na
-            soma.ek = self.e_k
-            soma().ihvcn.eh = self.e_h
-            soma().leak.erev = self.e_leak
-            self.add_section(soma, 'soma')
+                self.soma.insert(mech)
+            self.soma.ena = self.e_na
+            self.soma.ek = self.e_k
+            self.soma().ihvcn.eh = self.e_h
+            self.soma().leak.erev = self.e_leak
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
             self.decorated = decorator(self.hr, cellType='Bushy', modelType=modelType,
@@ -140,7 +138,7 @@ class BushyRothman(Bushy):
             self.decorated.channelValidate(self.hr, verify=False)
             self.mechanisms = self.decorated.hf.mechanisms  # copy out all of the mechanisms that were inserted
 #        print 'Mechanisms inserted: ', self.mechanisms
-        self.get_mechs(soma)
+        self.get_mechs(self.soma)
         self.cell_initialize(vrange=self.vrange)
         if debug:
             print "<< Bushy model created, point cell using JSR parameters >>"

@@ -27,12 +27,13 @@ class Cell(object):
             self.all_sections[k] = []  # initialize to an empty list
         
         self.species = 'mouse'
-        self.HocReader = None  # points to the routine that will 
+        self.morphologyReader = None  # points to the routine that will 
         # Record synaptic inputs and projections
         self.inputs = []
         self.outputs = []
         
         # each cell has the following parameters:
+        #self.soma = None  # holds the list of soma sections
         self.totcap = None  # total membrane capacitance (somatic)
         self.somaarea = None  # total soma area
         self.initsegment = None  # hold initial segment sections
@@ -61,31 +62,46 @@ class Cell(object):
         # self.find_i0()
         self.vm0 = None
 
-    def set_reader(self, hocreader):
-            self.HocReader = hocreader
-
-    def morphology_from_hoc(self, morphology=None, somasection='sections[0]'):
+    def set_morphology_reader(self, morphology_reader):
         """
-        Populate the section channel densities as well from an neurovis read file
+        Get the routine that understands how to read the morphology data from a file
+        
+        Parameters
+        ----------
+        morphology_reader : Class that can read the morphology (no default)
+            The selected morphology_reader class should provide the following functions and dataused
+            to get information about the morphology:
+                _read_section_info()  # information about the section
+                sec_groups: dictionary listing all of the section "groups" (types of sections)
+                get_section(section): Get the section (string) from the morphology, and return the NEURON object
+                get_mechanisms(sec): Get the list of mechanisms known to us in the requested section
+        
+        
+        Returns
+        -------
+        nothing.
+        
+        """
+        self.morphologyReader = morphology_reader
+
+    def set_morphology(self, morphology=None):
+        """
+        Set the cell's morphological structure from an file that defines sections
+        (for example, a morphology file read by neuronvis)
         
         Parameters
         ----------
         morphology : string (default: None)
-            File name/path for the morphology file (.hoc file)
-        
-        somasection : string (default: 'sections[0]')
-            Name of the section that should be assigned as the main soma section.
-        
+            File name/path for the morphology file (for example, .hoc or .swc file)
+
         Returns
         -------
-        soma : neuron section object
-            soma is the neuron section object in this cell model
-            that was idenfied as the primary "soma" section
+        nothing
             
         """
-        if self.HocReader is None:
-            raise ValueError("No HocReader was set for this cell: cannot read morphology files")
-        self.hr = self.HocReader(morphology)
+        if self.morphologyReader is None:
+            raise ValueError("No Morphology Reader was set for this cell: cannot read and parse morphology files")
+        self.hr = self.morphologyReader(morphology)
         self.hr._read_section_info()  
         # these were not instantiated when the file was read, but when the decorator was run.
         for s in self.hr.sec_groups.keys():
@@ -95,11 +111,9 @@ class Cell(object):
                 self.add_section(section, s) # add the section to the cell.
                # print '\nmechanisms for section: %s', section
                # self.print_mechs(section)
-        soma = self.hr.get_section(somasection)  # we need a better way to do this.
-        self.set_soma_size_from_Section(soma)  # this is used for reporting and setting g values...
-        self.distances(soma)
+        self.set_soma_size_from_Section(self.soma)  # this is used for reporting and setting g values...
+        self.distances(self.soma)
         self.hr.distanceMap = self.distanceMap
-        return soma
 
     def add_section(self, sec, sec_type):
         """
@@ -133,7 +147,6 @@ class Cell(object):
                 for u in s:
                     print 'Section type %s (%s): %s' % (sec, u.name(), Cell.sec_lookup[u.name()])
 
-    
     @property
     def soma(self):
         """
