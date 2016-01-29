@@ -1,9 +1,11 @@
 from neuron import h
 
 from .cell import Cell
-from .. import synapses
+#from .. import synapses
 from ..util import nstomho
 from .. import data
+from ..util import Params
+import numpy as np
 
 __all__ = ['Bushy', 'BushyRothman']
 
@@ -49,8 +51,8 @@ class BushyRothman(Bushy):
     Rothman and Manis, 2003abc (Type II, Type II-I)
     """
 
-    def __init__(self, morphology=None, decorator=None, morphology_reader=None, nach='na',
-            ttx=False, species='guineapig', modelType=None, debug=False):
+    def __init__(self, morphology=None, decorator=None, nach='na',
+                 ttx=False, species='guineapig', modelType=None, debug=False):
         """
         Initialize the bushy cell, using the default parameters for guinea pig from
         R&M2003, as a type II cell.
@@ -58,7 +60,7 @@ class BushyRothman(Bushy):
         
         Parameters
         ----------
-        morphology : string (default: None)
+        morphology_filename : string (default: None)
             a file name to read the cell morphology from. If a valid file is found, a cell is constructed
             as a cable model from the hoc file.
             If None (default), the only a point model is made, exactly according to RM03.
@@ -97,8 +99,6 @@ class BushyRothman(Bushy):
             Nothing
         """
         super(BushyRothman, self).__init__()
-        print "<< Bushy model: Creating point cell using JSR parameters >>"
-        self.set_morphology_reader(morphology_reader)
         if modelType == None:
             modelType = 'II'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
@@ -112,6 +112,7 @@ class BushyRothman(Bushy):
             """
             instantiate a basic soma-only ("point") model
             """
+            print "<< Bushy model: Creating point cell using JSR parameters >>"
             soma = h.Section(name="Bushy_Soma_%x" % id(self))  # one compartment of about 29000 um2
             soma.nseg = 1
             self.add_section(soma, 'soma')
@@ -120,7 +121,8 @@ class BushyRothman(Bushy):
             instantiate a structured model with the morphology as specified by 
             the morphology file
             """
-            self.set_morphology(morphology=morphology)
+            print "<< Bushy model: Creating structured cell using JSR parameters >>"
+            self.set_morphology(morphology_file=morphology)
 
         # decorate the morphology with ion channels
         if decorator is None:   # basic model, only on the soma
@@ -133,10 +135,7 @@ class BushyRothman(Bushy):
             self.soma().leak.erev = self.e_leak
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
-            self.decorated = decorator(self.hr, cellType='Bushy', modelType=modelType,
-                                 parMap=None)
-            self.decorated.channelValidate(self.hr, verify=False)
-            self.mechanisms = self.decorated.hf.mechanisms  # copy out all of the mechanisms that were inserted
+            self.decorate()
 #        print 'Mechanisms inserted: ', self.mechanisms
         self.get_mechs(self.soma)
         self.cell_initialize(vrange=self.vrange)
@@ -146,7 +145,7 @@ class BushyRothman(Bushy):
     def species_scaling(self, species='guineapig', modelType='II', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
-        Used only for point models.
+        Used ONLY for point models.
         
         Parameters
         ----------
@@ -213,8 +212,147 @@ class BushyRothman(Bushy):
            print ' set cell as: ', species
            print ' with Vm rest = %6.3f' % self.vm0
 
+    def channel_manager(self, modelType='RM03'):
+        """
+        This routine defines channel density maps and distance map patterns
+        for each type of compartment in the cell. The maps
+        are used by the ChannelDecorator class to(specifically, it's private
+        _biophys function) to decorate the cell membrane.
+        
+        Parameters
+        ----------
+        modelType : string (default: 'RM03')
+            A string that defines the type of the model. Currently, 3 types are implemented:
+            RM03: Rothman and Manis, 2003 somatic densities for guinea pig
+            XM13: Xie and Manis, 2013, somatic densities for mouse
+            XM13PasDend: XM13, but with only passive dendrites, no channels.
+        
+        Returns
+        -------
+        Nothing
+        
+        Notes
+        -----
+        
+        This routine defines the following variables for the class:
+            conductances (gBar)
+            a channelMap (dictonary of channel densities in defined anatomical compartments)
+            a current injection range for IV's (when testing)
+            a distance map, which defines how selected conductances in selected compartments
+                will change with distance. This includes both linear and exponential gradients,
+                the minimum conductance at the end of the gradient, and the space constant or
+                slope for the gradient.
+        
+        """
+        
+        self.c_m = 1.0E-6  # in units of F/cm^2
+        #
+        # Create a model based on the Rothman and Manis 2003 conductance set from guinea pig
+        # 
+        if modelType == 'RM03':
+            totcap = 12.0E-12  # in units of F, from Rothman and Manis, 2003.
+            refarea = totcap / self.c_m  # area is in cm^2
+            # bushy Rothman-Manis, guinea pig type II
+            # model gave cell conductance in nS, but we want S/cm^2 for NEURON
+            # so conversion is 1e-9*nS = uS, and refarea is already in cm2
+            self.gBar = Params(nabar=1000.0E-9/refarea,
+                               khtbar=150.0E-9/refarea,
+                               kltbar=200.0E-9/refarea,
+                               ihbar=20.0E-9/refarea,
+                               leakbar=2.0E-9/refarea,
+            )
+            self.channelMap = {
+                'axon': {'nacn': 0.0, 'klt': self.gBar.kltbar / 4., 'kht': self.gBar.khtbar, 'ihvcn': 0.,
+                         'leak': self.gBar.leakbar / 4.},
+                'hillock': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
+                            'leak': self.gBar.leakbar, },
+                'initseg': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
+                            'ihvcn': self.gBar.ihbar / 2., 'leak': self.gBar.leakbar, },
+                'soma': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
+                         'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
+                'dend': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar * 0.5, 'kht': self.gBar.khtbar * 0.5,
+                         'ihvcn': self.gBar.ihbar / 3., 'leak': self.gBar.leakbar * 0.5, },
+                'apic': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar * 0.2, 'kht': self.gBar.khtbar * 0.2,
+                         'ihvcn': self.gBar.ihbar / 4., 'leak': self.gBar.leakbar * 0.2, },
+            }
+            self.irange = np.linspace(-1., 1., 11)
+            self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                     'nacn': {'gradient': 'exp', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
+                            'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                     'nacn': {'gradient': 'exp', 'gminf': 0., 'lambda': 100.}}, # gradients are: flat, linear, exponential
+                            }
+                            
+        elif modelType == 'XM13':
+            # bushy from Xie and Manis, 2013, based on Cao and Oertel mouse conductances
+            totcap = 26.0E-12 # uF/cm2 
+            refarea = totcap  / self.c_m  # see above for units
+            self.gBar = Params(nabar=500.E-9/refarea,
+                               khtbar=58.0E-9/refarea,
+                               kltbar=80.0E-9/refarea,  # note doubled here... 
+                               ihbar=0.25*30.0E-9/refarea,
+                               leakbar=0.5*2.0E-9/refarea,
+            )
+            print 'XM13 gbar:\n', self.gBar.show()
+            self.channelMap = {
+                'axon': {'nav11': self.gBar.nabar*0, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
+                         'leak': self.gBar.leakbar * 0.25},
+                'hillock': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
+                            'leak': self.gBar.leakbar, },
+                'initseg': {'nav11': self.gBar.nabar*3, 'klt': self.gBar.kltbar*2, 'kht': self.gBar.khtbar*2,
+                            'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
+                'soma': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
+                         'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
+                'dend': {'nav11': self.gBar.nabar * 0.5, 'klt': self.gBar.kltbar *0.5, 'kht': self.gBar.khtbar *0.5,
+                         'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
+                'apic': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar * 0.25,
+                         'ihvcn': self.gBar.ihbar *0.25, 'leak': self.gBar.leakbar * 0.25, },
+            }
+            self.irange = np.linspace(-2, 2, 7)
+            self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.},
+                                     'kht': {'gradient': 'llinear', 'gminf': 0., 'lambda': 200.},
+                                     'nav11': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.}}, # linear with distance, gminf (factor) is multiplied by gbar
+                            'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                     'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
+                            }
 
-       # print 'Rescaled, status: ', self.status
+        elif modelType == 'XM13PasDend':
+            # bushy form Xie and Manis, 2013, based on Cao and Oertel mouse conductances
+            # passive dendritestotcap = 26.0E-12 # uF/cm2 
+            totcap = 26.0E-12 # uF/cm2 
+            refarea = totcap  / self.c_m  # see above for units
+            self.gBar = Params(nabar=500.E-9/refarea,
+                               khtbar=58.0E-9/refarea,
+                               kltbar=80.0E-9/refarea,  # note doubled here... 
+                               ihbar=30.0E-9/refarea,
+                               leakbar=2.0E-9/refarea,
+            )
+            self.channelMap = {
+                'axon': {'nav11': self.gBar.nabar*0, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
+                         'leak': self.gBar.leakbar * 0.25},
+                'hillock': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
+                            'leak': self.gBar.leakbar, },
+                'initseg': {'nav11': self.gBar.nabar*3, 'klt': self.gBar.kltbar*2, 'kht': self.gBar.khtbar*2,
+                            'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
+                'soma': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
+                         'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
+                'dend': {'nav11': self.gBar.nabar * 0.0, 'klt': self.gBar.kltbar*0 , 'kht': self.gBar.khtbar*0,
+                         'ihvcn': self.gBar.ihbar*0, 'leak': self.gBar.leakbar*0.5, },
+                'apic': {'nav11': self.gBar.nabar * 0.0, 'klt': self.gBar.kltbar * 0, 'kht': self.gBar.khtbar * 0.,
+                         'ihvcn': self.gBar.ihbar *0., 'leak': self.gBar.leakbar * 0.25, },
+            }
+            self.irange = np.linspace(-1, 1, 21)
+            self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.},
+                                     'kht': {'gradient': 'llinear', 'gminf': 0., 'lambda': 200.},
+                                     'nav11': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.}}, # linear with distance, gminf (factor) is multiplied by gbar
+                            'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                     'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
+                            }
+        else:
+            raise ValueError('model type %s is not implemented' % modelType)
 
     def adjust_na_chans(self, soma, gbar=1000., debug=False):
         """

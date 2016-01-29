@@ -3,6 +3,7 @@ from neuron import h
 import neuron as nrn
 from ..util import nstomho
 from .cell import Cell
+from ..util import Params
 from .. import synapses
 from .. import data
 
@@ -47,9 +48,6 @@ class DStellate(Cell):
         else:
             raise ValueError("Unsupported psd type %s" % psd_type)
 
-
-
-
     def make_terminal(self, post_cell, term_type, **kwds):
         if term_type == 'simple':
             return synapses.SimpleTerminal(pre_sec, post_cell, 
@@ -77,7 +75,7 @@ class DStellateRothman(DStellate):
     VCN D-stellate model:
     as a type I-II from Rothman and Manis, 2003
     """
-    def __init__(self, morphology=None, decorator=None, morphology_reader=None, nach='na', ttx=False,
+    def __init__(self, morphology=None, decorator=None,  nach='na', ttx=False,
                 debug=False, species='guineapig', modelType=None):
         """
         initialize a radial stellate (D-stellate) cell, using the default parameters for guinea pig from
@@ -128,7 +126,6 @@ class DStellateRothman(DStellate):
         """
         
         super(DStellateRothman, self).__init__()
-        self.set_morphology_reader(morphology_reader)
         if modelType == None:  # allow us to pass None to get the default
             modelType = 'I-II'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
@@ -148,7 +145,7 @@ class DStellateRothman(DStellate):
             instantiate a structured model with the morphology as specified by 
             the morphology file
             """
-            self.set_morphology(morphology=morphology)
+            self.set_morphology(morphology_file=morphology)
 
         # decorate the morphology with ion channels
         if decorator is None:   # basic model, only on the soma
@@ -162,10 +159,7 @@ class DStellateRothman(DStellate):
             self.set_soma_size_from_Cm(12.0)
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
-            self.decorated = decorator(self.hr, cellType='DStellate', modelType=modelType,
-                                 parMap=None)
-            self.decorated.channelValidate(self.hr, verify=False)
-            self.mechanisms = self.decorated.hf.mechanisms  # copy out all of the mechanisms that were inserted
+            self.decorate()
     #        print 'Mechanisms inserted: ', self.mechanisms
         self.get_mechs(self.soma)
         self.cell_initialize()

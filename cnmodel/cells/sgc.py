@@ -165,7 +165,6 @@ class SGC_TypeI(SGC):
         """         
         
         super(SGC_TypeI, self).__init__(cf=cf, sr=sr)
-        self.set_morphology_reader(morphology_reader)
         if modelType == None:
             modelType = 'bm'  # modelTypes are: a (apical), bm (basal middle)
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
@@ -186,7 +185,7 @@ class SGC_TypeI(SGC):
             instantiate a structured model with the morphology as specified by 
             the morphology file
             """
-            self.set_morphology(morphology=morphology)
+            self.set_morphology(morphology_file=morphology)
 
         # decorate the morphology with ion channels
         if decorator is None:   # basic model, only on the soma
@@ -203,10 +202,7 @@ class SGC_TypeI(SGC):
             self.soma().leak.erev = self.e_leak
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
-            self.decorated = decorator(self.hr, cellType='Bushy', modelType=modelType,
-                                 parMap=None)
-            self.decorated.channelValidate(self.hr, verify=False)
-            self.mechanisms = self.decorated.hf.mechanisms  # copy out all of the mechanisms that were inserted
+            self.decorate()
 #        print 'Mechanisms inserted: ', self.mechanisms
         self.get_mechs(self.soma)
         self.cell_initialize()

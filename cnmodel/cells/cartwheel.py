@@ -20,7 +20,7 @@ class CartwheelDefault(Cartwheel, Cell):
     DCN cartwheel cell model.
     
     """
-    def __init__(self, morphology=None, decorator=None, morphology_reader=None, debug=False, ttx=False,
+    def __init__(self, morphology=None, decorator=None, debug=False, ttx=False,
                 nach='naRsg', species='rat', modelType=None):
         """        
         initialize a cartwheel cell model, based on a Purkinje cell model from Raman.
@@ -67,7 +67,6 @@ class CartwheelDefault(Cartwheel, Cell):
             Nothing
         """
         super(CartwheelDefault, self).__init__()
-        self.set_morphology_reader(morphology_reader)
         if modelType == None:
             modelType = 'I'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
@@ -91,7 +90,7 @@ class CartwheelDefault(Cartwheel, Cell):
             instantiate a structured model with the morphology as specified by 
             the morphology file
             """
-            self.set_morphology(morphology=morphology)
+            self.set_morphology(morphology_file=morphology)
 
         # decorate the morphology with ion channels
         if decorator is None:   # basic model, only on the soma
@@ -107,10 +106,7 @@ class CartwheelDefault(Cartwheel, Cell):
            # soma().lkpkj.gbar = 3e-4
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
-            self.decorated = decorator(self.hr, cellType='Cartwheel', modelType=modelType,
-                                 parMap=None)
-            self.decorated.channelValidate(self.hr, verify=False)
-            self.mechanisms = self.decorated.hf.mechanisms  # copy out all of the mechanisms that were inserted
+            self.decorate()
 #        print 'Mechanisms inserted: ', self.mechanisms
         self.get_mechs(self.soma)
         self.cell_initialize(vrange=self.vrange)

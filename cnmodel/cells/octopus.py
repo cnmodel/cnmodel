@@ -39,7 +39,7 @@ class OctopusRothman(Octopus, Cell):
     Rothman and Manis, 2003abc (Type II, with high gklt and hcno - octopus cell h current).
     """
 
-    def __init__(self, morphology=None, decorator=None, morphology_reader=None, nach='jsrna', ttx=False,
+    def __init__(self, morphology=None, decorator=None, nach='jsrna', ttx=False,
                 debug=False, species='guineapig', modelType=None):
         """
         initialize the octopus cell, using the default parameters for guinea pig from
@@ -59,10 +59,6 @@ class OctopusRothman(Octopus, Cell):
             If None, a default set of channels aer inserted into the first soma section, and the
             rest of the structure is "bare".
         
-        morphology_reader : Python class (default: None)
-            morphology_reader is the reader class that will be used to parse the morphology file, generate
-            and connect NEURON sections for the model.
-
         nach : string (default: 'na')
             nach selects the type of sodium channel that will be used in the model. A channel mechanims
             by that name must exist. 
@@ -88,11 +84,10 @@ class OctopusRothman(Octopus, Cell):
         """
         
         super(OctopusRothman, self).__init__()
-        self.set_morphology_reader(morphology_reader)
         if modelType == None:
             modelType = 'II-o'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'Octopus',
+                       'na': nach, 'species': species, 'type': modelType, 'ttx': ttx, 'name': 'Octopus',
                         'morphology': morphology, 'decorator': decorator}
         self.i_test_range=(-4.0, 4.0, 0.2)
         self.spike_threshold = -50
@@ -100,7 +95,7 @@ class OctopusRothman(Octopus, Cell):
             """
             instantiate a basic soma-only ("point") model
             """
-            soma = h.Section(name="octopus_Soma_%x" % id(self))  # one compartment of about 29000 um2
+            soma = h.Section(name="Octopus_Soma_%x" % id(self))  # one compartment of about 29000 um2
             soma.nseg = 1
             self.add_section(soma, 'soma')
         else:
@@ -108,7 +103,7 @@ class OctopusRothman(Octopus, Cell):
             instantiate a structured model with the morphology as specified by 
             the morphology file
             """
-            self.set_morphology(morphology=morphology)
+            self.set_morphology(morphology_file=morphology)
 
         # decorate the morphology with ion channels
         if decorator is None:   # basic model, only on the soma
@@ -125,10 +120,7 @@ class OctopusRothman(Octopus, Cell):
             self.soma.Ra = self.R_a
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
-            self.decorated = decorator(self.hr, cellType='Octopus', modelType=modelType,
-                                 parMap=None)
-            self.decorated.channelValidate(self.hr, verify=False)
-            self.mechanisms = self.decorated.hf.mechanisms  # copy out all of the mechanisms that were inserted
+            self.decorate()
 #        print 'Mechanisms inserted: ', self.mechanisms
         self.get_mechs(self.soma)
         self.cell_initialize()
