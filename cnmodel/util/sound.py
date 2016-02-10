@@ -177,6 +177,49 @@ def dbspl_to_pa(dbspl, ref=20e-6):
     return ref * 10**(dbspl / 20)
 
 
+class SAMTone(Sound):
+    """ SAM tones with cosine-ramped edges.
+    
+    Parameters
+    ----------
+    rate : float
+        Sample rate in Hz
+    duration : float
+        Total duration of the sound
+    f0 : float or array-like
+        Tone frequency in Hz. Must be less than half of the sample rate.
+    dbspl : float
+        Maximum amplitude of tone in dB SPL. 
+    pip_duration : float
+        Duration of each pip including ramp time. Must be at least 
+        2 * ramp_duration.
+    pip_start : array-like
+        Start times of each pip
+    ramp_duration : float
+        Duration of a single ramp period (from minimum to maximum). 
+        This may not be more than half of pip_duration.
+    fMod : float
+        SAM modulation frequency
+    fMod : float
+        Modulation depth
+        
+    """
+    def __init__(self, **kwds):
+        for k in ['rate', 'duration', 'f0', 'dbspl', 'ramp_duration', 'fmod', 'dmod']:
+            if k not in kwds:
+                raise TypeError("Missing required argument '%s'" % k)
+        if kwds['pip_duration'] < kwds['ramp_duration'] * 2:
+            raise ValueError("pip_duration must be greater than (2 * ramp_duration).")
+        if kwds['f0'] > kwds['rate'] * 0.5:
+            raise ValueError("f0 must be less than (0.5 * rate).")
+        
+        Sound.__init__(self, **kwds)
+        
+    def generate(self):
+        o = self.opts
+        return modtone(self.time, o['ramp_duration'], o['rate'], o['f0'], 
+                       o['dbspl'], o['fmod'], o['dmod'], 0.) # o['pip_duration'], o['pip_start'],)
+
 def modtone(t, rt, Fs, F0, dBSPL, FMod, DMod, phaseshift):
     """
     Generate an amplitude-modulated tone with linear ramps.
@@ -219,12 +262,12 @@ def modtone(t, rt, Fs, F0, dBSPL, FMod, DMod, phaseshift):
     
     # TODO: is this envelope correct? For dmod=100, the envelope max is 2.
     # I would have expected something like  (dmod/100) * 0.5 * (sin + 1)
-    env = (1 + (DMod/100.0) * np.sin((2*pi*FMod*t) - np.pi/2 + phaseshift)) # envelope...
+    env = (1 + (DMod/100.0) * np.sin((2*np.pi*FMod*t) - np.pi/2 + phaseshift)) # envelope...
     
-    pin = (np.sqrt(2) * dbspl_to_pa(dBSPL)) * np.sin((2*pi*F0*t) - np.pi/2) * env # unramped stimulus
+    pin = (np.sqrt(2) * dbspl_to_pa(dBSPL)) * np.sin((2*np.pi*F0*t) - np.pi/2) * env # unramped stimulus
     pin = ramp(pin, mxpts, irpts)
     env = ramp(env, mxpts, irpts)
-    return pin, env
+    return pin*env
 
 
 def ramp(pin, mxpts, irpts):
