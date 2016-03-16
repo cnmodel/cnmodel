@@ -227,9 +227,9 @@ class SAMTone(Sound):
     ramp_duration : float
         Duration of a single ramp period (from minimum to maximum). 
         This may not be more than half of pip_duration.
-    fMod : float
+    fmod : float
         SAM modulation frequency
-    fMod : float
+    dmod : float
         Modulation depth
         
     """
@@ -250,7 +250,7 @@ class SAMTone(Sound):
         o = self.opts
         basetone = piptone(self.time, o['ramp_duration'], o['rate'], o['f0'], 
                        o['dbspl'], o['pip_duration'], o['pip_start'])
-        return sinusoidal_modulation(self.time, basetone, o['fmod'], o['dmod'], 0.)
+        return sinusoidal_modulation(self.time, basetone, o['pip_start'], o['fmod'], o['dmod'], 0.)
 
 class SAMNoise(Sound):
     """ One or more gaussian noise pips with cosine-ramped edges, sinusoidally modulated.
@@ -273,9 +273,9 @@ class SAMNoise(Sound):
     ramp_duration : float
         Duration of a single ramp period (from minimum to maximum). 
         This may not be more than half of pip_duration.
-    fMod : float
+    fmod : float
         SAM modulation frequency
-    fMod : float
+    dmod : float
         Modulation depth
     """
     
@@ -295,36 +295,37 @@ class SAMNoise(Sound):
         o = self.opts
         basenoise = pipnoise(self.time, o['ramp_duration'], o['rate'],
                         o['dbspl'], o['pip_duration'], o['pip_start'], o['seed'])
-        return sinusoidal_modulation(self.time, basenoise, o['fmod'], o['dmod'], 0.)
+        return sinusoidal_modulation(self.time, basenoise, o['pip_start'], o['fmod'], o['dmod'], 0.)
     
 
-def sinusoidal_modulation(t, basestim, FMod, DMod, phaseshift):
+def sinusoidal_modulation(t, basestim, tstart, fmod, dmod, phaseshift):
     """
     Generate a sinusoidally amplitude-modulation of the input stimulus.
-    Modulation eq. based on Rhode and Greenberg, J. Neurophys, 1994
-    and Sayles et al. J. Physiol. 2013.
+    For dmod=100%, the envelope max is 2, the min is 0; for dmod = 0, the max and min are 1
+    maintains equal energy for all modulation depths.
+    Equation from Rhode and Greenberg, J. Neurophys, 1994 (adding missing parenthesis) and
+    Sayles et al. J. Physiol. 2013
+    The envelope can be phase shifted (useful for co-deviant stimuli).
     
     Parameters
     ----------
     t : array
-        array of waveform time values
+        array of waveform time values (seconds)
     basestim : array
         array of waveform values that will be subject to sinulsoidal envelope modulation
-    FMod : float
-        modulation frequency
-    DMod : float
+    tstart : float
+        time at which the base sound starts (modulation starts then, with 0 phase crossing)
+        (seconds)
+    fmod : float
+        modulation frequency (Hz)
+    dmod : float
         modulation depth (percent)
     phaseshift : float
-        modulation phase
+        modulation phase shift (starting phase, radians)
     
     """
-    
-    # For dmod=100%, the envelope max is 2, the min is 0; for dmod = 0, the max and min are 1
-    # maintains equal energy for all modulation depths.
-    # Equation from Rhode and Greenberg, J. Neurophys, 1994; Sayles et al. J. Physiol. 2013
-    # envelope can be phase shifted (useful for co-deviant stimuli)
 
-    env = (1.0 + (DMod/100.0) * np.sin((2.0*np.pi*FMod*t) + phaseshift)) # envelope...
+    env = (1.0 + (dmod/100.0) * np.sin((2.0*np.pi*fmod*(t-tstart)) + phaseshift - np.pi/2)) # envelope...
     return basestim*env
 
 
