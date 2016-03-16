@@ -58,7 +58,7 @@ class TStellateRothman(TStellate):
     Rothman and Manis, 2003abc (Type I-c, Type I-t)
     """
     def __init__(self, morphology=None, decorator=None, nach='na', ttx=False,
-                debug=False, species='guineapig', modelType=None):
+                species='guineapig', modelType=None, debug=False):
         """
         initialize a planar stellate (T-stellate) cell, using the default parameters for guinea pig from
         R&M2003, as a type I cell.

@@ -40,7 +40,7 @@ class OctopusRothman(Octopus, Cell):
     """
 
     def __init__(self, morphology=None, decorator=None, nach='jsrna', ttx=False,
-                debug=False, species='guineapig', modelType=None):
+                species='guineapig', modelType=None, debug=False):
         """
         initialize the octopus cell, using the default parameters for guinea pig from
         R&M2003, as a type II cell with modified conductances.
@@ -132,6 +132,19 @@ class OctopusRothman(Octopus, Cell):
     def species_scaling(self, species='guineapig', modelType='II-o', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
+        Used ONLY for point models.
+        
+        Parameters
+        ----------
+        species : string (default: 'guineapig')
+            name of the species to use for scaling the conductances in the base point model
+            Must be guineapig
+        
+        modelType: string (default: 'II-o')
+            definition of model type from RM03 models, currently limited to type II-o
+        
+        silent : boolean (default: True)
+            run silently (True) or verbosely (False)
         """
         #print '\nSpecies scaling: %s   %s' % (species, type)
         soma = self.soma
@@ -184,9 +197,21 @@ class OctopusRothman(Octopus, Cell):
     def adjust_na_chans(self, soma, debug=False):
         """
         adjust the sodium channel conductance
-        :param soma: a soma object whose sodium channel complement will have it's 
-        conductances adjusted depending on the channel type
-        :return nothing:
+        Parameters
+        ----------
+        soma : neuron section object
+            a soma object whose sodium channel complement will have it's 
+            conductances adjusted depending on the channel type
+        
+        gbar : float (default: 1000.)
+            the maximal conductance for the sodium channel
+        
+        debug : boolean (false):
+            verbose printing
+            
+        Returns
+        -------
+        Nothing
         """
         if self.status['ttx']:
             gnabar = 0.0
@@ -216,11 +241,19 @@ class OctopusRothman(Octopus, Cell):
     def i_currents(self, V):
         """
         For the steady-state case, return the total current at voltage V
-        Used to find the zero current point
-        vrange brackets the interval
-        Implemented here are the basic RM03 mechanisms
-        This function should be replaced for specific cell types.
+        Used to find the zero current point.
+        vrange brackets the search interval.
+        Implemented here mechanisms for the octopus cell model
+        
+        Parameters
+        ----------
+        v : current voltage (no default)
+        
+        Returns
+        -------
+        total conductance at steady-state for the voltage V
         """
+        
         for part in self.all_sections.keys():
             for sec in self.all_sections[part]:
                 sec.v = V

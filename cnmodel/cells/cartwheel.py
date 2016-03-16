@@ -20,8 +20,8 @@ class CartwheelDefault(Cartwheel, Cell):
     DCN cartwheel cell model.
     
     """
-    def __init__(self, morphology=None, decorator=None, debug=False, ttx=False,
-                nach='naRsg', species='rat', modelType=None):
+    def __init__(self, morphology=None, decorator=None, ttx=False, nach='naRsg',
+                 species='rat', modelType=None, debug=False):
         """        
         initialize a cartwheel cell model, based on a Purkinje cell model from Raman.
         There are no variations available for this model.
@@ -38,10 +38,6 @@ class CartwheelDefault(Cartwheel, Cell):
             to a set of rules.
             If None, a default set of channels aer inserted into the first soma section, and the
             rest of the structure is "bare".
-        
-        morphology_reader : Python class (default: None)
-            morphology_reader is the reader class that will be used to parse the morphology file, generate
-            and connect NEURON sections for the model.
             
         nach : string (default: 'na')
             nach selects the type of sodium channel that will be used in the model. A channel mechanims
