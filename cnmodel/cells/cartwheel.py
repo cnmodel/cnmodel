@@ -9,49 +9,115 @@ __all__ = ['Cartwheel', 'CartwheelDefault']
 class Cartwheel(Cell):
 
     @classmethod
-    def create(cls, model='RM03', **kwds):
-        if model == 'RM03':
+    def create(cls, model='CW', **kwds):
+        if model == 'CW':
             return CartwheelDefault(**kwds)
         else:
-            raise ValueError ('DStellate type %s is unknown', type)
+            raise ValueError ('Carthweel model is unknown', model)
 
 class CartwheelDefault(Cartwheel, Cell):
     """
     DCN cartwheel cell model.
     
     """
-    def __init__(self, debug=False, ttx=False, nach='naRsg', species='rat', type=None):
+    def __init__(self, morphology=None, decorator=None, debug=False, ttx=False,
+                nach='naRsg', species='rat', modelType=None):
+        """        
+        initialize a cartwheel cell model, based on a Purkinje cell model from Raman.
+        There are no variations available for this model.
+        
+        Parameters
+        ----------
+        morphology : string (default: None)
+            a file name to read the cell morphology from. If a valid file is found, a cell is constructed
+            as a cable model from the hoc file.
+            If None (default), the only a point model is made, exactly according to RM03.
+            
+        decorator : Python function (default: None)
+            decorator is a function that "decorates" the morphology with ion channels according
+            to a set of rules.
+            If None, a default set of channels aer inserted into the first soma section, and the
+            rest of the structure is "bare".
+        
+        morphology_reader : Python class (default: None)
+            morphology_reader is the reader class that will be used to parse the morphology file, generate
+            and connect NEURON sections for the model.
+            
+        nach : string (default: 'na')
+            nach selects the type of sodium channel that will be used in the model. A channel mechanims
+            by that name must exist. 
+        
+        ttx : Boolean (default: False)
+            If ttx is True, then the sodium channel conductance is set to 0 everywhere in the cell.
+            Currently, this is not implemented.
+        
+        species: string (default 'guineapig')
+            species defines the channel density that will be inserted for different models. Note that
+            if a decorator function is specified, this argument is ignored.
+            
+        modelType: string (default: None)
+            modelType specifies the type of the model that will be used (e.g., "II", "II-I", etc).
+            modelType is passed to the decorator, or to species_scaling to adjust point models.
+            
+        debug: boolean (default: False)
+            debug is a boolean flag. When set, there will be multiple printouts of progress and parameters.
+            
+        Returns
+        -------
+            Nothing
+        """
         super(CartwheelDefault, self).__init__()
-        if type == None:
-            type = 'I'
+        if modelType == None:
+            modelType = 'I'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'Cartwheel'}
+                       'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Cartwheel',
+                       'morphology': morphology, 'decorator': decorator,}
 
         self.i_test_range=(-0.2, 0.2, 0.02)
+       # self.spike_threshold = 0
+        self.vrange = [-75., -52.]  # set a default vrange for searching for rmp
 
-        soma = h.Section(name="Cartwheel_Soma_%x" % id(self)) # one compartment of about 29000 um2
-        cm = 1
-        v_potassium = -80       # potassium reversal potential
-        v_sodium = 50           # sodium reversal potential
+        if morphology is None:
+            """
+            instantiate a basic soma-only ("point") model
+            """
+            soma = h.Section(name="Cartwheel_Soma_%x" % id(self)) # one compartment of about 29000 um2
+            cm = 1
+            soma.nseg = 1
+            self.add_section(soma, 'soma')
+        else:
+            """
+            instantiate a structured model with the morphology as specified by 
+            the morphology file
+            """
+            self.set_morphology(morphology_file=morphology)
 
-        self.mechanisms = ['naRsg', 'bkpkj', 'hpkj', 'kpkj', 'kpkj2',
-                           'kpkjslow', 'kpksk', 'lkpkj', 'cap']
-        for mech in self.mechanisms:
-            soma.insert(mech)
-        soma.insert('cadiff')
+        # decorate the morphology with ion channels
+        if decorator is None:   # basic model, only on the soma
+            v_potassium = -80       # potassium reversal potential
+            v_sodium = 50           # sodium reversal potential
 
-       # soma().kpksk.gbar = 0.002
-       # soma().lkpkj.gbar = 3e-4
-        self.add_section(soma, 'soma')
-        self.species_scaling(silent=True, species=species, type=type)  # set the default type I-c  cell parameters
-        self.get_mechs(soma)
+            self.mechanisms = ['naRsg', 'bkpkj', 'hpkj', 'kpkj', 'kpkj2',
+                               'kpkjslow', 'kpksk', 'lkpkj', 'cap']
+            for mech in self.mechanisms:
+                self.soma.insert(mech)
+            self.soma.insert('cadiff')
+           # soma().kpksk.gbar = 0.002
+           # soma().lkpkj.gbar = 3e-4
+            self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
+        else:  # decorate according to a defined set of rules on all cell compartments
+            self.decorate()
+#        print 'Mechanisms inserted: ', self.mechanisms
+        self.get_mechs(self.soma)
+        self.cell_initialize(vrange=self.vrange)
+        
         if debug:
-            print "<< cartwheel: Raman Purkinje cell model (modified) created >>"
+            print "<< Cartwheel: Modified version of Raman Purkinje cell model created >>"
 
-    def species_scaling(self, silent=True, species='rat', type='I'):
+    def species_scaling(self, silent=True, species='rat', modelType='I'):
         soma = self.soma
         dia = 18.
-        self.set_soma_size_from_Diam(dia)# if species == 'rat' and type == 'I':
+        self.set_soma_size_from_Diam(dia)# if species == 'rat' and modelType == 'I':
         #self.print_mechs(self.soma)
         #     self.set_soma_size_from_Cm(12.0)
         self.soma().bkpkj.gbar = nstomho(2., self.somaarea) # 2030
@@ -69,10 +135,10 @@ class CartwheelDefault(Cartwheel, Cell):
         self.soma().hpkj.eh = -43
         self.soma().eca = 50
         # else:
-        #     raise ValueError('Species %s or species-type %s is not recognized for T-stellate cells' % (species, type))
+        #     raise ValueError('Species %s or species-modelType %s is not recognized for T-stellate cells' % (species, modelType))
 
         self.status['species'] = species
-        self.status['type'] = type
+        self.status['modelType'] = modelType
         self.cell_initialize(showinfo=False)
         if not silent:
             print 'set cell as: ', species

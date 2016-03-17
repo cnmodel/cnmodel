@@ -374,7 +374,7 @@ class IVCurve(Protocol):
         # Generate figure with subplots
         #
         app = pg.mkQApp()
-        win = pg.GraphicsWindow('%s  %s (%s)' % (cell.status['name'], cell.status['type'], cell.status['species']))
+        win = pg.GraphicsWindow('%s  %s (%s)' % (cell.status['name'], cell.status['modelType'], cell.status['species']))
         self.win = win
         win.resize(1000, 800)
         Vplot = win.addPlot(labels={'left': 'Vm (mV)', 'bottom': 'Time (ms)'})

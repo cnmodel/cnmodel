@@ -5,6 +5,8 @@ from neuron import h
 from ..util import nstomho, mho2ns
 from .. import synapses
 from .. import data
+from .. import morphology
+from .. import decorator
 
 
 class Cell(object):
@@ -24,11 +26,10 @@ class Cell(object):
         # dictionary of all sections associated with this cell
         self.all_sections = {}
         # the following section types (parts) are known to us:
-        for k in ['soma', 'maindend', 'secdend', 'internode', 'initialsegment', 'axonnode', 'axon']:
+        for k in ['soma', 'maindend', 'secdend', 'dend', 'dendrite', 'internode', 'initialsegment', 'axonnode', 'axon']:
             self.all_sections[k] = []  # initialize to an empty list
-        
         self.species = 'mouse'
-        
+        self.status = {}  # dictionary of parameters used to instantiate the cell.
         # Record synaptic inputs and projections
         self.inputs = []
         self.outputs = []
@@ -41,6 +42,8 @@ class Cell(object):
         self.internode = None  # hold internode sections
         self.maindend = None  # hold main dendrite sections
         self.secdend = None  # hold secondary dendrite sections
+        self.dendrite = None
+        self.axon = None
         self.axonsf = None  # axon diameter scale factor
         # define defaults for these parameters (RM03 model defaults)
         self.e_k = -70  # potassium reversal potential, mV
@@ -59,6 +62,49 @@ class Cell(object):
         # Resting potential for this cell, determined by calling
         # self.find_i0()
         self.vm0 = None
+
+    def set_morphology(self, morphology_file=None):
+        """
+        Set the cell's morphological structure from a file that defines sections
+        (for example, a morphology file read by neuronvis), or from a morphology
+        object that has already been retrieved/created.
+        
+        Parameters
+        ----------
+        morphology_file : string or morphology object (default: None)
+            File name/path for the morphology file (for example, .hoc or .swc file)
+            Alternatively, this can be a morphology object returned by the morphology class.
+
+        Returns
+        -------
+        nothing
+            
+        """
+        if isinstance(morphology_file, str):
+            if morphology_file.endswith('.hoc'):
+                self.morphology = morphology.HocReader(morphology_file)
+            elif morphology_file.endswith('.swc'):
+                self.morphology = morphology.SwcReader(morphology_file)
+            else:
+                raise ValueError('Unknown morphology file type [must be .hoc or .swc]')
+        elif isinstance(morphology_file, Morphology):
+            self.morphology = morphology_file
+        else:
+            raise TypeError('Invalid morphology type')
+        self.hr = self.morphology # extensive renaming required in calling classes, temporary fix.
+        #self.hr = self.morphologyReader(morphology)
+        self.morphology.read_section_info()  # not sure this is necessary... 
+        # these were not instantiated when the file was read, but when the decorator was run.
+        for s in self.hr.sec_groups.keys():
+            for sec in self.hr.sec_groups[s]:
+                section =self. hr.get_section(sec)
+                mechs = self.hr.get_mechanisms(sec)
+                self.add_section(section, s) # add the section to the cell.
+               # print '\nmechanisms for section: %s', section
+               # self.print_mechs(section)
+        self.set_soma_size_from_Section(self.soma)  # this is used for reporting and setting g values...
+        self.distances(self.soma)
+        self.hr.distanceMap = self.distanceMap
 
     def add_section(self, sec, sec_type):
         """
@@ -81,12 +127,48 @@ class Cell(object):
         for s in sec:
             Cell.sec_lookup[s.name()] = self
     
+    def list_sections(self):
+        # print self.all_sections
+        for sec in self.all_sections:
+            print 'Sections named: %s' % sec
+            print '------------------------------------------'
+            s = self.all_sections[sec]
+            # print 's: ', s
+            if len(s) > 0:
+                for u in s:
+                    print 'Section type %s (%s): %s' % (sec, u.name(), Cell.sec_lookup[u.name()])
+
     @property
     def soma(self):
         """
         First (or only) section in the "soma" section group.
         """
         return self.all_sections['soma'][0]
+        
+    def decorate(self):
+        """
+        decorate the cell with it's own class channel decorator
+        """
+        self.decorated = decorator.Decorator(cell=self)
+        self.decorated.channelValidate(self, verify=False)
+        self.mechanisms = self.hr.mechanisms  # copy out all of the mechanisms that were inserted
+
+    def channel_manager(self, modelType='RM03'):
+        """
+        Every cell class should have a channel manager if it is set up to handle morphology.
+        This function should be overridden in the class with an appropriate routine that
+        builds the dictionary needed to decorate the cell. See the bushy cell class for
+        an example.
+        
+        Parameters
+        ----------
+        modelType : string (default: 'RM03')
+             A string that identifies what type of model the channel manager will implement.
+             This may be used to define different kinds of channels, or channel densities
+             and compartmental placement for different cells.
+        """
+        raise NotImplementedError("No channel manager exists for cells of the class: %s" %
+                                  (self.__class__.__name__))
 
     def connect(self, post_cell, pre_opts=None, post_opts=None, **kwds):
         """
@@ -97,6 +179,21 @@ class Cell(object):
         
         By default, the cells decide which sections to connect. This can be 
         overridden by specifying 'section' in pre_opts and/or post_opts.
+       
+        Parameters
+        ----------
+        post_cell : NEURON section (required)
+            The postsynaptic cell that will receive the connection.
+        pre_opts : dictionary of options for the presynaptic cell (default: None)
+            see the synapses class for valid options and format.
+        post_opts : diction of options for the postsynaptic cell (default: None)
+            see synapses class for valide options and format.
+        **kwds : (optional)
+            argmuments that are passed to the synapses class.
+        
+        Returns
+        -------
+        the synapse object
         """
         if pre_opts is None:
             pre_opts = {}
@@ -113,14 +210,32 @@ class Cell(object):
         """
         Create a synaptic terminal release mechanism suitable for output
         from this cell to post_sec
+        This routine is a placeholder and should be replace in the specific
+        cell class with code that performs the required actions for that class.
+        
+        Paramaters
+        ----------
+        post_cell : the target terminal cell (required)
+        
+        **kwds : parameters passed to the terminal
+        
         """
         raise NotImplementedError("Cannot make Terminal connecting %s => %s" % 
                                   (self.__class__.__name__, 
                                    post_cell.__class__.__name__))
-    
+
     def make_psd(self, terminal, **kwds):
         """
         Create a PSD suitable for synaptic input from pre_sec.
+        This routine is a placeholder and should be overridden in the specific
+        cell class with code that performs the required actions for that class.
+        
+        Paramaters
+        ----------
+        terminal : the terminal that connects to the PSD (required)
+        
+        **kwds : parameters passed to the terminal
+        
         """
         pre_cell = terminal.cell
         raise NotImplementedError("Cannot make PSD connecting %s => %s" %
@@ -202,15 +317,29 @@ class Cell(object):
         """
         print '\n    Installed mechanisms:'
         self.get_mechs(section)
+        print eval('section().nav11.gbar')
+ 
+        print 'self mechs: ', self.mechs
         for m in self.mechs:
             try:
                 gx=eval('section().'+m+'.gbar')
-                #print gx
+                print 'gx: ', gx
+                print 'self.somaarea: ', self.somaarea
+                print 'ns: ', mho2ns(gx, self.somaarea)
                 print('{0:>12s} : {1:<7.3g} mho/cm2  {2:<7.3g} nS '.format(m, gx, mho2ns(gx, self.somaarea)))
+                quit()
             except:
                 print('{0:>12s} : <no gbar> '.format(m))
         print '-'*32
-
+        
+    def print_all_mechs(self):
+        print '\nAll mechanisms in all sections: '
+        for part in self.all_sections.keys():
+            print 'Cell part: %s' % part 
+            for sec in self.all_sections[part]:
+                print '   Section: ', sec
+                print '        ', self.get_mechs(sec)
+                print '            ', dir(sec)
 
     def i_currents(self, V):
         """
@@ -223,13 +352,16 @@ class Cell(object):
         for part in self.all_sections.keys():
             for sec in self.all_sections[part]:
                 sec.v = V
-
         h.t = 0.
         h.finitialize()  # force variables to steady-state values in mod file
         self.ix = {}
+
         if 'na' in self.mechanisms:
             #print dir(self.soma().na)
-            self.ix['na'] = self.soma().na.gna*(V - self.soma().ena)
+            try:
+                self.ix['na'] = self.soma().na.gna*(V - self.soma().ena)
+            except:
+                self.ix['na'] = self.soma().nav11.gna*(V - self.soma().ena)
         if 'jsrna' in self.mechanisms:
             #print dir(self.soma().na)
             self.ix['jsrna'] = self.soma().jsrna.gna*(V - self.soma().ena)
@@ -255,10 +387,21 @@ class Cell(object):
         """
         find the root of the system of equations in vrange.
         Finds RMP fairly accurately as zero current level for current conductances.
+        
+        Parameters
+        ----------
+        vrange : list of 2 floats (default: [-70, -55])
+            The voltage range over which the root search will be performed.
+            
+        showinfo : boolean (default: False)
+            a flag to print out which roots were found and which mechanisms were in the cell
+            
+        Returns
+        -------
+        The voltage at which I = 0 in the vrange specified
         """
         try:
             v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1])
-#            print 'V0: ', v0, 'i+: ', self.i_currents(v0-0.1), 'i-: ', self.i_currents(v0+0.1)
         except:
             print 'find i0 failed:'
             print self.ix
@@ -267,19 +410,27 @@ class Cell(object):
             raise ValueError('vrange not good for %s : %f at %6.1f, %f at %6.1f' %
                              (self.status['name'], i0, vrange[0], i1, vrange[1]))
         if showinfo:
-            print '\n  [soma] find_i0  Species: %s  cell type: %s' % (self.status['species'], self.status['type'])
+            print '\n  [soma] find_i0  Species: %s  cell type: %s' % (self.status['species'], self.status['modelType'])
             print '    *** found V0 = %f' % v0
             print '    *** using conductances: ', self.ix.keys()
             print '    *** and cell has mechanisms: ', self.mechanisms
         return v0
 
-    def compute_rmrintau(self, auto_initialize = True):
+    def compute_rmrintau(self, auto_initialize=True):
         """
         Run the model for 2 msec after initialization - then
         compute the inverse of the sum of the conductances to get Rin at rest
         compute Cm*Rin to get tau at rest
         
-        Returns a tuple ``(Rin (Mohm), tau (ms), Vm (mV))``.
+        Parameters
+        ----------
+        auto_initialize : boolean (default: True)
+            If true, forces initialization of cell in NEURON befor the computation.
+            
+        Returns
+        -------
+        A dictionary containing: Rin (Mohm), tau (ms) and Vm (mV)
+        
         """
         if auto_initialize:
             self.cell_initialize()
@@ -339,6 +490,23 @@ class Cell(object):
     #    lstd = diam # 1E4 * ((self.somaarea / np.pi) ** 0.5)  # convert from cm to um
         self.soma.diam = diam
         self.soma.L = diam
+        
+    def set_soma_size_from_Section(self, soma):
+        self.soma.diam = soma.diam
+        self.soma.L = soma.L
+        self.somaarea = 1e-8*np.pi*soma.diam*soma.L
+        self.totcap = self.c_m * self.somaarea * 1e6
+        
+    def distances(self, section):
+        self.distanceMap = {}
+        self.hr.h('access %s' % section.name()) # reference point
+        d = self.hr.h.distance()
+        for sec in self.all_sections:
+            s = self.all_sections[sec]
+            if len(s) > 0:
+                for u in s:
+                    self.hr.h('access %s' % u.name())
+                    self.distanceMap[u.name()] = self.hr.h.distance(0.5) # should be distance from first point
 
     def add_axon(self, c_m=1.0, R_a=150, axonsf=1.0, nodes=5, debug=False, dia=None, len=None, seg=None):
         """

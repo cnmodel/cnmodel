@@ -39,42 +39,97 @@ class OctopusRothman(Octopus, Cell):
     Rothman and Manis, 2003abc (Type II, with high gklt and hcno - octopus cell h current).
     """
 
-    def __init__(self, nach='jsrna', ttx=False, debug=False, species='guineapig', type=None):
+    def __init__(self, morphology=None, decorator=None, nach='jsrna', ttx=False,
+                debug=False, species='guineapig', modelType=None):
         """
         initialize the octopus cell, using the default parameters for guinea pig from
         R&M2003, as a type II cell with modified conductances.
         Modifications to the cell can be made by calling methods below.
+        
+        Parameters
+        ----------
+        morphology : string (default: None)
+            a file name to read the cell morphology from. If a valid file is found, a cell is constructed
+            as a cable model from the hoc file.
+            If None (default), the only a point model is made, exactly according to RM03.
+            
+        decorator : Python function (default: None)
+            decorator is a function that "decorates" the morphology with ion channels according
+            to a set of rules.
+            If None, a default set of channels aer inserted into the first soma section, and the
+            rest of the structure is "bare".
+        
+        nach : string (default: 'na')
+            nach selects the type of sodium channel that will be used in the model. A channel mechanims
+            by that name must exist. 
+        
+        ttx : Boolean (default: False)
+            If ttx is True, then the sodium channel conductance is set to 0 everywhere in the cell.
+            Currently, this is not implemented.
+        
+        species: string (default 'guineapig')
+            species defines the channel density that will be inserted for different models. Note that
+            if a decorator function is specified, this argument is ignored.
+            
+        modelType: string (default: None)
+            modelType specifies the type of the model that will be used (e.g., "II", "II-I", etc).
+            modelType is passed to the decorator, or to species_scaling to adjust point models.
+            
+        debug: boolean (default: False)
+            debug is a boolean flag. When set, there will be multiple printouts of progress and parameters.
+            
+        Returns
+        -------
+            Nothing
         """
+        
         super(OctopusRothman, self).__init__()
-        if type == None:
-            type = 'II-o'
+        if modelType == None:
+            modelType = 'II-o'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'Octopus'}
+                       'na': nach, 'species': species, 'type': modelType, 'ttx': ttx, 'name': 'Octopus',
+                        'morphology': morphology, 'decorator': decorator}
         self.i_test_range=(-4.0, 4.0, 0.2)
         self.spike_threshold = -50
-        # overrides:
-        self.e_leak = -62
-        self.e_h = -38
-        self.R_a = 100
-        soma = h.Section(name="octopus_Soma_%x" % id(self))  # one compartment of about 29000 um2
-        soma.nseg = 1
-        self.mechanisms = ['klt', 'kht', 'hcno', 'leak', nach]
-        for mech in self.mechanisms:
-            soma.insert(mech)
-        soma.ek = self.e_k
-        soma.ena = self.e_na
-        soma().hcno.eh = self.e_h
-        soma().leak.erev = self.e_leak
-        soma.Ra = self.R_a
+        if morphology is None:
+            """
+            instantiate a basic soma-only ("point") model
+            """
+            soma = h.Section(name="Octopus_Soma_%x" % id(self))  # one compartment of about 29000 um2
+            soma.nseg = 1
+            self.add_section(soma, 'soma')
+        else:
+            """
+            instantiate a structured model with the morphology as specified by 
+            the morphology file
+            """
+            self.set_morphology(morphology_file=morphology)
 
-        self.add_section(soma, 'soma')
-        self.species_scaling(silent=True, species=species, type=type)  # set the default type II cell parameters
-        self.get_mechs(soma)
+        # decorate the morphology with ion channels
+        if decorator is None:   # basic model, only on the soma
+            self.e_leak = -62
+            self.e_h = -38
+            self.R_a = 100
+            self.mechanisms = ['klt', 'kht', 'hcno', 'leak', nach]
+            for mech in self.mechanisms:
+                self.soma.insert(mech)
+            self.soma.ek = self.e_k
+            self.soma.ena = self.e_na
+            self.soma().hcno.eh = self.e_h
+            self.soma().leak.erev = self.e_leak
+            self.soma.Ra = self.R_a
+            self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
+        else:  # decorate according to a defined set of rules on all cell compartments
+            self.decorate()
+#        print 'Mechanisms inserted: ', self.mechanisms
+        self.get_mechs(self.soma)
+        self.cell_initialize()
+        
         if debug:
             print "<< octopus: octopus cell model created >>"
         #print 'Cell created: ', self.status
 
-    def species_scaling(self, species='guineapig', type='II-o', silent=True):
+    def species_scaling(self, species='guineapig', modelType='II-o', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
         """
@@ -91,7 +146,7 @@ class OctopusRothman(Octopus, Cell):
         #     soma().leak.gbar = nstomho(2.0, self.somaarea)
         #     self.vm0 = self.find_i0()
         #     self.axonsf = 0.57
-        if species == 'guineapig' and type =='II-o':
+        if species == 'guineapig' and modelType =='II-o':
             self.set_soma_size_from_Cm(25.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = 0.0061  # nstomho(150.0, self.somaarea)  # 6.1 mmho/cm2
@@ -120,7 +175,7 @@ class OctopusRothman(Octopus, Cell):
         else:
             raise ValueError('Species "%s" or species-type "%s" is not recognized for octopus cells' %  (species, type))
         self.status['species'] = species
-        self.status['type'] = type
+        self.status['modelType'] = modelType
         self.cell_initialize(showinfo=False)
         if not silent:
             print 'set cell as: ', species

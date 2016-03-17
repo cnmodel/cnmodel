@@ -19,8 +19,9 @@ manually created and connected.
 """
 from cnmodel import populations
 from cnmodel.protocols import PopulationTest
-
+import pyqtgraph as pg
 import sys
+
 if len(sys.argv) < 3:
     print "Usage:  python test_populations.py <pre_celltype> <post_celltype>"
     sys.exit(1)
@@ -43,4 +44,7 @@ for cell_type in sys.argv[1:3]:
 pt = PopulationTest()
 pt.run(pops)
 pt.show()
+
+if sys.flags.interactive == 0:
+    pg.QtGui.QApplication.exec_()
 

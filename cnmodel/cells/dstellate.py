@@ -3,6 +3,7 @@ from neuron import h
 import neuron as nrn
 from ..util import nstomho
 from .cell import Cell
+from ..util import Params
 from .. import synapses
 from .. import data
 
@@ -47,9 +48,6 @@ class DStellate(Cell):
         else:
             raise ValueError("Unsupported psd type %s" % psd_type)
 
-
-
-
     def make_terminal(self, post_cell, term_type, **kwds):
         if term_type == 'simple':
             return synapses.SimpleTerminal(pre_sec, post_cell, 
@@ -77,7 +75,8 @@ class DStellateRothman(DStellate):
     VCN D-stellate model:
     as a type I-II from Rothman and Manis, 2003
     """
-    def __init__(self, nach='na', ttx=False, debug=False, species='guineapig', type=None):
+    def __init__(self, morphology=None, decorator=None,  nach='na', ttx=False,
+                debug=False, species='guineapig', modelType=None):
         """
         initialize a radial stellate (D-stellate) cell, using the default parameters for guinea pig from
         R&M2003, as a type I-II cell.
@@ -85,47 +84,95 @@ class DStellateRothman(DStellate):
             changing the sodium channel
             Changing "species" to mouse or cat (scales conductances)
             Shifting model type
+        Parameters
+        ----------
+        morphology : string (default: None)
+            a file name to read the cell morphology from. If a valid file is found, a cell is constructed
+            as a cable model from the hoc file.
+            If None (default), the only a point model is made, exactly according to RM03.
+            
+        decorator : Python function (default: None)
+            decorator is a function that "decorates" the morphology with ion channels according
+            to a set of rules.
+            If None, a default set of channels aer inserted into the first soma section, and the
+            rest of the structure is "bare".
+        
+        morphology_reader : Python class (default: None)
+            morphology_reader is the reader class that will be used to parse the morphology file, generate
+            and connect NEURON sections for the model.
+            
+        nach : string (default: 'na')
+            nach selects the type of sodium channel that will be used in the model. A channel mechanims
+            by that name must exist. 
+        
+        ttx : Boolean (default: False)
+            If ttx is True, then the sodium channel conductance is set to 0 everywhere in the cell.
+            Currently, this is not implemented.
+        
+        species: string (default 'guineapig')
+            species defines the channel density that will be inserted for different models. Note that
+            if a decorator function is specified, this argument is ignored.
+            
+        modelType: string (default: None)
+            modelType specifies the type of the model that will be used (e.g., "II", "II-I", etc).
+            modelType is passed to the decorator, or to species_scaling to adjust point models.
+            
+        debug: boolean (default: False)
+            debug is a boolean flag. When set, there will be multiple printouts of progress and parameters.
+            
+        Returns
+        -------
+            Nothing
         """
+        
         super(DStellateRothman, self).__init__()
-        if type == None:  # allow us to pass None to get the default
-            type = 'I-II'
+        if modelType == None:  # allow us to pass None to get the default
+            modelType = 'I-II'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'DStellate'}
+                       'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'DStellate',
+                       'morphology': morphology, 'decorator': decorator}
         self.i_test_range=(-0.25, 0.25, 0.025)  # set range for ic command test
 
-        soma = h.Section(name="DStellate_Soma_%x" % id(self)) # one compartment
-
-        soma.nseg = 1
-
-        if nach in ['nacn', 'na']:
-            soma.insert('na')
-        elif nach == 'nav11':
-            soma.insert('nav11')
-        elif nach == 'jsrna':
-            soma.insert('jsrna')
+        if morphology is None:
+            """
+            instantiate a basic soma-only ("point") model
+            """
+            soma = h.Section(name="DStellate_Soma_%x" % id(self))  # one compartment of about 29000 um2
+            soma.nseg = 1
+            self.add_section(soma, 'soma')
         else:
-            raise ValueError('Sodium channel %s in type 1 cell not known' % nach)
+            """
+            instantiate a structured model with the morphology as specified by 
+            the morphology file
+            """
+            self.set_morphology(morphology_file=morphology)
 
-        soma.insert("kht")
-        soma.insert('klt')
-        soma.insert('ihvcn')
-        soma.insert('leak')
-        soma.ek = self.e_k
-        soma().leak.erev = self.e_leak
-        self.add_section(soma, 'soma')
-        self.set_soma_size_from_Cm(12.0)
-        self.mechanisms = ['kht', 'klt', 'ihvcn', 'leak', nach]
-        self.get_mechs(soma)
-        self.species_scaling(species=species, type=type)  # set the default type II cell parameters
+        # decorate the morphology with ion channels
+        if decorator is None:   # basic model, only on the soma
+            self.mechanisms = ['klt', 'kht', 'ihvcn', 'leak', nach]
+            for mech in self.mechanisms:
+                self.soma.insert(mech)
+            # soma.ena = self.e_na
+            self.soma.ek = self.e_k
+            # ().ihvcn.eh = self.e_h
+            self.soma().leak.erev = self.e_leak
+            self.set_soma_size_from_Cm(12.0)
+            self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
+        else:  # decorate according to a defined set of rules on all cell compartments
+            self.decorate()
+    #        print 'Mechanisms inserted: ', self.mechanisms
+        self.get_mechs(self.soma)
+        self.cell_initialize()
+
         if debug:
-                print "<< D-stellate: JSR Stellate Type I-II cell model created >>"
+            print "<< D-stellate: JSR Stellate Type I-II cell model created >>"
 
-    def species_scaling(self, species='guineapig', type='I-II', silent=True):
+    def species_scaling(self, species='guineapig', modelType='I-II', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
         """
         soma = self.soma
-        if species == 'mouse' and type == 'I-II':
+        if species == 'mouse' and modelType == 'I-II':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
             self.set_soma_size_from_Cm(25.0)
             self.adjust_na_chans(soma, gbar=800.)
@@ -135,7 +182,7 @@ class DStellateRothman(DStellate):
             soma().ihvcn.eh = -43 # Rodrigues and Oertel, 2006
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             self.axonsf = 0.5
-        elif species == 'guineapig' and type == 'I-II':  # values from R&M 2003, Type II-I
+        elif species == 'guineapig' and modelType == 'I-II':  # values from R&M 2003, Type II-I
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma, gbar=1000.)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
@@ -143,7 +190,7 @@ class DStellateRothman(DStellate):
             soma().ihvcn.gbar = nstomho(2.0, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             self.axonsf = 0.5
-        elif species == 'cat' and type == 'I=II':  # a cat is a big guinea pig Type I
+        elif species == 'cat' and modelType == 'I=II':  # a cat is a big guinea pig Type I
             self.set_soma_size_from_Cm(35.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
@@ -152,9 +199,9 @@ class DStellateRothman(DStellate):
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             self.axonsf = 1.0
         else:
-            raise ValueError('Species %s or species-type %s is not recognized for D-Stellate cells' %  (species, type))
+            raise ValueError('Species %s or species-modelType %s is not recognized for D-Stellate cells' %  (species, modelType))
         self.status['species'] = species
-        self.status['type'] = type
+        self.status['modelType'] = modelType
         self.cell_initialize(showinfo=False)
         if not silent:
             print 'set cell as: ', species
