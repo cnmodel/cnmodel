@@ -23,7 +23,7 @@ class PyramidalKanold(Pyramidal, Cell):
     Kanold and Manis, 1999, 2001, 2005
     """
     def __init__(self,  morphology=None, decorator=None, nach='napyr', ttx=False,
-                debug=False, species='rat', modelType=None):
+                species='rat', modelType=None, debug=False):
         """
         initialize a pyramidal cell, based on the Kanold-Manis (2001) pyramidal cell model.
         Modifications to the cell can be made by calling methods below. These include:
@@ -108,7 +108,26 @@ class PyramidalKanold(Pyramidal, Cell):
         if debug:
             print "<< PYR: POK Pyramidal Cell created >>"
 
-    def species_scaling(self, silent=True, species='rat', modelType='I'):
+    def species_scaling(self, species='rat', modelType='I', silent=True):
+        """
+        Adjust all of the conductances and the cell size according to the species requested.
+        Used ONLY for point models.
+        
+        Parameters
+        ----------
+        species : string (default: 'rat')
+            name of the species to use for scaling the conductances in the base point model
+            Must be 'rat'
+        
+        modelType: string (default: 'I')
+            definition of model type from Kanold and Manis, 2001
+            choices are 'I' or 'POK' (canonical model) or
+            'II', a modified model with more physiological surface area and KCNQ channels
+        
+        silent : boolean (default: True)
+            run silently (True) or verbosely (False)
+        """
+        
         soma = self.soma
         if species == 'rat' and modelType in ['I', 'POK']:  # canonical K&M2001 model cell
             self.set_soma_size_from_Cm(12.0)

@@ -60,7 +60,7 @@ class BushyRothman(Bushy):
         
         Parameters
         ----------
-        morphology_filename : string (default: None)
+        morphology : string (default: None)
             a file name to read the cell morphology from. If a valid file is found, a cell is constructed
             as a cable model from the hoc file.
             If None (default), the only a point model is made, exactly according to RM03.
@@ -71,10 +71,6 @@ class BushyRothman(Bushy):
             If None, a default set of channels aer inserted into the first soma section, and the
             rest of the structure is "bare".
         
-        morphology_reader : Python class (default: None)
-            morphology_reader is the reader class that will be used to parse the morphology file, generate
-            and connect NEURON sections for the model.
-            
         nach : string (default: 'na')
             nach selects the type of sodium channel that will be used in the model. A channel mechanims
             by that name must exist. 

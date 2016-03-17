@@ -76,7 +76,7 @@ class DStellateRothman(DStellate):
     as a type I-II from Rothman and Manis, 2003
     """
     def __init__(self, morphology=None, decorator=None,  nach='na', ttx=False,
-                debug=False, species='guineapig', modelType=None):
+                species='guineapig', modelType=None, debug=False):
         """
         initialize a radial stellate (D-stellate) cell, using the default parameters for guinea pig from
         R&M2003, as a type I-II cell.
@@ -97,10 +97,6 @@ class DStellateRothman(DStellate):
             If None, a default set of channels aer inserted into the first soma section, and the
             rest of the structure is "bare".
         
-        morphology_reader : Python class (default: None)
-            morphology_reader is the reader class that will be used to parse the morphology file, generate
-            and connect NEURON sections for the model.
-            
         nach : string (default: 'na')
             nach selects the type of sodium channel that will be used in the model. A channel mechanims
             by that name must exist. 
@@ -170,6 +166,20 @@ class DStellateRothman(DStellate):
     def species_scaling(self, species='guineapig', modelType='I-II', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
+        
+        Parameters
+        ----------
+        species : string (default: 'guineapig')
+            A string specifying the species used for scaling. Recognized values are
+            'mouse', 'guineapig', and 'cat' (cat is just a larger version of the guineapig)
+        
+        modelType : string (default: 'I-II')
+            A string specifying the version of the model to use. 
+            Current choices are 'I-II' (others need to be implemented)
+        
+        silent : boolean (default: True)
+            Flag for printing debugging information.
+            
         """
         soma = self.soma
         if species == 'mouse' and modelType == 'I-II':
@@ -190,7 +200,7 @@ class DStellateRothman(DStellate):
             soma().ihvcn.gbar = nstomho(2.0, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             self.axonsf = 0.5
-        elif species == 'cat' and modelType == 'I=II':  # a cat is a big guinea pig Type I
+        elif species == 'cat' and modelType == 'I-II':  # a cat is a big guinea pig Type I
             self.set_soma_size_from_Cm(35.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
@@ -211,9 +221,22 @@ class DStellateRothman(DStellate):
     def adjust_na_chans(self, soma, gbar=1000., debug=False):
         """
         adjust the sodium channel conductance
-        :param soma: a soma object whose sodium channel complement will have it's
-        conductances adjusted depending on the channel type
-        :return nothing:
+        
+        Parameters
+        ----------
+        soma : soma object (no default)
+            soma object whose sodium channel complement will have it's
+            conductances adjusted depending on the channel type
+        
+        gbar : float (default: 1000.)
+            The conductance to be set for the sodium channel
+        
+        debug : boolean (default: False)
+            Flag for printing the conductance value and Na channel model
+            
+        Returns
+        -------
+            Nothing
         """
         if self.status['ttx']:
             gnabar = 0.0
@@ -294,11 +317,32 @@ class DStellateEager(DStellate):
     with small modifications.
     Their model includes dendrites and an axon, which are added in this version
     """
-    def __init__(self, nach='na', ttx=False, debug=False, species='guineapig', type='I-II'):
+    def __init__(self, nach='na', ttx=False, species='guineapig', modelType='I-II', debug=False):
+        """
+        Initialize the VCN D-stellate model of Eager et al. Some model parameters may be modified.
+        
+        Parameters
+        ----------
+        nach : string (default: 'na')
+            Set the sodium channel model. Choices are 'na', 'nav11', 'jsrna'
+        
+        ttx : boolean (default: False)
+            ttx sets the sodium channel conductance to 0
+        
+        species : string (default: 'guineapig')
+            species to use for conductance scaling
+        
+        modelType : string (default: 'I-II')
+            RM03 model type to use for conductances. 
+        
+        debug : boolean (default: False)
+            Flag to use to enable print statements for debugging purposes.
+        
+        """
         super(DStellateEager, self).__init__()
 
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': species, 'type': type, 'ttx': ttx, 'name': 'DStellateEager'}
+                       'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'DStellateEager'}
         self.i_test_range=(-0.25, 0.25, 0.025)  # set range for ic command test
 
         soma = h.Section(name="DStellateEager_Soma_%x" % id(self)) # one compartment
@@ -323,18 +367,32 @@ class DStellateEager(DStellate):
         self.mechanisms = ['kht', 'klt', 'ihvcn', 'leak', nach]
         self.add_section(soma, 'soma')
         self.get_mechs(soma)
-        self.species_scaling(silent=False, species=species, type=type)  # set the default type II cell parameters
+        self.species_scaling(silent=False, species=species, modelType=modelType)  # set the default type II cell parameters
         self.add_axon()  # must follow species scaling so that area parameters are available
         self.add_dendrites()   # similar for dendrites
         if debug:
                 print "<< D-stellateEager: Eager DStellate Type I-II cell model created >>"
 
-    def species_scaling(self, species='guineapig', type='I-II', silent=True):
+    def species_scaling(self, species='guineapig', modelType='I-II', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
+        
+        Parameters
+        ----------
+        species : string (default: 'guineapig')
+            A string specifying the species used for scaling. Recognized values are
+            'mouse', 'guineapig', and 'cat' (cat is just a larger version of the guineapig)
+        
+        modelType : string (default: 'I-II')
+            A string specifying the version of the model to use. 
+            Current choices are 'I-II' (others need to be implemented)
+        
+        silent : boolean (default: True)
+            Flag for printing debugging information.
+            
         """
         soma = self.soma
-        if species == 'mouse' and type == 'I-II':
+        if species == 'mouse' and modelType == 'I-II':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
             self.set_soma_size_from_Cm(25.0)
             self.adjust_na_chans(soma, gbar=800.)
@@ -344,7 +402,7 @@ class DStellateEager(DStellate):
             soma().ihvcn.eh = -43 # Rodrigues and Oertel, 2006
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             self.axonsf = 0.5
-        elif species == 'guineapig' and type == 'I-II':  # values from R&M 2003, Type II-I
+        elif species == 'guineapig' and modelType == 'I-II':  # values from R&M 2003, Type II-I
             self.set_soma_size_from_Diam(25.0)
             self.adjust_na_chans(soma, gbar=1000.*0.75)
             soma().kht.gbar = 0.02  # nstomho(150.0, self.somaarea)
@@ -352,7 +410,7 @@ class DStellateEager(DStellate):
             soma().ihvcn.gbar = 0.0002  #nstomho(2.0, self.somaarea)
             soma().leak.gbar = 0.0005  # nstomho(2.0, self.somaarea)
             self.axonsf = 1.0
-        elif species == 'cat' and type == 'I=II':  # a cat is a big guinea pig Type I
+        elif species == 'cat' and modelType == 'I=II':  # a cat is a big guinea pig Type I
             self.set_soma_size_from_Cm(35.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
@@ -363,7 +421,7 @@ class DStellateEager(DStellate):
         else:
             raise ValueError('Species %s or species-type %s is not recognized for D-StellateEager cells' %  (species, type))
         self.status['species'] = species
-        self.status['type'] = type
+        self.status['type'] = modelType
         self.cell_initialize(showinfo=True)
         if not silent:
             print ' set cell as: ', species
@@ -372,10 +430,24 @@ class DStellateEager(DStellate):
     def adjust_na_chans(self, soma, gbar=1000., debug=False):
         """
         adjust the sodium channel conductance
-        :param soma: a soma object whose sodium channel complement will have it's
-        conductances adjusted depending on the channel type
-        :return nothing:
+        
+        Parameters
+        ----------
+        soma : soma object (no default)
+            soma object whose sodium channel complement will have it's
+            conductances adjusted depending on the channel type
+        
+        gbar : float (default: 1000.)
+            The conductance to be set for the sodium channel
+        
+        debug : boolean (default: False)
+            Flag for printing the conductance value and Na channel model
+            
+        Returns
+        -------
+            Nothing
         """
+        
         if self.status['ttx']:
             gnabar = 0.0
         else:
@@ -408,8 +480,20 @@ class DStellateEager(DStellate):
         print soma().na.gbar
 
     def add_axon(self):
-        #Cell.add_axon(self, nodes=1, c_m=self.c_m, R_a=self.R_a, axonsf=self.axonsf, dia=3.0, len=70, seg=2)
-        # The Eager et al model just uses one cable, 70 microns long and 3 microns in dameter.
+        """
+        Adds an axon to the Eager. et al model
+        Cell.add_axon(self, nodes=1, c_m=self.c_m, R_a=self.R_a, axonsf=self.axonsf, dia=3.0, len=70, seg=2)
+        The Eager et al model just uses one cable, 70 microns long and 3 microns in dameter.
+        
+        Parameters
+        ----------
+            None
+        
+        Returns
+        -------
+            Nothing
+        """
+        
         naxons = 1
         axon = []
         for i in range(naxons):
@@ -439,8 +523,17 @@ class DStellateEager(DStellate):
 
     def add_dendrites(self):
         """
-        The Eager model uses simple passive dendrites, which are built here
+        Adds dendrites to the Eager model. The Eager model uses simple passive dendrites.
+        
+        Parameters
+        ----------
+            None
+        
+        Returns
+        -------
+            Nothing
         """
+        
         nDend = range(2) # these will be simple, unbranced, N=4 dendrites
         dendrites=[]
         for i in nDend:

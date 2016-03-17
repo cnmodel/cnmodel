@@ -107,9 +107,9 @@ class SGC_TypeI(SGC):
     Spiral ganglion cell model
     
     """
-    def __init__(self, morphology=None, decorator=None, morphology_reader=None, nach='jsrna', ttx=False,
-                 debug=False, species='guineapig', 
-                 modelType='bm', cf=None, sr=None):
+    def __init__(self, morphology=None, decorator=None, nach='jsrna', ttx=False,
+                 species='guineapig', 
+                 modelType='bm', cf=None, sr=None, debug=False):
         """
         initialize a pyramidal cell, based on the Kanold-Manis (2001) pyramidal cell model.
         Modifications to the cell can be made by calling methods below. These include:
@@ -127,10 +127,6 @@ class SGC_TypeI(SGC):
             to a set of rules.
             If None, a default set of channels aer inserted into the first soma section, and the
             rest of the structure is "bare".
-        
-        morphology_reader : Python class (default: None)
-            morphology_reader is the reader class that will be used to parse the morphology file, generate
-            and connect NEURON sections for the model.
 
         nach : string (default: 'na')
             nach selects the type of sodium channel that will be used in the model. A channel mechanims
@@ -210,6 +206,34 @@ class SGC_TypeI(SGC):
             print "<< SGC: Spiral Ganglion Cell created >>"
 
     def species_scaling(self, silent=True, species='guineapig', modelType='a'):
+        """
+        Adjust all of the conductances and the cell size according to the species requested.
+        Used ONLY for point models.
+        
+        Parameters
+        ----------
+        species : string (default: 'guineapig')
+            name of the species to use for scaling the conductances in the base point model
+            Must be one of mouse or guineapig
+        
+        modelType: string (default: 'a')
+            definition of HCN model type from Liu et al. JARO 2014:
+            'a' for apical model
+            'bm' for basal-middle model
+        
+        silent : boolean (default: True)
+            run silently (True) or verbosely (False)
+        
+        Returns
+        -------
+        Nothing
+        
+        Notes
+        -----
+        The 'guineapig' model uses the mouse HCN channel model, verbatim. This may not
+        be appropriate, given that the other conductances are scaled up.
+        """
+        
         soma = self.soma
         if species == 'mouse':
             self.set_soma_size_from_Cm(12.0)
