@@ -123,6 +123,36 @@ class TonePip(Sound):
         return piptone(self.time, o['ramp_duration'], o['rate'], o['f0'], 
                        o['dbspl'], o['pip_duration'], o['pip_start'])
     
+class FMSweep(Sound):
+    """ an FM sweep between to frequenceis.
+    
+    Parameters
+    ----------
+    rate : float
+        Sample rate in Hz
+    duration : float
+        Total duration of the sweep
+    start : float
+        t times of each pip
+    freqs : list 
+        [f0, f1]: the start and stop times for the sweep
+    ramp : string
+        valid input for type of sweep (linear, logarithmic, etc)
+    dbspl : float
+        Maximum amplitude of pip in dB SPL. 
+    """
+    def __init__(self, **kwds):
+        for k in ['rate', 'duration', 'start', 'freqs', 'ramp', 'dbspl']:
+            if k not in kwds:
+                raise TypeError("Missing required argument '%s'" % k)
+        
+        Sound.__init__(self, **kwds)
+        
+    def generate(self):
+        o = self.opts
+        return fmsweep(self.time, o['start'], o['duration'],
+                         o['freqs'], o['ramp'], o['rate'], o['dbspl'])
+
 
 class NoisePip(Sound):
     """ One or more gaussian noise pips with cosine-ramped edges.
@@ -370,4 +400,12 @@ def piptone(t, rt, Fs, F0, dBSPL, pip_dur, pip_start):
         pin[ts:ts+pip.size] += pip
 
     return pin
+    
+def fmsweep(t, start, duration, freqs, ramp, rate, dBSPL):
+    """
+    """
+    sw = scipy.signal.chirp(t, freqs[0], duration, freqs[1],
+        method='linear', phi=0, vertex_zero=True)
+    sw = sqrt(2) * dbspl_to_pa(dBSPL)
+    return psw
     
