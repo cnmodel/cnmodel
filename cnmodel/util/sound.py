@@ -3,6 +3,7 @@ Tools for generating auditory stimuli.
 """
 from __future__ import division
 import numpy as np
+import scipy
 
 
 def create(type, **kwds):
@@ -154,6 +155,16 @@ class FMSweep(Sound):
                          o['freqs'], o['ramp'], o['rate'], o['dbspl'])
 
 
+def fmsweep(t, start, duration, freqs, ramp, rate, dBSPL):
+    """
+    """
+    sw = scipy.signal.chirp(t, freqs[0], duration, freqs[1],
+        method=ramp, phi=0, vertex_zero=True)
+    sw = np.sqrt(2) * dbspl_to_pa(dBSPL) * sw
+    return sw
+
+
+
 class NoisePip(Sound):
     """ One or more gaussian noise pips with cosine-ramped edges.
     
@@ -192,6 +203,86 @@ class NoisePip(Sound):
         return pipnoise(self.time, o['ramp_duration'], o['rate'],
                         o['dbspl'], o['pip_duration'], o['pip_start'], o['seed'])
     
+
+class SAMNoise(Sound):
+    """ One or more gaussian noise pips with cosine-ramped edges.
+    
+    Parameters
+    ----------
+    rate : float
+        Sample rate in Hz
+    duration : float
+        Total duration of the sound
+    seed : int >= 0
+        Random seed
+    dbspl : float
+        Maximum amplitude of pip in dB SPL. 
+    pip_duration : float
+        Duration of each pip including ramp time. Must be at least 
+        2 * ramp_duration.
+    pip_start : array-like
+        Start times of each pip
+    ramp_duration : float
+        Duration of a single ramp period (from minimum to maximum). 
+        This may not be more than half of pip_duration.
+    fmod : float
+        SAM modulation frequency
+    dmod : float
+        Modulation depth
+    """
+    def __init__(self, **kwds):
+        for k in ['rate', 'duration', 'seed', 'pip_duration', 'pip_start', 'ramp_duration', 'fmod', 'dmod', 'seed']:
+            if k not in kwds:
+                raise TypeError("Missing required argument '%s'" % k)
+        if kwds['pip_duration'] < kwds['ramp_duration'] * 2:
+            raise ValueError("pip_duration must be greater than (2 * ramp_duration).")
+        if kwds['seed'] < 0:
+            raise ValueError("Random seed must be integer > 0")
+        
+        Sound.__init__(self, **kwds)
+        
+    def generate(self):
+        o = self.opts
+        o['phaseshift'] = 0.
+        return modnoise(self.time, o['ramp_duration'], o['rate'], o['f0'], 
+                       o['pip_duration'], o['pip_start'], o['dbspl'],
+                       o['fmod'], o['dmod'], 0., o['seed'])
+
+def modnoise(t, rt, Fs, F0, dur, start, dBSPL, FMod, DMod, phaseshift, seed):
+    irpts = rt * Fs
+    mxpts = len(t)+1
+    pin = pipnoise(t, rt, Fs, dBSPL, dur, start, seed)
+    env = (1 + (DMod/100.0) * np.sin((2*np.pi*FMod*t) - np.pi/2 + phaseshift)) # envelope...
+
+    pin = ramp(pin, mxpts, irpts)
+    env = ramp(env, mxpts, irpts)
+    return pin*env
+
+                        
+class ClickTrain(Sound):
+    """
+    Parameters
+    ----------
+    rate : float
+        sample frequency (Hz)
+    click_starts : float (seconds)
+        array of start time for clicks 
+    click_duration : float (seconds)
+        duration of each click
+    dbspl : float
+        maximum sound pressure level of pip    
+    
+    """
+    def __init__(self, **kwds):
+        for k in ['click_starts', 'click_duration', 'dbspl', 'rate']:
+            if k not in kwds:
+                raise TypeError("Missing rquired argument '%s'" % k)
+        Sound.__init__(self, **kwds)
+        
+    def generate(self):
+        o = self.opts
+        return clicks(self.time, o['rate'], o['click_starts'], o['click_duration'], o['dbspl'])
+
 
 def pa_to_dbspl(pa, ref=20e-6):
     """ Convert Pascals (rms) to dBSPL. By default, the reference pressure is
@@ -278,7 +369,7 @@ def modtone(t, rt, Fs, F0, dBSPL, FMod, DMod, phaseshift):
             irpts = rt*Fs;
             mxpts = length(t);
             env = (1 + (DMod/100.0)*sin((2*pi*FMod*t)-pi/2+phaseshift)); % envelope...
-            pin = sqrt(2)*20e-6*10^(dBSPL/20)*(sin((2*pi*F0*t)-pi/2).*env); % unramped stimulus
+            pin = np.sqrt(2)*20e-6*10^(dBSPL/20)*(sin((2*pi*F0*t)-pi/2).*env); % unramped stimulus
 
             pin = ramp(pin, mxpts, irpts);
             env = ramp(env, mxpts, irpts);
@@ -288,7 +379,7 @@ def modtone(t, rt, Fs, F0, dBSPL, FMod, DMod, phaseshift):
         end
     """
     irpts = rt * Fs
-    mxpts = len(t)
+    mxpts = len(t)+1
     
     # TODO: is this envelope correct? For dmod=100, the envelope max is 2.
     # I would have expected something like  (dmod/100) * 0.5 * (sin + 1)
@@ -315,8 +406,8 @@ def ramp(pin, mxpts, irpts):
     """
     out = pin.copy()
     r = np.linspace(0, 1, irpts)
-    out[:irpts] *= r
-    out[mxpts-irpts:mxpts] *= r[::-1]
+    out[:irpts] = out[:irpts]*r
+    out[mxpts-irpts:mxpts] = out[mxpts-irpts:mxpts] * r[::-1]
     return out
 
 def pipnoise(t, rt, Fs, dBSPL, pip_dur, pip_start, seed):
@@ -354,7 +445,7 @@ def pipnoise(t, rt, Fs, dBSPL, pip_dur, pip_start, seed):
         pip[:ramp_pts] *= ramp
         pip[-ramp_pts:] *= ramp[::-1]
         
-        ts = np.floor(start * Fs)
+        ts = int(np.floor(start * Fs))
         pin[ts:ts+pip.size] += pip
 
     return pin
@@ -396,16 +487,37 @@ def piptone(t, rt, Fs, F0, dBSPL, pip_dur, pip_start):
     # apply template to waveform
     pin = np.zeros(t.size)
     for start in pip_start:
-        ts = np.floor(start * Fs)
+        ts = int(np.floor(start * Fs))
         pin[ts:ts+pip.size] += pip
 
     return pin
-    
-def fmsweep(t, start, duration, freqs, ramp, rate, dBSPL):
+
+
+def clicks(t, Fs, click_starts, click_duration, dbspl):
     """
+    Create a waveform with clicks. Output is in 
+    Pascals.
+
+    Parameters
+    ----------
+    t : array
+        array of time values
+    Fs : float
+        sample frequency (Hz)
+    click_starts : float (seconds)
+        array of start time for clicks 
+    click)duration : float (seconds)
+        duration of each click
+    dspl : float
+        maximum sound pressure level of pip
     """
-    sw = scipy.signal.chirp(t, freqs[0], duration, freqs[1],
-        method='linear', phi=0, vertex_zero=True)
-    sw = sqrt(2) * dbspl_to_pa(dBSPL)
-    return psw
+    totdur = np.max(click_starts) + click_duration
+    click_pts = int(totdur * Fs) + 1
+    swave = np.zeros(t.size)
+    for start_time in click_starts:
+        t0 = int(np.floor(start_time * Fs))
+        t1 = t0 + int(np.floor(click_duration * Fs))
+        swave[t0:t1] = dbspl_to_pa(dbspl)
+    return swave
+
     
