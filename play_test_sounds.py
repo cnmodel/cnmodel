@@ -17,6 +17,7 @@ if len(sys.argv) >= 2:
 else:
     exit()
 
+plots = True
 
 PS = PySounds.PySounds()
     
@@ -24,31 +25,37 @@ cf = 2e3
 Fs = 44100  # sample frequency
 level = 80.
 seed = 34978
-fmod = 5.
-dmod = 10.
-# win = pg.GraphicsWindow()
-# pipwin = win.addPlot(title='sound pip', row=0, col=0)
-# pipmodwin = win.addPlot(title='100 \% SAM modulated pip', row=1, col=0)
-# noisewin = win.addPlot(title='WB noise', row=2, col=0)
-# noisemodwin = win.addPlot(title='100 \% SAM Modulated WB Noise', row=3, col=0)
-# clickwin = win.addPlot(title='clicks', row=4, col=0)
-#
-# pipwins = win.addPlot(title='sound pip Spec', row=0, col=1)
-# pipmodwins = win.addPlot(title='100 \% SAM modulated pip', row=1, col=1)
-# noisewins = win.addPlot(title='WB noise', row=2, col=1)
-# noisemodwins = win.addPlot(title='100 \% SAM Modulated WB Noise', row=3, col=1)
-# clickwins = win.addPlot(title='click spec', row=4, col=1)
-pipwin = None
-pipmodwin = None
-noisewin = None
-noisemodwin = None
-clickwin = None
-pipwins = None
-pipmodwins = None
-noisewins = None
-noisemodwins = None
-clickwins = None
-fmwins = None
+fmod = 20.
+dmod = 20.
+
+if plots:
+    # waveforms
+    win = pg.GraphicsWindow()
+    pipwin = win.addPlot(title='sound pip', row=0, col=0)
+    pipmodwin = win.addPlot(title='100 \% SAM modulated pip', row=1, col=0)
+    noisewin = win.addPlot(title='WB noise', row=2, col=0)
+    noisemodwin = win.addPlot(title='100 \% SAM Modulated WB Noise', row=3, col=0)
+    clickwin = win.addPlot(title='clicks', row=4, col=0)
+    fmwin = win.addPlot(title='fmsweep', row=5, col=0)
+    # spectra
+    pipwins = win.addPlot(title='sound pip Spec', row=0, col=1)
+    pipmodwins = win.addPlot(title='100 \% SAM modulated pip', row=1, col=1)
+    noisewins = win.addPlot(title='WB noise', row=2, col=1)
+    noisemodwins = win.addPlot(title='100 \% SAM Modulated WB Noise', row=3, col=1)
+    clickwins = win.addPlot(title='click spec', row=4, col=1)
+    fmwins = win.addPlot(title='fmsweep spec', row=5, col=1)
+else:
+    pipwin = None
+    pipmodwin = None
+    noisewin = None
+    noisemodwin = None
+    clickwin = None
+    pipwins = None
+    pipmodwins = None
+    noisewins = None
+    noisemodwins = None
+    clickwins = None
+    fmwins = None
 
 stims = OrderedDict([('pip', (pipwin, sound.TonePip)),
                      ('pipmod', (pipmodwin, sound.SAMTone)),
@@ -71,16 +78,18 @@ if stim in stims:
                          click_duration=1e-4, click_starts=1e-3*np.linspace(10, 500, 10))
     elif stim in ['fmsweep']:
         wave = stims[stim][1](rate=Fs, duration=0.25, dbspl=level,
-                            start=0., ramp='logarithmic', freqs=[3000, 16000])
+                            start=0., ramp='linear', freqs=[16000, 200])
     elif stim in ['pip', 'pipmod', 'noise', 'noisemod']:
         wave = stims[stim][1](rate=Fs, duration=2.0, f0=cf, dbspl=level, 
                          pip_duration=1.8, pip_start=[10e-3], ramp_duration=2.5e-3,
                          fmod=fmod, dmod=dmod, seed=seed)
-    # stims[stim][0].plot(wave.time, wave.sound)
-    # f, Pxx_spec = signal.periodogram(wave.sound, Fs) # window='flattop', nperseg=8192, noverlap=512, scaling='spectrum')
-    # specs[stim][0].plot(f, np.sqrt(Pxx_spec))
+    if plots:
+        stims[stim][0].plot(wave.time, wave.sound)
+        f, Pxx_spec = signal.periodogram(wave.sound, Fs) # window='flattop', nperseg=8192,
+                            noverlap=512, scaling='spectrum')
+        specs[stim][0].plot(f, np.sqrt(Pxx_spec))
     print ('Playing %s' % stim)
     PS.playSound(wave.sound, wave.sound, Fs)
 
-# if sys.flags.interactive == 0:
-#     pg.QtGui.QApplication.exec_()
+if plots and sys.flags.interactive == 0:
+     pg.QtGui.QApplication.exec_()

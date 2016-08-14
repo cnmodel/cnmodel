@@ -140,7 +140,7 @@ class FMSweep(Sound):
     ramp : string
         valid input for type of sweep (linear, logarithmic, etc)
     dbspl : float
-        Maximum amplitude of pip in dB SPL. 
+        Maximum amplitude of pip in dB SPL.
     """
     def __init__(self, **kwds):
         for k in ['rate', 'duration', 'start', 'freqs', 'ramp', 'dbspl']:
@@ -231,7 +231,9 @@ class SAMNoise(Sound):
         Modulation depth
     """
     def __init__(self, **kwds):
-        for k in ['rate', 'duration', 'seed', 'pip_duration', 'pip_start', 'ramp_duration', 'fmod', 'dmod', 'seed']:
+        parms = ['rate', 'duration', 'seed', 'pip_duration', 
+                 'pip_start', 'ramp_duration', 'fmod', 'dmod', 'seed']
+        for k in parms:
             if k not in kwds:
                 raise TypeError("Missing required argument '%s'" % k)
         if kwds['pip_duration'] < kwds['ramp_duration'] * 2:
