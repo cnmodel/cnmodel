@@ -8,7 +8,7 @@ import numpy as np
 import pyqtgraph as pg
 from cnmodel.util import sound
 from collections import OrderedDict
-from scipy import signal
+import scipy.signal
 import PySounds
 import sys
 
@@ -85,8 +85,8 @@ if stim in stims:
                          fmod=fmod, dmod=dmod, seed=seed)
     if plots:
         stims[stim][0].plot(wave.time, wave.sound)
-        f, Pxx_spec = signal.periodogram(wave.sound, Fs) # window='flattop', nperseg=8192,
-                            noverlap=512, scaling='spectrum')
+        f, Pxx_spec = scipy.signal.periodogram(wave.sound, Fs) #, window='flattop', nperseg=8192,
+                           # noverlap=512, scaling='spectrum')
         specs[stim][0].plot(f, np.sqrt(Pxx_spec))
     print ('Playing %s' % stim)
     PS.playSound(wave.sound, wave.sound, Fs)
