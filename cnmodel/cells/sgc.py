@@ -115,7 +115,7 @@ class DummySGC(SGC):
         self.vecstim.play(self._stvec)
 
     def set_sound_stim(self, stim, seed, simulator='matlab'):
-        """ Set the sound stimulus used to generatethis cell's spike train.
+        """ Set the sound stimulus used to generate this cell's spike train.
         """
         self._sound_stim = stim
         spikes = an_model.get_spiketrain(cf=self.cf, sr=self.sr, seed=seed, 
