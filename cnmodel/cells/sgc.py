@@ -77,7 +77,27 @@ class DummySGC(SGC):
     """ SGC class with no cell body; this cell only replays a predetermined
     spike train.
     """
-    def __init__(self, cf=None, sr=None):
+    def __init__(self, cf=None, sr=None, simulator='matlab'):
+        """
+        Parameters
+        ----------
+        cf : float (default: None)
+            Required: the characteristic frequency for the SGC
+        
+        sr : int (default None)
+            required : Selects the spontaneous rate group from the
+            Zilany et al (2010) model. 1 = LSR, 2 = MSR, 3 = HSR
+        
+        simul(default: 'matlab')
+            Sets the simulator interface that will be used. All models
+      currently use the Zilany et al. model, but the simulator can
+            be run though a Python-interface direcltly to the Matlab code
+            as publicy available, (simulator='matlab'), or can be run through
+            Rudieki's Python interface to the simulator's C code 
+            (simulator='cochlea'). Requires installation of the modified
+            versions of cochlea and thorns from github.com/pbmanis/cochlea and
+            github.com/pbmanis/thorns.
+        """
         SGC.__init__(self, cf, sr)
         self.vecstim = h.VecStim()
         
@@ -94,11 +114,12 @@ class DummySGC(SGC):
         self._stvec = h.Vector(times)
         self.vecstim.play(self._stvec)
 
-    def set_sound_stim(self, stim, seed):
-        """ Set the sound stimulus used to generate this cell's spike train.
+    def set_sound_stim(self, stim, seed, simulator='matlab'):
+        """ Set the sound stimulus used to generatethis cell's spike train.
         """
         self._sound_stim = stim
-        spikes = an_model.get_spiketrain(cf=self.cf, sr=self.sr, seed=seed, stim=stim)
+        spikes = an_model.get_spiketrain(cf=self.cf, sr=self.sr, seed=seed, 
+            stim=stim, simulator=simulator)
         self.set_spiketrain(spikes * 1000)
 
 
@@ -111,7 +132,7 @@ class SGC_TypeI(SGC):
                  species='guineapig', 
                  modelType='bm', cf=None, sr=None, debug=False):
         """
-        initialize a pyramidal cell, based on the Kanold-Manis (2001) pyramidal cell model.
+        Initialize a spiral ganglion Type I cell, based on the based on a bushy cell model.
         Modifications to the cell can be made by calling methods below. These include:
             Converting to a model with modified size and conductances (experimental).
         

@@ -109,14 +109,14 @@ class TonePip(Sound):
         This may not be more than half of pip_duration.
     """
     def __init__(self, **kwds):
-        for k in ['rate', 'duration', 'f0', 'dbspl', 'pip_duration', 'pip_start', 'ramp_duration']:
-            if k not in kwds:
+        reqdWords = ['rate', 'duration', 'f0', 'dbspl', 'pip_duration', 'pip_start', 'ramp_duration']
+        for k in reqdWords:
+            if k not in kwds.keys():
                 raise TypeError("Missing required argument '%s'" % k)
         if kwds['pip_duration'] < kwds['ramp_duration'] * 2:
             raise ValueError("pip_duration must be greater than (2 * ramp_duration).")
         if kwds['f0'] > kwds['rate'] * 0.5:
             raise ValueError("f0 must be less than (0.5 * rate).")
-        
         Sound.__init__(self, **kwds)
         
     def generate(self):
@@ -488,6 +488,9 @@ def piptone(t, rt, Fs, F0, dBSPL, pip_dur, pip_start):
     
     # apply template to waveform
     pin = np.zeros(t.size)
+    ps = pip_start
+    if ~isinstance(ps, list):
+        ps = [ps]
     for start in pip_start:
         ts = int(np.floor(start * Fs))
         pin[ts:ts+pip.size] += pip
