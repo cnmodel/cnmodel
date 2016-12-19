@@ -305,7 +305,7 @@ class BushyRothman(Bushy):
                 'apic': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar * 0.25,
                          'ihvcn': self.gBar.ihbar *0.25, 'leak': self.gBar.leakbar * 0.25, },
             }
-            self.irange = np.linspace(-2, 2, 7)
+            self.irange = np.linspace(-3, 12, 7)
             self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.},
                                      'kht': {'gradient': 'llinear', 'gminf': 0., 'lambda': 200.},
                                      'nav11': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.}}, # linear with distance, gminf (factor) is multiplied by gbar
