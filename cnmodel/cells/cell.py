@@ -339,7 +339,9 @@ class Cell(object):
             for sec in self.all_sections[part]:
                 print '   Section: ', sec
                 print '        ', self.get_mechs(sec)
-                print '            ', dir(sec)
+                for m in self.get_mechs(sec):
+                    gx = eval('sec().'+m+'.gbar')
+                    print '            %s: %f' % (m, gx)
 
     def i_currents(self, V):
         """
