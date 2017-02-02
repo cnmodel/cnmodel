@@ -257,9 +257,11 @@ class BushyRothman(Bushy):
                                ihbar=20.0E-9/refarea,
                                leakbar=2.0E-9/refarea,
             )
+            print 'RM03 gbar:\n', self.gBar.show()
+            
             self.channelMap = {
-                'axon': {'nacn': 0.0, 'klt': self.gBar.kltbar / 4., 'kht': self.gBar.khtbar, 'ihvcn': 0.,
-                         'leak': self.gBar.leakbar / 4.},
+                'axon': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
+                         'leak': self.gBar.leakbar / 2.},
                 'hillock': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
                             'leak': self.gBar.leakbar, },
                 'initseg': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
@@ -284,15 +286,22 @@ class BushyRothman(Bushy):
             # bushy from Xie and Manis, 2013, based on Cao and Oertel mouse conductances
             totcap = 26.0E-12 # uF/cm2 
             refarea = totcap  / self.c_m  # see above for units
-            self.gBar = Params(nabar=500.E-9/refarea,
+            # original:
+            # self.gBar = Params(nabar=500.E-9/refarea,
+            #                    khtbar=58.0E-9/refarea,
+            #                    kltbar=80.0E-9/refarea,  # note doubled here...
+            #                    ihbar=0.25*30.0E-9/refarea,
+            #                    leakbar=0.05*2.0E-9/refarea,  # was 0.5
+            # )
+            self.gBar = Params(nabar=800.E-9/refarea,
                                khtbar=58.0E-9/refarea,
-                               kltbar=80.0E-9/refarea,  # note doubled here... 
+                               kltbar=40.0E-9/refarea,  # note doubled here... 
                                ihbar=0.25*30.0E-9/refarea,
-                               leakbar=0.5*2.0E-9/refarea,
+                               leakbar=0.02*2.0E-9/refarea,  # was 0.5
             )
             print 'XM13 gbar:\n', self.gBar.show()
             self.channelMap = {
-                'axon': {'nav11': self.gBar.nabar*0, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
+                'axon': {'nav11': self.gBar.leakbar, 'klt': self.gBar.kltbar * 1.0, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
                          'leak': self.gBar.leakbar * 0.25},
                 'hillock': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
                             'leak': self.gBar.leakbar, },
@@ -325,6 +334,8 @@ class BushyRothman(Bushy):
                                ihbar=30.0E-9/refarea,
                                leakbar=2.0E-9/refarea,
             )
+            print 'XM13PassDend gbar:\n', self.gBar.show()
+            
             self.channelMap = {
                 'axon': {'nav11': self.gBar.nabar*0, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
                          'leak': self.gBar.leakbar * 0.25},
