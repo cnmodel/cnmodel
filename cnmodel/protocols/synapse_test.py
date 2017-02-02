@@ -2,15 +2,12 @@ from collections import OrderedDict
 from scipy import interpolate
 import numpy as np
 import pyqtgraph as pg
-
 from neuron import h
-
 import cnmodel.util as util
 from .protocol import Protocol
 from .. import cells
 from ..synapses import GluPSD, GlyPSD
 from ..util.find_point import find_crossing
-
 
 class SynapseTest(Protocol):
     def reset(self):

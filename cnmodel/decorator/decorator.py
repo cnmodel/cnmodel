@@ -14,7 +14,7 @@ It also takes the cellType, a string that directs how conductances should be ins
 import string
 import numpy as np
 import cnmodel.util as nu
-from pylibrary.Params import Params
+from cnmodel.util import Params
 
 class Decorator():
     def __init__(self, cell, parMap=None, verify=False):

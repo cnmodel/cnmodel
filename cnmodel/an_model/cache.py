@@ -180,8 +180,8 @@ def generate_spiketrain(cf, sr, stim, seed, **kwds):
         return times * stim.dt
     elif simulator == 'cochlea':
         fs = int(0.5+1./stim.dt)  # need to avoid roundoff error
-        srgrp = [0,0,0]
-        srgrp[sr-1] = 1
+        srgrp = [0,0,0] # H, M, L (but input is 1=L, 2=M, H = 3)
+        srgrp[3-sr] = 1
         sp = cochlea.run_zilany2014(
                 stim.sound,
                 fs=fs,
