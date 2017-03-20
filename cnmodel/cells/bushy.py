@@ -34,6 +34,7 @@ class Bushy(Cell):
                 # running `synapses/tests/test_psd.py`. The test should fail
                 # if these values are incorrect:
                 AMPA_gmax = 3.314707700918133*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
+                AMPA_gmax = AMPA_gmax*1.25
                 NMDA_gmax = 0.4531929783503451*1e3
                 return self.make_glu_psd(post_sec, terminal, AMPA_gmax, NMDA_gmax)
             elif pre_cell.type == 'dstellate':
@@ -301,7 +302,7 @@ class BushyRothman(Bushy):
             )
             print 'XM13 gbar:\n', self.gBar.show()
             self.channelMap = {
-                'axon': {'nav11': self.gBar.leakbar, 'klt': self.gBar.kltbar * 1.0, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
+                'axon': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar * 1.0, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
                          'leak': self.gBar.leakbar * 0.25},
                 'hillock': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
                             'leak': self.gBar.leakbar, },
