@@ -37,7 +37,7 @@ class Bushy(Cell):
                 if 'AMPAScale' in kwds:
                     AMPA_gmax = AMPA_gmax*kwds['AMPAScale']  # allow scaling of AMPA conductances
                     print ('AMPA Scaled to: %f by %f' % (AMPA_gmax, kwds['AMPAScale']))
-                NMDA_gmax = 0.4531929783503451*1e3
+                NMDA_gmax = 0.4531929783503451*1e3 * 0
                 return self.make_glu_psd(post_sec, terminal, AMPA_gmax, NMDA_gmax)
             elif pre_cell.type == 'dstellate':
                 return self.make_gly_psd(post_sec, terminal, type='glyslow')
