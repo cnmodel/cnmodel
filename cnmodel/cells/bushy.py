@@ -34,7 +34,9 @@ class Bushy(Cell):
                 # running `synapses/tests/test_psd.py`. The test should fail
                 # if these values are incorrect:
                 AMPA_gmax = 3.314707700918133*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
-                AMPA_gmax = AMPA_gmax*1.25
+                if 'AMPAScale' in kwds:
+                    AMPA_gmax = AMPA_gmax*kwds['AMPAScale']  # allow scaling of AMPA conductances
+                    print ('AMPA Scaled to: %f by %f' % (AMAP_gmax, kwds['AMPAScale']))
                 NMDA_gmax = 0.4531929783503451*1e3
                 return self.make_glu_psd(post_sec, terminal, AMPA_gmax, NMDA_gmax)
             elif pre_cell.type == 'dstellate':
