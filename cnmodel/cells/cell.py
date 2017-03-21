@@ -26,7 +26,7 @@ class Cell(object):
         # dictionary of all sections associated with this cell
         self.all_sections = {}
         # the following section types (parts) are known to us:
-        for k in ['soma', 'maindend', 'secdend', 'dend', 'dendrite', 'internode', 'initialsegment', 'axonnode', 'axon']:
+        for k in ['soma', 'maindend', 'secdend', 'dend', 'dendrite', 'internode', 'initialsegment', 'axonnode', 'axon', 'unmyelinatedaxon', 'myelinatedaxon', 'hillock']:
             self.all_sections[k] = []  # initialize to an empty list
         self.species = 'mouse'
         self.status = {}  # dictionary of parameters used to instantiate the cell.
@@ -99,6 +99,8 @@ class Cell(object):
             for sec in self.hr.sec_groups[s]:
                 section =self. hr.get_section(sec)
                 mechs = self.hr.get_mechanisms(sec)
+                if s == 'myelinatedaxon':
+                    section.cm = 0.002
                 self.add_section(section, s) # add the section to the cell.
                # print '\nmechanisms for section: %s', section
                # self.print_mechs(section)

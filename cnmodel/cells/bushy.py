@@ -284,7 +284,7 @@ class BushyRothman(Bushy):
                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'nacn': {'gradient': 'exp', 'gminf': 0., 'lambda': 100.}}, # gradients are: flat, linear, exponential
                             }
-                            
+
         elif modelType == 'XM13':
             # bushy from Xie and Manis, 2013, based on Cao and Oertel mouse conductances
             totcap = 26.0E-12 # uF/cm2 
@@ -304,15 +304,61 @@ class BushyRothman(Bushy):
             )
             print 'XM13 gbar:\n', self.gBar.show()
             self.channelMap = {
-                'axon': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar * 1.0, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
+                'axon': {'nav11': self.gBar.nabar*1, 'klt': self.gBar.kltbar * 1.0, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
                          'leak': self.gBar.leakbar * 0.25},
-                'hillock': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
-                            'leak': self.gBar.leakbar, },
-                'initseg': {'nav11': self.gBar.nabar*3, 'klt': self.gBar.kltbar*2, 'kht': self.gBar.khtbar*2,
+                'initseg': {'nav11': self.gBar.nabar*3.0, 'klt': self.gBar.kltbar*1, 'kht': self.gBar.khtbar*2,
                             'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
-                'soma': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
+                'soma': {'nav11': self.gBar.nabar*0.5, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
                          'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
-                'dend': {'nav11': self.gBar.nabar * 0.5, 'klt': self.gBar.kltbar *0.5, 'kht': self.gBar.khtbar *0.5,
+                'dend': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar *0.5, 'kht': self.gBar.khtbar *0.5,
+                         'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
+                'apic': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar * 0.25,
+                         'ihvcn': self.gBar.ihbar *0.25, 'leak': self.gBar.leakbar * 0.25, },
+            }
+            self.irange = np.linspace(-3, 12, 7)
+            self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                     'kht': {'gradient': 'llinear', 'gminf': 0., 'lambda': 100.},
+                                     'nav11': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
+                            'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                     'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
+                            }
+
+                            
+        elif modelType == 'mGBC':
+            # bushy from Xie and Manis, 2013, based on Cao and Oertel mouse conductances
+            totcap = 26.0E-12 # uF/cm2 
+            refarea = totcap  / self.c_m  # see above for units
+            # original:
+            # self.gBar = Params(nabar=500.E-9/refarea,
+            #                    khtbar=58.0E-9/refarea,
+            #                    kltbar=80.0E-9/refarea,  # note doubled here...
+            #                    ihbar=0.25*30.0E-9/refarea,
+            #                    leakbar=0.05*2.0E-9/refarea,  # was 0.5
+            # )
+            self.gBar = Params(nabar=800.E-9/refarea,
+                               khtbar=58.0E-9/refarea,
+                               kltbar=40.0E-9/refarea,  # note doubled here... 
+                               ihbar=0.25*30.0E-9/refarea,
+                               leakbar=0.02*2.0E-9/refarea,  # was 0.5
+            )
+            print 'mGBC gbar:\n', self.gBar.show()
+            self.channelMap = {
+                'axon': {'nav11': self.gBar.nabar*1, 'klt': self.gBar.kltbar * 1.0, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
+                         'leak': self.gBar.leakbar * 0.25},
+                'unmyelinatedaxon': {'nav11': self.gBar.nabar*3.0, 'klt': self.gBar.kltbar * 2.0,
+                         'kht': self.gBar.khtbar*2., 'ihvcn': 0.,
+                         'leak': self.gBar.leakbar * 0.25},
+                'myelinatedaxon': {'nav11': self.gBar.nabar*0, 'klt': self.gBar.kltbar * 1e-3,
+                         'kht': self.gBar.khtbar*1e-3, 'ihvcn': 0.,
+                         'leak': self.gBar.leakbar * 0.25*1e-3},
+                'hillock': {'nav11': self.gBar.nabar*0.5, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
+                            'leak': self.gBar.leakbar, },
+                'initseg': {'nav11': self.gBar.nabar*3.0, 'klt': self.gBar.kltbar*2, 'kht': self.gBar.khtbar*2,
+                            'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
+                'soma': {'nav11': self.gBar.nabar*0.5, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
+                         'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
+                'dend': {'nav11': self.gBar.nabar * 0.2, 'klt': self.gBar.kltbar *1, 'kht': self.gBar.khtbar *1,
                          'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
                 'apic': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar * 0.25,
                          'ihvcn': self.gBar.ihbar *0.25, 'leak': self.gBar.leakbar * 0.25, },
@@ -320,7 +366,7 @@ class BushyRothman(Bushy):
             self.irange = np.linspace(-3, 12, 7)
             self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.},
                                      'kht': {'gradient': 'llinear', 'gminf': 0., 'lambda': 200.},
-                                     'nav11': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.}}, # linear with distance, gminf (factor) is multiplied by gbar
+                                     'nav11': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
                             'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential

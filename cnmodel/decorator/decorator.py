@@ -47,7 +47,7 @@ class Decorator():
         self.gmapper = {'nacn': 'gbar', 'kht': 'gbar', 'klt': 'gbar', 'leak': 'gbar',
                         'ihvcn': 'gbar', 'jsrna': 'gbar', 'nav11': 'gbar'}
         self._biophys(cell, verify=verify)
-        print 'ChannelDecorate: Model Decorated with channels (if this appears more than once per cell, there is a problem)'
+        print 'Decorator: Model Decorated with channels (if this appears more than once per cell, there is a problem)'
 
 
     def _biophys(self, cell, verify=False):
@@ -161,6 +161,8 @@ class Decorator():
         for s in cell.hr.sec_groups.keys():
             sectype = self.remapSectionType(string.rsplit(s, '[')[0])
             if sectype not in cell.channelMap.keys():
+                if sectype in ['undefined']:  # skip undefined sections
+                    continue
                 print 'Validation: encountered unknown section group type: %s  Cannot Validate' % sectype
                 continue
 #            print 'Validating Section: %s' % s
