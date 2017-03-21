@@ -100,7 +100,8 @@ class BushyRothman(Bushy):
         super(BushyRothman, self).__init__()
         if modelType == None:
             modelType = 'II'
-        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False, 'hillock': False, 
+                        'initialsegment': False, 'myelinatedaxon': False, 'unmyelinatedaxon': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Bushy',
                        'morphology': morphology, 'decorator': decorator}
         self.i_test_range=(-0.5, 0.5, 0.05)
@@ -337,40 +338,41 @@ class BushyRothman(Bushy):
             #                    ihbar=0.25*30.0E-9/refarea,
             #                    leakbar=0.05*2.0E-9/refarea,  # was 0.5
             # )
-            self.gBar = Params(nabar=800.E-9/refarea,
+            self.gBar = Params(nabar=1600.E-9/refarea,
                                khtbar=58.0E-9/refarea,
                                kltbar=40.0E-9/refarea,  # note doubled here... 
                                ihbar=0.25*30.0E-9/refarea,
                                leakbar=0.02*2.0E-9/refarea,  # was 0.5
             )
             print 'mGBC gbar:\n', self.gBar.show()
+            sodiumch = 'jsrna'
             self.channelMap = {
-                'axon': {'nav11': self.gBar.nabar*1, 'klt': self.gBar.kltbar * 1.0, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
+                'axon': {sodiumch: self.gBar.nabar*1., 'klt': self.gBar.kltbar * 1.0, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
                          'leak': self.gBar.leakbar * 0.25},
-                'unmyelinatedaxon': {'nav11': self.gBar.nabar*2.0, 'klt': self.gBar.kltbar * 2.0,
-                         'kht': self.gBar.khtbar*2., 'ihvcn': 0.,
+                'unmyelinatedaxon': {sodiumch: self.gBar.nabar*3.0, 'klt': self.gBar.kltbar * 2.0,
+                         'kht': self.gBar.khtbar*3.0, 'ihvcn': 0.,
                          'leak': self.gBar.leakbar * 0.25},
-                'myelinatedaxon': {'nav11': self.gBar.nabar*0, 'klt': self.gBar.kltbar * 1e-3,
-                         'kht': self.gBar.khtbar*1e-3, 'ihvcn': 0.,
+                'myelinatedaxon': {sodiumch: self.gBar.nabar*0, 'klt': self.gBar.kltbar * 1e-2,
+                         'kht': self.gBar.khtbar*1e-2, 'ihvcn': 0.,
                          'leak': self.gBar.leakbar * 0.25*1e-3},
-                'hillock': {'nav11': self.gBar.nabar*2.0, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
-                            'leak': self.gBar.leakbar, },
-                'initseg': {'nav11': self.gBar.nabar*3.0, 'klt': self.gBar.kltbar*2, 'kht': self.gBar.khtbar*2,
+                'hillock': {sodiumch: self.gBar.nabar*4.0, 'klt': self.gBar.kltbar*1.0, 'kht': self.gBar.khtbar*3.0,
+                             'ihvcn': 0., 'leak': self.gBar.leakbar, },
+                'initseg': {sodiumch: self.gBar.nabar*3.0, 'klt': self.gBar.kltbar*2, 'kht': self.gBar.khtbar*2,
                             'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
-                'soma': {'nav11': self.gBar.nabar*0.65, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
+                'soma': {sodiumch: self.gBar.nabar*0.65, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar*1.5,
                          'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
-                'dend': {'nav11': self.gBar.nabar * 0.2, 'klt': self.gBar.kltbar *1, 'kht': self.gBar.khtbar *1,
+                'dend': {sodiumch: self.gBar.nabar * 0.2, 'klt': self.gBar.kltbar *1, 'kht': self.gBar.khtbar *1,
                          'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
-                'apic': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar * 0.25,
+                'apic': {sodiumch: self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar * 0.25,
                          'ihvcn': self.gBar.ihbar *0.25, 'leak': self.gBar.leakbar * 0.25, },
             }
             self.irange = np.linspace(-3, 12, 7)
             self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.},
                                      'kht': {'gradient': 'llinear', 'gminf': 0., 'lambda': 200.},
-                                     'nav11': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
+                                     sodiumch: {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
                             'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
+                                     sodiumch: {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
                             }
 
         elif modelType == 'XM13PasDend':

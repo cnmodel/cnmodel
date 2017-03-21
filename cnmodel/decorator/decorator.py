@@ -157,6 +157,8 @@ class Decorator():
          print the results to the terminal
         """
         print '\nChannel Validation'
+        print 'looking for sec_groups: ', cell.hr.sec_groups.keys()
+        print 'channelmaps: ', cell.channelMap.keys()
         secstuff = {}
         for s in cell.hr.sec_groups.keys():
             sectype = self.remapSectionType(string.rsplit(s, '[')[0])

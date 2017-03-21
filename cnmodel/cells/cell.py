@@ -26,7 +26,8 @@ class Cell(object):
         # dictionary of all sections associated with this cell
         self.all_sections = {}
         # the following section types (parts) are known to us:
-        for k in ['soma', 'maindend', 'secdend', 'dend', 'dendrite', 'internode', 'initialsegment', 'axonnode', 'axon', 'unmyelinatedaxon', 'myelinatedaxon', 'hillock']:
+        for k in ['soma', 'maindend', 'secdend', 'dend', 'dendrite', 'internode',
+            'initialsegment', 'axonnode', 'axon', 'unmyelinatedaxon', 'myelinatedaxon', 'hillock']:
             self.all_sections[k] = []  # initialize to an empty list
         self.species = 'mouse'
         self.status = {}  # dictionary of parameters used to instantiate the cell.
