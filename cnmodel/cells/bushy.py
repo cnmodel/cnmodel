@@ -3,7 +3,7 @@ from neuron import h
 from .cell import Cell
 #from .. import synapses
 from ..util import nstomho
-from .. import data
+#from .. import data
 from ..util import Params
 import numpy as np
 
@@ -326,7 +326,8 @@ class BushyRothman(Bushy):
 
                             
         elif modelType == 'mGBC':
-            # bushy from Xie and Manis, 2013, based on Cao and Oertel mouse conductances
+            # bushy from Xie and Manis, 2013, based on Cao and Oertel mouse conductances,
+            # BUT modified ad hoc for Spirou reconstructions.
             totcap = 26.0E-12 # uF/cm2 
             refarea = totcap  / self.c_m  # see above for units
             # original:
@@ -346,17 +347,17 @@ class BushyRothman(Bushy):
             self.channelMap = {
                 'axon': {'nav11': self.gBar.nabar*1, 'klt': self.gBar.kltbar * 1.0, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
                          'leak': self.gBar.leakbar * 0.25},
-                'unmyelinatedaxon': {'nav11': self.gBar.nabar*3.0, 'klt': self.gBar.kltbar * 2.0,
+                'unmyelinatedaxon': {'nav11': self.gBar.nabar*2.0, 'klt': self.gBar.kltbar * 2.0,
                          'kht': self.gBar.khtbar*2., 'ihvcn': 0.,
                          'leak': self.gBar.leakbar * 0.25},
                 'myelinatedaxon': {'nav11': self.gBar.nabar*0, 'klt': self.gBar.kltbar * 1e-3,
                          'kht': self.gBar.khtbar*1e-3, 'ihvcn': 0.,
                          'leak': self.gBar.leakbar * 0.25*1e-3},
-                'hillock': {'nav11': self.gBar.nabar*0.5, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
+                'hillock': {'nav11': self.gBar.nabar*2.0, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
                             'leak': self.gBar.leakbar, },
                 'initseg': {'nav11': self.gBar.nabar*3.0, 'klt': self.gBar.kltbar*2, 'kht': self.gBar.khtbar*2,
                             'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
-                'soma': {'nav11': self.gBar.nabar*0.5, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
+                'soma': {'nav11': self.gBar.nabar*0.65, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
                          'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
                 'dend': {'nav11': self.gBar.nabar * 0.2, 'klt': self.gBar.kltbar *1, 'kht': self.gBar.khtbar *1,
                          'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
