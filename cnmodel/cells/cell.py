@@ -98,7 +98,7 @@ class Cell(object):
         # these were not instantiated when the file was read, but when the decorator was run.
         for s in self.hr.sec_groups.keys():
             for sec in self.hr.sec_groups[s]:
-                section =self. hr.get_section(sec)
+                section =self.hr.get_section(sec)
                 mechs = self.hr.get_mechanisms(sec)
                 if s == 'myelinatedaxon':
                     section.cm = 0.002
@@ -132,14 +132,20 @@ class Cell(object):
     
     def list_sections(self):
         # print self.all_sections
+        print 'Known Section names:'
         for sec in self.all_sections:
-            print 'Sections named: %s' % sec
-            print '------------------------------------------'
+            print '  %s' % sec
             s = self.all_sections[sec]
             # print 's: ', s
             if len(s) > 0:
+                print '    ------------------------------------------'
+                print '    Sections present:'
                 for u in s:
-                    print 'Section type %s (%s): %s' % (sec, u.name(), Cell.sec_lookup[u.name()])
+                    print '    Type: %s (%s, %s): %s' % (sec,  u.name(), str(self.hr.get_section(u.name())), Cell.sec_lookup[u.name()])
+                print '    ------------------------------------------'
+            else:
+                print'    No section of this type in cell'
+                
 
     @property
     def soma(self):
@@ -190,7 +196,7 @@ class Cell(object):
         pre_opts : dictionary of options for the presynaptic cell (default: None)
             see the synapses class for valid options and format.
         post_opts : diction of options for the postsynaptic cell (default: None)
-            see synapses class for valide options and format.
+            see synapses class for valid options and format.
         **kwds : (optional)
             argmuments that are passed to the synapses class.
         

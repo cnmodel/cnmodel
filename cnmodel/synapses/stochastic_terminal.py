@@ -42,6 +42,11 @@ class StochasticTerminal(Terminal):
             calcium_pars: A dictionary of parameters (Param class) to determine the calcium channels in this section.
                 If None, then no calcium channels are inserted; otherwise, a P-type calcium conductance and a dynamic
                 mechanism are inserted, and their conductance is set.
+            delay : delay time before release
+            debug : set a flag to print stuff out while debugging
+            spike_source: the input spike source to use in net con - default is to use pre_sec
+            dep_flag : set to 1 for depression mechanism (slow), 0 to turn it off
+
         Outputs: a list with 3 variables:
         terminal, relsite, cleft
             terminal: this is the pointer to the terminal section that was inserted (same as pre_sec if it was

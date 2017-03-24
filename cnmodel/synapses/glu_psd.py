@@ -47,7 +47,7 @@ class GluPSD(PSD):
     insignificant effect.
     """
     def __init__(self, section, terminal, ampa_gmax, nmda_gmax,
-                 gvar=0, eRev=0, ampa_params=None):
+                 gvar=0, eRev=0, ampa_params=None, loc=0.5):
         PSD.__init__(self, section, terminal)
         
         ampa_params = {} if ampa_params is None else ampa_params
@@ -59,8 +59,8 @@ class GluPSD(PSD):
         self.section.push()
         for i in range(0, terminal.n_rzones):
             # create mechanisms
-            ampa = h.AMPATRUSSELL(0.5, self.section) # raman/trussell AMPA with rectification
-            nmda = h.NMDA_Kampa(0.5, self.section) # Kampa state model NMDA receptors
+            ampa = h.AMPATRUSSELL(loc, self.section) # raman/trussell AMPA with rectification
+            nmda = h.NMDA_Kampa(loc, self.section) # Kampa state model NMDA receptors
 
             # Connect terminal to psd
             relsite.setpointer(relsite._ref_XMTR[i], 'XMTR', ampa)

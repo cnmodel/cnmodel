@@ -8,9 +8,9 @@ class Exp2PSD(PSD):
     """
     Simple double-exponential PSD.
     """
-    def __init__(self, section, terminal):
+    def __init__(self, section, terminal, loc=0.5):
         PSD.__init__(self, section, terminal)
-        self.syn = h.Exp2Syn(0.5, sec=section)
+        self.syn = h.Exp2Syn(loc, sec=section)
         self.syn.tau1 = 0.1
         self.syn.tau2 = 0.3
         self.syn.e = 0

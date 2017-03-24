@@ -24,7 +24,20 @@ class Bushy(Cell):
     def make_psd(self, terminal, psd_type, **kwds):
         pre_sec = terminal.section
         pre_cell = terminal.cell
-        post_sec = self.soma
+        if 'postlocation' in kwds:
+            postlocation = kwds['postlocation']
+            posttype = postlocation.keys()[0]
+            sectioninfo = postlocation[posttype] # get the section info for the first entry
+            sectionnos = sectioninfo.keys() # get the section numbers to add synapses to
+            firstsec = sectionnos[0]  # here, just the first one... (splitting not implemented yet)
+            loc = sectioninfo[sectionnos[0]][0]  # where on the section?
+            uname = 'sections[%d]' % firstsec  # make a name to look up the neuron section object
+            post_sec = self.hr.get_section(uname)  # here it is
+            # self.list_sections()
+            # print 'post_sec: ', post_sec.name()  # checks... 
+        else:
+            post_sec = self.soma
+            loc = 0.5
         
         if psd_type == 'simple':
             return self.make_exp2_psd(post_sec, terminal)        
@@ -38,9 +51,9 @@ class Bushy(Cell):
                     AMPA_gmax = AMPA_gmax*kwds['AMPAScale']  # allow scaling of AMPA conductances
                     print ('AMPA Scaled to: %f by %f' % (AMPA_gmax, kwds['AMPAScale']))
                 NMDA_gmax = 0.4531929783503451*1e3 * 0
-                return self.make_glu_psd(post_sec, terminal, AMPA_gmax, NMDA_gmax)
+                return self.make_glu_psd(post_sec, terminal, AMPA_gmax, NMDA_gmax, loc=loc)
             elif pre_cell.type == 'dstellate':
-                return self.make_gly_psd(post_sec, terminal, type='glyslow')
+                return self.make_gly_psd(post_sec, terminal, type='glyslow', loc=loc)
             else:
                 raise TypeError("Cannot make PSD for %s => %s" % 
                             (pre_cell.type, self.type))

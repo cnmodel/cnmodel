@@ -21,7 +21,7 @@ class GlyPSD(PSD):
     def __init__(self, section, terminal, params=None,
                  gmax=1000., psdType='glyfast',
                  message=None, debug=False,
-                 gvar=0, eRev=-70):
+                 gvar=0, eRev=-70, loc=0.5):
 
         PSD.__init__(self, section, terminal)
         pre_sec = terminal.section
@@ -52,7 +52,7 @@ class GlyPSD(PSD):
         # 
         clefts = []
         for k in range(0, n_rzones):
-            cl = h.cleftXmtr(0.5, sec=post_sec)
+            cl = h.cleftXmtr(loc, sec=post_sec)
             clefts.append(cl)
         
         # and then make a set of postsynaptic receptor mechanisms
@@ -118,12 +118,12 @@ class GlyPSD(PSD):
     # the dictionary selection is made by selectpars in glycine_fit.py.
     #
 
-    def template_Gly_PSD_exp(self, debug=False, nReceptors=2, cellname=None, message=None):
+    def template_Gly_PSD_exp(self, debug=False, nReceptors=2, cellname=None, message=None, loc=0.5):
         sec = self.section
         psd = []
         sec.push()
         for k in range(0, nReceptors):
-            psd.append(h.GLY2(0.5, sec))
+            psd.append(h.GLY2(loc, sec))
         h.pop_section()
         par = ['alpha', 'beta']
         p = []
@@ -132,12 +132,12 @@ class GlyPSD(PSD):
         return (psd, par, p)
 
 
-    def template_Gly_PSD_State_Glya5(self, debug=False, nReceptors=2, psdtype=None, message=None):
+    def template_Gly_PSD_State_Glya5(self, debug=False, nReceptors=2, psdtype=None, message=None, loc=0.5):
         sec = self.section
         psd = []
         sec.push()
         for k in range(0, nReceptors):
-            psd.append(h.GLYa5(0.5, sec))
+            psd.append(h.GLYa5(loc, sec))
         h.pop_section()
         par = {'kf1': ('r', psd[0].kf1), # retreive values in the MOD file
             'kf2': ('r', psd[0].kf2),
@@ -150,12 +150,12 @@ class GlyPSD(PSD):
         return (psd, par)
 
 
-    def template_Gly_PSD_State_Gly6S(self, debug=False, nReceptors=2, psdtype=None, message=None):
+    def template_Gly_PSD_State_Gly6S(self, debug=False, nReceptors=2, psdtype=None, message=None, loc=0.5):
         sec = self.section
         psd = []
         sec.push()
         for k in range(0, nReceptors):
-            psd.append(h.Gly6S(0.5, sec)) # simple using Trussell model 6 states with desens
+            psd.append(h.Gly6S(loc, sec)) # simple using Trussell model 6 states with desens
             if debug:
                 print 'Gly6S psdtype: ', psdtype
             if psdtype == 'glyslow': # fit on 8 March 2010, error =  0.164, max open: 0.155
@@ -182,12 +182,12 @@ class GlyPSD(PSD):
 
 
     def template_Gly_PSD_State_PL(self, debug=False, nReceptors=2, cellname=None,
-                                psdtype=None, message=None):
+                                psdtype=None, message=None, loc=0.5):
         sec = self.section
         psd = []
         sec.push()
         for k in range(0, nReceptors):
-            psd.append(h.GLYaPL(0.5, sec)) # simple dextesche glycine receptors
+            psd.append(h.GLYaPL(loc, sec)) # simple dextesche glycine receptors
             if debug:
                 print 'PL psdtype: ', psdtype
             if psdtype == 'glyslow':
@@ -220,12 +220,12 @@ class GlyPSD(PSD):
         return (psd, par)
 
 
-    def template_Gly_PSD_State_GC(self, debug=False, nReceptors=2, psdtype=None, message=None):
+    def template_Gly_PSD_State_GC(self, debug=False, nReceptors=2, psdtype=None, message=None, loc=0.5):
         sec = self.section
         psd = []
         sec.push()
         for k in range(0, nReceptors):
-            psd.append(h.GLYaGC(0.5, sec)) # simple dextesche glycine receptors
+            psd.append(h.GLYaGC(loc, sec)) # simple dextesche glycine receptors
             if psdtype == 'glyslow':
                 psd[-1].k1 = 12.81    # (/uM /ms)   : binding
                 psd[-1].km1 = 0.0087#   (/ms)   : unbinding
