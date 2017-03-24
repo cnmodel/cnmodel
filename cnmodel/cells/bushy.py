@@ -22,41 +22,48 @@ class Bushy(Cell):
             raise ValueError ('Bushy model %s is unknown', model)
 
     def make_psd(self, terminal, psd_type, **kwds):
-        pre_sec = terminal.section
-        pre_cell = terminal.cell
-        if 'postlocation' in kwds:
-            postlocation = kwds['postlocation']
-            posttype = postlocation.keys()[0]
-            sectioninfo = postlocation[posttype] # get the section info for the first entry
-            sectionnos = sectioninfo.keys() # get the section numbers to add synapses to
-            firstsec = sectionnos[0]  # here, just the first one... (splitting not implemented yet)
-            loc = sectioninfo[sectionnos[0]][0]  # where on the section?
-            uname = 'sections[%d]' % firstsec  # make a name to look up the neuron section object
-            post_sec = self.hr.get_section(uname)  # here it is
-            # self.list_sections()
-            # print 'post_sec: ', post_sec.name()  # checks... 
-        else:
-            post_sec = self.soma
-            loc = 0.5
+        """
+        Connect a presynaptic terminal to one post section at the specified location, with the fraction
+        of the "standard" conductance determined by gbar.
+        The default condition is to try to pass the default unit test (loc=0.5)
         
+        Parameters
+        ----------
+        terminal : Presynaptic terminal (NEURON object)
+        
+        psd_type : either simple or multisite PSD for bushy cell
+        
+        kwds: dict of options. Two are currently handled:
+        postsize : expect a list consisting of [sectionno, location (float)]
+        AMPAScale : float to scale the ampa currents
+        
+        """
+        if 'postsite' in kwds:  # use a defined location instead of the default
+            postsite = kwds['postsite']
+            loc = postsite[1]  # where on the section?
+            uname = 'sections[%d]' % postsite[0]  # make a name to look up the neuron section object
+            post_sec = self.hr.get_section(uname)  # Tell us where to put the synapse.
+        else:
+            loc = 0.5
+            post_sec = self.soma
         if psd_type == 'simple':
-            return self.make_exp2_psd(post_sec, terminal)        
+            return self.make_exp2_psd(post_sec, terminal, loc=loc)
         elif psd_type == 'multisite':
-            if pre_cell.type == 'sgc':
+            if terminal.cell.type == 'sgc':
                 # Max conductances for the glu mechanisms are calibrated by 
                 # running `synapses/tests/test_psd.py`. The test should fail
                 # if these values are incorrect:
                 AMPA_gmax = 3.314707700918133*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
                 if 'AMPAScale' in kwds:
                     AMPA_gmax = AMPA_gmax*kwds['AMPAScale']  # allow scaling of AMPA conductances
-                    print ('AMPA Scaled to: %f by %f' % (AMPA_gmax, kwds['AMPAScale']))
+                    # print ('AMPA Scaled to: %f by %f' % (AMPA_gmax, kwds['AMPAScale']))
                 NMDA_gmax = 0.4531929783503451*1e3 * 0
                 return self.make_glu_psd(post_sec, terminal, AMPA_gmax, NMDA_gmax, loc=loc)
-            elif pre_cell.type == 'dstellate':
+            elif terminal.cell.type == 'dstellate':
                 return self.make_gly_psd(post_sec, terminal, type='glyslow', loc=loc)
             else:
                 raise TypeError("Cannot make PSD for %s => %s" % 
-                            (pre_cell.type, self.type))
+                            (terminal.cell.type, self.type))
         else:
             raise ValueError("Unsupported psd type %s" % psd_type)
 

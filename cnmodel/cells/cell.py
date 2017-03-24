@@ -32,7 +32,7 @@ class Cell(object):
         self.species = 'mouse'
         self.status = {}  # dictionary of parameters used to instantiate the cell.
         # Record synaptic inputs and projections
-        self.inputs = []
+        self.inputs = []  # inputs are recorded - synapse object, post_opts and kwds
         self.outputs = []
         
         # each cell has the following parameters:
@@ -145,7 +145,12 @@ class Cell(object):
                 print '    ------------------------------------------'
             else:
                 print'    No section of this type in cell'
-                
+    
+    def get_section_type(self, sec):
+        for s in self.all_sections:
+            if sec in self.all_sections[s]:
+                return s
+        return None
 
     @property
     def soma(self):
@@ -211,10 +216,17 @@ class Cell(object):
         
         synapse = synapses.Synapse(self, pre_opts, post_cell, post_opts, **kwds)
         self.outputs.append(synapse)
-        post_cell.inputs.append(synapse)
+        post_cell.inputs.append([synapse, post_opts, kwds])
         
         return synapse
 
+    def print_connections(self):
+        """
+        This is mostly for debugging ...
+        """
+        print 'outputs: ', self.outputs
+        print 'inputs: ', self.inputs
+    
     def make_terminal(self, post_cell, **kwds):
         """
         Create a synaptic terminal release mechanism suitable for output
@@ -276,8 +288,8 @@ class Cell(object):
                                 **kwds)
         return psd
 
-    def make_exp2_psd(self, post_sec, terminal):
-        return synapses.Exp2PSD(post_sec, terminal)
+    def make_exp2_psd(self, post_sec, terminal, loc=0.5):
+        return synapses.Exp2PSD(post_sec, terminal, loc=loc)
 
     def print_status(self):
         print("\nCell model: %s" % self.__class__.__name__)
