@@ -69,6 +69,9 @@ import sys
 
 usematlab = True
 if len(sys.argv) > 0:
+    if len(sys.argv) == 1:
+        print 'Call requires argument, must be either "matlab" or "cochlea"; default is "matlab"'
+        exit()
     flag = sys.argv[1]
     if flag not in ['matlab', 'cochlea']:
         print 'Flag must be either "matlab" or "cochlea"; default is "matlab"'

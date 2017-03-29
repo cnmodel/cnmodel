@@ -38,7 +38,7 @@ class Bushy(Cell):
         AMPAScale : float to scale the ampa currents
         
         """
-        if 'postsite' in kwds:  # use a defined location instead of the default
+        if 'postsite' in kwds:  # use a defined location instead of the default (soma(0.5)
             postsite = kwds['postsite']
             loc = postsite[1]  # where on the section?
             uname = 'sections[%d]' % postsite[0]  # make a name to look up the neuron section object
@@ -46,6 +46,7 @@ class Bushy(Cell):
         else:
             loc = 0.5
             post_sec = self.soma
+        
         if psd_type == 'simple':
             return self.make_exp2_psd(post_sec, terminal, loc=loc)
         elif psd_type == 'multisite':
@@ -124,7 +125,7 @@ class BushyRothman(Bushy):
                         'initialsegment': False, 'myelinatedaxon': False, 'unmyelinatedaxon': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Bushy',
                        'morphology': morphology, 'decorator': decorator}
-        self.i_test_range=(-0.5, 0.5, 0.05)
+        self.i_test_range=(-2, 2, 0.25)  # note that this gets reset with decorator according to channels
         self.spike_threshold = -40
         self.vrange = [-70., -57.]  # set a default vrange for searching for rmp
         
@@ -336,7 +337,7 @@ class BushyRothman(Bushy):
                 'apic': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar * 0.25,
                          'ihvcn': self.gBar.ihbar *0.25, 'leak': self.gBar.leakbar * 0.25, },
             }
-            self.irange = np.linspace(-3, 12, 7)
+            self.irange = np.linspace(-2, 2, 7)
             self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'kht': {'gradient': 'llinear', 'gminf': 0., 'lambda': 100.},
                                      'nav11': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
@@ -386,7 +387,7 @@ class BushyRothman(Bushy):
                 'apic': {sodiumch: self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar * 0.25,
                          'ihvcn': self.gBar.ihbar *0.25, 'leak': self.gBar.leakbar * 0.25, },
             }
-            self.irange = np.linspace(-3, 12, 7)
+            self.irange = np.arange(-1.5, 2.1, 0.25 )
             self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.},
                                      'kht': {'gradient': 'llinear', 'gminf': 0., 'lambda': 200.},
                                      sodiumch: {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar

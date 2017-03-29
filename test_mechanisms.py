@@ -21,6 +21,9 @@ from pyqtgraph.Qt import QtCore, QtGui
 import pylibrary.Utility as Util
 faulthandler.enable()
 
+nottestablemechs = ['cadyn', 'ca_ion', 'cadiff', 'cadifpmp', 'Mechanism',
+                'capmp', 'capump', 'cl_ion', 'extracellular', 'fastpas',
+                'k_ion', 'KIR', 'hh', 'na_ion', 'narsg', 'pas', 'cap']  # cap uses "pcabar"
 
 class ChannelKinetics():
     def __init__(self, args):
@@ -80,6 +83,7 @@ class ChannelKinetics():
     def run(self, modfile='CaPCalyx', color='r'):
         if isinstance(modfile, list):
             modfile = modfile[0]
+
         if modfile in self.tdur:
             tstep = self.tdur[modfile]
         else:
@@ -87,10 +91,7 @@ class ChannelKinetics():
         tdelay = 5.0
         Channel = cnmodel.util.Mechanism(modfile)
         leak = cnmodel.util.Mechanism('leak')
-        if modfile != 'cap':
-            Channel.set_parameters({'gbar': 1})
-        else:
-            pass
+        Channel.set_parameters({'gbar': 1})
         leak.set_parameters({'gbar': 1e-12})
         self.soma = cnmodel.util.Section(L=10, diam=10, mechanisms=[Channel, leak])
         if modfile == 'bkpjk':
@@ -158,18 +159,37 @@ class ChannelKinetics():
     def computeKinetics(self, ch):
         pass
 
+def getmechs():
+    mechs = []
+
+    for n in dir(nrn):
+        o = getattr(nrn, n)
+        if str(o) == str(nrn.Mechanism):
+            mechs.append(n)
+    return mechs
+
 if __name__ == "__main__":
+    mechs = getmechs()
     if len(sys.argv) < 2:
         print "\n\nUsage: python test_mechanisms.py <mechname>"
         print "  Available mechanisms:"
-        for n in dir(nrn):
-            o = getattr(nrn, n)
-            if str(o) == str(nrn.Mechanism):
-                print "    ", n
+        for n in mechs:
+            print "    ", n
         sys.exit(1)
-    ck = ChannelKinetics(sys.argv[1:])
 
+    if sys.argv[1:] in nottestablemechs:
+        exit()
+        
+    if sys.argv[1] == 'all':
+        for n in mechs:
+            if n in nottestablemechs:
+                print('Skipping %s' % n)
+                continue
+            else:
+                ck = ChannelKinetics(n)
+    else:
+        ck = ChannelKinetics(sys.argv[1])
+        
     if sys.flags.interactive == 0:
-        import pyqtgraph as pg
         pg.QtGui.QApplication.exec_()
 
