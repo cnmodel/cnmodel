@@ -1,5 +1,5 @@
-import lmfit
 import numpy as np
+import lmfit
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
 

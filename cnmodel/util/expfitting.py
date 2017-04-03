@@ -7,7 +7,7 @@ Provide single or double exponential fits to data.
 
 import lmfit
 import numpy as np
-
+import scipy.optimize
 
 class ExpFitting:
     """
@@ -53,8 +53,8 @@ class ExpFitting:
 
     def fit(self, x, y, p, verbose=False):
         
-        mim = lmfit.minimize(self.efunc, p, args=(x, y))
-        mim.leastsq(maxfev=5000*5)
+        kws={'maxfev': 5000}
+        mim = lmfit.minimize(self.efunc, p, method='least_squares', args=(x, y)) #, kws=kws)
         if verbose:
             lmfit.printfuncs.report_fit(mim.params)
         fitpars = mim.params

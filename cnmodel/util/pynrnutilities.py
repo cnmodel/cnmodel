@@ -97,7 +97,7 @@ def all_mechanism_types():
     return _mechtype_cache
 
 
-def reset():
+def reset(raiseError=True):
     """Introspect the NEURON kernel to verify that no objects are left over
     from previous simulation runs.
     """
@@ -107,13 +107,15 @@ def reset():
     
     # Make sure nothing is hanging around in an old exception or because of
     # reference cycles 
+
     sys.exc_clear()
-    gc.collect()
-    
+    gc.collect(2)
+    neuron.h.Vector().size()
+    numsec = 0
+
     remaining = []
-    
-    # No sections left
     n = len(list(neuron.h.allsec()))
+
     if n > 0:
         remaining.append((n, 'Section'))
         
@@ -127,9 +129,9 @@ def reset():
             n = len(neuron.h.List(name))
             if n > 0:
                 remaining.append((n, name))
-        
-    if len(remaining) > 0:
-        msg = ("Cannot reset--old objects have not been cleared: %s" % 
+    
+    if len(remaining) > 0 and raiseError:  # note that not raising the error leads to memory leak
+        msg = ("Cannot reset--old objects have not been cleared: %s" %
                ', '.join(['%d %s' % rem for rem in remaining]))
         raise RuntimeError(msg)
 

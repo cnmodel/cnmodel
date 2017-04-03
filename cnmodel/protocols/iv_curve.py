@@ -328,11 +328,13 @@ class IVCurve(Protocol):
             
             # Fit cell charging to single exponential
             fit = fitting.Exp1().fit(trace[:min_ind],
+                                     method='nelder',
                                      x=tx[:min_ind],
                                      xoffset=(tx[0], 'fixed'),
                                      yoffset=(min_val, -120, 0),
                                      amp=(min_diff, 0, 50),
-                                     tau=(tau_est, 0.1, 50))
+                                     tau=(tau_est, 0.5, 50),
+                                     )
 
             # find first maximum in the trace (following with first minimum)
             max_ind = np.argmax(trace[min_ind:]) + min_ind
@@ -351,10 +353,10 @@ class IVCurve(Protocol):
                                      xoffset=(tx[0], 'fixed'),
                                      yoffset=(max_val, -120, 0),
                                      amp1=(amp1_est, 0, 200),
-                                     tau1=(tau1_est, 0.1, 50),
+                                     tau1=(tau1_est, 0.5, 50),
                                      amp2=(amp2_est, -200, 0),
                                      tau_ratio=(tau2_est/tau1_est, 2, 50),
-                                     tau2='tau_ratio * tau1'
+                                     tau2='tau_ratio * tau1',
                                      )
             
             fits.append(fit)

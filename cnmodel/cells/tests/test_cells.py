@@ -12,52 +12,52 @@ from cnmodel.protocols import IVCurve
 #
 
 def test_bushy():
-    reset()
+    reset(raiseError=False)
     cell = cells.Bushy.create(species='guineapig', modelType='II')
     CellTester('bushy_guineapig-typeII', cell)
 
 def test_bushy21():
-    reset()
+    reset(raiseError=False)
     cell = cells.Bushy.create(species='guineapig', modelType='II-I')
     CellTester('bushy_guineapig-typeII-I', cell)
 
 def test_tstellate():
-    reset()
+    reset(raiseError=False)
     cell = cells.TStellate.create(species='guineapig', modelType='I-c')
     CellTester('tstellate_guineapig-typeI-c', cell)
 
 def test_tstellatet():
-    reset()
+    reset(raiseError=False)
     cell = cells.TStellate.create(species='guineapig', modelType='I-t')
     CellTester('tstellate_guineapig-typeI-t', cell)
 
 def test_dstellate():
-    reset()
+    reset(raiseError=False)
     cell = cells.DStellate.create(species='guineapig', modelType='I-II')
     CellTester('dstellate_guineapig-typeI-II', cell)
 
 def test_octopus():
-    reset()
+    reset(raiseError=False)
     cell = cells.Octopus.create(species='guineapig', modelType='II-o')
     CellTester('octopus_guineapig-typeII-o', cell)
 
 def test_pyramidal():
-    reset()
+    reset(raiseError=False)
     cell = cells.Pyramidal.create(species='rat', modelType='I')
     CellTester('pyramidal_rat_I', cell)
 
 def test_cartwheel():
-    reset()
+    reset(raiseError=False)
     cell = cells.Cartwheel.create(species='rat', modelType='I')
     CellTester('cartwheel_rat_I', cell)
 
 def test_sgc_basal_middle():
-    reset()
+    reset(raiseError=False)
     cell = cells.SGC.create(species='mouse', modelType='bm')
     CellTester('SGC_rat_bm', cell)
 
 def test_sgc_apical():
-    reset()
+    reset(raiseError=False)
     cell = cells.SGC.create(species='mouse', modelType='a')
     CellTester('SGC_rat_a', cell)
 
