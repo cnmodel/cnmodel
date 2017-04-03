@@ -117,6 +117,7 @@ class BushyRothman(Bushy):
         Returns
         -------
             Nothing
+                 
         """
         super(BushyRothman, self).__init__()
         if modelType == None:
@@ -179,6 +180,7 @@ class BushyRothman(Bushy):
         
         silent : boolean (default: True)
             run silently (True) or verbosely (False)
+        
         """
         #print '\nSpecies scaling: %s   %s' % (species, type)
         knownspecies = ['mouse', 'guineapig', 'cat']
@@ -238,7 +240,7 @@ class BushyRothman(Bushy):
         This routine defines channel density maps and distance map patterns
         for each type of compartment in the cell. The maps
         are used by the ChannelDecorator class to(specifically, it's private
-        _biophys function) to decorate the cell membrane.
+        \_biophys function) to decorate the cell membrane.
         
         Parameters
         ----------
@@ -254,15 +256,14 @@ class BushyRothman(Bushy):
         
         Notes
         -----
-        
         This routine defines the following variables for the class:
-            conductances (gBar)
-            a channelMap (dictonary of channel densities in defined anatomical compartments)
-            a current injection range for IV's (when testing)
-            a distance map, which defines how selected conductances in selected compartments
-                will change with distance. This includes both linear and exponential gradients,
-                the minimum conductance at the end of the gradient, and the space constant or
-                slope for the gradient.
+        # conductances (gBar)
+        # a channelMap (dictonary of channel densities in defined anatomical compartments)
+        # a current injection range for IV's (when testing)
+        # a distance map, which defines how selected conductances in selected compartments
+        will change with distance. This includes both linear and exponential gradients,
+        the minimum conductance at the end of the gradient, and the space constant or
+        slope for the gradient.
         
         """
         
@@ -437,22 +438,25 @@ class BushyRothman(Bushy):
     def adjust_na_chans(self, soma, gbar=1000., debug=False):
         """
         adjust the sodium channel conductance
+        
         Parameters
         ----------
         soma : neuron section object
-            a soma object whose sodium channel complement will have it's 
+            A soma object whose sodium channel complement will have its 
             conductances adjusted depending on the channel type
         
         gbar : float (default: 1000.)
-            the maximal conductance for the sodium channel
+            The maximal conductance for the sodium channel
         
         debug : boolean (false):
-            verbose printing
+            Verbose printing
             
         Returns
         -------
-            nothing
+            Nothing
+        
         """
+        
         if self.status['ttx']:
             gnabar = 0.0
         else:

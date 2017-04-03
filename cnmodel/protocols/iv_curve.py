@@ -34,7 +34,8 @@ class IVCurve(Protocol):
         """
         Run a current-clamp I/V curve on *cell*.
         
-        Parameters:
+        Parameters
+        ==========
         ivrange : list of tuples
             Each item in the list is (min, max, step) describing a range of 
             levels to test. Range values are inclusive, so the max value may
@@ -52,6 +53,7 @@ class IVCurve(Protocol):
             temperature of simulation (32)
         dt : 
             timestep of simulation (0.025)
+            
         """
         self.reset()
         self.cell = cell
@@ -150,6 +152,7 @@ class IVCurve(Protocol):
     def peak_vm(self, window=0.5):
         """
         :param window: fraction of trace to look at to find peak value
+        
         Return peak membrane voltage for each trace.
 
         """
@@ -168,9 +171,16 @@ class IVCurve(Protocol):
     
     def steady_vm(self, window=0.1):
         """
-        :param window: fraction of window to use for steady-state measurement, taken
+        Parameters
+        ==========
+        window: (float) default: 0.1
+        fraction of window to use for steady-state measurement, taken
         immediately before the end of the step
-        Return steady-state membrane voltage for each trace.
+        
+        Returns
+        =======
+        steady-state membrane voltage for each trace.
+        
         """
         Vm = self.voltage_traces
         steps = len(Vm)
@@ -183,8 +193,16 @@ class IVCurve(Protocol):
         """
         Return an array of spike times for each trace.
         
-        :param threshold: Optional threshold at which to detect spikes. By 
-        default, this queries cell.spike_threshold.
+        Parameters
+        ==========
+        threshold: float (default: None)
+            Optional threshold at which to detect spikes. By 
+            default, this queries cell.spike_threshold.
+        
+        Returns
+        =======
+        list of spike times.
+        
         """
         if threshold is None:
             threshold = self.cell.spike_threshold
@@ -216,6 +234,7 @@ class IVCurve(Protocol):
             the entire trace).
 
         return the spikes in a list
+        
         """
         filteredspikes = []
         for i in range(len(spikes)):
@@ -260,6 +279,7 @@ class IVCurve(Protocol):
         
         Analyzes only traces hyperpolarizing pulse traces near rest, with no 
         spikes.
+        
         """
         Vss = self.steady_vm()
         vmin += self.rest_vm()

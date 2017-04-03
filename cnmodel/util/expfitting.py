@@ -2,19 +2,26 @@
 # encoding: utf-8
 """
 expfitting.py
-
-Created by Paul Manis on 2014-10-08.
-
+Provide single or double exponential fits to data.
 """
 
-import sys
-import os
 import lmfit
 import numpy as np
 
 
 class ExpFitting:
     """
+    Parameters
+    ----------
+    nexp : int
+        1 or 2 for single or double exponential fit
+    initpars : dict
+        dict of initial parameters. For example: {'dc': 0., 
+        'a1': 1., 't1': 3, 'a2' : 0.5, 'delta': 3.}, where
+        delta determines the ratio between the time constants.
+    bounds : dict
+        dictionary of bounds for each parameter, with a list of lower and upper values.
+    
     """
     def __init__(self, nexp=1, initpars=None, bounds=None):
         self.fitpars = lmfit.Parameters()

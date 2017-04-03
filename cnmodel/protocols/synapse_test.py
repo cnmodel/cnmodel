@@ -198,17 +198,24 @@ class SynapseTest(Protocol):
             
             n_zones: Array containing the number of release zones for each
                      synapse.
+        
             n_requests: Array containing number of release requests for each 
                         synapse. Note for multi-zone synapses, a single 
                         presynaptic spike results in one release request _per_
                         zone.
+        
             n_releases: Array containing actual number of releases for each 
                         synapse.
+        
             tot_requests: The total number of release requests across all
-                          release zones. 
+                          release zones.
+        
             tot_releases: The total number of releases.
+        
             release_p: Release probability computed as 
                        tot_releases / tot_requests
+        
+        
         """
         synapse = self.synapses[0]
         
@@ -308,9 +315,9 @@ class SynapseTest(Protocol):
         
         Todo: 
         - This currently analyzes cumulative currents; might be better to 
-          analyze individual PSD currents
+        analyze individual PSD currents
         - Measure decay time constant, rate of facilitation/depression,
-          recovery.
+        recovery.
         
         """
         stim = self.stim

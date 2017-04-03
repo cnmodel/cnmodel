@@ -7,16 +7,33 @@ from .psd import PSD
 class GlyPSD(PSD):
     """Glycinergic PSD
     
+    This creates postsynaptoc glycinergic receptors. Receptors are connected to the XMTR range
+    variable of the terminal release mechanisms.
+    
     Parameters
     ----------
     section : Section
         The postsynaptic section in which to insert the receptor mechanism.
     terminal : Terminal
         The presynaptic Terminal instance
-    params : dict
-        Dictionary of kinetic parameters {'KV', 'KU', 'XMax'}
-    psdType : str
-        glyfast, glyslow, glyGC, glya5, or glyexp.
+    params : dict, default=None
+        Dictionary of kinetic parameters to override {'KV', 'KU', 'XMax'}
+    gmax : float, default=1000.
+        maximal conductance unless overridden by values used in psdType
+    psdType : str, default='glyfast'
+        Kinetic model of receptors: possiblities are:
+        glyfast, glyslow, glyGC, glya5, or glyexp, as defined in the mechanisms.
+    message : str, default: None
+        placeholder for a message to be printed out when testing.
+    debug: bool, default=False
+        enable printing of internal debugging messages.
+    gvar : float, default=0
+        coefficient of variation of the amplitudes for each of the release zones.
+    eRev : float, default=-70
+        "Reversal" potential, or Nernst potential for ions through the receptor channel.
+    loc : float, default=0.5
+        Position on the postsynaptic section to insert the mechanism, from [0..1]. 
+        
     """
     def __init__(self, section, terminal, params=None,
                  gmax=1000., psdType='glyfast',
@@ -119,6 +136,21 @@ class GlyPSD(PSD):
     #
 
     def template_Gly_PSD_exp(self, debug=False, nReceptors=2, cellname=None, message=None, loc=0.5):
+        """
+        Template to build simple glycinergic exp-style PSD
+        
+        Parameters
+        ----------
+        nReceptors : int, default=2
+            number of sites to implement
+        loc : float, default=0.5
+            Position on the postsynaptic section to insert the mechanism, from [0..1]. 
+    
+        Unused parameters:
+            cellname, debug, message.
+        
+        """
+        
         sec = self.section
         psd = []
         sec.push()
@@ -133,6 +165,20 @@ class GlyPSD(PSD):
 
 
     def template_Gly_PSD_State_Glya5(self, debug=False, nReceptors=2, psdtype=None, message=None, loc=0.5):
+        """
+        Template to build PSD using state model of glycine receptors, model glya5.mod
+        
+        Parameters
+        ----------
+        nReceptors : int, default=2
+            number of sites to implement
+        loc : float, default=0.5
+            Position on the postsynaptic section to insert the mechanism, from [0..1]. 
+    
+        Unused parameters:
+            cellname, debug, message, psdtype.
+        
+        """
         sec = self.section
         psd = []
         sec.push()
@@ -151,6 +197,23 @@ class GlyPSD(PSD):
 
 
     def template_Gly_PSD_State_Gly6S(self, debug=False, nReceptors=2, psdtype=None, message=None, loc=0.5):
+        """
+        Template to build PSD using state model of glycine receptors, model gly6s.mod
+        
+        Parameters
+        ----------
+        nReceptors : int, default=2
+            number of sites to implement
+        loc : float, default=0.5
+            Position on the postsynaptic section to insert the mechanism, from [0..1].
+        psdtype : str, default=None
+            resets the psd type to have slow kinetics if 'glyslow'. Any other string
+            defaults to kinetics in the mod file.
+    
+        Unused parameters:
+            cellname, debug, message.
+        
+        """
         sec = self.section
         psd = []
         sec.push()
@@ -183,6 +246,24 @@ class GlyPSD(PSD):
 
     def template_Gly_PSD_State_PL(self, debug=False, nReceptors=2, cellname=None,
                                 psdtype=None, message=None, loc=0.5):
+        """
+        Template to build PSD using state model of glycine receptors, model glypl.mod
+        
+        Parameters
+        ----------
+        nReceptors : int, default=2
+            number of sites to implement
+        loc : float, default=0.5
+            Position on the postsynaptic section to insert the mechanism, from [0..1]. 
+        psdtype : str, default=None
+            resets the psd type to have slow kinetics if 'glyslow'. 
+            'glyfast' forces fast kinetics.
+            Any other string defaults to the default kinetics in the mod file.
+    
+        Unused parameters:
+            cellname, debug, message,.
+        
+        """
         sec = self.section
         psd = []
         sec.push()
@@ -221,11 +302,28 @@ class GlyPSD(PSD):
 
 
     def template_Gly_PSD_State_GC(self, debug=False, nReceptors=2, psdtype=None, message=None, loc=0.5):
+        """
+        Template to build PSD using state model of glycine receptors, model glyaGC.mod
+        
+        Parameters
+        ----------
+        nReceptors : int, default=2
+            number of sites to implement
+        loc : float, default=0.5
+            Position on the postsynaptic section to insert the mechanism, from [0..1]. 
+        psdtype : str, default=None
+            resets the psd type to have slow kinetics if 'glyslow'. Any other string
+            defaults to predefined kinetics in the mod file.
+    
+        Unused parameters:
+            cellname, debug, message, psdtype.
+        
+        """
         sec = self.section
         psd = []
         sec.push()
         for k in range(0, nReceptors):
-            psd.append(h.GLYaGC(loc, sec)) # simple dextesche glycine receptors
+            psd.append(h.GLYaGC(loc, sec)) # simple Dextesche glycine receptors
             if psdtype == 'glyslow':
                 psd[-1].k1 = 12.81    # (/uM /ms)   : binding
                 psd[-1].km1 = 0.0087#   (/ms)   : unbinding

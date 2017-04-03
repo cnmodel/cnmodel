@@ -97,6 +97,7 @@ class DummySGC(SGC):
             (simulator='cochlea'). Requires installation of the modified
             versions of cochlea and thorns from github.com/pbmanis/cochlea and
             github.com/pbmanis/thorns.
+        
         """
         SGC.__init__(self, cf, sr)
         self.vecstim = h.VecStim()
@@ -253,6 +254,7 @@ class SGC_TypeI(SGC):
         -----
         The 'guineapig' model uses the mouse HCN channel model, verbatim. This may not
         be appropriate, given that the other conductances are scaled up.
+        
         """
         
         soma = self.soma

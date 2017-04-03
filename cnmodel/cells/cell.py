@@ -12,6 +12,7 @@ from .. import decorator
 class Cell(object):
     """
     Base class for all cell types.
+    
     """
     type = None
     
@@ -188,8 +189,8 @@ class Cell(object):
         """
         Create a new synapse connecting this cell to a postsynaptic cell. 
         The synapse is automatically created using 
-        pre_cell.make_terminal(post_cell, **pre_opts) and  
-        post_cell.make_psd(terminal, **post_opts).
+        pre_cell.make_terminal(post_cell, \**pre_opts) and  
+        post_cell.make_psd(terminal, \**post_opts).
         
         By default, the cells decide which sections to connect. This can be 
         overridden by specifying 'section' in pre_opts and/or post_opts.
@@ -202,12 +203,13 @@ class Cell(object):
             see the synapses class for valid options and format.
         post_opts : diction of options for the postsynaptic cell (default: None)
             see synapses class for valid options and format.
-        **kwds : (optional)
+        \**kwds : (optional)
             argmuments that are passed to the synapses class.
         
         Returns
         -------
         the synapse object
+        
         """
         if pre_opts is None:
             pre_opts = {}
@@ -234,11 +236,11 @@ class Cell(object):
         This routine is a placeholder and should be replace in the specific
         cell class with code that performs the required actions for that class.
         
-        Paramaters
+        Parameters
         ----------
         post_cell : the target terminal cell (required)
         
-        **kwds : parameters passed to the terminal
+        \**kwds : parameters passed to the terminal
         
         """
         raise NotImplementedError("Cannot make Terminal connecting %s => %s" % 
@@ -251,11 +253,11 @@ class Cell(object):
         This routine is a placeholder and should be overridden in the specific
         cell class with code that performs the required actions for that class.
         
-        Paramaters
+        Parameters
         ----------
         terminal : the terminal that connects to the PSD (required)
         
-        **kwds : parameters passed to the terminal
+        \**kwds : parameters passed to the terminal
         
         """
         pre_cell = terminal.cell
@@ -335,6 +337,7 @@ class Cell(object):
         """
         print the mechanisms that are inserted into the specified section,
         and their densities (in uS/cm^2)
+        
         """
         print '\n    Installed mechanisms:'
         self.get_mechs(section)
@@ -371,6 +374,7 @@ class Cell(object):
         vrange brackets the interval
         Implemented here are the basic RM03 mechanisms
         This function should be replaced for specific cell types.
+        
         """
         for part in self.all_sections.keys():
             for sec in self.all_sections[part]:

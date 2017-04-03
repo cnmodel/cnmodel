@@ -2,6 +2,8 @@
 class Morphology(object):
     """
     Base class for morphological structure
+    Provides the ability to read .hoc files for NEURON simulations.
+    
     """
     def init():
         pass

@@ -8,7 +8,7 @@ from ..util import nstomho
 from ..util import Params
 #from .. import data
 
-__all__ = ['TStellate', 'TStellateNav11', 'TStellateFast'] 
+__all__ = ['TStellate', 'TStellateRothman', 'TStellateNav11', 'TStellateFast'] 
 
 
 class TStellate(Cell):
@@ -60,7 +60,7 @@ class TStellateRothman(TStellate):
     def __init__(self, morphology=None, decorator=None, nach='na', ttx=False,
                 species='guineapig', modelType=None, debug=False):
         """
-        initialize a planar stellate (T-stellate) cell, using the default parameters for guinea pig from
+        Initialize a planar stellate (T-stellate) cell, using the default parameters for guinea pig from
         R&M2003, as a type I cell.
         Modifications to the cell can be made by calling methods below. These include:
         Converting to a type IA model (add transient K current) (species: guineapig-TypeIA).
@@ -238,10 +238,11 @@ class TStellateRothman(TStellate):
         -----
         
         This routine defines the following variables for the class:
-            conductances (gBar)
-            a channelMap (dictonary of channel densities in defined anatomical compartments)
-            a current injection range for IV's (when testing)
-            a distance map, which defines how selected conductances in selected compartments
+            
+            - conductances (gBar)
+            - a channelMap (dictonary of channel densities in defined anatomical compartments)
+            - a current injection range for IV's (when testing)
+            - a distance map, which defines how selected conductances in selected compartments
                 will change with distance. This includes both linear and exponential gradients,
                 the minimum conductance at the end of the gradient, and the space constant or
                 slope for the gradient.

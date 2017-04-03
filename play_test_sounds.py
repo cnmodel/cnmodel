@@ -13,7 +13,7 @@ import PySounds
 import sys
 
 if len(sys.argv) >= 2:
-    stim = sys.argv[1]
+    stimarg = sys.argv[1]
 else:
     exit()
 
@@ -70,14 +70,17 @@ specs = OrderedDict([('pip', (pipwins, sound.TonePip)),
                      ('noisemod', (noisemodwins, sound.SAMNoise)),
                      ('clicks', (clickwins, sound.ClickTrain)),
                      ('fmsweep', (fmwins, sound.FMSweep))])
-
-if stim in stims:
+if stimarg == 'all':
+    stimlist = stims.keys()
+else:
+    stimlist = [stimarg]
+for stim in stimlist:
     print stim
     if stim in ['clicks']:
         wave = stims[stim][1](rate=Fs, duration=1.0, dbspl=level,
                          click_duration=1e-4, click_starts=1e-3*np.linspace(10, 500, 10))
     elif stim in ['fmsweep']:
-        wave = stims[stim][1](rate=Fs, duration=0.25, dbspl=level,
+        wave = stims[stim][1](rate=Fs, duration=0.5, dbspl=level,
                             start=0., ramp='linear', freqs=[16000, 200])
     elif stim in ['pip', 'pipmod', 'noise', 'noisemod']:
         wave = stims[stim][1](rate=Fs, duration=2.0, f0=cf, dbspl=level, 

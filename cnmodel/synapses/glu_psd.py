@@ -13,7 +13,7 @@ class GluPSD(PSD):
     variable of the terminal release mechanisms.
     
     Parameters
-    ==========
+    ----------
     section : Section instance
         The postsynaptic section into which the receptor mechanisms should be
         attached
@@ -36,7 +36,7 @@ class GluPSD(PSD):
         keys are Ro1, Ro2, Rc1, Rc2, and PA.
         
     Notes
-    =====
+    -----
     
     *ampa_gmax* and *nmda_gmax* should be provided as the maximum *measured*
     conductances; these will be automatically corrected for the maximum open
@@ -45,6 +45,7 @@ class GluPSD(PSD):
     GluPSD does not include a cleft mechanism because AMPATRUSSELL implements
     its own cleft and NMDA_Kampa is slow enough that a cleft would have 
     insignificant effect.
+    
     """
     def __init__(self, section, terminal, ampa_gmax, nmda_gmax,
                  gvar=0, eRev=0, ampa_params=None, loc=0.5):
@@ -98,7 +99,13 @@ class GluPSD(PSD):
 
     def record(self, *args):
         """Create a new set of vectors to record parameters for each release
-        site. Allowed parameters are 'i', 'g', and 'Open'.
+        site.
+        
+        Parameters
+        ----------
+        \*args : 
+            Allowed parameters are 'i' (current), 'g' (conductance), and 'Open' (open probability).
+        
         """
         self.vectors = {'ampa': [], 'nmda': []}
         for receptor in self.vectors:
@@ -112,9 +119,15 @@ class GluPSD(PSD):
     def get_vector(self, receptor, var, i=0):
         """Return an array from a previously recorded vector. 
         
-        *receptor* may be 'ampa' or 'nmda'
-        *var* may be 'i', 'g', or 'Open'
-        *i* is the integer index of the psd (if this is a multi-site synapse)
+        Parameters
+        ----------
+        receptor : str
+             May be 'ampa' or 'nmda'
+        var : str
+            Allowed parameters are 'i' (current), 'g' (conductance), and 'Open' (open probability).
+        i : int, default=0
+             The integer index of the psd (if this is a multi-site synapse)
+        
         """
         v = self.vectors[receptor][i][var]
         return np.array(v)

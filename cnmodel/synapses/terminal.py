@@ -7,6 +7,13 @@ class Terminal(object):
     
     """
     def __init__(self, section):
+        """
+        Parameters
+        ----------
+        section : :obj:`NEURON section`
+            Set the section in the postsynaptic cell that the terminal is attached to.
+        
+        """
         self._section = section
         
     @property

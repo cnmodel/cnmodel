@@ -11,10 +11,17 @@ class HocReader(object):
     """
     Provides useful methods for reading hoc structures.
     
-    Input:
+    Parameters\n-----------
         hoc: a hoc object or a "xxx.hoc" file name.
     """
     def __init__(self, hoc):
+        """
+        Parameters
+        ----------
+        hoc : :obj: `hoc` or str
+            Either a hoc object that hs been already created, or a string that defines a hoc file name.
+        
+        """
         self.file_loaded = False
         if isinstance(hoc, basestring):
             fullfile = os.path.join(os.getcwd(), hoc)
@@ -69,7 +76,17 @@ class HocReader(object):
 
     def get_section(self, sec_name):
         """
-        Return the hoc Section object with the given name.
+        Get the section associated with the section name
+        
+        Parameters
+        ----------
+        sec_name : str
+            The name of the section object.
+        
+        Returns
+        -------
+        The hoc Section object with the given name.
+        
         """
         try:
             return self.sections[sec_name]
@@ -102,9 +119,16 @@ class HocReader(object):
     def get_mechanisms(self, section):
         """
         Get a set of all of the mechanisms inserted into a given section
-        Input: section (hoc object)
-        Returns: set of mechanism names
-        Side-effects: None
+
+        Parameters
+        ----------
+        section : :obj: `NEURON section`
+            The NEURON section object.
+
+        Returns
+        -------
+        A list of mechanism names
+
         """
         return self.mechanisms[section]
 
@@ -116,14 +140,18 @@ class HocReader(object):
         kind of 'gbarname' than 'gbar<name>_mechname'
         returns the average of the conductance density, as that may range across different
         values in a section (e.g., can vary by segments)
-        Input: section (hoc object)
-                mechanism mechanism is a list ['name', 'gbarname']. It is used to 
-                retrieve the mechanism density from HOC as 
-                `segment.name.gbarname`.
-        Output:
-            mean conductance inserted into the section across segments
-        Side-effects:
-            None
+        Parameters
+        ----------
+        section : :obj: `NEURON section`
+            The NEURON section object.
+        mechanism : list
+            mechanism is a list ['name', 'gbarname']. It is used to 
+            retrieve the mechanism density from HOC as 
+            `segment.name.gbarname`.
+
+        Returns
+        -------
+            Mean conductance of the selected mechanism in the section, averaged across all segments of the section.
         """
         
         gmech = []
@@ -141,7 +169,6 @@ class HocReader(object):
                 print 'hoc_reader:get_density failed to evaluate the mechanisms... '
                 raise
 
-
 #        print gmech
         if len(gmech) == 0:
             gmech = 0.
@@ -151,6 +178,17 @@ class HocReader(object):
         """
         Get the info of the given section
         modified from: neuronvisio
+        
+        Parameters
+        ----------
+        section : :obj: `NEURON section`
+            The NEURON section object.
+        
+        Returns
+        -------
+        str
+            containing the information, with html formatting.
+        
         """
         info = "<b>Section Name:</b> %s<br/>" %section.name()
         info += "<b>Length [um]:</b> %f<br/>" % section.L
@@ -173,6 +211,10 @@ class HocReader(object):
         return info
 
     def read_section_info(self):
+        """
+        Read all the information about the sections in the current hoc file
+        Stores the result in the mechanisms class variable.
+        """
         # Collect list of all sections and their mechanism names.
         self.sections = collections.OrderedDict()
         self.mechanisms = collections.OrderedDict()
@@ -187,7 +229,7 @@ class HocReader(object):
 
     def hoc_namespace(self):
         """
-        Return a dict of the HOC namespace {'variable_name': hoc_object}.
+        Get a dict of the HOC namespace {'variable_name': hoc_object}.
         NOTE: this method requires NEURON >= 7.3
         """
         names = {}
@@ -205,7 +247,17 @@ class HocReader(object):
     
     def find_hoc_hname(self, regex):
         """
-        Return a list of the names of HOC objects whose *hname* matches regex.        
+        Find hoc names matching a pattern
+        
+        Parameters
+        ----------
+        regex : str
+            Regular expression (Python Re module) to search for.
+         
+        Returns
+        -------
+        list 
+            The names of HOC objects whose *hname* matches regex.        
         """
         objs = []
         ns = self.hoc_namespace()
@@ -223,9 +275,12 @@ class HocReader(object):
         Declare a grouping of sections (or section names). Sections may be
         grouped by any arbitrary criteria (cell, anatomical type, etc).
         
-        Input:
-            name: string name of the section group
-            sections: list of section names or hoc Section objects.
+        Parameters
+        ----------
+        name : str
+                name of the section group
+        sections: list
+            section names or hoc Section objects.
         
         """
         if name in self.sec_groups and not overwrite:
@@ -240,7 +295,16 @@ class HocReader(object):
 
     def get_section_group(self, name):
         """
-        Return the set of section names in the group *name*.
+        Get a section group by name
+        Parameters
+        ----------
+        name : str
+            name of the group (dendrite, for example)
+        
+        Returns
+        -------
+        The set of section names in the group *name*.
+        
         """
         return self.sec_groups[name]
     
@@ -256,13 +320,17 @@ class HocReader(object):
         """
         Add a new section groups from the hoc variables indicated in *names*.
         
-        Input:
-            names: list of variable names. Each name must refer to a list of 
+        Parameters
+        -----------
+        names : list 
+            List containing variable names as strings. Each name must refer to a list of 
                    Sections in hoc. If a dict is supplied instead, then it
                    maps {hoc_list_name: section_group_name}.
-        Side effects (modifies):
+        
+        Side effects (modifies)
+        -----------------------
            calls add_section_group
-        returns: Nothing.
+        
         """
         # if a list is supplied, then the names of groups to create are 
         # exactly the same as the names of hoc lists.
@@ -277,13 +345,17 @@ class HocReader(object):
         """
         modified from:neuronvisio
         Generate structures that describe the geometry of the sections and their segments (all segments are returned)
-        Inputs: None
-        Outputs: vertexes: record array containing {pos: (x,y,z), dia, sec_id}
+        
+        Returns
+        -------
+        vertexes : record array containing {pos: (x,y,z), dia, sec_id}
                            for each segment.
-                 edges:    array of pairs indicating the indexes of connected
+        edges :    array of pairs indicating the indexes of connected
                            vertexes.
-        Side effects:
-            modifies vertexes and edges.
+        Side effects
+        ------------
+            Modifies vertexes and edges.
+        
         """
         
         # return cached geometry if this method has already run.
@@ -316,10 +388,22 @@ class HocReader(object):
         self.vertexes[:] = vertexes
         return self.vertexes, self.edges
 
-    def retrieve_coordinate(self, sec):
-        """Retrieve the coordinates of the section avoiding duplicates"""
+    def retrieve_coordinate(self, section):
+        """Retrieve the coordinates of a section avoiding duplicates
+        
+        Parameters
+        ----------
+        section : :obj: `NEURON section`
+            The NEURON section object.        
+        
+        Returns
+        -------
+        array
+            arrays of x, y, z, d for all the segments of the specified section.
+        
+        """
 
-        sec.push()
+        section.push()
         x, y, z, d = [],[],[],[]
 
         tot_points = 0
@@ -360,7 +444,13 @@ class HocReader(object):
             
     def get_branch(self, root):
         """
-        Return all sections in a branch, starting with root.        
+        Return all sections in a branch, starting with root.
+        
+        Parameters
+        ----------
+        root : :obj: `NEURON section`
+            The NEURON section object.
+        
         """
         branch = [root]
         childs = [root]
@@ -374,8 +464,15 @@ class HocReader(object):
 
     def translate_branch(self, root, dx):
         """
-        Move the branch beginning at *root* by *dx*, which must be an array of
-        length 3.
+        Move the branch beginning at *root* by *dx*.
+        
+        Parameters
+        ----------
+        root : :obj: `NEURON section`
+            The NEURON section object.
+        dx : array
+           Which must be an array of length 3 defining the translation.
+        
         """
         self.get_geometry()
         dx[np.newaxis, :]
@@ -388,10 +485,15 @@ class HocReader(object):
         """
         Using the current state of vertexes, edges, generates a scalar field
         useful for building isosurface or volumetric renderings.
-        Input:
-            resolution: width (um) of a single voxel in the scalar field.
-            max_size: maximum allowed scalar field size (bytes).
-        Returns:
+        
+        Parameters
+        ----------
+        resolution: float, default=1.0 microns
+            width (um) of a single voxel in the scalar field.
+        max_size: int
+            maximum allowed scalar field size (bytes).
+        Returns
+        -------
             * 3D scalar field indicating distance from nearest membrane,
             * 3D field indicating section IDs of nearest membrane,
             * QTransform that maps from 3D array indexes to original vertex 
