@@ -73,7 +73,7 @@ class SynapseTester(UserTester):
     
     def run_test(self, pre, post):
         # Make sure no objects are left over from previous tests
-        reset()
+        reset(raiseError=False)
         
         # seed random generator using the name of this test
         seed = "%s_%s" % (pre, post)
