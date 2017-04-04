@@ -298,6 +298,7 @@ class IVCurve(Protocol):
             print("WARNING: Not enough traces to do linear reggression in "
                   "IVCurve.input_resistance_tau().")
             print('{0:<15s}: {1:s}'.format('vss', ', '.join(['{:.2f}'.format(v) for v in Vss])))
+            print('{0:<15s}: {1:s}'.format('Icmd', ', '.join(['{:.2f}'.format(i) for i in Icmd])))
             print('{0:<15s}: {1:s}'.format('vmask', repr(vmask.astype(int))))
             print('{0:<15s}: {1:s} '.format('imask', repr(imask.astype(int))))
             print('{0:<15s}: {1:s}'.format('spikemask', repr(smask.astype(int))))

@@ -128,7 +128,7 @@ class BushyRothman(Bushy):
                         'initialsegment': False, 'myelinatedaxon': False, 'unmyelinatedaxon': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Bushy',
                        'morphology': morphology, 'decorator': decorator}
-        self.i_test_range=(-2, 2, 0.25)  # note that this gets reset with decorator according to channels
+        self.i_test_range=(-1, 1, 0.05)  # note that this gets reset with decorator according to channels
         self.spike_threshold = -40
         self.vrange = [-70., -57.]  # set a default vrange for searching for rmp
         
@@ -301,7 +301,7 @@ class BushyRothman(Bushy):
                 'apic': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar * 0.2, 'kht': self.gBar.khtbar * 0.2,
                          'ihvcn': self.gBar.ihbar / 4., 'leak': self.gBar.leakbar * 0.2, },
             }
-            self.irange = np.linspace(-1., 1., 11)
+#            self.irange = np.linspace(-1., 1., 21)
             self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'nacn': {'gradient': 'exp', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
