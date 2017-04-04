@@ -55,10 +55,12 @@ class Bushy(Cell):
                 # running `synapses/tests/test_psd.py`. The test should fail
                 # if these values are incorrect:
                 AMPA_gmax = 3.314707700918133*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
+                NMDA_gmax = 0.4531929783503451*1e3
                 if 'AMPAScale' in kwds:
-                    AMPA_gmax = AMPA_gmax*kwds['AMPAScale']  # allow scaling of AMPA conductances
+                    AMPA_gmax = AMPA_gmax * kwds['AMPAScale']  # allow scaling of AMPA conductances
                     # print ('AMPA Scaled to: %f by %f' % (AMPA_gmax, kwds['AMPAScale']))
-                NMDA_gmax = 0.4531929783503451*1e3 * 0
+                if 'NMDAScale' in kwds:
+                    NMDA_gmax = NMDA_gmax * kwds['NMDAScale']
                 return self.make_glu_psd(post_sec, terminal, AMPA_gmax, NMDA_gmax, loc=loc)
             elif terminal.cell.type == 'dstellate':
                 return self.make_gly_psd(post_sec, terminal, type='glyslow', loc=loc)
@@ -162,7 +164,7 @@ class BushyRothman(Bushy):
         self.get_mechs(self.soma)
         self.cell_initialize(vrange=self.vrange)
         if debug:
-            print "<< Bushy model created, point cell using JSR parameters >>"
+            print "<< Bushy model: Created point cell using JSR parameters >>"
 
     def species_scaling(self, species='guineapig', modelType='II', silent=True):
         """
