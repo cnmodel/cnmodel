@@ -251,7 +251,7 @@ class SynapseTest(Protocol):
         data = []
         for j in range(0, len(self.synapses)):
             relsite = self.synapses[j].terminal.relsite
-            nev = relsite.ev_index
+            nev = int(relsite.ev_index)
             ev = np.empty(nev, dtype=[('time', float), ('latency', float)])
             ev['latency'] = np.array(relsite.EventLatencies)[:nev]
             ev['time'] = np.array(relsite.EventTime)[:nev]
