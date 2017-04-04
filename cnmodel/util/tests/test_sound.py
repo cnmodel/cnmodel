@@ -30,8 +30,8 @@ def test_tonepip():
     assert np.allclose(s1.measure_dbspl(ps+rd, ps+pd-rd), db, atol=0.1, rtol=0.01)
     
     # test for quiet before and after pip
-    assert np.all(s1.sound[:(ps*rate)-1] == 0)
-    assert np.all(s1.sound[((ps+pd)*rate)+1:] == 0)
+    assert np.all(s1.sound[:int(ps*rate)-1] == 0)
+    assert np.all(s1.sound[int((ps+pd)*rate)+1:] == 0)
     
     # test the sound can be recreated from its key
     key = s1.key()
@@ -61,8 +61,8 @@ def test_noisepip():
     assert np.allclose(s1.measure_dbspl(ps+rd, ps+pd-rd), db, atol=0.1, rtol=0.01)
     
     # test for quiet before and after pip
-    assert np.all(s1.sound[:(ps*rate)-1] == 0)
-    assert np.all(s1.sound[((ps+pd)*rate)+1:] == 0)
+    assert np.all(s1.sound[:int(ps*rate)-1] == 0)
+    assert np.all(s1.sound[int((ps+pd)*rate)+1:] == 0)
     
     # test the sound can be recreated from its key
     key = s1.key()
@@ -74,8 +74,8 @@ def test_noisepip():
     
     assert np.all(s1.time == s2.time)
     assert np.all(s1.sound == s2.sound)
-    start = (ps * rate) + 1
-    end = ((ps+pd) * rate) - 1
+    start = int(ps * rate) + 1
+    end = int((ps+pd) * rate) - 1
     assert not np.any(s1.sound[start:end] == s3.sound[start:end])
 
 
