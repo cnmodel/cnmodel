@@ -1,6 +1,6 @@
 from neuron import h
 import numpy as np
-import neuron as nrn
+#import neuron as nrn
 
 from .cell import Cell
 #from .. import synapses
@@ -8,59 +8,78 @@ from ..util import nstomho
 from ..util import Params
 #from .. import data
 
-__all__ = ['TStellate', 'TStellateNav11', 'TStellateFast'] 
+__all__ = ['Tuberculoventral'] 
 
 
-class TStellate(Cell):
+class Tuberculoventral(Cell):
     
-    type = 'tstellate'
+    type = 'Tuberculoventral'
 
     @classmethod
     def create(cls, model='RM03', **kwds):
         if model == 'RM03':
-            return TStellateRothman(**kwds)
-        # elif model == 'Nav11':   # these models are not supported.
-        #     return TStellateNav11(**kwds)
-        # elif model == 'fast':
-        #     return TStellateFast(**kwds)
+            return Tuberculoventral(**kwds)
         else:
-            raise ValueError ('TStellate type %s is unknown', type)
+            raise ValueError ('Tuberculoventral type %s is unknown', type)
 
     def make_psd(self, terminal, psd_type, **kwds):
-        pre_sec = terminal.section
-        pre_cell = terminal.cell
-        post_sec = self.soma
-
-        if psd_type == 'simple':
-            return self.make_exp2_psd(post_sec, terminal)
+        """
+        Connect a presynaptic terminal to one post section at the specified location, with the fraction
+        of the "standard" conductance determined by gbar.
+        The default condition is to try to pass the default unit test (loc=0.5)
         
+        Parameters
+        ----------
+        terminal : Presynaptic terminal (NEURON object)
+        
+        psd_type : either simple or multisite PSD for bushy cell
+        
+        kwds: dict of options. Two are currently handled:
+        postsize : expect a list consisting of [sectionno, location (float)]
+        AMPAScale : float to scale the ampa currents
+        
+        """
+        if 'postsite' in kwds:  # use a defined location instead of the default (soma(0.5)
+            postsite = kwds['postsite']
+            loc = postsite[1]  # where on the section?
+            uname = 'sections[%d]' % postsite[0]  # make a name to look up the neuron section object
+            post_sec = self.hr.get_section(uname)  # Tell us where to put the synapse.
+        else:
+            loc = 0.5
+            post_sec = self.soma
+        
+        if psd_type == 'simple':
+            return self.make_exp2_psd(post_sec, terminal, loc=loc)
         elif psd_type == 'multisite':
-            if pre_cell.type == 'sgc':
+            if terminal.cell.type == 'sgc':
                 # Max conductances for the glu mechanisms are calibrated by 
                 # running `synapses/tests/test_psd.py`. The test should fail
                 # if these values are incorrect:
-                AMPA_gmax = 0.22479596944138733*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
-                NMDA_gmax = 0.12281291946623739*1e3
-                return self.make_glu_psd(post_sec, terminal, AMPA_gmax, NMDA_gmax)
-            elif pre_cell.type == 'dstellate':
-                # Get GLY kinetic constants from database 
-                return self.make_gly_psd(post_sec, terminal, type='glyfast')
+                AMPA_gmax = 3.314707700918133*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
+                NMDA_gmax = 0.4531929783503451*1e3
+                if 'AMPAScale' in kwds:
+                    AMPA_gmax = AMPA_gmax * kwds['AMPAScale']  # allow scaling of AMPA conductances
+                if 'NMDAScale' in kwds:
+                    NMDA_gmax = NMDA_gmax*kwds['NMDAScale']
+                return self.make_glu_psd(post_sec, terminal, AMPA_gmax, NMDA_gmax, loc=loc)
+            elif terminal.cell.type == 'dstellate':
+                return self.make_gly_psd(post_sec, terminal, type='glyfast', loc=loc)
             else:
                 raise TypeError("Cannot make PSD for %s => %s" % 
-                                (pre_cell.type, self.type))
+                            (terminal.cell.type, self.type))
         else:
             raise ValueError("Unsupported psd type %s" % psd_type)
 
 
-class TStellateRothman(TStellate):
+class Tuberculoventral(Tuberculoventral):
     """
-    VCN T-stellate base model.
-    Rothman and Manis, 2003abc (Type I-c, Type I-t)
+    Tuberculoventral Neuron (DCN) base model
+    Adapted from T-stellate model
     """
     def __init__(self, morphology=None, decorator=None, nach='na', ttx=False,
                 species='guineapig', modelType=None, debug=False):
         """
-        initialize a planar stellate (T-stellate) cell, using the default parameters for guinea pig from
+        Initialize a DCN Tuberculoventral cell, using the default parameters for guinea pig from
         R&M2003, as a type I cell.
         Modifications to the cell can be made by calling methods below. These include:
         Converting to a type IA model (add transient K current) (species: guineapig-TypeIA).
@@ -102,22 +121,23 @@ class TStellateRothman(TStellate):
         -------
         Nothing
         """
-        
-        super(TStellateRothman, self).__init__()
+        super(Tuberculoventral, self).__init__()
         if modelType == None:
-            modelType = 'I-c'
+            modelType = 'I'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'TStellate',
+                       'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Tuberculoventral',
                        'morphology': morphology, 'decorator': decorator}
 
-        self.i_test_range=(-0.15, 0.15, 0.01)
+        print self.status
+        self.i_test_range=(-0.4, 0.6, 0.02)
+        self.vrange = [-75., -60.]  # set a default vrange for searching for rmp
         
         if morphology is None:
             """
             instantiate a basic soma-only ("point") model
             """
-            print "<< TStellate model: Creating point cell using JSR parameters >>"
-            soma = h.Section(name="TStellate_Soma_%x" % id(self))  # one compartment of about 29000 um2
+            print "<< Tuberculoventral model: Creating point cell >>"
+            soma = h.Section(name="Tuberculoventral_Soma_%x" % id(self))  # one compartment of about 29000 um2
             soma.nseg = 1
             self.add_section(soma, 'soma')
         else:
@@ -125,7 +145,7 @@ class TStellateRothman(TStellate):
             instantiate a structured model with the morphology as specified by 
             the morphology file
             """
-            print "<< TStellate model: Creating structured cell using JSR parameters >>"
+            print "<< Tuberculoventral model: Creating structured cell >>"
             self.set_morphology(morphology_file=morphology)
 
         # decorate the morphology with ion channels
@@ -145,7 +165,7 @@ class TStellateRothman(TStellate):
         self.get_mechs(self.soma)
         self.cell_initialize()
         if debug:
-                print "<< T-stellate: JSR Stellate Type 1 cell model created >>"
+                print "<< Tuberculoventral cell model created >>"
 
     def species_scaling(self, species='guineapig', modelType='I-c', silent=True):
         """
@@ -165,38 +185,33 @@ class TStellateRothman(TStellate):
             run silently (True) or verbosely (False)
         """
         soma = self.soma
-        if species == 'mouse' and modelType == 'I-c':
-            # use conductance levels from Cao et al.,  J. Neurophys., 2007.
-            #print 'Mouse Tstellate cell'
-            self.set_soma_size_from_Cm(25.0)
-            self.adjust_na_chans(soma, gbar=800.)
+        if species == 'mouse' and modelType == 'I':
+            #From Kuo 150 Mohm, 10 msec tau
+            #Firing at 600 pA about 400 Hz
+            print 'mousing it'
+            # Adapted from TStellate model type I-c'
+            self.set_soma_size_from_Cm(35.0)
+            self.adjust_na_chans(soma, gbar=1800.)
             soma().kht.gbar = nstomho(250.0, self.somaarea)
-            soma().ka.gbar = nstomho(0.0, self.somaarea)
-            soma().ihvcn.gbar = nstomho(18.0, self.somaarea)
-            soma().ihvcn.eh = -43 # Rodrigues and Oertel, 2006
-            soma().leak.gbar = nstomho(2.0, self.somaarea)
-            soma().leak.erev = -65.0
+            soma().ka.gbar = nstomho(150.0, self.somaarea)
+            soma().ihvcn.gbar = nstomho(10.0, self.somaarea)
+            soma().ihvcn.eh = -40 # Rodrigues and Oertel, 2006
+            soma().leak.gbar = nstomho(4.0, self.somaarea)
+            soma().leak.erev = -72.0
             self.axonsf = 0.5
-        elif species == 'guineapig' and modelType == 'I-c':  # values from R&M 2003, Type I
+        elif species == 'guineapig' and modelType =='I':
+            print 'gpig...'
+            # Adapted from TStellate model, typeI-t
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma)
-            soma().kht.gbar = nstomho(150.0, self.somaarea)
-            soma().ka.gbar = nstomho(0.0, self.somaarea)
-            soma().ihvcn.gbar = nstomho(0.5, self.somaarea)
-            soma().leak.gbar = nstomho(2.0, self.somaarea)
-            soma().leak.erev = -65.0
-            self.axonsf = 0.5
-        elif species == 'guineapig' and modelType =='I-t':
-            # guinea pig data from Rothman and Manis, 2003, type It
-            self.set_soma_size_from_Cm(12.0)
-            self.adjust_na_chans(soma)
-            soma().kht.gbar = nstomho(80.0, self.somaarea)
+            soma().kht.gbar = nstomho(40.0, self.somaarea)
             soma().ka.gbar = nstomho(65.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(0.5, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             soma().leak.erev = -65.0
             self.axonsf = 0.5
-        elif species == 'cat' and modelType == 'I-c':  # a cat is a big guinea pig Type I
+        elif species == 'cat' and modelType == 'I':
+            # a cat is a big guinea pig Type I
             self.set_soma_size_from_Cm(30.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
@@ -238,17 +253,18 @@ class TStellateRothman(TStellate):
         -----
         
         This routine defines the following variables for the class:
-            conductances (gBar)
-            a channelMap (dictonary of channel densities in defined anatomical compartments)
-            a current injection range for IV's (when testing)
-            a distance map, which defines how selected conductances in selected compartments
+            
+            - conductances (gBar)
+            - a channelMap (dictonary of channel densities in defined anatomical compartments)
+            - a current injection range for IV's (when testing)
+            - a distance map, which defines how selected conductances in selected compartments
                 will change with distance. This includes both linear and exponential gradients,
                 the minimum conductance at the end of the gradient, and the space constant or
                 slope for the gradient.
         
         """
         if modelType == 'RM03':
-            totcap = 12.0E-12  # TStellate cell (type I) from Rothman and Manis, 2003, as base model
+            totcap = 12.0E-12  # Tuberculoventral cell (type I) from Rothman and Manis, 2003, as base model
             refarea = totcap / self.c_m  # see above for units
             # Type I stellate Rothman and Manis, 2003c
             self.gBar = Params(nabar=1000.0E-9/refarea,
@@ -317,39 +333,6 @@ class TStellateRothman(TStellate):
                                      'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 100.}}, # gradients are: flat, linear, exponential
                             }
 
-        elif modelType == 'XM13PasDend':
-            # bushy form Xie and Manis, 2013, based on Cao and Oertel mouse conductances
-            # passive dendritestotcap = 26.0E-12 # uF/cm2 
-            totcap = 26.0E-12 # uF/cm2 
-            refarea = totcap  / self.c_m  # see above for units
-            self.gBar = Params(nabar=1000.0E-9/refarea,
-                               khtbar=150.0E-9/refarea,
-                               kltbar=0.0E-9/refarea,
-                               ihbar=0.5E-9/refarea,
-                               leakbar=2.0E-9/refarea,
-            )
-            self.channelMap = {
-                'axon': {'nav11': self.gBar.nabar*0, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
-                         'leak': self.gBar.leakbar * 0.25},
-                'hillock': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
-                            'leak': self.gBar.leakbar, },
-                'initseg': {'nav11': self.gBar.nabar*3, 'klt': self.gBar.kltbar*2, 'kht': self.gBar.khtbar*2,
-                            'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
-                'soma': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
-                         'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
-                'dend': {'nav11': self.gBar.nabar * 0.0, 'klt': self.gBar.kltbar*0 , 'kht': self.gBar.khtbar*0,
-                         'ihvcn': self.gBar.ihbar*0, 'leak': self.gBar.leakbar*0.5, },
-                'apic': {'nav11': self.gBar.nabar * 0.0, 'klt': self.gBar.kltbar * 0, 'kht': self.gBar.khtbar * 0.,
-                         'ihvcn': self.gBar.ihbar *0., 'leak': self.gBar.leakbar * 0.25, },
-            }
-            self.irange = np.linspace(-1, 1, 21)
-            self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.},
-                                     'kht': {'gradient': 'llinear', 'gminf': 0., 'lambda': 200.},
-                                     'nav11': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.}}, # linear with distance, gminf (factor) is multiplied by gbar
-                            'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
-                            }
         else:
             raise ValueError('model type %s is not implemented' % modelType)
         
@@ -386,7 +369,7 @@ class TStellateRothman(TStellate):
             soma.ena = self.e_na
             soma().nav11.vsna = 4.3
             if debug:
-                print "tstellate using inva11"
+                print "Tuberculoventral using inva11"
             print 'nav11 gbar: ', soma().nav11.gbar
         elif nach == 'na':
             soma().na.gbar = gnabar
@@ -399,7 +382,7 @@ class TStellateRothman(TStellate):
             if debug:
                 print 'nacn gbar: ', soma().nacn.gbar
         else:
-            raise ValueError("tstellate setting Na channels: channel %s not known" % nach)
+            raise ValueError("Tuberculoventral setting Na channels: channel %s not known" % nach)
 
     def add_axon(self):
         Cell.add_axon(self, self.soma, self.somaarea, self.c_m, self.R_a, self.axonsf)
@@ -435,164 +418,4 @@ class TStellateRothman(TStellate):
         self.add_section(self.maindend, 'maindend')
 
 
-class TStellateNav11(TStellate):
-    """
-    VCN T-stellate cell setup from Rothman and Manis, 2003, 
-    using nav11 sodium channel model
-    
-    ttx: if True, turns off sodium channels
-    cs: if True, turns off K channels (e.g., cesium in pipette). 
-    dend: if True, adds dendrites to the model, based roughly on White et al.,
-    1994)
-    NOTE: This has been modified from it's original from
-    for use in simulating MOUSE stellate cells.
-    """
-    def __init__(self, debug=False, ttx=False, cs = False, message=None, dend=False):
-        super(TStellateNav11, self).__init__()
-        print ("T-STELLATE NAV11",
-            "\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        soma = h.Section() # one compartment of about 29000 um2
-        v_potassium = -80       # potassium reversal potential
-        v_sodium = 50           # sodium reversal potential
-
-        cm = 1.0
-        scalefactor = 1.0 # This determines the relative size of the cell
-        rinsf = 1.0           # input resistance adjustment (also current...)
-        totcap = scalefactor * 25.0 # cap in pF for cell
-        effcap = totcap # sometimes we change capacitance - that's effcap
-        somaarea = totcap * 1E-6 / cm # pf -> uF, cm = 1uf/cm^2 nominal;
-        lstd = 1E4 * ((somaarea / 3.14159) ** 0.5) # convert from cm to um
-
-        soma.nseg = 1
-        soma.diam = lstd
-        soma.L = lstd
-
-        dendrites=[]
-        if dend is True:
-            nDend = range(4) # these will be simple, unbranced, N=4 dendrites
-
-            
-    #    print nnodes
-            for i in nDend:
-                dendrites.append(h.Section(cell=soma))
-            for i in nDend:
-                dendrites[i].connect(soma)
-                dendrites[i].L = 200 # length of the dendrite (not tapered)
-                dendrites[i].diam = 1.5 # dendritic diameter
-                dendrites[i].nseg = 21 # # segments in dendrites
-                dendrites[i].Ra = 150 # ohm.cm
-                d = dendrites[i]
-                ds = d()
-                d.insert('kht')
-                if cs is False:
-                    ds.kht.gbar = 0.005 # a little Ht
-                else:
-                    ds.kht.gbar = 0.0
-                d.insert('leak') # leak
-                ds.leak.gbar = 0.0001
-                d.insert('ihvcn') # some H current
-                ds.ihvcn.gbar = 0.# 0.001
-                ds.ihvcn.eh = -43.0
-        seg = soma
-        seg.insert('kht')
-        seg.insert('nav11')
-        seg.insert('ka')
-        seg.insert('ihvcn')
-        seg.insert('leak')
-        seg.ena = 10
-        seg.ek = -84
-        s = soma()
-        if ttx is False:
-            s.nav11.gbar = nstomho(1800.0, somaarea) * scalefactor
-        else:
-            s.nav11.gbar = 0.0 # print s.nav11.gnat
-        s.nav11.vsna = 4.3 # was 8
-
-        if cs is False:
-            s.kht.gbar = nstomho(200.0, somaarea) * scalefactor
-            s.ka.gbar = nstomho(0.0, somaarea) * scalefactor
-        else:
-            s.kht.gbar = 0.
-            s.ka.gbar = 0.
-        s.ihvcn.gbar = nstomho(18.0, somaarea) * scalefactor # was 10
-        s.ihvcn.eh = -43 # Rodrigues and Oertel, 2006
-    #    print 'ih vcn vh: %f ' % (s.ihvcn.vh)
-        s.leak.gbar = nstomho(2.0, somaarea) * scalefactor
-        vm0 = -63.9
-        if debug:
-            if message is None:
-                print ("<< T-stellate: JSR Stellate Type 1 cell model created",
-                " - modified for mouse >>")
-            else:
-                print message
-    # print dendrites
-        self.add_section(soma, 'soma')
-        self.add_section(dendrites, 'dendrite')
-
-class TStellateFast(TStellate):
-    """ 
-    VCN t-stellate model based on Rothman and Manis 2003, but with fast sodium
-    channel 
-    """
-    def __init__(self, debug=False, ttx=False, message=None, dend=False):
-        super(TStellateFast, self).__init__()
-        soma = h.Section() # one compartment of about 29000 um2
-        v_potassium = -80       # potassium reversal potential
-        v_sodium = 50           # sodium reversal potential
-
-        cm = 1.0
-        scalefactor = 1.0 # This determines the relative size of the cell
-        rinsf = 1.0           # input resistance adjustment (also current...)
-        totcap = scalefactor * 20.0 # cap in pF for cell
-        effcap = totcap # sometimes we change capacitance - that's effcap
-        somaarea = totcap * 1E-6 / cm # pf -> uF, cm = 1uf/cm^2 nominal;
-        lstd = 1E4 * ((somaarea / 3.14159) ** 0.5) # convert from cm to um
-
-        soma.nseg = 1
-        soma.diam = lstd
-        soma.L = lstd
-
-        seg = soma
-        seg.insert('kht')
-        seg.insert('nav11')
-        seg.insert('ka')
-        # 'it' is not part of canonical model; 
-        # just trying it to reproduce some data.
-        #seg.insert('it') # low-voltage activated ca channel
-        seg.insert('ihvcn')
-        #seg.insert('iH_std')
-        seg.insert('leak')
-        seg.ena = 10
-        seg.ek = -80
-        #seg.eh = -40 # Rodrigues and Oertel, 2006
-
-        s = soma()
-        if ttx is False:
-            s.nav11.gbar = nstomho(1500.0, somaarea) * scalefactor
-        else:
-            s.nav11.gbar = 0.0 # print s.nav11.gnat
-        s.nav11.vsna = 4.3 # was 8
-        s.kht.gbar = nstomho(380.0 * 2.0, somaarea) * scalefactor
-        s.ka.gbar = nstomho(90.0, somaarea) * scalefactor # was 280
-        
-        #s.it.gbar = nstomho(14.0 * 4.0, somaarea) * scalefactor
-        # this creates a better rebound! with it
-        #s.it.vshift = -16
-        
-        #  was 16.5to allow the tau shift to be about right so it is not so fast.
-        #s.iH_std.gbar = nstomho(100.0, somaarea) * scalefactor
-        #s.iH_std.vshift = 1.8
-        s.ihvcn.gbar = nstomho(220.0, somaarea) * scalefactor
-        s.ihvcn.vshift = 16.0
-        s.ihvcn.eh = -43
-        s.leak.gbar = nstomho(18.0, somaarea) * scalefactor
-        s.leak.e = -61
-        vm0 = -60.0
-        if debug:
-            if message is None:
-                print "<< T-stellate: JSR Stellate Type 1 cell model created >>"
-            else:
-                print message
-        
-        self.add_section(soma, 'soma')
 

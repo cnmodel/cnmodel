@@ -4,7 +4,7 @@ from cnmodel.util import reset
 
 
 def test_max_open_probability():
-    reset()
+    reset(raiseError=False)  # reset() fails as unable to remove all neuron objects, unless we ignore the error
     sec = h.Section()
     
     # Create AMPA and NMDA mechanisms
