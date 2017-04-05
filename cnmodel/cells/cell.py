@@ -341,7 +341,7 @@ class Cell(object):
         """
         print '\n    Installed mechanisms:'
         self.get_mechs(section)
-        print eval('section().nav11.gbar')
+        #print eval('section().nav11.gbar')
  
         print 'self mechs: ', self.mechs
         for m in self.mechs:
@@ -351,7 +351,7 @@ class Cell(object):
                 print 'self.somaarea: ', self.somaarea
                 print 'ns: ', mho2ns(gx, self.somaarea)
                 print('{0:>12s} : {1:<7.3g} mho/cm2  {2:<7.3g} nS '.format(m, gx, mho2ns(gx, self.somaarea)))
-                quit()
+                #quit()
             except:
                 print('{0:>12s} : <no gbar> '.format(m))
         print '-'*32
@@ -402,6 +402,8 @@ class Cell(object):
             self.ix['ihvcn'] = self.soma().ihvcn.gh*(V - self.soma().ihvcn.eh)
         if 'hcno' in self.mechanisms:
             self.ix['hcno'] = self.soma().hcno.gh*(V - self.soma().hcno.eh)
+        if 'hcnobo' in self.mechanisms:
+            self.ix['hcnobo'] = self.soma().hcnobo.gh*(V - self.soma().hcnobo.eh)
         if 'leak' in self.mechanisms:
             self.ix['leak'] = self.soma().leak.gbar*(V - self.soma().leak.erev)
 #        print self.status['name'], self.status['type'], V, self.ix
@@ -466,7 +468,7 @@ class Cell(object):
                     'leak': 'gbar',
                     'klt': 'gklt', 'kht': 'gkht',
                     'ka': 'gka',
-                    'ihvcn': 'gh', 'hcno': 'gh',
+                    'ihvcn': 'gh', 'hcno': 'gh', 'hcnobo': 'gh',
                     # pyramidal cell specific:
                     'napyr': 'gna', 'nap': 'gnap',
                     'kdpyr': 'gk', 'kif': 'gkif', 'kis': 'gkis',
