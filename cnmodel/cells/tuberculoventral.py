@@ -1,6 +1,6 @@
 from neuron import h
 import numpy as np
-import neuron as nrn
+#import neuron as nrn
 
 from .cell import Cell
 #from .. import synapses
@@ -69,7 +69,6 @@ class Tuberculoventral(Cell):
                             (terminal.cell.type, self.type))
         else:
             raise ValueError("Unsupported psd type %s" % psd_type)
-
 
 
 class Tuberculoventral(Tuberculoventral):
