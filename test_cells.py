@@ -22,7 +22,7 @@ parser = argparse.ArgumentParser(description=('test_cells.py:',
 
 cclamp = False
 cellinfo = {'types': ['bushy', 'stellate', 'steldend', 'dstellate', 'dstellateeager', 'sgc',
-                        'cartwheel', 'pyramidal', 'octopus'],
+                        'cartwheel', 'pyramidal', 'octopus', 'tuberculoventral'],
             'configs': ['std, ''waxon', 'dendrite'],
             'nav': ['std', 'jsrna', 'nav11'],
             'species': ['guineapig', 'cat', 'rat', 'mouse'],
@@ -36,6 +36,7 @@ ccivrange = {'bushy': [(-0.5, 0.5, 0.025)],
             'sgc': [(-0.3, 0.3, 0.01)],
             'cartwheel': [(-0.2, 0.1, 0.02)],
             'pyramidal': [(-0.3, 0.3, 0.025), (-0.040, 0.025, 0.005)],
+            'tuberculoventral': [(-0.35, 0.6, 0.02)],
             'octopus': [(-3., 3., 0.2)],
             }
 # scales holds some default scaling to use in the cciv plots
@@ -57,6 +58,8 @@ scale = {'bushy': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
             'cartwheel': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
                 'crossing', [0, -60]),
             'pyramidal': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
+                'crossing', [0, -60]),
+            'tuberculoventral': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
                 'crossing', [0, -60]),
             'octopus': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
                 'crossing', [0, -60])}
@@ -100,6 +103,7 @@ h.load_file(os.path.join(path, "custom_init.hoc"))
 # replace init with one that gets closer to steady state
 
 print 'configuration: ', args.configuration
+print 'species: ', args.species
 sites = None
 if args.pulsetype == 'step':
     ptype = None
@@ -148,6 +152,11 @@ elif args.celltype == 'dstellateeager':
 elif args.celltype == 'pyramidal':
     cell = cells.Pyramidal.create(debug=debugFlag, ttx=args.ttx, modelType=args.type)
 
+#
+# DCN pyramidal cell tests
+#
+elif args.celltype == 'tuberculoventral':
+    cell = cells.Tuberculoventral.create(debug=debugFlag, ttx=args.ttx, modelType=args.type, species=args.species)
 #
 # DCN cartwheel cell tests
 #

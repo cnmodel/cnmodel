@@ -91,6 +91,8 @@ class OctopusRothman(Octopus, Cell):
                         'morphology': morphology, 'decorator': decorator}
         self.i_test_range=(-4.0, 4.0, 0.2)
         self.spike_threshold = -50
+        self.vrange = [-70., -57.]  # set a default vrange for searching for rmp
+        
         if morphology is None:
             """
             instantiate a basic soma-only ("point") model
@@ -107,15 +109,15 @@ class OctopusRothman(Octopus, Cell):
 
         # decorate the morphology with ion channels
         if decorator is None:   # basic model, only on the soma
-            self.e_leak = -62
-            self.e_h = -38
-            self.R_a = 100
-            self.mechanisms = ['klt', 'kht', 'hcno', 'leak', nach]
+            self.e_leak = -73. # from McGinley et al., 2016
+            self.e_h = -38. # from McGinley et al. 
+            self.R_a = 195  # McGinley et al. 
+            self.mechanisms = ['klt', 'kht', 'hcnobo', 'leak', nach]
             for mech in self.mechanisms:
                 self.soma.insert(mech)
             self.soma.ek = self.e_k
             self.soma.ena = self.e_na
-            self.soma().hcno.eh = self.e_h
+            self.soma().hcnobo.eh = self.e_h
             self.soma().leak.erev = self.e_leak
             self.soma.Ra = self.R_a
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
@@ -123,7 +125,7 @@ class OctopusRothman(Octopus, Cell):
             self.decorate()
 #        print 'Mechanisms inserted: ', self.mechanisms
         self.get_mechs(self.soma)
-        self.cell_initialize()
+        self.cell_initialize(vrange=self.vrange)
         
         if debug:
             print "<< octopus: octopus cell model created >>"
@@ -164,7 +166,7 @@ class OctopusRothman(Octopus, Cell):
             self.adjust_na_chans(soma)
             soma().kht.gbar = 0.0061  # nstomho(150.0, self.somaarea)  # 6.1 mmho/cm2
             soma().klt.gbar = 0.0407  # nstomho(3196.0, self.somaarea)  #  40.7 mmho/cm2
-            soma().hcno.gbar = 0.0076  #nstomho(40.0, self.somaarea)  # 7.6 mmho/cm2, cf. Bal and Oertel, Spencer et al. 25 u dia cell
+            soma().hcnobo.gbar = 0.0076  #nstomho(40.0, self.somaarea)  # 7.6 mmho/cm2, cf. Bal and Oertel, Spencer et al. 25 u dia cell
             soma().leak.gbar = 0.0005  # nstomho(2.0, self.somaarea)
             self.axonsf = 1.0
         # elif species == 'guineapig' and type =='II-I':
@@ -189,7 +191,7 @@ class OctopusRothman(Octopus, Cell):
             raise ValueError('Species "%s" or species-type "%s" is not recognized for octopus cells' %  (species, type))
         self.status['species'] = species
         self.status['modelType'] = modelType
-        self.cell_initialize(showinfo=False)
+        self.cell_initialize(showinfo=True)
         if not silent:
             print 'set cell as: ', species
             print ' with Vm rest = %6.3f' % self.vm0
@@ -219,7 +221,7 @@ class OctopusRothman(Octopus, Cell):
             gnabar = 0.04244 # 4.2441  # nstomho(1000.0, self.somaarea)  # mmho/cm2 - 4244.1 moh - 4.2441
         nach = self.status['na']
         if nach == 'jsrna':
-            soma().jsrna.gbar = gnabar
+            soma().jsrna.gbar = gnabar * 0.2
             soma.ena = self.e_na
             if debug:
                 print 'jsrna gbar: ', soma().jsrna.gbar
@@ -271,8 +273,8 @@ class OctopusRothman(Octopus, Cell):
             self.ix['klt'] = self.soma().klt.gklt*(V - self.soma().ek)
         if 'kht' in self.mechanisms:
             self.ix['kht'] = self.soma().kht.gkht*(V - self.soma().ek)
-        if 'hcno' in self.mechanisms:
-            self.ix['hcno'] = self.soma().hcno.gh*(V - self.soma().hcno.eh)
+        if 'hcnobo' in self.mechanisms:
+            self.ix['hcnobo'] = self.soma().hcnobo.gh*(V - self.soma().hcnobo.eh)
         if 'leak' in self.mechanisms:
             self.ix['leak'] = self.soma().leak.gbar*(V - self.soma().leak.erev)
 #        print self.status['name'], self.status['type'], V, self.ix
@@ -325,7 +327,7 @@ class OctopusRothman(Octopus, Cell):
         maindend.insert('klt')
         maindend.insert('ihcno')
         maindend().klt.gbar = self.soma().klt.gbar / 2.0
-        maindend().hcno.gbar = self.soma().hcno.gbar / 2.0
+        maindend().hcnobo.gbar = self.soma().hcnobo.gbar / 2.0
 
         maindend.cm = self.c_m
         maindend.Ra = self.R_a

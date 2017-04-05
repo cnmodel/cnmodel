@@ -75,23 +75,36 @@ class Toy(Protocol):
         print 'made Toy'
 
     def current_name(self, name, n):
-        return '%.3f' % self.celltypes[name][2][n]
+        if len(self.celltypes[name][2]) > 2:
+            injs = self.celltypes[name][2]
+            injarr = np.linspace(injs[0], injs[1], injs[2], endpoint=True)
+            return '%.3f' % injarr[n]
+        else:
+            return '%.3f' % self.celltypes[name][2][n]
 
     def getname(self, cell, ninj):
-        name = cell.status['name'] + ', ' + cell.status['modelType']
+        name = self.make_name(cell)
         iname = self.current_name(name, ninj)
-        nname = name + iname
+        nname = name + ' ' + iname
         return name, nname
 
+    def make_name(self, cell):
+        return cell + ', ' + self.celltypes[cell][1] + ':'
+        
     def run(self):
         print 'running'
         sre = re.compile('(?P<cell>\w+)(?:[, ]*)(?P<type>[\w-]*)')  # regex for keys in cell types
-        self.celltypes = OrderedDict([('Bushy, II', (cells.Bushy, "II", (-0.5,0.5))), ('Bushy, II-I', (cells.Bushy, "II-I", (-0.5,0.5))),
-                                ('Octopus, II-o', (cells.Octopus, 'II-o', (-2.5, 2.5))),
-                                ('TStellate, I-c', (cells.TStellate, "I-c", (-0.15, 0.15))), ('TStellate, I-t', (cells.TStellate, "I-t", (-0.15, 0.15))),
-                                ('DStellate, I-II', (cells.DStellate, 'I-II', (-0.2, 0.2))),
-                                ('Pyramidal, I', (cells.Pyramidal, 'I', (-0.1, 0.06))), ('Cartwheel, I', (cells.Cartwheel, 'I', (-0.12, 0.1))),
-                                ('SGC, bm', (cells.SGC, "bm", (-0.2, 0.2))),
+        self.celltypes = OrderedDict([('Bushy, II', (cells.Bushy, "II", (-0.5, 0.5, 11))),
+                                ('Bushy, II-I', (cells.Bushy, "II-I", (-0.5,0.5, 11))),
+                                ('Octopus, II-o', (cells.Octopus, 'II-o', (-2.5, 2.5, 11))),
+                                ('TStellate, I-c', (cells.TStellate, "I-c", (-0.15, 0.15, 9))), 
+                                ('TStellate, I-t', (cells.TStellate, "I-t", (-0.15, 0.15, 9))),
+                                ('DStellate, I-II', (cells.DStellate, 'I-II', (-0.2, 0.2, 9))),
+                                ('Pyramidal, I', (cells.Pyramidal, 'I', (-0.3, 0.4, 11))),
+                                ('Cartwheel, I', (cells.Cartwheel, 'I', (-0.12, 0.12, 7))),
+                                ('Tubercuoventral, I', (cells.Tuberculoventral, 'I', (-0.2, 0.2, 11))),
+                                ('SGC, bm', (cells.SGC, "bm", (-0.2, 0.2, 5))),
+                                ('SGC, a', (cells.SGC, "a", (-0.2, 0.2, 5))),
                                 ])
 
         dt = 0.025
@@ -105,20 +118,25 @@ class Toy(Protocol):
             'amp': 0.,
             'dt': h.dt,
             }
-        tend = stim['delay'] + stim['dur'] + 20
+        tend = stim['delay'] + stim['dur'] + 20.
 
-        netcells = []
+        netcells = {}
         for c in self.celltypes.keys():
             g = sre.match(c)
             cellname = g.group('cell')
-            print cellname
             modelType = g.group('type')
             if g.group('type') == '':
-                netcells.append(self.celltypes[c][0].create())
+                netcells[c] = self.celltypes[c][0].create()
             else:
-                netcells.append(self.celltypes[c][0].create(modelType=modelType))
-        istim = {}
-
+                netcells[c] = self.celltypes[c][0].create(modelType=modelType)
+        # dicts to hold data
+        pl = OrderedDict([])
+        pl2 = OrderedDict([])
+        rvec = OrderedDict([])
+        vec = OrderedDict([])
+        istim = OrderedDict([])
+        ncells = len(self.celltypes.keys())
+        print self.celltypes.keys()
         #
         # build plotting area
         #
@@ -126,74 +144,96 @@ class Toy(Protocol):
         win = pg.GraphicsWindow()
         self.win=win
         win.resize(800, 600)
-        pl = {}
-        rvec = {}
-        vec = {}
-        ncells = len(self.celltypes.keys())
         cols, rows = autorowcol(ncells)
         (plx, widget, gridlayout) = makeLayout(cols=cols, rows=rows, nmax=ncells)
         win.setLayout(gridlayout)
         win.show()
         row = 0
         col = 0
+        print ncells
+        print cols, rows
+        
+        app2 = pg.mkQApp()
+        win2 = pg.GraphicsWindow()
+        self.win2=win2
+        win2.resize(800, 600)
+        cols2, rows2 = autorowcol(ncells)
+        (plx2, widget2, gridlayout2) = makeLayout(cols=cols2, rows=rows2, nmax=ncells)
+        win2.setLayout(gridlayout2)
+        win2.show()
+        
         for n, name in enumerate(self.celltypes.keys()):
             pl[name] = plx[row][col]
             pl[name].setLabels(left='Vm (mV)', bottom='Time (ms)')
             pl[name].setTitle(name)
+            pl2[name] = plx2[row][col]
+            pl2[name].setLabels(left='I (nA)', bottom='Time (ms)')
+            pl2[name].setTitle(name)
             col += 1
             if col >= cols:
                 col = 0
                 row += 1
-        # initialized some recording vectors
+        print pl
+        print pl2
+        # initialize some recording vectors
         for n, name in enumerate(self.celltypes.keys()):
-            for ninj in range(len(self.celltypes[name][2])):
+            nrn_cell = netcells[name]  # get the Neuron object we are using for this cell class
+            injcmds = self.celltypes[name][2]  # list of injections
+            ninjs = len(injcmds)
+            if ninjs > 2:  # 2 values or a range?
+                injcmds = np.linspace(injcmds[0], injcmds[1], num=injcmds[2], endpoint=True)
+                ninjs = len(injcmds)
+            print 'cell: ', name
+            print 'injs: ', injcmds
+            for ninj in range(ninjs):  # for each current level
                 iname = self.current_name(name, ninj)
-                rvec[name+iname] = {'v_soma': h.Vector(), 'i_inj': h.Vector(), 'time': h.Vector()}
-                vec[name+iname] = {'istim': h.Vector()}
-       #
-       # Build injection arrays for each stimulus level
-       #
-        for cell in netcells:
-            name = cell.status['name'] + ', ' + cell.status['modelType']
-            print 'building for: ', name
-            for ninj in range(len(self.celltypes[name][2])):
-                name, nname  = self.getname(cell, ninj)
-                stim['amp'] =  self.celltypes[name][2][ninj]  # currents[name]
+                runname = name + ' ' + iname 
+                rvec[runname] = {'v_soma': h.Vector(), 'i_inj': h.Vector(), 'time': h.Vector()}
+                stim['amp'] = injcmds[ninj]  # currents[name]
                 (secmd, maxt, tstims) = make_pulse(stim)
-                istim[name] = h.iStim(0.5, sec=cell.soma)
-                istim[name].delay = 5.
-                istim[name].dur = 1e9 # these actually do not matter...
-                istim[name].iMax = 0.
-                vec[nname]['i_stim'] = h.Vector(secmd)
-
-        for ninj in range(2):  # all have 2 currents ...
-        #
-        # initialize all cells
-            for cell in netcells:
-                name, nname  = self.getname(cell, ninj)
-                cell.cell_initialize()
-                rvec[nname]['v_soma'].record(cell.soma(0.5)._ref_v)
-                rvec[nname]['i_inj'].record(istim[name]._ref_i)
-                rvec[nname]['time'].record(h._ref_t)
+                if ninj == 0: # install stimulus electronde first run only
+                    istim[name] = h.iStim(0.5, sec=nrn_cell.soma)
+                    istim[name].delay = 5.
+                    istim[name].dur = 1e9 # these actually do not matter...
+                #istim[runname].iMax = 20.
+                vec[runname] = {'i_stim': h.Vector(secmd)}
+        
+                rvec[runname]['v_soma'].record(nrn_cell.soma(0.5)._ref_v)
+                rvec[runname]['i_inj'].record(istim[name]._ref_i)
+                rvec[runname]['time'].record(h._ref_t)
                 # connect current command vector
-                vec[nname]['i_stim'].play(istim[name]._ref_i, h.dt, 0, sec=cell.soma)
+                h.dt = dt
+                vec[runname]['i_stim'].play(istim[name]._ref_i, h.dt, 0, sec=nrn_cell.soma)
 
-            h.dt = dt
-            h.tstop = tend
-            self.custom_init()
-            # Now run all cells at one time for the selected individual current levels
-            while h.t < h.tstop:
-                h.fadvance()
-            for cell in netcells:  # plot data from each cell from this run
-                (name, nname) = self.getname(cell, ninj)
-                pl[name].plot(np.array(rvec[nname]['time']), np.array(rvec[nname]['v_soma']))
+                nrn_cell.cell_initialize()
+                self.custom_init()
+                # Now run all cells at one time for the selected individual current levels
+                h.t = 0.
+                h.tstop = tend
+                while h.t < h.tstop:
+                    h.fadvance()
+                # h.t = 0.
+                # h.tstop = tend
+                # h.batch_save() # save nothing
+                # h.batch_run(h.tstop, h.dt, "v.dat")
+                
+                pl[name].plot(np.array(rvec[runname]['time']), np.array(rvec[runname]['v_soma']))
+                pl2[name].plot(np.array(rvec[runname]['time']), np.array(rvec[runname]['i_inj']), pen='r')
+                pl2[name].plot(np.linspace(0., h.tstop, len(vec[runname]['i_stim'])), np.array(vec[runname]['i_stim']))
+                # if n < 10:
+                #     print np.min(np.array(rvec[runname]['i_inj'])), np.max(np.array(rvec[runname]['i_inj']))
+                #     print np.array(rvec[runname]['time'])
+                    
 
         # get overall Rin, etc; need to initialize all cells first
-        self.custom_init()
-        for cell in netcells:
-            cell.vm0 = cell.soma.v
-            pars = cell.compute_rmrintau(auto_initialize=False)
-            print(u'{0:>14s}   *** Rin = {1:6.1f} M\u03A9  \u03C4 = {2:6.1f} ms   Vm = {3:6.1f} mV'.format(cell.status['name'], pars['Rin'], pars['tau'], pars['v']))
+        #self.custom_init()
+        nrn_cell.cell_initialize()
+        for n, name in enumerate(self.celltypes.keys()):
+            nrn_cell = netcells[name]
+            nrn_cell.vm0 = nrn_cell.soma.v
+            pars = nrn_cell.compute_rmrintau(auto_initialize=False)
+            print(u'{0:>14s} [{1:>14s}]   *** Rin = {2:6.1f} M\u03A9  \u03C4 = {3:6.1f} ms   Vm = {4:6.1f} mV'.
+                format(nrn_cell.status['name'], name, pars['Rin'], pars['tau'], pars['v']))
 
 
 if __name__ == "__main__":

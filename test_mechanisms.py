@@ -59,10 +59,10 @@ class ChannelKinetics():
         # self.tdur is a table of durations for the pulse and post-pulse for each channel type (best to highlight features
         # on appropriate time scales)
         #
-        self.tdur = {'CaPCalyx': [20., 10.], 'hcno': [1000., 200.], 'ih': [1000., 200.], 'ihvcn': [1000., 200.],
+        self.tdur = {'CaPCalyx': [20., 10.], 
                      'nav11': [10., 5.], 'jsrna': [10., 5.], 'ichanWT2005': [10., 5.], 'kht':[200., 20.], 'klt': [200., 20.], 'nacn': [10., 5.],
-                     'ihsgcApical': [1000., 200.],
-                     'ihsgcBasalMiddle': [1000., 200.],
+                     'hcno': [1000., 200.], 'ih': [1000., 200.], 'ihvcn': [1000., 200.],'hcnobo': [1000., 200.],
+                     'ihsgcBasalMiddle': [1000., 200.], 'ihsgcApical': [1000., 200.], 
                      'kif': [100., 100.], 'kis': [100., 10.], 'napyr': [10, 5.], 'ihpyr': [1000., 200.],
                      'kdpyr': [200., 20.], 'kcnq': [200, 20], 'nap': [200., 100.],
                      }
@@ -99,7 +99,7 @@ class ChannelKinetics():
             self.soma().cai = ca_init
         else:
             ca_init = 70e-6
-        h.celsius = 22 # set the temperature.
+        h.celsius = 37. # set the temperature.
         self.vec={}
         for var in ['time', 'V', 'IChan', 'Vcmd']:
             self.vec[var] = h.Vector()
