@@ -20,6 +20,7 @@ class Decorator():
     def __init__(self, cell, parMap=None, verify=False):
 
 
+        print 'cell type: ', cell.type
         cellType = cell.type.lower().capitalize()
         self.channelInfo = Params(newCm=1.0,
                               newRa=100.0,  # changed 10/20/2007 to center in range
@@ -174,7 +175,7 @@ class Decorator():
                 if mech in self.excludeMechs:
                     continue
                 if verify:
-                    print '\tSection: %s  find mechanism: %s at ' % (s, mech), cell.channelMap[sectype][mech]
+                    print '\tSection: %s  found mechanism: %s at ' % (s, mech), cell.channelMap[sectype][mech]
                 x = nu.Mechanism(mech) # , {gmapper[mech]: self.channelMap[cellType][sectype][mech]})
                 setup = ('%s_%s' % (self.gmapper[mech], mech))
                 for sec in cell.hr.sec_groups[s]:
@@ -183,8 +184,9 @@ class Decorator():
                         secstuff[sec] += ', g_%s = %g ' % (mech, bar)
                     else:
                         secstuff[sec] = '(%10s) g_%-6s = %g ' % (sectype, mech, bar)
-#        for i, k in enumerate(secstuff.keys()):
-#            print '%-20s ' % k, secstuff[k]
+        if verify:
+            for i, k in enumerate(secstuff.keys()):
+                print '%-20s ' % k, secstuff[k]
                 
 
     def remapSectionType(self, sectype):

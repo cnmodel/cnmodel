@@ -1,6 +1,7 @@
 import weakref
 import numpy as np
 import scipy.optimize
+import neuron
 from neuron import h
 from ..util import nstomho, mho2ns
 from .. import synapses
@@ -25,9 +26,11 @@ class Cell(object):
     
     def __init__(self):
         # dictionary of all sections associated with this cell
+        self.hr = None # hoc reader - e.g., we have read a morphology file.
         self.all_sections = {}
         # the following section types (parts) are known to us:
-        for k in ['soma', 'maindend', 'secdend', 'dend', 'dendrite', 'internode',
+        for k in ['soma', 'maindend', 'secdend', 'dend', 'dendrite', 'primarydendrite', 'secondarydendrite',
+            'internode',
             'initialsegment', 'axonnode', 'axon', 'unmyelinatedaxon', 'myelinatedaxon', 'hillock']:
             self.all_sections[k] = []  # initialize to an empty list
         self.species = 'mouse'
@@ -89,12 +92,14 @@ class Cell(object):
                 self.morphology = morphology.SwcReader(morphology_file)
             else:
                 raise ValueError('Unknown morphology file type [must be .hoc or .swc]')
-        elif isinstance(morphology_file, Morphology):
+        elif isinstance(morphology_file, morphology.Morphology):
             self.morphology = morphology_file
+        elif isinstance(morphology_file, neuron.h):  # passed a hoc object
+            self.morphology = morphology.HocReader(morphology_file)
         else:
+            print morphology_file
             raise TypeError('Invalid morphology type')
         self.hr = self.morphology # extensive renaming required in calling classes, temporary fix.
-        #self.hr = self.morphologyReader(morphology)
         self.morphology.read_section_info()  # not sure this is necessary... 
         # these were not instantiated when the file was read, but when the decorator was run.
         for s in self.hr.sec_groups.keys():
@@ -152,6 +157,70 @@ class Cell(object):
             if sec in self.all_sections[s]:
                 return s
         return None
+
+    def set_d_lambda(self, freq=100, d_lambda=0.1):
+        """ Sets nseg in each section to an odd value so that its segments are no longer than
+        d_lambda x the AC length constant at frequency freq in that section.
+        The defaults are reasonable values for most models
+        Be sure to specify your own Ra and cm before calling geom_nseg()
+
+        To understand why this works,
+        and the advantages of using an odd value for nseg,
+        see  Hines, M.L. and Carnevale, N.T.
+            NEURON: a tool for neuroscientists.
+            The Neuroscientist 7:123-135, 2001.
+        This is a python version of the hoc code.
+        
+        Parameters
+        ----------
+        freq : float, default=100. (Hz)
+            Frequency in Hz to use in computing nseg.
+        d_lambda : float, default=0.1
+            fraction of AC length constant for minimum segment length
+        
+        """
+        if self.hr is None:  # no hoc reader file, so no adjustments
+            return
+        for st in self.all_sections.keys():
+            for i, section in enumerate(self.all_sections[st]):
+                nseg  = int((section.L/(d_lambda*self._lambda_f(freq, section))+0.9)/2)*2 + 1
+                if nseg < 3:
+                    nseg = 3 # ensure at least 3 segments per section...
+                section.nseg = nseg
+
+
+    def _lambda_f(self, freq, section):
+        """
+        get lambda_f for the section (internal)
+        
+        Parameters
+        ----------
+        freq : float, default=100. (Hz)
+            Frequency in Hz to use in computing nseg.
+        section : Neuron section object
+        
+        Returns
+        -------
+        section length normalized by the length constant at freq.
+        """
+        self.hr.h('access %s' % section.name())
+        if self.hr.h.n3d() < 2:
+            return 1e5*np.sqrt(section.diam/(4.0*np.pi*freq*section.Ra*section.cm))
+        # above was too inaccurate with large variation in 3d diameter
+        # so now we use all 3-d points to get a better approximate lambda
+        x1 = self.hr.h.arc3d(0)
+        d1 = self.hr.h.diam3d(0)
+        lam = 0
+        for i in range(int(self.hr.h.n3d())-1):
+                x2 = self.hr.h.arc3d(i)
+                d2 = self.hr.h.diam3d(i)
+                lam = lam + ((x2 - x1)/np.sqrt(d1 + d2))
+                x1 = x2
+                d1 = d2
+        #  length of the section in units of lambda
+        lam = lam * np.sqrt(2.0) * 1e-5*np.sqrt(4.0*np.pi*freq*section.Ra*section.cm)
+        return section.L/lam
+
 
     @property
     def soma(self):
@@ -302,13 +371,13 @@ class Cell(object):
             print('{0:>12s} : {1:<12s}'.format(s, repr(self.status[s])))
         print '-'*32
 
-    def cell_initialize(self, showinfo=False, **kwargs):
+    def cell_initialize(self, showinfo=False, vrange=None, **kwargs):
         """
         Initialize this cell to it's "rmp" under current conditions
         All sections in the cell are set to the same value
         """
         if self.vm0 is None:
-            self.vm0 = self.find_i0(showinfo=showinfo, **kwargs)
+            self.vm0 = self.find_i0(showinfo=showinfo, vrange=vrange, **kwargs)
         for part in self.all_sections.keys():
             for sec in self.all_sections[part]:
                 sec.v = self.vm0
@@ -401,7 +470,8 @@ class Cell(object):
         if 'ihvcn' in self.mechanisms:
             self.ix['ihvcn'] = self.soma().ihvcn.gh*(V - self.soma().ihvcn.eh)
         if 'hcno' in self.mechanisms:
-            self.ix['hcno'] = self.soma().hcno.gh*(V - self.soma().hcno.eh)
+            raise ValueError('HCNO is not supported - use hcnobo instead')
+            #self.ix['hcno'] = self.soma().hcno.gh*(V - self.soma().hcno.eh)
         if 'hcnobo' in self.mechanisms:
             self.ix['hcnobo'] = self.soma().hcnobo.gh*(V - self.soma().hcnobo.eh)
         if 'leak' in self.mechanisms:
@@ -412,7 +482,7 @@ class Cell(object):
 #        print 'V, isum, values: ', V, isum, [self.ix[i] for i in self.ix]
         return isum
 
-    def find_i0(self, vrange=[-70., -55.], showinfo=False):
+    def find_i0(self, vrange=None, showinfo=False):
         """
         find the root of the system of equations in vrange.
         Finds RMP fairly accurately as zero current level for current conductances.
@@ -429,6 +499,8 @@ class Cell(object):
         -------
         The voltage at which I = 0 in the vrange specified
         """
+        if vrange is None:
+            vrange = [-80., -50.]
         try:
             v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1])
         except:
@@ -445,7 +517,7 @@ class Cell(object):
             print '    *** and cell has mechanisms: ', self.mechanisms
         return v0
 
-    def compute_rmrintau(self, auto_initialize=True):
+    def compute_rmrintau(self, auto_initialize=True, vrange=None):
         """
         Run the model for 2 msec after initialization - then
         compute the inverse of the sum of the conductances to get Rin at rest
@@ -462,7 +534,7 @@ class Cell(object):
         
         """
         if auto_initialize:
-            self.cell_initialize()
+            self.cell_initialize(vrange=vrange)
         gnames = {# R&M03:
                     'nacn': 'gna', 'na': 'gna', 'jsrna': 'gna',
                     'leak': 'gbar',
@@ -525,6 +597,16 @@ class Cell(object):
         self.soma.L = soma.L
         self.somaarea = 1e-8*np.pi*soma.diam*soma.L
         self.totcap = self.c_m * self.somaarea * 1e6
+
+    def print_soma_info(self):
+        print '-'*40
+        print 'Soma Parameters: '
+        print '   Area: ', self.somaarea
+        print '   Cap:  ', self.totcap
+        print '   L:    ', self.soma.L
+        print '   diam: ', self.soma.diam
+        print '   cm:   ', self.c_m
+        print '-'*40
         
     def distances(self, section):
         self.distanceMap = {}

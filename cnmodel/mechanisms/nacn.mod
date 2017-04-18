@@ -14,6 +14,9 @@ Original implementation by Paul B. Manis, April (JHU) and Sept, (UNC)1999.
 
 File split implementaiton, April 1, 2004.
 
+This version does not have all the temperature scaling. Does not pass modlunit.
+Should work at 22C
+
 Contact: pmanis@med.unc.edu
 
 ENDCOMMENT

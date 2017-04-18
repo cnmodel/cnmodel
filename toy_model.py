@@ -1,4 +1,7 @@
+#!/usr/bin/python
+from __future__ import print_function
 __author__ = 'pbmanis'
+
 """
 Basic test of initialization of multiple cells in the model, and running multiple cells at one time.
 
@@ -11,7 +14,8 @@ import cnmodel.cells as cells
 from cnmodel.protocols import Protocol
 from collections import OrderedDict
 import re
-try:
+
+try:  # check for pyqtgraph install
     import pyqtgraph as pg
     HAVE_PG = True
 except ImportError:
@@ -70,11 +74,23 @@ def makeLayout(cols=1, rows=1, letters=True, margins=4, spacing=4, nmax=None):
 
 
 class Toy(Protocol):
+    """
+    Calls to encapsulate the model runs
+    """
     def __init__(self):
         super(Toy, self).__init__()
-        print 'made Toy'
 
     def current_name(self, name, n):
+        """
+        From the name of the current model, get the current injection information
+        
+        Parameters
+        ---------
+        name : str (no default)
+            name of the cell type
+        n : int (no default
+            )
+        """
         if len(self.celltypes[name][2]) > 2:
             injs = self.celltypes[name][2]
             injarr = np.linspace(injs[0], injs[1], injs[2], endpoint=True)
@@ -92,7 +108,7 @@ class Toy(Protocol):
         return cell + ', ' + self.celltypes[cell][1] + ':'
         
     def run(self):
-        print 'running'
+        print('running')
         sre = re.compile('(?P<cell>\w+)(?:[, ]*)(?P<type>[\w-]*)')  # regex for keys in cell types
         self.celltypes = OrderedDict([('Bushy, II', (cells.Bushy, "II", (-0.5, 0.5, 11))),
                                 ('Bushy, II-I', (cells.Bushy, "II-I", (-0.5,0.5, 11))),
@@ -109,7 +125,7 @@ class Toy(Protocol):
 
         dt = 0.025
         h.dt = dt
-        h.celsius = 22
+        h.celsius = 38
 
         stim = {
             'NP': 1,
@@ -136,7 +152,7 @@ class Toy(Protocol):
         vec = OrderedDict([])
         istim = OrderedDict([])
         ncells = len(self.celltypes.keys())
-        print self.celltypes.keys()
+#        print self.celltypes.keys()
         #
         # build plotting area
         #
@@ -150,31 +166,29 @@ class Toy(Protocol):
         win.show()
         row = 0
         col = 0
-        print ncells
-        print cols, rows
+        # print ncells
+        # print cols, rows
         
-        app2 = pg.mkQApp()
-        win2 = pg.GraphicsWindow()
-        self.win2=win2
-        win2.resize(800, 600)
-        cols2, rows2 = autorowcol(ncells)
-        (plx2, widget2, gridlayout2) = makeLayout(cols=cols2, rows=rows2, nmax=ncells)
-        win2.setLayout(gridlayout2)
-        win2.show()
+        # app2 = pg.mkQApp()
+        # win2 = pg.GraphicsWindow()
+        # self.win2=win2
+        # win2.resize(800, 600)
+        # cols2, rows2 = autorowcol(ncells)
+        # (plx2, widget2, gridlayout2) = makeLayout(cols=cols2, rows=rows2, nmax=ncells)
+        # win2.setLayout(gridlayout2)
+        # win2.show()
         
         for n, name in enumerate(self.celltypes.keys()):
             pl[name] = plx[row][col]
             pl[name].setLabels(left='Vm (mV)', bottom='Time (ms)')
             pl[name].setTitle(name)
-            pl2[name] = plx2[row][col]
-            pl2[name].setLabels(left='I (nA)', bottom='Time (ms)')
-            pl2[name].setTitle(name)
+            # pl2[name] = plx2[row][col]
+            # pl2[name].setLabels(left='I (nA)', bottom='Time (ms)')
+            # pl2[name].setTitle(name)
             col += 1
             if col >= cols:
                 col = 0
                 row += 1
-        print pl
-        print pl2
         # initialize some recording vectors
         for n, name in enumerate(self.celltypes.keys()):
             nrn_cell = netcells[name]  # get the Neuron object we are using for this cell class
@@ -183,8 +197,8 @@ class Toy(Protocol):
             if ninjs > 2:  # 2 values or a range?
                 injcmds = np.linspace(injcmds[0], injcmds[1], num=injcmds[2], endpoint=True)
                 ninjs = len(injcmds)
-            print 'cell: ', name
-            print 'injs: ', injcmds
+            print( 'cell: ', name)
+            print( 'injs: ', injcmds)
             for ninj in range(ninjs):  # for each current level
                 iname = self.current_name(name, ninj)
                 runname = name + ' ' + iname 
@@ -218,8 +232,8 @@ class Toy(Protocol):
                 # h.batch_run(h.tstop, h.dt, "v.dat")
                 
                 pl[name].plot(np.array(rvec[runname]['time']), np.array(rvec[runname]['v_soma']))
-                pl2[name].plot(np.array(rvec[runname]['time']), np.array(rvec[runname]['i_inj']), pen='r')
-                pl2[name].plot(np.linspace(0., h.tstop, len(vec[runname]['i_stim'])), np.array(vec[runname]['i_stim']))
+#                pl2[name].plot(np.array(rvec[runname]['time']), np.array(rvec[runname]['i_inj']), pen='r')
+#                pl2[name].plot(np.linspace(0., h.tstop, len(vec[runname]['i_stim'])), np.array(vec[runname]['i_stim']))
                 # if n < 10:
                 #     print np.min(np.array(rvec[runname]['i_inj'])), np.max(np.array(rvec[runname]['i_inj']))
                 #     print np.array(rvec[runname]['time'])

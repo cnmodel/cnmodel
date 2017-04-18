@@ -141,7 +141,7 @@ class TStellateRothman(TStellate):
             """
             instantiate a basic soma-only ("point") model
             """
-            print "<< TStellate model: Creating point cell using JSR parameters >>"
+            print( "<< TStellate model: Creating point cell using JSR parameters, type={:s} >>".format(modelType))
             soma = h.Section(name="TStellate_Soma_%x" % id(self))  # one compartment of about 29000 um2
             soma.nseg = 1
             self.add_section(soma, 'soma')

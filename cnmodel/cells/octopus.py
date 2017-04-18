@@ -1,5 +1,6 @@
 from neuron import h
 from ..util import nstomho
+from ..util import Params
 import numpy as np
 """
 Original hoc code from RMmodel.hoc
@@ -21,17 +22,71 @@ proc set_Type2o() {
 
 from .cell import Cell
 
-__all__ = ['Octopus', 'OctopusRothman']
+__all__ = ['Octopus', 'OctopusRothman', 'OctopusSpencer']
 
 class Octopus(Cell):
 
+    type = 'octopus'
+    
     @classmethod
-    def create(cls, model='RM03', **kwds):
-        if model == 'RM03':
+    def create(cls, modelType='RM03', **kwds):
+        print 'modelType: ', modelType
+        if modelType in ['RM03', 'II-o']:
             print 'making RM03'
             return OctopusRothman(**kwds)
+        elif modelType == 'Spencer':
+            return OctopusSpencer(**kwds)
         else:
-            raise ValueError ('DStellate type %s is unknown', type)
+            raise ValueError ('Octopus cell type %s is unknown', type)
+
+    def make_psd(self, terminal, psd_type, **kwds):
+        """
+        Connect a presynaptic terminal to one post section at the specified location, with the fraction
+        of the "standard" conductance determined by gbar.
+        The default condition is to try to pass the default unit test (loc=0.5)
+        
+        Parameters
+        ----------
+        terminal : Presynaptic terminal (NEURON object)
+        
+        psd_type : either simple or multisite PSD for bushy cell
+        
+        kwds: dict of options. Two are currently handled:
+        postsize : expect a list consisting of [sectionno, location (float)]
+        AMPAScale : float to scale the ampa currents
+        
+        """
+        if 'postsite' in kwds:  # use a defined location instead of the default (soma(0.5)
+            postsite = kwds['postsite']
+            loc = postsite[1]  # where on the section?
+            uname = 'sections[%d]' % postsite[0]  # make a name to look up the neuron section object
+            post_sec = self.hr.get_section(uname)  # Tell us where to put the synapse.
+        else:
+            loc = 0.5
+            post_sec = self.soma
+        
+        if psd_type == 'simple':
+            return self.make_exp2_psd(post_sec, terminal, loc=loc)
+        elif psd_type == 'multisite':
+            if terminal.cell.type == 'sgc':
+                # Max conductances for the glu mechanisms are calibrated by 
+                # running `synapses/tests/test_psd.py`. The test should fail
+                # if these values are incorrect:
+                AMPA_gmax = 3.314707700918133*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
+                NMDA_gmax = 0.4531929783503451*1e3
+                if 'AMPAScale' in kwds:
+                    AMPA_gmax = AMPA_gmax * kwds['AMPAScale']  # allow scaling of AMPA conductances
+                if 'NMDAScale' in kwds:
+                    NMDA_gmax = NMDA_gmax*kwds['NMDAScale']
+                return self.make_glu_psd(post_sec, terminal, AMPA_gmax, NMDA_gmax, loc=loc)
+            elif terminal.cell.type == 'dstellate':
+                return self.make_gly_psd(post_sec, terminal, type='glyslow', loc=loc)
+            else:
+                raise TypeError("Cannot make PSD for %s => %s" % 
+                            (terminal.cell.type, self.type))
+        else:
+            raise ValueError("Unsupported psd type %s" % psd_type)
+
 
 class OctopusRothman(Octopus, Cell):
     """
@@ -87,7 +142,7 @@ class OctopusRothman(Octopus, Cell):
         if modelType == None:
             modelType = 'II-o'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': species, 'type': modelType, 'ttx': ttx, 'name': 'Octopus',
+                       'na': nach, 'species': species, 'modelype': modelType, 'ttx': ttx, 'name': 'Octopus',
                         'morphology': morphology, 'decorator': decorator}
         self.i_test_range=(-4.0, 4.0, 0.2)
         self.spike_threshold = -50
@@ -126,6 +181,8 @@ class OctopusRothman(Octopus, Cell):
 #        print 'Mechanisms inserted: ', self.mechanisms
         self.get_mechs(self.soma)
         self.cell_initialize(vrange=self.vrange)
+        print 'soma area: ', self.somaarea
+        print 'soma cap: ', self.totcap
         
         if debug:
             print "<< octopus: octopus cell model created >>"
@@ -163,6 +220,13 @@ class OctopusRothman(Octopus, Cell):
         #     self.axonsf = 0.57
         if species == 'guineapig' and modelType =='II-o':
             self.set_soma_size_from_Cm(25.0)
+            self.print_soma_info()
+            
+            # print 'soma area: ', self.somaarea
+            # print 'soma cap: ', self.totcap
+            # print 'soma L', self.soma.L
+            # print 'diam: ', self.soma.diam
+            # print 'cm: ', self.c_m
             self.adjust_na_chans(soma)
             soma().kht.gbar = 0.0061  # nstomho(150.0, self.somaarea)  # 6.1 mmho/cm2
             soma().klt.gbar = 0.0407  # nstomho(3196.0, self.somaarea)  #  40.7 mmho/cm2
@@ -240,113 +304,177 @@ class OctopusRothman(Octopus, Cell):
         else:
             raise ValueError('Sodium channel %s is not recognized for octopus cells', nach)
 
-    def i_currents(self, V):
+
+class OctopusSpencer(Octopus, Cell):
+    """
+    VCN octopus cell model (with dendrites).
+    Based on Spencer et al Front. Comput. Neurosci., 22 October 2012 | https://doi.org/10.3389/fncom.2012.00083
+    """
+
+    def __init__(self, morphology=None, decorator=None, nach='jsrna', ttx=False,
+                species='guineapig', modelType=None, debug=False):
         """
-        For the steady-state case, return the total current at voltage V
-        Used to find the zero current point.
-        vrange brackets the search interval.
-        Implemented here mechanisms for the octopus cell model
+        initialize the octopus cell, using the default parameters for guinea pig from
+        R&M2003, as a type II cell with modified conductances.
+        Modifications to the cell can be made by calling methods below.
         
         Parameters
         ----------
-        v : current voltage (no default)
+        morphology : string (default: None)
+            a file name to read the cell morphology from. If a valid file is found, a cell is constructed
+            as a cable model from the hoc file.
+            If None (default), the only a point model is made, exactly according to RM03.
+            
+        decorator : Python function (default: None)
+            decorator is a function that "decorates" the morphology with ion channels according
+            to a set of rules.
+            If None, a default set of channels aer inserted into the first soma section, and the
+            rest of the structure is "bare".
+        
+        nach : string (default: 'na')
+            nach selects the type of sodium channel that will be used in the model. A channel mechanims
+            by that name must exist. 
+        
+        ttx : Boolean (default: False)
+            If ttx is True, then the sodium channel conductance is set to 0 everywhere in the cell.
+            Currently, this is not implemented.
+        
+        species: string (default 'guineapig')
+            species defines the channel density that will be inserted for different models. Note that
+            if a decorator function is specified, this argument is ignored.
+            
+        modelType: string (default: None)
+            modelType specifies the type of the model that will be used (e.g., "II", "II-I", etc).
+            modelType is passed to the decorator, or to species_scaling to adjust point models.
+            
+        debug: boolean (default: False)
+            debug is a boolean flag. When set, there will be multiple printouts of progress and parameters.
+            
+        Returns
+        -------
+            Nothing
+        """
+        
+        super(OctopusSpencer, self).__init__()
+        if modelType == None:
+            modelType = 'Spencer'
+        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+                       'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Octopus',
+                        'morphology': morphology, 'decorator': decorator}
+        self.i_test_range=(-4.0, 4.0, 0.2)
+        self.spike_threshold = -50
+        self.vrange = [-70., -57.]  # set a default vrange for searching for rmp
+        
+        if morphology is None:
+            """
+            instantiate a basic soma-only ("point") model
+            """
+            soma = h.Section(name="Octopus_Soma_%x" % id(self))  # one compartment of about 29000 um2
+            soma.nseg = 1
+            self.add_section(soma, 'soma')
+        else:
+            """
+            instantiate a structured model with the morphology as specified by 
+            the morphology file
+            """
+            self.set_morphology(morphology_file=morphology)
+
+        # decorate the morphology with ion channels
+        if decorator is None:   # basic model, only on the soma
+            self.e_leak = -62. # from Spencer et al., 2012
+            self.e_h = -38. ## from Spencer et al., 2012
+            self.R_a = 100.  # from Spencer et al., 2012 
+            self.mechanisms = ['klt', 'kht', 'hcnobo', 'leak', nach]
+            for mech in self.mechanisms:
+                self.soma.insert(mech)
+            self.soma.ek = -70. # self.e_k
+            self.soma.ena = 55.0 # self.e_na
+            self.soma().hcnobo.eh = self.e_h
+            self.soma().leak.erev = self.e_leak
+            self.soma.Ra = self.R_a
+            #self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
+        else:  # decorate according to a defined set of rules on all cell compartments
+            self.decorate()
+            self.decorated.channelValidate(self, verify=True)
+#        print 'Mechanisms inserted: ', self.mechanisms
+        self.get_mechs(self.soma)
+        self.cell_initialize(vrange=self.vrange)
+        
+        if debug:
+            print "<< octopus: octopus cell model created >>"
+        #print 'Cell created: ', self.status
+
+    def channel_manager(self, modelType='Spencer'):
+        """
+        This routine defines channel density maps and distance map patterns
+        for each type of compartment in the cell. The maps
+        are used by the ChannelDecorator class (specifically, it's private
+        \_biophys function) to decorate the cell membrane.
+        
+        Parameters
+        ----------
+        modelType : string (default: 'Spencer')
+            A string that defines the type of the model. Currently, 1 type is implemented:
+            Spencer : Spencer et al Front. Comput. Neurosci. 2012
         
         Returns
         -------
-        total conductance at steady-state for the voltage V
+        Nothing
+        
+        Notes
+        -----
+        This routine defines the following variables for the class:
+        # conductances (gBar)
+        # a channelMap (dictonary of channel densities in defined anatomical compartments)
+        # a current injection range for IV's (when testing)
+        # a distance map, which defines how selected conductances in selected compartments
+        will change with distance. This includes both linear and exponential gradients,
+        the minimum conductance at the end of the gradient, and the space constant or
+        slope for the gradient.
+        
         """
         
-        for part in self.all_sections.keys():
-            for sec in self.all_sections[part]:
-                sec.v = V
+        #
+        # Create a model based on the Spencer model
+        # 6
+        if modelType == 'Spencer':
+#            print self.c_m
+            self.c_m = 0.9
+            self.set_soma_size_from_Section(self.soma)
+            totcap = self.totcap
+            refarea = self.somaarea # totcap / self.c_m  # see above for units
+            self.print_soma_info()
+            
+            self.gBar = Params(nabar=0., #0.0407,  # S/cm2
+                               nabar_ais=0., # 0.42441,
+                               khtbar=0.0061,
+                               khtbar_hillock=0.0061,
+                               khtbar_dend=0.0061,
+                               kltbar=0.0407,
+                               kltbar_dend=0.0027,
+                               kltbar_hillock=0.0407,
+                               ihbar=0.0076,
+                               ihbar_dend=0.0006,
+                               leakbar=0.0002,
+            )
+            
+            self.channelMap = {
+                # 'axon': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
+                #          'leak': self.gBar.leakbar / 2.},
+                'hillock': {'jsrna': 0., 'klt': self.gBar.kltbar_hillock, 'kht': self.gBar.khtbar_hillock, 'ihvcn': 0.,
+                            'leak': self.gBar.leakbar, },
+                # initial segment:
+                'unmyelinatedaxon': {'jsrna': self.gBar.nabar_ais, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
+                            'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
+                'soma': {'jsrna': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
+                         'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
+                'primarydendrite': {'jsrna': self.gBar.nabar*0., 'klt': self.gBar.kltbar_dend, 'kht': self.gBar.khtbar * 0.,
+                         'ihvcn': self.gBar.ihbar_dend, 'leak': self.gBar.leakbar, },
+            }
+            self.distMap = {'primardendrite': {'klt': {'gradient': 'flat', 'gminf': 0., 'lambda': 100.},
+                                     'kht': {'gradient': 'flat', 'gminf': 0., 'lambda': 100.},
+                                     'ihvcn': {'gradient': 'flat', 'gminf': 0., 'lambda': 100.}}, # all flat with distance
+                            }
 
-        h.t = 0.
-        h.finitialize()
-        self.ix = {}
-        if 'na' in self.mechanisms:
-            #print dir(self.soma().na)
-            self.ix['na'] = self.soma().na.gna*(V - self.soma().ena)
-        if 'jsrna' in self.mechanisms:
-            #print dir(self.soma().na)
-            self.ix['jsrna'] = self.soma().jsrna.gna*(V - self.soma().ena)
-        if 'klt' in self.mechanisms:
-            self.ix['klt'] = self.soma().klt.gklt*(V - self.soma().ek)
-        if 'kht' in self.mechanisms:
-            self.ix['kht'] = self.soma().kht.gkht*(V - self.soma().ek)
-        if 'hcnobo' in self.mechanisms:
-            self.ix['hcnobo'] = self.soma().hcnobo.gh*(V - self.soma().hcnobo.eh)
-        if 'leak' in self.mechanisms:
-            self.ix['leak'] = self.soma().leak.gbar*(V - self.soma().leak.erev)
-#        print self.status['name'], self.status['type'], V, self.ix
-        return np.sum([self.ix[i] for i in self.ix])
-
-
-    def add_axon(self):
-        Cell.add_axon(self, self.c_m, self.R_a, self.axonsf)
-
-    def add_pumps(self):
-        """
-        Insert mechanisms for potassium ion, sodium ion, and a
-        sodium-potassium pump at the soma.
-        """
-        soma = self.soma
-        soma.insert('k_conc')
-
-        ki0_k_ion = 140
-        soma().ki = ki0_k_ion
-        soma().ki0_k_conc = ki0_k_ion
-        soma().beta_k_conc = 0.075
-
-        soma.insert('na_conc')
-        nai0_na_ion = 5
-        soma().nai = nai0_na_ion
-        soma().nai0_na_conc = nai0_na_ion
-        soma().beta_na_conc = 0.075
-
-        soma.insert('nakpump')
-        soma().nakpump.inakmax = 8
-        soma().nao = 145
-        soma().ko = 5
-        soma().nakpump.Nai_inf = 5
-        soma().nakpump.Ki_inf = 140
-        soma().nakpump.ATPi = 5
-        self.status['pumps'] = True
-
-    def add_dendrites(self, debug=False):
-        """
-        Add a simple dendrite to the octopus cell.
-        """
-        if debug:
-            print 'Adding dendrite to octopus model'
-        section = h.Section
-        maindend = section(cell=self.soma)
-        maindend.connect(self.soma)
-        maindend.nseg = 10
-        maindend.L = 100.0
-        maindend.diam = 2.5
-        maindend.insert('klt')
-        maindend.insert('ihcno')
-        maindend().klt.gbar = self.soma().klt.gbar / 2.0
-        maindend().hcnobo.gbar = self.soma().hcnobo.gbar / 2.0
-
-        maindend.cm = self.c_m
-        maindend.Ra = self.R_a
-        nsecd = range(0, 5)
-        secdend = []
-        for ibd in nsecd:
-            secdend.append(section(cell=self.soma))
-        for ibd in nsecd:
-            secdend[ibd].connect(maindend)
-            secdend[ibd].diam = 1.0
-            secdend[ibd].L = 15.0
-            secdend[ibd].cm = self.c_m
-            secdend[ibd].Ra = self.R_a
-        self.maindend = maindend
-        self.secdend = secdend
-        self.status['dendrite'] = True
-        if debug:
-            print 'octopus: added dendrite'
-            h.topology()
-        self.add_section(maindend, 'maindend')
-        self.add_section(secdend, 'secdend')
-
+        else:
+            raise ValueError('model type %s is not implemented' % modelType)

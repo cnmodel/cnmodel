@@ -7,9 +7,9 @@ import cnmodel.cells as cells
 from cnmodel.util import UserTester, reset
 from cnmodel.protocols import IVCurve
 
-#
-# Cell-type tests
-#
+"""
+Cell-type tests
+"""
 
 def test_bushy():
     reset(raiseError=False)
@@ -125,7 +125,8 @@ class CellTester(UserTester):
         #os.mkdir(dirname)
     #pickle.dump(info, open(fn, 'wb'))
     
-    
+
+# The following is superseeded by the built in unit tests.
 #def CellTester(key):
     #"""
     #Test *cell* and raise exception if the results do not match prior

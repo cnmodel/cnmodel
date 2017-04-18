@@ -11,9 +11,11 @@ class HocReader(object):
     """
     Provides useful methods for reading hoc structures.
     
-    Parameters\n-----------
+    Parameters
+    -----------
         hoc: a hoc object or a "xxx.hoc" file name.
     """
+    
     def __init__(self, hoc):
         """
         Parameters
@@ -92,7 +94,6 @@ class HocReader(object):
             return self.sections[sec_name]
         except KeyError:
             raise KeyError("No section named '%s'" % sec_name)
-
 
     def get_section_prefixes(self):
         """
@@ -340,7 +341,6 @@ class HocReader(object):
             var = getattr(self.h, hoc_name)
             self.add_section_group(group_name, list(var))
 
-
     def get_geometry(self):
         """
         modified from:neuronvisio
@@ -394,7 +394,7 @@ class HocReader(object):
         Parameters
         ----------
         section : :obj: `NEURON section`
-            The NEURON section object.        
+            The NEURON section object.
         
         Returns
         -------

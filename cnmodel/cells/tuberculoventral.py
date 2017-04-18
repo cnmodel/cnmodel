@@ -16,11 +16,11 @@ class Tuberculoventral(Cell):
     type = 'Tuberculoventral'
 
     @classmethod
-    def create(cls, model='RM03', **kwds):
-        if model == 'RM03':
+    def create(cls, modelType='TVmouse', **kwds):
+        if modelType in ['TVmouse', 'I']:
             return Tuberculoventral(**kwds)
         else:
-            raise ValueError ('Tuberculoventral type %s is unknown', type)
+            raise ValueError ('Tuberculoventral type %s is unknown', modelType)
 
     def make_psd(self, terminal, psd_type, **kwds):
         """
@@ -77,7 +77,7 @@ class Tuberculoventral(Tuberculoventral):
     Adapted from T-stellate model
     """
     def __init__(self, morphology=None, decorator=None, nach='na', ttx=False,
-                species='guineapig', modelType=None, debug=False):
+                species='mouse', modelType=None, debug=False):
         """
         Initialize a DCN Tuberculoventral cell, using the default parameters for guinea pig from
         R&M2003, as a type I cell.
@@ -123,14 +123,14 @@ class Tuberculoventral(Tuberculoventral):
         """
         super(Tuberculoventral, self).__init__()
         if modelType == None:
-            modelType = 'I'
+            modelType = 'TVmouse'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Tuberculoventral',
                        'morphology': morphology, 'decorator': decorator}
 
         print self.status
         self.i_test_range=(-0.4, 0.6, 0.02)
-        self.vrange = [-75., -60.]  # set a default vrange for searching for rmp
+        self.vrange = [-80., -60.]  # set a default vrange for searching for rmp
         
         if morphology is None:
             """
@@ -163,11 +163,11 @@ class Tuberculoventral(Tuberculoventral):
 #        print 'Mechanisms inserted: ', self.mechanisms
         
         self.get_mechs(self.soma)
-        self.cell_initialize()
+        self.cell_initialize(vrange=self.vrange)
         if debug:
                 print "<< Tuberculoventral cell model created >>"
 
-    def species_scaling(self, species='guineapig', modelType='I-c', silent=True):
+    def species_scaling(self, species='guineapig', modelType='TVmouse', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
         Used ONLY for point models.
@@ -185,29 +185,36 @@ class Tuberculoventral(Tuberculoventral):
             run silently (True) or verbosely (False)
         """
         soma = self.soma
-        if species == 'mouse' and modelType == 'I':
-            #From Kuo 150 Mohm, 10 msec tau
-            #Firing at 600 pA about 400 Hz
-            print 'mousing it'
+        print 'species: ', species, 'modelType: ', modelType
+        if species == 'mouse' and modelType == 'TVmouse':
+            """#From Kuo 150 Mohm, 10 msec tau
+            Firing at 600 pA about 400 Hz
+            These values from brute_force runs, getting 380 Hz at 600 pA at 35C
+            Input resistance and vm is ok, time constnat is short
+                *** Rin:       143  tau:       2.9   v:  -68.4
+            Attempts to get longer time constant - cannot keep rate up.
+            """
             # Adapted from TStellate model type I-c'
-            self.set_soma_size_from_Cm(35.0)
-            self.adjust_na_chans(soma, gbar=1800.)
-            soma().kht.gbar = nstomho(250.0, self.somaarea)
-            soma().ka.gbar = nstomho(150.0, self.somaarea)
-            soma().ihvcn.gbar = nstomho(10.0, self.somaarea)
-            soma().ihvcn.eh = -40 # Rodrigues and Oertel, 2006
-            soma().leak.gbar = nstomho(4.0, self.somaarea)
-            soma().leak.erev = -72.0
+            print 'decorate as TVmouse'
+            self.vrange=[-80., -50.]
+            self.set_soma_size_from_Cm(71.0)
+            self.adjust_na_chans(soma, gbar=1520.)
+            soma().kht.gbar = nstomho(160.0, self.somaarea)
+            soma().ka.gbar = nstomho(65.0, self.somaarea)
+            soma().ihvcn.gbar = nstomho(1.25, self.somaarea)  # 2
+            soma().ihvcn.eh = -43 # Rodrigues and Oertel, 2006
+            soma().leak.gbar = nstomho(5.5, self.somaarea)  # 7.4
+            soma().leak.erev = -70.0
             self.axonsf = 0.5
         elif species == 'guineapig' and modelType =='I':
-            print 'gpig...'
+            self.vrange=[-75., -50.]
             # Adapted from TStellate model, typeI-t
-            self.set_soma_size_from_Cm(12.0)
+            self.set_soma_size_from_Cm(30.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(40.0, self.somaarea)
             soma().ka.gbar = nstomho(65.0, self.somaarea)
-            soma().ihvcn.gbar = nstomho(0.5, self.somaarea)
-            soma().leak.gbar = nstomho(2.0, self.somaarea)
+            soma().ihvcn.gbar = nstomho(0.35, self.somaarea)
+            soma().leak.gbar = nstomho(0.54, self.somaarea)
             soma().leak.erev = -65.0
             self.axonsf = 0.5
         elif species == 'cat' and modelType == 'I':
@@ -221,7 +228,7 @@ class Tuberculoventral(Tuberculoventral):
             soma().leak.erev = -65.0
             self.axonsf = 1.0
         else:
-            raise ValueError('Species %s or species-type %s is not recognized for T-stellate cells' % (species, type))
+            raise ValueError('Species %s or species-type %s is not recognized for Tuberculoventralcells' % (species, type))
 
         self.status['species'] = species
         self.status['modelType'] = modelType
@@ -263,15 +270,18 @@ class Tuberculoventral(Tuberculoventral):
                 slope for the gradient.
         
         """
-        if modelType == 'RM03':
-            totcap = 12.0E-12  # Tuberculoventral cell (type I) from Rothman and Manis, 2003, as base model
-            refarea = totcap / self.c_m  # see above for units
-            # Type I stellate Rothman and Manis, 2003c
-            self.gBar = Params(nabar=1000.0E-9/refarea,
-                               khtbar=150.0E-9/refarea,
+        if modelType == 'TVmouse':
+            print 'decorate as tvmouse'
+#            totcap = 95.0E-12  # Tuberculoventral cell (type I), based on stellate, adjusted for Kuo et al. TV firing
+            self.set_soma_size_from_Section(self.soma)
+            totcap = self.totcap
+            refarea = self.somaarea # totcap / self.c_m  # see above for units
+            self.gBar = Params(nabar=1520.0E-9/refarea,
+                               khtbar=160.0E-9/refarea,
                                kltbar=0.0E-9/refarea,
-                               ihbar=0.5E-9/refarea,
-                               leakbar=2.0E-9/refarea,
+                               kabar=65.0/refarea,
+                               ihbar=1.25E-9/refarea,
+                               leakbar=5.5E-9/refarea,
             )
             self.channelMap = {
                 'axon': {'nacn': 0.0, 'klt': 0., 'kht': self.gBar.khtbar,
@@ -290,49 +300,12 @@ class Tuberculoventral(Tuberculoventral):
                          'ihvcn': self.gBar.ihbar / 4.,
                          'leak': self.gBar.leakbar * 0.2, },
             }
-            self.irange = np.linspace(-0.1, 0.1, 7)
+            self.irange = np.linspace(-0.3, 0.6, 10)
             self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
                             'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # gradients are: flat, linear, exponential
                             }
-
-        elif modelType  == 'XM13':
-            totcap = 25.0E-12  # Base model from Xie and Manis, 2013 for type I stellate cell
-            refarea = totcap / self.c_m  # see above for units
-            self.gBar = Params(nabar=800.0E-9/refarea,
-                               khtbar=250.0E-9/refarea,
-                               kltbar=0.0E-9/refarea,
-                               ihbar=18.0E-9/refarea,
-                               leakbar=8.0E-9/refarea,
-            )
-            self.channelMap = {
-                'axon': {'nav11': 0.0, 'klt': 0., 'kht': self.gBar.khtbar,
-                         'ihvcn': 0., 'leak': self.gBar.leakbar / 4.},
-                'hillock': {'nav11': self.gBar.nabar, 'klt': 0., 'kht': self.gBar.khtbar,
-                            'ihvcn': 0.,
-                            'leak': self.gBar.leakbar, },
-                'initseg': {'nav11': self.gBar.nabar, 'klt': 0., 'kht': self.gBar.khtbar,
-                            'ihvcn': self.gBar.ihbar / 2.,
-                            'leak': self.gBar.leakbar, },
-                'soma': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar,
-                         'kht': self.gBar.khtbar, 'ihvcn': self.gBar.ihbar,
-                         'leak': self.gBar.leakbar, },
-                'dend': {'nav11': self.gBar.nabar, 'klt': 0., 'kht': self.gBar.khtbar * 0.5,
-                         'ihvcn': self.gBar.ihbar / 3., 'leak': self.gBar.leakbar * 0.5, },
-                'apic': {'nav11': 0.0, 'klt': 0., 'kht': self.gBar.khtbar * 0.2,
-                         'ihvcn': self.gBar.ihbar / 4.,
-                         'leak': self.gBar.leakbar * 0.2, },
-            }
-            self.irange = np.linspace(-0.5, 0.5, 9)
-            self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
-                            'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 100.}}, # gradients are: flat, linear, exponential
-                            }
-
         else:
             raise ValueError('model type %s is not implemented' % modelType)
         
@@ -384,38 +357,41 @@ class Tuberculoventral(Tuberculoventral):
         else:
             raise ValueError("Tuberculoventral setting Na channels: channel %s not known" % nach)
 
-    def add_axon(self):
-        Cell.add_axon(self, self.soma, self.somaarea, self.c_m, self.R_a, self.axonsf)
-
-    def add_dendrites(self):
-        """
-        Add simple unbranched dendrites to basic Rothman Type I models.
-        The dendrites have some kht and ih current
-        """
-        cs = False  # not implemented outside here - internal Cesium.
-        nDend = range(4) # these will be simple, unbranced, N=4 dendrites
-        dendrites=[]
-        for i in nDend:
-            dendrites.append(h.Section(cell=self.soma))
-        for i in nDend:
-            dendrites[i].connect(self.soma)
-            dendrites[i].L = 200 # length of the dendrite (not tapered)
-            dendrites[i].diam = 1.5 # dendrite diameter
-            dendrites[i].nseg = 21 # # segments in dendrites
-            dendrites[i].Ra = 150 # ohm.cm
-            dendrites[i].insert('kht')
-            if cs is False:
-                dendrites[i]().kht.gbar = 0.005 # a little Ht
-            else:
-                dendrites[i]().kht.gbar = 0.0
-            dendrites[i].insert('leak') # leak
-            dendrites[i]().leak.gbar = 0.0001
-            dendrites[i].insert('ihvcn') # some H current
-            dendrites[i]().ihvcn.gbar = 0.# 0.001
-            dendrites[i]().ihvcn.eh = -43.0
-        self.maindend = dendrites
-        self.status['dendrites'] = True
-        self.add_section(self.maindend, 'maindend')
+    # def add_axon(self):
+    #     Cell.add_axon(self, self.soma, self.somaarea, self.c_m, self.R_a, self.axonsf)
+    #
+    # def add_dendrites(self):
+    #     """
+    #     Add 2 simple unbranched dendrites the basic model.
+    #     The dendrites have some kht and ih current
+    #     """
+    #     print 'adding dendrites'
+    #     cs = False  # not implemented outside here - internal Cesium.
+    #     nDend = range(2) # these will be simple, unbranced, N=2 dendrites
+    #     dendrites=[]
+    #     for i in nDend:
+    #         dendrites.append(h.Section(cell=self.soma))
+    #     for i in nDend:
+    #         dendrites[i].connect(self.soma)
+    #         dendrites[i].L = 200. # length of the dendrite (not tapered)
+    #         dendrites[i].diam = 1.0 # dendrite diameter
+    #         dendrites[i].nseg = 21 # # segments in dendrites
+    #         dendrites[i].Ra = 150 # ohm.cm
+    #         dendrites[i].insert('kht')
+    #         if cs is False:
+    #             dendrites[i]().kht.gbar = 0.000 # a little Ht
+    #         else:
+    #             dendrites[i]().kht.gbar = 0.0
+    #         dendrites[i].insert('leak') # leak
+    #         dendrites[i]().leak.gbar = 0.001
+    #         dendrites[i]().leak.erev = -78.0
+    #         dendrites[i].insert('ihvcn') # some H current
+    #         dendrites[i]().ihvcn.gbar = 0.0000
+    #         dendrites[i]().ihvcn.eh = -43.0
+    #         dendrites[i].ek = self.e_k
+    #     self.maindend = dendrites
+    #     self.status['dendrites'] = True
+    #     self.add_section(self.maindend, 'maindend')
 
 
 

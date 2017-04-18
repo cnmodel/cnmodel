@@ -23,7 +23,7 @@ parser = argparse.ArgumentParser(description=('test_cells.py:',
 cclamp = False
 cellinfo = {'types': ['bushy', 'stellate', 'steldend', 'dstellate', 'dstellateeager', 'sgc',
                         'cartwheel', 'pyramidal', 'octopus', 'tuberculoventral'],
-            'configs': ['std, ''waxon', 'dendrite'],
+            'configs': ['std', 'waxon', 'dendrite'],
             'nav': ['std', 'jsrna', 'nav11'],
             'species': ['guineapig', 'cat', 'rat', 'mouse'],
             'pulse': ['step', 'pulse']}
@@ -138,6 +138,15 @@ elif args.celltype == 'bushy' and args.configuration == 'std':
 elif args.celltype == 'octopus' and args.configuration == 'std':
     cell = cells.Octopus.create(debug=debugFlag, species=args.species, nach='jsrna', modelType=args.type, ttx=args.ttx)
 #
+# Ocotpus tests
+#
+elif args.celltype == 'octopus' and args.configuration == 'waxon':
+    cell = cells.Octopus.create(debug=debugFlag, morphology='cnmodel/morphology/octopus_spencer_stick.hoc',
+        decorator=True,
+        species=args.species, nach='jsrna', modelType=args.type, ttx=args.ttx)
+        
+
+#
 # D-stellate tests
 #
 elif args.celltype == 'dstellate':
@@ -156,7 +165,9 @@ elif args.celltype == 'pyramidal':
 # DCN pyramidal cell tests
 #
 elif args.celltype == 'tuberculoventral':
-    cell = cells.Tuberculoventral.create(debug=debugFlag, ttx=args.ttx, modelType=args.type, species=args.species)
+    cell = cells.Tuberculoventral.create(debug=debugFlag, ttx=args.ttx, modelType='TVmouse', species='mouse',
+            morphology='cnmodel/morphology/tv_stick.hoc', decorator=True)
+    h.topology()
 #
 # DCN cartwheel cell tests
 #
