@@ -41,7 +41,7 @@ NEURON {
     THREADSAFE
     SUFFIX klt
     USEION k READ ek WRITE ik
-    RANGE gbar, gklt, ik
+    RANGE gbar, gklt, ik, q10g
     GLOBAL winf, zinf, wtau, ztau
 }
 
@@ -53,7 +53,7 @@ PARAMETER {
     gbar = 0.01592 (mho/cm2) <0,1e9>
     zss = 0.5   <0,1>   : steady state inactivation of glt
     q10tau = 3.0
-    q10g = 2.0
+    q10g = 1.0
 }
 
 STATE {

@@ -6,6 +6,7 @@ Usage:   python test_cells.py celltype species [--cc | --vc]
 This script generates a cell of the specified type and species, then tests the
 cell with a series of current/voltage pulses to produce I/V, F/I, and spike
 latency analyses.
+
 """
 
 import argparse
@@ -21,24 +22,26 @@ parser = argparse.ArgumentParser(description=('test_cells.py:',
 ' Biophysical representations of neurons (mostly auditory), test file'))
 
 cclamp = False
-cellinfo = {'types': ['bushy', 'stellate', 'steldend', 'dstellate', 'dstellateeager', 'sgc',
+cellinfo = {'types': ['bushy', 'stellate', 'stellatenav11', 'steldend', 'dstellate', 'dstellateeager', 'sgc',
                         'cartwheel', 'pyramidal', 'octopus', 'tuberculoventral'],
             'configs': ['std', 'waxon', 'dendrite'],
             'nav': ['std', 'jsrna', 'nav11'],
             'species': ['guineapig', 'cat', 'rat', 'mouse'],
             'pulse': ['step', 'pulse']}
 # Format for ivranges is list of tuples. This allows finer increments in selected ranges, such as close to rest
-ccivrange = {'bushy': [(-0.5, 0.5, 0.025)],
-            'stellate': [(-0.2, 0.2, 0.02), (-0.015, 0, 0.005)],
-            'steldend': [(-1.0, 1.0, 0.1)],
-            'dstellate': [(-0.2, 0.2, 0.0125)],
-            'dstellateeager': [(-0.6, 1.0, 0.025)],
-            'sgc': [(-0.3, 0.3, 0.01)],
-            'cartwheel': [(-0.2, 0.1, 0.02)],
-            'pyramidal': [(-0.3, 0.3, 0.025), (-0.040, 0.025, 0.005)],
-            'tuberculoventral': [(-0.35, 0.6, 0.02)],
-            'octopus': [(-3., 3., 0.2)],
+ccivrange = {'bushy': {'pulse': [(-0.5, 0.5, 0.025)]},
+            'stellate': {'pulse': [(-0.2, 0.2, 0.02), (-0.015, 0, 0.005)]},
+            'stellatenav11': {'pulse': [(-0.5, 1., 0.1)]}, # , (-0.015, 0, 0.005)]},
+            'steldend': {'pulse': [(-1.0, 1.0, 0.1)]},
+            'dstellate': {'pulse': [(-0.2, 0.2, 0.0125)]},
+            'dstellateeager': {'pulse': [(-0.6, 1.0, 0.025)]},
+            'sgc': {'pulse': [(-0.3, 0.3, 0.01)]},
+            'cartwheel': {'pulse': [(-0.2, 0.1, 0.02)]},
+            'pyramidal': {'pulse': [(-0.3, 0.3, 0.025), (-0.040, 0.025, 0.005)], 'prepulse': [(-0.25, -0.25, 0.25)]},
+            'tuberculoventral': {'pulse': [(-0.35, 0.6, 0.02)]},
+            'octopus': {'pulse': [(-3., 3., 0.2)]},
             }
+
 # scales holds some default scaling to use in the cciv plots
 # argument is {cellname: (xmin, xmax, IVymin, IVymax, FIspikemax,
 # offset(for spikes), crossing (for IV) )}
@@ -46,6 +49,8 @@ ccivrange = {'bushy': [(-0.5, 0.5, 0.025)],
 scale = {'bushy': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
                 'crossing', [0, -60]),
             'stellate': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
+                'crossing', [0, -60]),
+            'stellatenav11': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
                 'crossing', [0, -60]),
             'steldend': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
                 'crossing', [0, -60]),
@@ -112,17 +117,23 @@ else:
 if args.configuration in cellinfo['configs']:
     print 'Configuration %s is ok' % args.configuration
 
+default_durs = [10., 100., 20.]
+
 #
 # Spiral Ganglion cell tests
 #
-
 if args.celltype == 'sgc':
     cell = cells.SGC.create(debug=debugFlag, species=args.species, nach=args.nav, ttx=args.ttx, modelType=args.type)
+
 #
 # T-stellate tests
 #
 elif args.celltype == 'stellate':
-    cell = cells.TStellate.create(debug=debugFlag, species=args.species, nach=args.nav, modelType=args.type, ttx=args.ttx)
+     cell = cells.TStellate.create(model='RM03', debug=debugFlag, species=args.species, nach=args.nav, modelType=args.type, ttx=args.ttx)
+
+elif args.celltype == 'stellatenav11':  # note this uses a different model...
+    print 'test_cells: Stellate NAV11'
+    cell = cells.TStellateNav11.create(model='Nav11', debug=debugFlag, species=args.species, modelType=None, ttx=args.ttx)
 #
 # Bushy tests
 #
@@ -132,6 +143,7 @@ elif args.celltype == 'bushy' and args.configuration == 'waxon':
 
 elif args.celltype == 'bushy' and args.configuration == 'std':
     cell = cells.Bushy.create(debug=debugFlag, species=args.species, nach=args.nav, modelType=args.type, ttx=args.ttx)
+
 #
 # Ocotpus tests
 #
@@ -144,7 +156,6 @@ elif args.celltype == 'octopus' and args.configuration == 'waxon':
     cell = cells.Octopus.create(debug=debugFlag, morphology='cnmodel/morphology/octopus_spencer_stick.hoc',
         decorator=True,
         species=args.species, nach='jsrna', modelType=args.type, ttx=args.ttx)
-        
 
 #
 # D-stellate tests
@@ -162,12 +173,13 @@ elif args.celltype == 'pyramidal':
     cell = cells.Pyramidal.create(debug=debugFlag, ttx=args.ttx, modelType=args.type)
 
 #
-# DCN pyramidal cell tests
+# DCN tuberculoventral cell tests
 #
 elif args.celltype == 'tuberculoventral':
     cell = cells.Tuberculoventral.create(debug=debugFlag, ttx=args.ttx, modelType='TVmouse', species='mouse',
             morphology='cnmodel/morphology/tv_stick.hoc', decorator=True)
     h.topology()
+
 #
 # DCN cartwheel cell tests
 #
@@ -189,21 +201,26 @@ app = pg.mkQApp()
 # define the current clamp electrode and default settings
 #
 if args.cc is True:
-    #run_iv(ccivrange[args.celltype], cell,
-        #sites=sites, reppulse=ptype)
     iv = IVCurve()
-    iv.run(ccivrange[args.celltype],  cell, durs=[10., 100., 20.],
+    iv.run(ccivrange[args.celltype],  cell, durs=default_durs,
            sites=sites, reppulse=ptype, temp=float(args.temp))
+    ret = iv.input_resistance_tau()
+    print('    From IV: Rin = {:7.1f}  Tau = {:7.1f}  Vm = {:7.1f}'.format(ret['slope'], ret['tau'], ret['intercept']))
     iv.show(cell=cell)
+
 elif args.vc is True:
     vc = VCCurve()
     vc.run((-120, 40, 5), cell)
     vc.show(cell=cell)
+
 elif args.demo is True:
     run_democlamp(cell, dendrites)
+
 else:
     print("Nothing to run. Specify one of --cc, --vc, --democlamp.")
     sys.exit(1)
+
+
 #-----------------------------------------------------------------------------
 #
 # If we call this directly, provide a test with the IV function

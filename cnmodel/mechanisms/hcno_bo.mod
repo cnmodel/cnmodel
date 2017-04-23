@@ -8,7 +8,7 @@ NEURON {
     THREADSAFE
     SUFFIX hcnobo
     NONSPECIFIC_CURRENT i
-    RANGE  gbar, eh, gh
+    RANGE  gbar, eh, gh, q10tau
     GLOBAL hinf, tau1, tau2
 }
 
@@ -49,7 +49,6 @@ ASSIGNED {
     hinf 
     tau1 (ms)
     tau2 (ms) 
-    qg ()  : computed q10 for gnabar based on q10g
     q10 ()
 	ssih
     ct

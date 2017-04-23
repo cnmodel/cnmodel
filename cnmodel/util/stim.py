@@ -5,11 +5,6 @@ def make_pulse(stim):
     """
     Generate a pulse train for current / voltage command. Returns a tuple:
     
-    Returns
-    -------
-    w : stimulus waveform
-    maxt : duration of waveform
-    tstims : index of each pulse in the train
     
     Parameters
     ----------
@@ -17,20 +12,30 @@ def make_pulse(stim):
         Holds parameters that determine stimulus shape:
         
         * delay : time before first pulse
-        * Sfreq : frequency of pulses 
-        * dur : duration of one pulse
+        * Sfreq : frequency of pulses
+        * dur : duration of one pulse or main pulse
+        * predur : duration of prepulse (default should be 0 for no prepulse)
         * amp : pulse amplitude
+        * preamp : amplitude of prepulse
         * PT : delay between end of train and test pulse (0 for no test)
         * NP : number of pulses
         * hold : holding level (optional)
         * dt : timestep
+
+    Returns
+    -------
+    w : stimulus waveform
+    maxt : duration of waveform
+    tstims : index of each pulse in the train
     """
     defaults = {
         'delay': 10,
         'Sfreq': 50,
-        'dur': 50,
+        'dur': 100,
+        'predur': 0.,
         'post': 50.,
         'amp': None,
+        'preamp': 0.,
         'PT': 0,
         'NP': 1,
         'hold': 0.0,
@@ -47,14 +52,17 @@ def make_pulse(stim):
     
     dt = stim['dt']
     delay = int(np.floor(stim['delay'] / dt))
+    if stim['predur'] > 0.:
+        predur = int(np.floor(stim['predur'] / dt))
+    else:
+        predur = 0.
     ipi = int(np.floor((1000.0 / stim['Sfreq']) / dt))
     pdur = int(np.floor(stim['dur'] / dt))
     posttest = int(np.floor(stim['PT'] / dt))
     ndur = 5
     if stim['PT'] == 0:
         ndur = 1
-    
-    maxt = dt * (stim['delay'] + (ipi * (stim['NP'] + 3)) +
+    maxt = dt * (stim['delay'] + stim['predur'] + (ipi * (stim['NP'] + 3)) +
         posttest + pdur * ndur)
     
     hold = stim.get('hold', None)
@@ -66,8 +74,10 @@ def make_pulse(stim):
     #   make pulse
     tstims = [0] * int(stim['NP'])
     for j in range(0, int(stim['NP'])):
-        start = delay + j * ipi
-        t = start * dt
+        prestart = delay
+        start = prestart + predur + j*ipi
+        if predur > 0.:
+            w[prestart:prestart+predur] = stim['preamp']
         w[start:start + pdur] = stim['amp']
         tstims[j] = start
     if stim['PT'] > 0.0:

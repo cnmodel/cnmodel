@@ -42,7 +42,7 @@ NEURON {
         THREADSAFE
         SUFFIX kht
         USEION k READ ek WRITE ik
-        RANGE gbar, gkht, ik
+        RANGE gbar, gkht, ik, q10g
         GLOBAL ninf, pinf, ntau, ptau
 }
 
@@ -65,7 +65,7 @@ PARAMETER {
         gbar = 0.01592 (mho/cm2) <0,1e9>
         nf = 0.85 <0,1> :proportion of n vs p kinetics
         q10tau = 3.0
-        q10g = 2.0
+        q10g = 1.0
 }
 
 STATE {

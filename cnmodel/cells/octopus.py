@@ -2,6 +2,8 @@ from neuron import h
 from ..util import nstomho
 from ..util import Params
 import numpy as np
+from .cell import Cell
+
 """
 Original hoc code from RMmodel.hoc
 // including the "Octopus" cell:
@@ -19,8 +21,6 @@ proc set_Type2o() {
 }
 
 """
-
-from .cell import Cell
 
 __all__ = ['Octopus', 'OctopusRothman', 'OctopusSpencer']
 
@@ -205,10 +205,9 @@ class OctopusRothman(Octopus, Cell):
         silent : boolean (default: True)
             run silently (True) or verbosely (False)
         """
-        #print '\nSpecies scaling: %s   %s' % (species, type)
         soma = self.soma
         # if species == 'mouse' and type == 'II-o':
-        #     # use conductance levels from Cao et al.,  J. Neurophys., 2007.
+        #     # use conductance levels for a mouse
         #     #print 'Mouse octopus cell'
         #     self.set_soma_size_from_Cm(26.0)
         #     self.adjust_na_chans(soma)
@@ -218,39 +217,16 @@ class OctopusRothman(Octopus, Cell):
         #     soma().leak.gbar = nstomho(2.0, self.somaarea)
         #     self.vm0 = self.find_i0()
         #     self.axonsf = 0.57
+
         if species == 'guineapig' and modelType =='II-o':
             self.set_soma_size_from_Cm(25.0)
             self.print_soma_info()
-            
-            # print 'soma area: ', self.somaarea
-            # print 'soma cap: ', self.totcap
-            # print 'soma L', self.soma.L
-            # print 'diam: ', self.soma.diam
-            # print 'cm: ', self.c_m
             self.adjust_na_chans(soma)
             soma().kht.gbar = 0.0061  # nstomho(150.0, self.somaarea)  # 6.1 mmho/cm2
             soma().klt.gbar = 0.0407  # nstomho(3196.0, self.somaarea)  #  40.7 mmho/cm2
             soma().hcnobo.gbar = 0.0076  #nstomho(40.0, self.somaarea)  # 7.6 mmho/cm2, cf. Bal and Oertel, Spencer et al. 25 u dia cell
             soma().leak.gbar = 0.0005  # nstomho(2.0, self.somaarea)
             self.axonsf = 1.0
-        # elif species == 'guineapig' and type =='II-I':
-        #     # guinea pig data from Rothman and Manis, 2003, type II=I
-        #     self.i_test_range=(-0.4, 0.4, 0.02)
-        #     self.set_soma_size_from_Cm(12.0)
-        #     self.adjust_na_chans(soma)
-        #     soma().kht.gbar = nstomho(150.0, self.somaarea)
-        #     soma().klt.gbar = nstomho(35.0, self.somaarea)
-        #     soma().hcno.gbar = nstomho(3.5, self.somaarea)
-        #     soma().leak.gbar = nstomho(2.0, self.somaarea)
-        #     self.axonsf = 0.57
-        # elif species == 'cat' and type == 'II':  # a cat is a big guinea pig
-        #     self.set_soma_size_from_Cm(35.0)
-        #     self.adjust_na_chans(soma)
-        #     soma().kht.gbar = nstomho(150.0, self.somaarea)
-        #     soma().klt.gbar = nstomho(200.0, self.somaarea)
-        #     soma().hcno.gbar = nstomho(20.0, self.somaarea)
-        #     soma().leak.gbar = nstomho(2.0, self.somaarea)
-        #     self.axonsf = 1.0
         else:
             raise ValueError('Species "%s" or species-type "%s" is not recognized for octopus cells' %  (species, type))
         self.status['species'] = species
@@ -288,19 +264,18 @@ class OctopusRothman(Octopus, Cell):
             soma().jsrna.gbar = gnabar * 0.2
             soma.ena = self.e_na
             if debug:
-                print 'jsrna gbar: ', soma().jsrna.gbar
+                print 'octopus using jsrna, gbar: ', soma().jsrna.gbar
         elif nach == 'nav11':
             soma().nav11.gbar = gnabar * 0.5
             soma.ena = self.e_na
             soma().nav11.vsna = 4.3
             if debug:
-                print "octopus using inva11"
-            print 'nav11 gbar: ', soma().nav11.gbar
+                print "octopus using inva11, gbar:", soma().nav11.gbar
         elif nach in ['na', 'nacn']:
             soma().na.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'na gbar: ', soma().na.gbar
+                print 'octopus cell using na/nacn, gbar: ', soma().na.gbar
         else:
             raise ValueError('Sodium channel %s is not recognized for octopus cells', nach)
 
@@ -308,14 +283,14 @@ class OctopusRothman(Octopus, Cell):
 class OctopusSpencer(Octopus, Cell):
     """
     VCN octopus cell model (with dendrites).
-    Based on Spencer et al Front. Comput. Neurosci., 22 October 2012 | https://doi.org/10.3389/fncom.2012.00083
+    Based on Spencer et al Front. Comput. Neurosci., 22 October 2012
+    https://doi.org/10.3389/fncom.2012.00083
     """
 
     def __init__(self, morphology=None, decorator=None, nach='jsrna', ttx=False,
                 species='guineapig', modelType=None, debug=False):
         """
-        initialize the octopus cell, using the default parameters for guinea pig from
-        R&M2003, as a type II cell with modified conductances.
+        initialize the octopus cell, using the parameters Spencer et al. 2012
         Modifications to the cell can be made by calling methods below.
         
         Parameters
@@ -372,6 +347,8 @@ class OctopusSpencer(Octopus, Cell):
             soma = h.Section(name="Octopus_Soma_%x" % id(self))  # one compartment of about 29000 um2
             soma.nseg = 1
             self.add_section(soma, 'soma')
+            self.set_soma_size_from_Section(self.soma)
+            
         else:
             """
             instantiate a structured model with the morphology as specified by 
@@ -392,7 +369,7 @@ class OctopusSpencer(Octopus, Cell):
             self.soma().hcnobo.eh = self.e_h
             self.soma().leak.erev = self.e_leak
             self.soma.Ra = self.R_a
-            #self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
+            self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
             self.decorate()
             self.decorated.channelValidate(self, verify=True)

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import weakref
 import numpy as np
 import scipy.optimize
@@ -97,7 +98,7 @@ class Cell(object):
         elif isinstance(morphology_file, neuron.h):  # passed a hoc object
             self.morphology = morphology.HocReader(morphology_file)
         else:
-            print morphology_file
+            print(morphology_file)
             raise TypeError('Invalid morphology type')
         self.hr = self.morphology # extensive renaming required in calling classes, temporary fix.
         self.morphology.read_section_info()  # not sure this is necessary... 
@@ -138,19 +139,19 @@ class Cell(object):
     
     def list_sections(self):
         # print self.all_sections
-        print 'Known Section names:'
+        print('Known Section names:')
         for sec in self.all_sections:
-            print '  %s' % sec
+            print('  %s' % sec)
             s = self.all_sections[sec]
             # print 's: ', s
             if len(s) > 0:
-                print '    ------------------------------------------'
-                print '    Sections present:'
+                print('    ------------------------------------------')
+                print('    Sections present:')
                 for u in s:
-                    print '    Type: %s (%s, %s): %s' % (sec,  u.name(), str(self.hr.get_section(u.name())), Cell.sec_lookup[u.name()])
-                print '    ------------------------------------------'
+                    print('    Type: %s (%s, %s): %s' % (sec,  u.name(), str(self.hr.get_section(u.name())), Cell.sec_lookup[u.name()]))
+                print('    ------------------------------------------')
             else:
-                print'    No section of this type in cell'
+                print('    No section of this type in cell')
     
     def get_section_type(self, sec):
         for s in self.all_sections:
@@ -295,8 +296,8 @@ class Cell(object):
         """
         This is mostly for debugging ...
         """
-        print 'outputs: ', self.outputs
-        print 'inputs: ', self.inputs
+        print('outputs: ', self.outputs)
+        print('inputs: ', self.inputs)
     
     def make_terminal(self, post_cell, **kwds):
         """
@@ -365,11 +366,11 @@ class Cell(object):
     def print_status(self):
         print("\nCell model: %s" % self.__class__.__name__)
         print(self.__doc__)
-        print '    Model Status:'
-        print '-'*24
+        print('    Model Status:')
+        print('-'*24)
         for s in self.status.keys():
             print('{0:>12s} : {1:<12s}'.format(s, repr(self.status[s])))
-        print '-'*32
+        print('-'*32)
 
     def cell_initialize(self, showinfo=False, vrange=None, **kwargs):
         """
@@ -408,41 +409,52 @@ class Cell(object):
         and their densities (in uS/cm^2)
         
         """
-        print '\n    Installed mechanisms:'
+        print('\n    Installed mechanisms:')
         self.get_mechs(section)
         #print eval('section().nav11.gbar')
  
-        print 'self mechs: ', self.mechs
+        print('somaarea: {:.3e}'.format(self.somaarea))
+        print('Mechanisms:', end='')
+        for s in self.mechs:
+            print(' {:>8s} '.format(s), end='')
+        print('')
         for m in self.mechs:
             try:
                 gx=eval('section().'+m+'.gbar')
-                print 'gx: ', gx
-                print 'self.somaarea: ', self.somaarea
-                print 'ns: ', mho2ns(gx, self.somaarea)
-                print('{0:>12s} : {1:<7.3g} mho/cm2  {2:<7.3g} nS '.format(m, gx, mho2ns(gx, self.somaarea)))
-                #quit()
+                erev = 0.
+                if m == 'leak':
+                    erev = eval('section().'+m+'.erev')
+                if m in ['jsrna', 'na', 'nacn', 'nav11']:
+                    erev = eval('section().ena')
+                if m in ['klt', 'kht', 'ka']:
+                    erev = eval('section().ek')
+                if m in ['hcno', 'ihvcn', 'hcnobo']:
+                    erev = eval('section().'+m+'.eh')
+                print('{0:>12s} : {2:8.1f} nS  {1:7.3e} mho/cm2  {3:>5.1f} mV'.
+                        format(m, gx, mho2ns(gx, self.somaarea), erev))
             except:
                 print('{0:>12s} : <no gbar> '.format(m))
-        print '-'*32
+        print('-'*32)
         
     def print_all_mechs(self):
-        print '\nAll mechanisms in all sections: '
+        print('\nAll mechanisms in all sections: ')
         for part in self.all_sections.keys():
-            print 'Cell part: %s' % part 
+            print('Cell part: %s' % part )
             for sec in self.all_sections[part]:
-                print '   Section: ', sec
-                print '        ', self.get_mechs(sec)
+                print('   Section: ', sec)
+                print('        ', self.get_mechs(sec))
                 for m in self.get_mechs(sec):
                     gx = eval('sec().'+m+'.gbar')
-                    print '            %s: %f' % (m, gx)
+                    print('            %s: %f' % (m, gx))
 
     def i_currents(self, V):
         """
         For the steady-state case, return the total current at voltage V
         Used to find the zero current point
         vrange brackets the interval
-        Implemented here are the basic RM03 mechanisms
-        This function should be replaced for specific cell types.
+        Implemented here are the basic known mechanisms; if you add more
+        mechanisms, they will need to be accomadated in this routine.
+        This function could be replaced for specific cell types.
         
         """
         for part in self.all_sections.keys():
@@ -504,17 +516,17 @@ class Cell(object):
         try:
             v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1])
         except:
-            print 'find i0 failed:'
-            print self.ix
+            print('find i0 failed:')
+            print(self.ix)
             i0 = self.i_currents(V=vrange[0])
             i1 = self.i_currents(V=vrange[1])
             raise ValueError('vrange not good for %s : %f at %6.1f, %f at %6.1f' %
                              (self.status['name'], i0, vrange[0], i1, vrange[1]))
         if showinfo:
-            print '\n  [soma] find_i0  Species: %s  cell type: %s' % (self.status['species'], self.status['modelType'])
-            print '    *** found V0 = %f' % v0
-            print '    *** using conductances: ', self.ix.keys()
-            print '    *** and cell has mechanisms: ', self.mechanisms
+            print('\n  [soma] find_i0  Species: %s  cell type: %s' % (self.status['species'], self.status['modelType']))
+            print('    *** found V0 = %f' % v0)
+            print('    *** using conductances: ', self.ix.keys())
+            print('    *** and cell has mechanisms: ', self.mechanisms)
         return v0
 
     def compute_rmrintau(self, auto_initialize=True, vrange=None):
@@ -536,7 +548,7 @@ class Cell(object):
         if auto_initialize:
             self.cell_initialize(vrange=vrange)
         gnames = {# R&M03:
-                    'nacn': 'gna', 'na': 'gna', 'jsrna': 'gna',
+                    'nacn': 'gna', 'na': 'gna', 'jsrna': 'gna', 'nav11': 'gna',
                     'leak': 'gbar',
                     'klt': 'gklt', 'kht': 'gkht',
                     'ka': 'gka',
@@ -563,6 +575,7 @@ class Cell(object):
             gsum += eval(gx)
            # print('{0:>12s} : gx '.format(m))
         # convert gsum from us/cm2 to nS using cell area
+        print ('gsum, self.somaarea: ', gsum, self.somaarea)
         gs = mho2ns(gsum, self.somaarea)
         Rin = 1e3/gs  # convert to megohms
         tau = Rin*self.totcap*1e-3  # convert to msec
@@ -599,14 +612,14 @@ class Cell(object):
         self.totcap = self.c_m * self.somaarea * 1e6
 
     def print_soma_info(self):
-        print '-'*40
-        print 'Soma Parameters: '
-        print '   Area: ', self.somaarea
-        print '   Cap:  ', self.totcap
-        print '   L:    ', self.soma.L
-        print '   diam: ', self.soma.diam
-        print '   cm:   ', self.c_m
-        print '-'*40
+        print('-'*40)
+        print('Soma Parameters: ')
+        print('   Area: ', self.somaarea)
+        print('   Cap:  ', self.totcap)
+        print('   L:    ', self.soma.L)
+        print('   diam: ', self.soma.diam)
+        print('   cm:   ', self.c_m)
+        print('-'*40)
         
     def distances(self, section):
         self.distanceMap = {}
@@ -659,7 +672,7 @@ class Cell(object):
         for ip, inseg in enumerate(initsegment):
             gna = gnamin + ip * gnastep
             if debug:
-                print 'Initial segment %d: gnabar = %9.6f' % (ip, gna)
+                print('Initial segment %d: gnabar = %9.6f' % (ip, gna))
             inseg.nacn.gbar = gna
             inseg.klt.gbar = 0.2 * nstomho(200.0, self.somaarea)
             inseg.kht.gbar = nstomho(150.0, self.somaarea)
