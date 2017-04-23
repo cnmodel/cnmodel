@@ -1,0 +1,82 @@
+objref soma
+soma = new SectionList()
+objref primarydendrite
+primarydendrite = new SectionList()
+objref secondarydendrite
+secondarydendrite = new SectionList()
+objref hillock
+hillock = new SectionList()
+objref unmyelinatedaxon
+unmyelinatedaxon = new SectionList()
+objref myelinatedaxon
+myelinatedaxon = new SectionList()
+
+create sections[8]
+access sections[0]
+soma.append()
+sections[0] {
+    pt3dadd(0., 0., 0., 25.)
+    pt3dadd(0., 25., 0., 25.)
+}
+
+// axon hillock, 15 microns long, tapered
+access sections[1]
+hillock.append()
+connect sections[1](0), sections[0](0)
+sections[1] {
+    pt3dadd(0., 0., 0., 2.5)
+    pt3dadd(0., -15., 0., 1.0)
+}
+
+// initial segment, unmyelinated, 10 microns long, not tapering
+access sections[2]
+unmyelinatedaxon.append()
+connect sections[2](0), sections[1](1)
+sections[2] {
+    pt3dadd(0., -15., 0., 1.0)
+    pt3dadd(0., -25., 0., 1.0)
+
+}
+
+// beginning of myelinated axon, 20 micron, enlarging with distance
+access sections[3]
+myelinatedaxon.append()
+connect sections[3](0), sections[2](1)
+sections[3] {
+    pt3dadd(0., -25., 0., 1.0)
+    pt3dadd(0., -45., 0., 2.0)
+
+}
+
+access sections[4]
+primarydendrite.append()
+connect sections[4](0), sections[0](1)
+sections[4] {
+    pt3dadd(0., 25., 0., 2)
+    pt3dadd(125., 25., 25., 1.5)
+}
+
+access sections[5]
+primarydendrite.append()
+connect sections[5](0), sections[0](1)
+sections [5] {
+    pt3dadd(0., 25., 0., 2.0)
+    pt3dadd(-125., 25., 25., 1.5)
+}
+
+access sections[6]
+primarydendrite.append()
+connect sections[6](0), sections[0](1)
+sections [6] {
+    pt3dadd(0., 25., 0., 2.0)
+    pt3dadd(125, 25., -25., 1.5)
+}
+
+access sections[7]
+primarydendrite.append()
+connect sections[7](0), sections[0](1)
+sections [7] {
+    pt3dadd(0., 25., 0., 2.0)
+    pt3dadd(-125., 25., -25., 1.5)
+}
+
