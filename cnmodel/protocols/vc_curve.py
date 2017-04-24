@@ -70,7 +70,7 @@ class VCCurve(Protocol):
         except:
             raise TypeError("run_iv argument 1 must be a tuple (imin, imax, istep)")
 
-        vstim = h.SEClamp(0.5, cell.soma) # use our new iclamp method
+        vstim = h.SEClamp(0.5, cell.soma) # set up a single-electrode clamp
         vstim.dur1 = 50.0
         vstim.amp1 = -60
         vstim.dur2 = 500.0
@@ -78,7 +78,7 @@ class VCCurve(Protocol):
         vstim.dur3 = 400
         vstim.amp3 = -60.0
         vstim.rs = 0.01
-        cell.soma.cm = 0.001
+        cell.soma.cm = 0.001  # reduce capacitative transients (cap compensation)
         self.durs = [vstim.dur1, vstim.dur2, vstim.dur3]
         self.amps = [vstim.amp1, vstim.amp2, vstim.amp3]
         self.voltage_cmd = []
@@ -98,9 +98,10 @@ class VCCurve(Protocol):
             self['i_inj'] = vstim._ref_i
             self['time'] = h._ref_t
             vstim.amp2 = self.voltage_cmd[i]
+            self.custom_init(vinit=-60.)
             h.tstop = tend
-            h.init()
-            h.run()
+            while h.t < h.tstop:
+                    h.fadvance()
             self.voltage_traces.append(self['v_soma'])
             self.current_traces.append(self['i_inj'])
             self.time_values = np.array(self['time'])
@@ -150,7 +151,7 @@ class VCCurve(Protocol):
         #
         app = pg.mkQApp()
         if cell is not None:
-            win = pg.GraphicsWindow('%s  %s (%s)' % (cell.status['name'], cell.status['type'], cell.status['species']))
+            win = pg.GraphicsWindow('%s  %s (%s)' % (cell.status['name'], cell.status['modelType'], cell.status['species']))
         else:
             win = pg.GraphisWindow('Voltage Clamp')
         self.win = win

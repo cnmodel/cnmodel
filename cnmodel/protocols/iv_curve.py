@@ -35,12 +35,17 @@ class IVCurve(Protocol):
         Run a current-clamp I/V curve on *cell*.
         
         Parameters
-        ==========
-        ivrange : list of tuples
+        ----------
+        ivrange : dict of list of tuples
             Each item in the list is (min, max, step) describing a range of 
             levels to test. Range values are inclusive, so the max value may
             appear in the test values. Using multiple ranges allows finer 
-            measurements in some ranges. 
+            measurements in some ranges.
+            For example:
+                {'pulse': [(-1., 0., 1.), (-0.1, 0., 0.02)], 'prepulse': [(-0.5, 0, 0.1)]}
+                Optional keys include 'pulsedur' : the duration of the pulse, in ms
+                                      'prepulsecur: the duration of the prepulse, in ms
+                The prepulse or the pulse can have a single value if the other is ranged.
         cell : Cell
             The Cell instance to test.
         durs : tuple
@@ -60,33 +65,40 @@ class IVCurve(Protocol):
 
         # Calculate current pulse levels
         icur = []
+        precur = [0.]
+        self.pre_current_cmd = []
+        npresteps = 0
         if isinstance(ivrange, tuple):
             ivrange = [ivrange]
-        for c in ivrange:  # unpack current levels
+        for c in ivrange['pulse']:  # unpack current levels for the main pulse
             try:
                 (imin, imax, istep) = c # unpack a tuple... or list
             except:
                 raise TypeError("run_iv arguments must be a list of tuples [(imin, imax, istep), ...]")
             nstep = np.floor((imax-imin)/istep) + 1
             icur.extend(imin + istep * np.arange(nstep))  # build the list
-
         self.current_cmd = np.array(sorted(icur))
         nsteps = self.current_cmd.shape[0]
         # Configure IClamp
         if durs is None:
             durs = [10.0, 100.0, 50.0]
-            
+
+        if 'prepulse' in ivrange.keys():
+            precur=[]
+            for c in ivrange['prepulse']:
+                try:
+                    (imin, imax, istep) = c # unpack a tuple... or list
+                except:
+                    raise TypeError("run_iv arguments must be a list of tuples [(imin, imax, istep), ...]")
+                nstep = np.floor((imax-imin)/istep) + 1
+                precur.extend(imin + istep * np.arange(nstep))  # build the list
+            self.pre_current_cmd = np.array(sorted(precur))
+            npresteps = self.pre_current_cmd.shape[0]
+            durs.insert(1, 50.)
+        
         self.durs = durs
         # set up stimulation with a pulse train
-        if reppulse is None:
-            stim = {
-                'NP': 1,
-                'delay': durs[0],
-                'dur': durs[1],
-                'amp': 1.0,
-                'dt': dt,
-                }
-        else:
+        if reppulse is not None:
             stim = {
                 'NP': 10,
                 'Sfreq': 50.0,
@@ -96,6 +108,31 @@ class IVCurve(Protocol):
                 'PT': 0.0,
                 'dt': dt,
                 }
+        elif 'prepulse' in ivrange.keys():
+            stim = {
+                'NP': 1,
+                'delay': durs[0],
+                'predur': durs[1],
+                'dur': durs[2],
+                'amp': 1.0,
+                'preamp': 0.0,
+                'dt': dt,
+                }
+            self.p_start = durs[0]+durs[1]
+            self.p_end = self.p_start + durs[2]
+            self.p_dur = durs[2]
+        else:
+            stim = {
+                'NP': 2,
+                'delay': durs[0],
+                'dur': durs[1],
+                'amp': 1.0,
+                'dt': dt,
+                }
+            self.p_start = durs[0]
+            self.p_end = self.p_start + durs[1]
+            self.p_dur = durs[1]
+        
         istim = h.iStim(0.5, sec=cell.soma)
         istim.delay = 5.
         istim.dur = 1e9 # these actually do not matter...
@@ -103,64 +140,87 @@ class IVCurve(Protocol):
         (secmd, maxt, tstims) = make_pulse(stim)
 
         iextend = []
-        if self.durs[2] > 50.:
-            iextend = np.ones(int((self.durs[2]-50)/stim['dt']))
+        if self.durs[-1] > 50.:
+            iextend = np.ones(int((self.durs[-1]-50)/stim['dt']))
             secmd = np.append(secmd, secmd[-1]*iextend)
-        tend = maxt + len(iextend)*stim['dt']
-        
+        self.tend = maxt + len(iextend)*stim['dt']
+    
         self.dt = dt
         self.temp = temp
-        vec = {}
-
+        self.cell = cell
         for i in range(nsteps):
             # Generate current command for this level 
             stim['amp'] = self.current_cmd[i]
-            (secmd, maxt, tstims) = make_pulse(stim)
-            vec['i_stim'] = h.Vector(secmd)
-            
-            # Connect recording vectors
-            self['v_soma'] = cell.soma(0.5)._ref_v
-            self['i_inj'] = istim._ref_i
-            self['time'] = h._ref_t
-            # connect current command vector
-            vec['i_stim'].play(istim._ref_i, h.dt, 0, sec=cell.soma)
+            if npresteps > 0:
+                for j in range(npresteps):
+                    stim['preamp'] = self.pre_current_cmd[j]
+                    self.run_one(istim, stim, initflag=(i==0 and j==0))
+            else:
+                self.run_one(istim, stim, initflag=(i==0))
+        
+    def run_one(self, istim, stim, initflag=True):
+        """
+        Perform one run in current-clamp for the selected cell
+        and add the data to the traces
+        
+        Parameters
+        ----------
+        istim : Stimulus electrode instance
+        stim : waveform information
+        initflag : boolean (default: True)
+            If true, force initialziation of the cell and computation of 
+            point Rin, tau and Vm
+        """
+        (secmd, maxt, tstims) = make_pulse(stim)
+        playvector = h.Vector(secmd)
+        # Connect recording vectors
+        self['v_soma'] = self.cell.soma(0.5)._ref_v
+        self['i_inj'] = istim._ref_i
+        self['time'] = h._ref_t
+        # connect current command vector
+        playvector.play(istim._ref_i, h.dt, 0, sec=self.cell.soma)
 
-            # GO
-            #h('secondorder=0')  # direct call fails; let hoc do the work
-            h.dt = dt
-            h.celsius = temp
-            h.tstop = tend
-            cell.vm0 = None
-            cell.cell_initialize()  # initialize the cell to it's rmp
-            if i == 0:
-                self.custom_init()
-                r = cell.compute_rmrintau(auto_initialize=False)
-                Rin, tau, v = r['Rin'], r['tau'], r['v']
-                print '    *** Rin: %9.0f  tau: %9.1f   v: %6.1f' % (Rin, tau, v)
-
-            cell.cell_initialize()  # initialize the cell to it's rmp
+        # GO
+        #h('secondorder=0')  # direct call fails; let hoc do the work
+        h.dt = self.dt
+        h.celsius = self.temp
+        h.tstop = self.tend
+        self.cell.vm0 = None
+        self.cell.cell_initialize()  # initialize the cell to it's rmp
+        if initflag:
             self.custom_init()
-            while h.t < h.tstop:
-                h.fadvance()
+            r = self.cell.compute_rmrintau(auto_initialize=False)
+            Rin, tau, v = r['Rin'], r['tau'], r['v']
+            print '    *** Rin: %9.0f  tau: %9.1f   v: %6.1f' % (Rin, tau, v)
 
-            k1 = int(stim['delay']/h.dt - 1)
+        self.cell.cell_initialize()  # initialize the cell to it's rmp
+        self.custom_init()
+        while h.t < h.tstop:
+            h.fadvance()
+
+        k1 = int(stim['delay']/h.dt - 1)
 #            print ('   V before step: {0:9.5f}'.format(self['v_soma'][k1]))
-            self.voltage_traces.append(self['v_soma'])
-            self.current_traces.append(self['i_inj'])
-            self.time_values = np.array(self['time'])
+        self.voltage_traces.append(self['v_soma'])
+        self.current_traces.append(self['i_inj'])
+        self.time_values = np.array(self['time'])
 
     def peak_vm(self, window=0.5):
         """
-        :param window: fraction of trace to look at to find peak value
+        Parameters
+        ----------
+        window : float (default: 0.5)
+            fraction of trace to look at to find peak value
         
-        Return peak membrane voltage for each trace.
+        Returns
+        -------
+        peak membrane voltage for each trace.
 
         """
         Vm = self.voltage_traces
         Icmd = self.current_cmd
         steps = len(Icmd)
-        peakStart = int(self.durs[0] / self.dt)
-        peakStop = int(peakStart + (self.durs[1]*window) / self.dt) # peak can be in first half
+        peakStart = int(self.p_start / self.dt)
+        peakStop = int(peakStart + (self.p_dur*window) / self.dt) # peak can be in first half
         Vpeak = []
         for i in range(steps):
             if Icmd[i] > 0:
@@ -172,20 +232,20 @@ class IVCurve(Protocol):
     def steady_vm(self, window=0.1):
         """
         Parameters
-        ==========
+        ----------
         window: (float) default: 0.1
         fraction of window to use for steady-state measurement, taken
         immediately before the end of the step
         
         Returns
-        =======
+        -------
         steady-state membrane voltage for each trace.
         
         """
         Vm = self.voltage_traces
         steps = len(Vm)
-        steadyStop = int((self.durs[0] + self.durs[1]) / self.dt)
-        steadyStart = int(steadyStop - (self.durs[1]*window) / self.dt)  # measure last 10% of trace
+        steadyStop = int((self.p_end) / self.dt)
+        steadyStart = int(steadyStop - (self.p_end*window) / self.dt)  # measure last 10% of trace
         Vsteady = [Vm[i][steadyStart:steadyStop].mean() for i in range(steps)]
         return np.array(Vsteady)
 
@@ -194,13 +254,13 @@ class IVCurve(Protocol):
         Return an array of spike times for each trace.
         
         Parameters
-        ==========
+        ----------
         threshold: float (default: None)
             Optional threshold at which to detect spikes. By 
             default, this queries cell.spike_threshold.
         
         Returns
-        =======
+        -------
         list of spike times.
         
         """
@@ -233,7 +293,9 @@ class IVCurve(Protocol):
             the window over which to look for spikes (in msec: default is
             the entire trace).
 
-        return the spikes in a list
+        Returns
+        -------
+        the spikes in a list
         
         """
         filteredspikes = []
@@ -247,12 +309,20 @@ class IVCurve(Protocol):
 
     def rest_vm(self):
         """
-        Return the resting membrane potential.
+        Parameters
+        ----------
+        None
+        
+        Returns
+        -------
+        The mean resting membrane potential.
         """
         d = int(self.durs[0] / self.dt)
-        return self.voltage_traces[-1][d//2:d].mean()
+        rvm = np.array([np.array(self.voltage_traces[i][d//2:d]).mean()
+                      for i in range(len(self.voltage_traces))]).mean()
+        return rvm
     
-    def input_resistance_tau(self, vmin=-10, imax=0, return_fits=False):
+    def input_resistance_tau(self, vmin=-10.0, imax=0, return_fits=False):
         """
         Estimate resting input resistance and time constant.
         
@@ -285,7 +355,7 @@ class IVCurve(Protocol):
         vmin += self.rest_vm()
         Icmd = self.current_cmd
         rawspikes = self.spike_times()
-        spikes = self.spike_filter(rawspikes, window=[0., self.durs[0]+self.durs[1]])
+        spikes = self.spike_filter(rawspikes, window=[self.p_start, self.p_end])
         steps = len(Icmd)
         
         nSpikes = np.array([len(s) for s in spikes])
@@ -295,7 +365,7 @@ class IVCurve(Protocol):
         smask = nSpikes > 0
         mask = vmask & imask & ~smask
         if mask.sum() < 2:
-            print("WARNING: Not enough traces to do linear reggression in "
+            print("WARNING: Not enough traces to do linear regression in "
                   "IVCurve.input_resistance_tau().")
             print('{0:<15s}: {1:s}'.format('vss', ', '.join(['{:.2f}'.format(v) for v in Vss])))
             print('{0:<15s}: {1:s}'.format('Icmd', ', '.join(['{:.2f}'.format(i) for i in Icmd])))
@@ -309,8 +379,8 @@ class IVCurve(Protocol):
         (slope, intercept, r, p, stderr) = reg
 
         # also measure the tau in the same traces:
-        pulse_start = int(self.durs[0] / self.dt)
-        pulse_stop = int((self.durs[0] + self.durs[1]) / self.dt)
+        pulse_start = int(self.p_start / self.dt)
+        pulse_stop = int((self.p_end) / self.dt)
 
         fits = []
         fit_inds = []
@@ -318,7 +388,6 @@ class IVCurve(Protocol):
         for i, m in enumerate(mask):
             if not m or (self.rest_vm() - Vss[i]) <= 1:
                 continue
-            
             trace = self.voltage_traces[i][pulse_start:pulse_stop]
             
             # find first minimum in the trace
@@ -362,7 +431,6 @@ class IVCurve(Protocol):
             
             fits.append(fit)
             fit_inds.append(i)
-
         # convert fits to record array
         dtype = [(k, float) for k in fits[0].params] + [('index', int)]
         fit_data = np.empty(len(fits), dtype=dtype)
@@ -389,6 +457,11 @@ class IVCurve(Protocol):
     def show(self, cell=None):
         """
         Plot results from run_iv()
+        
+        Parameters
+        ----------
+        cell : cell object (default: None)
+        
         """
         if not HAVE_PG:
             raise Exception("Requires pyqtgraph")
@@ -463,7 +536,7 @@ class IVCurve(Protocol):
         
         # plot exponential fits
         for fit in fits:
-            t = np.linspace(self.durs[0], self.durs[0]+self.durs[1], 1000)
+            t = np.linspace(self.p_start, self.p_end, 1000)
             y = fit.eval(x=t)
             Vplot.plot(t, y, pen={'color': (100, 100, 0), 'style': pg.QtCore.Qt.DashLine})
 
