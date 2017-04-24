@@ -471,8 +471,9 @@ class Cell(object):
             except:
                 self.ix['na'] = self.soma().nav11.gna*(V - self.soma().ena)
         if 'jsrna' in self.mechanisms:
-            #print dir(self.soma().na)
             self.ix['jsrna'] = self.soma().jsrna.gna*(V - self.soma().ena)
+        if 'nacncoop' in self.mechanisms:
+            self.ix['nacncoop'] = self.soma().nacncoop.gna*(V - self.soma().ena)
         if 'klt' in self.mechanisms:
             self.ix['klt'] = self.soma().klt.gklt*(V - self.soma().ek)
         if 'kht' in self.mechanisms:
@@ -548,7 +549,7 @@ class Cell(object):
         if auto_initialize:
             self.cell_initialize(vrange=vrange)
         gnames = {# R&M03:
-                    'nacn': 'gna', 'na': 'gna', 'jsrna': 'gna', 'nav11': 'gna',
+                    'nacn': 'gna', 'na': 'gna', 'jsrna': 'gna', 'nav11': 'gna', 'nacncoop': 'gna',
                     'leak': 'gbar',
                     'klt': 'gklt', 'kht': 'gkht',
                     'ka': 'gka',

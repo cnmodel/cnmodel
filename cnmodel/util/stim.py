@@ -75,7 +75,7 @@ def make_pulse(stim):
     tstims = [0] * int(stim['NP'])
     for j in range(0, int(stim['NP'])):
         prestart = delay
-        start = prestart + predur + j*ipi
+        start = int(prestart + predur + j*ipi)
         if predur > 0.:
             w[prestart:prestart+predur] = stim['preamp']
         w[start:start + pdur] = stim['amp']

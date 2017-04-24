@@ -310,7 +310,12 @@ class Tuberculoventral(Tuberculoventral):
         else:
             gnabar = nstomho(gbar, self.somaarea)
         nach = self.status['na']
-        if nach == 'jsrna':
+        if nach == 'nacncoop':
+            soma().nacncoop.gbar = gnabar
+            soma.ena = self.e_na
+            if debug:
+                print 'nacncoop gbar: ', soma().nacncoop.gbar
+        elif nach == 'jsrna':
             soma().jsrna.gbar = gnabar
             soma.ena = self.e_na
             if debug:

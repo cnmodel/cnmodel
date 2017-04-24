@@ -395,8 +395,8 @@ class IVCurve(Protocol):
             min_val = trace[min_ind]
             min_diff = trace[0] - min_val
             tau_est = min_ind * self.dt * (1 - 1 / np.e)
-            
-            # Fit cell charging to single exponential
+            print('tau_est: , min_ind, min_val, min_diff: ', tau_est, min_ind, min_val, min_diff)
+            print ('pulse start, stop: ', pulse_start, pulse_stop)# Fit cell charging to single exponential
             fit = fitting.Exp1().fit(trace[:min_ind],
                                      method='nelder',
                                      x=tx[:min_ind],
