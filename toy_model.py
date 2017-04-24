@@ -125,7 +125,7 @@ class Toy(Protocol):
 
         dt = 0.025
         h.dt = dt
-        h.celsius = 38
+        h.celsius = 22
 
         stim = {
             'NP': 1,
@@ -144,7 +144,7 @@ class Toy(Protocol):
             if g.group('type') == '':
                 netcells[c] = self.celltypes[c][0].create()
             else:
-                netcells[c] = self.celltypes[c][0].create(modelType=modelType)
+                netcells[c] = self.celltypes[c][0].create(modelType=modelType, debug=False)
         # dicts to hold data
         pl = OrderedDict([])
         pl2 = OrderedDict([])
