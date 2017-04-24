@@ -151,9 +151,9 @@ def tune_fi(cell, iinj, Vplot=None):
     """
     Given basic parameters, adjust nachans ka and kht for firing rate at specific current in 100 msec pulse.
     """
-    nabars = np.arange(800., 1600., 20.)
-    khtbars = np.arange(100., 400., 20.)
-    kabars = np.arange(65., 250., 250.)
+    nabars = np.arange(200., 1200., 40.)
+    khtbars = np.arange(80., 800., 40.)
+    kabars = np.arange(65., 260., 60.)
     dt = 0.025
     tend = 120.
     stim = {
@@ -206,7 +206,7 @@ def tune_fi(cell, iinj, Vplot=None):
                 vecs['i_stim'].play(istim._ref_i, h.dt, 0, sec=cell.soma)
                 # GO
                 h.dt = dt
-                h.celsius = 35
+                h.celsius = 34
                 h.tstop = tend
                 cell.vm0 = None
                 r = cell.compute_rmrintau(auto_initialize=False)
@@ -223,7 +223,7 @@ def tune_fi(cell, iinj, Vplot=None):
                     Vplot.plot(vecs['time'], vecs['v_soma'], pen=colors[ina])
                 if len(st) > 2:
                     sys.stdout.write("\r" + 'spks: %d  gna: %.1f ght: %.3f, ga: %.3f  n=%d' %
-                         (len(st), cell.soma().na.gbar*1000., cell.soma().kht.gbar*1000., cell.soma().ka.gbar*1000., len(slmap)))
+                         (len(st), cell.soma().jsrna.gbar*1000., cell.soma().kht.gbar*1000., cell.soma().ka.gbar*1000., len(slmap)))
                 
                     slmap.append({'spikes': len(st), 'pars': {'na': nabar, 'kht': khtbar, 'ka': kabar}})
 
@@ -234,11 +234,12 @@ def tune_fi(cell, iinj, Vplot=None):
 if __name__ == '__main__':
     target = {'vm': -72., 'Rin': 142., 'tau': 10.}
     cellobj = cells.Tuberculoventral
-    cell = cellobj.create(debug=False, ttx=False, modelType='TVmouse', species='mouse', morphology='cnmodel/morphology/tv_stick.hoc', decorator=True)
-#    cell = cellobj.create(debug=False, ttx=False, modelType='TVmouse', species='mouse')
-    cell.set_d_lambda(freq=2000) 
+#    cell = cellobj.create(debug=False, ttx=False, modelType='TVmouse', species='mouse',
+#        morphology='cnmodel/morphology/tv_stick.hoc', decorator=True)
+#    cell.set_d_lambda(freq=2000) 
+#    h.topology()
+    cell = cellobj.create(debug=False, ttx=False, nach='nacn', modelType='TVmouse', species='mouse')
     # init the cell (should do this inside loops...)
-    h.topology()
     if sys.argv[1] == 'rm':
         slmap = brute_search_rmtauvm(cell)
         pars, vals = find_minimum(target, slmap)
