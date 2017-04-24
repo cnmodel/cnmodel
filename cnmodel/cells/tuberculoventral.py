@@ -74,9 +74,9 @@ class Tuberculoventral(Cell):
 class Tuberculoventral(Tuberculoventral):
     """
     Tuberculoventral Neuron (DCN) base model
-    Adapted from T-stellate model
+    Adapted from T-stellate model, using target parameters from Kuo et al. J. Neurophys. 2012
     """
-    def __init__(self, morphology=None, decorator=None, nach='na', ttx=False,
+    def __init__(self, morphology=None, decorator=None, nach='nav11', ttx=False,
                 species='mouse', modelType=None, debug=False):
         """
         Initialize a DCN Tuberculoventral cell, using the default parameters for guinea pig from
@@ -128,7 +128,6 @@ class Tuberculoventral(Tuberculoventral):
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Tuberculoventral',
                        'morphology': morphology, 'decorator': decorator}
 
-        print self.status
         self.i_test_range=(-0.4, 0.6, 0.02)
         self.vrange = [-80., -60.]  # set a default vrange for searching for rmp
         
@@ -197,36 +196,15 @@ class Tuberculoventral(Tuberculoventral):
             # Adapted from TStellate model type I-c'
             print 'decorate as TVmouse'
             self.vrange=[-80., -50.]
-            self.set_soma_size_from_Cm(71.0)
-            self.adjust_na_chans(soma, gbar=1520.)
-            soma().kht.gbar = nstomho(160.0, self.somaarea)
+            self.set_soma_size_from_Cm(35.0)
+            self.adjust_na_chans(soma, gbar=1000.)
+            soma().kht.gbar = nstomho(600.0, self.somaarea)
             soma().ka.gbar = nstomho(65.0, self.somaarea)
-            soma().ihvcn.gbar = nstomho(1.25, self.somaarea)  # 2
+            soma().ihvcn.gbar = nstomho(2.5, self.somaarea)  # 1.25
             soma().ihvcn.eh = -43 # Rodrigues and Oertel, 2006
-            soma().leak.gbar = nstomho(5.5, self.somaarea)  # 7.4
+            soma().leak.gbar = nstomho(4.25, self.somaarea)  # 5.5
             soma().leak.erev = -70.0
             self.axonsf = 0.5
-        elif species == 'guineapig' and modelType =='I':
-            self.vrange=[-75., -50.]
-            # Adapted from TStellate model, typeI-t
-            self.set_soma_size_from_Cm(30.0)
-            self.adjust_na_chans(soma)
-            soma().kht.gbar = nstomho(40.0, self.somaarea)
-            soma().ka.gbar = nstomho(65.0, self.somaarea)
-            soma().ihvcn.gbar = nstomho(0.35, self.somaarea)
-            soma().leak.gbar = nstomho(0.54, self.somaarea)
-            soma().leak.erev = -65.0
-            self.axonsf = 0.5
-        elif species == 'cat' and modelType == 'I':
-            # a cat is a big guinea pig Type I
-            self.set_soma_size_from_Cm(30.0)
-            self.adjust_na_chans(soma)
-            soma().kht.gbar = nstomho(150.0, self.somaarea)
-            soma().ka.gbar = nstomho(0.0, self.somaarea)
-            soma().ihvcn.gbar = nstomho(0.5, self.somaarea)
-            soma().leak.gbar = nstomho(2.0, self.somaarea)
-            soma().leak.erev = -65.0
-            self.axonsf = 1.0
         else:
             raise ValueError('Species %s or species-type %s is not recognized for Tuberculoventralcells' % (species, type))
 
@@ -241,7 +219,7 @@ class Tuberculoventral(Tuberculoventral):
         """
         This routine defines channel density maps and distance map patterns
         for each type of compartment in the cell. The maps
-        are used by the ChannelDecorator class to(specifically, it's private
+        are used by the ChannelDecorator class (specifically, it's private
         _biophys function) to decorate the cell membrane.
         
         Parameters

@@ -455,3 +455,52 @@ class OctopusSpencer(Octopus, Cell):
 
         else:
             raise ValueError('model type %s is not implemented' % modelType)
+
+    def species_scaling(self, species='guineapig', modelType='Spencer', silent=True):
+        """
+        Adjust all of the conductances and the cell size according to the species requested.
+        Used ONLY for point models.
+        
+        Parameters
+        ----------
+        species : string (default: 'guineapig')
+            name of the species to use for scaling the conductances in the base point model
+            Must be guineapig
+        
+        modelType: string (default: 'II-o')
+            definition of model type from RM03 models, currently limited to type II-o
+        
+        silent : boolean (default: True)
+            run silently (True) or verbosely (False)
+        """
+        soma = self.soma
+        # if species == 'mouse' and type == 'II-o':
+        #     # use conductance levels for a mouse
+        #     #print 'Mouse octopus cell'
+        #     self.set_soma_size_from_Cm(26.0)
+        #     self.adjust_na_chans(soma)
+        #     soma().kht.gbar = nstomho(58.0, self.somaarea)
+        #     soma().klt.gbar = nstomho(80.0, self.somaarea)
+        #     soma().hcno.gbar = nstomho(30.0, self.somaarea)
+        #     soma().leak.gbar = nstomho(2.0, self.somaarea)
+        #     self.vm0 = self.find_i0()
+        #     self.axonsf = 0.57
+
+        if species == 'guineapig' and modelType =='II-o':
+            self.set_soma_size_from_Cm(25.0)
+            self.print_soma_info()
+            self.adjust_na_chans(soma)
+            soma().kht.gbar = 0.0061  # nstomho(150.0, self.somaarea)  # 6.1 mmho/cm2
+            soma().klt.gbar = 0.0407  # nstomho(3196.0, self.somaarea)  #  40.7 mmho/cm2
+            soma().hcnobo.gbar = 0.0076  #nstomho(40.0, self.somaarea)  # 7.6 mmho/cm2, cf. Bal and Oertel, Spencer et al. 25 u dia cell
+            soma().leak.gbar = 0.0005  # nstomho(2.0, self.somaarea)
+            self.axonsf = 1.0
+        else:
+            raise ValueError('Species "%s" or species-type "%s" is not recognized for octopus cells' %  (species, type))
+        self.status['species'] = species
+        self.status['modelType'] = modelType
+        self.cell_initialize(showinfo=True)
+        if not silent:
+            print 'set cell as: ', species
+            print ' with Vm rest = %6.3f' % self.vm0
+

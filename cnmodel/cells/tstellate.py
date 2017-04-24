@@ -116,7 +116,7 @@ class TStellateRothman(TStellate):
             if a decorator function is specified, this argument is ignored.
         
         modelType: string (default: None)
-            modelType specifies the type of the model that will be used (e.g., "II", "II-I", etc).
+            modelType specifies the type of the model that will be used (e.g., "I-c", "I-t").
             modelType is passed to the decorator, or to species_scaling to adjust point models.
         
         debug: boolean (default: False)

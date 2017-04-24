@@ -124,7 +124,7 @@ class BushyRothman(Bushy):
         if modelType == None:
             modelType = 'II'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False, 'hillock': False, 
-                        'initialsegment': False, 'myelinatedaxon': False, 'unmyelinatedaxon': False,
+                       'initialsegment': False, 'myelinatedaxon': False, 'unmyelinatedaxon': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Bushy',
                        'morphology': morphology, 'decorator': decorator}
         self.i_test_range=(-1, 1, 0.05)  # note that this gets reset with decorator according to channels
