@@ -59,6 +59,12 @@ class FitModel(lmfit.Model):
             else:
                 model_params[k] = v
         p = self.make_params(**model_params)
+        print ('params: ', p)
+        print ('fitparams: ', fit_params)
+        # import matplotlib.pyplot as mpl
+        # mpl.plot(data)
+        # mpl.show()
+
         fit = lmfit.Model.fit(self, data, params=p, **fit_params)
         if interactive:
             self.show_interactive(fit)
