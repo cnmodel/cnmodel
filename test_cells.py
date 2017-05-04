@@ -42,7 +42,7 @@ ccivrange = {'bushy': {'pulse': [(-0.5, 0.5, 0.025)]},
             'sgc': {'pulse': [(-0.3, 0.3, 0.01)]},
             'cartwheel': {'pulse': [(-0.2, 0.1, 0.02)]},
             'pyramidal': {'pulse': [(-0.3, 0.3, 0.025), (-0.040, 0.025, 0.005)], 'prepulse': [(-0.25, -0.25, 0.25)]},
-            'tuberculoventral': {'pulse': [(-0.35, 0.6, 0.02)]},
+            'tuberculoventral': {'pulse': [(-0.35, 1.0, 0.05), (-0.040, 0.01, 0.005)]},
             'octopus': {'pulse': [(-3., 3., 0.2)]},
             }
 

@@ -527,9 +527,9 @@ def linearramp(pin, mxpts, irpts):
     out = pin.copy()
     r = np.linspace(0, 1, irpts)
     out[:irpts] = out[:irpts]*r
-#    print  out[mxpts-irpts:mxpts].shape
-#    print r[::-1].shape
-    out[mxpts-irpts:mxpts] = out[mxpts-irpts:mxpts] * r[::-1]
+    print  out[mxpts-irpts:mxpts].shape
+    print r[::-1].shape
+    out[mxpts-irpts-1:mxpts] = out[mxpts-irpts-1:mxpts] * r[::-1]
     return out
 
 

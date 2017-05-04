@@ -197,8 +197,8 @@ class Tuberculoventral(Tuberculoventral):
             print 'decorate as TVmouse'
             self.vrange=[-80., -50.]
             self.set_soma_size_from_Cm(35.0)
-            self.adjust_na_chans(soma, gbar=1000.)
-            soma().kht.gbar = nstomho(600.0, self.somaarea)
+            self.adjust_na_chans(soma, gbar=8000.)
+            soma().kht.gbar = nstomho(2000.0, self.somaarea)
             soma().ka.gbar = nstomho(65.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(2.5, self.somaarea)  # 1.25
             soma().ihvcn.eh = -43 # Rodrigues and Oertel, 2006
@@ -311,7 +311,10 @@ class Tuberculoventral(Tuberculoventral):
             gnabar = nstomho(gbar, self.somaarea)
         nach = self.status['na']
         if nach == 'nacncoop':
+            print('TV model using nacncoop')
             soma().nacncoop.gbar = gnabar
+            soma().nacncoop.KJ = 2000.
+            soma().nacncoop.p = 0.25
             soma.ena = self.e_na
             if debug:
                 print 'nacncoop gbar: ', soma().nacncoop.gbar

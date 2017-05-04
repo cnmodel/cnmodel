@@ -4,26 +4,35 @@ COMMENT
 
 NEURON implementation of Jason Rothman's measurements of VCN conductances.
 
-This file implements the average brain sodium current used in the Rothman model.
-In the absence of direct measurements in the VCN, this is a fair assumption.
+This file implements a modified version of the average brain sodium current
+    used in the Rothman and Manis 2003 models.
+    
 The model differs from the one used in Rothman et al, (1993) in that the steep
 voltage dependence of recovery from inactivation in that model is missing. This
-may affect the refractory period. To use the other model, use najsr.mod instead.
+may affect the refractory period. To use the other model, use jsrnaf.mod instead.
 
-Original implementation by Paul B. Manis, April (JHU) and Sept, (UNC)1999.
+Original implementation by Paul B. Manis, April 1999 (JHU) and Sept 1999 (UNC-CH).
 
-File split implementaiton, April 1, 2004.
+File split implementation, April 1, 2004.
 
-This version does not have all the temperature scaling. Does not pass modlunit.
-Should work at 22C
 
-Version nacncoop implements a cooperative sodium channel model on the basis
-of the original nacn model. The motiviation is to make a faster sodium channel -
-faster onset of the current. The model is implemented similar to Oz et al. 
+Version nacncoop implements a cooperative sodium channel model built on the kinetics
+of the original nacn model (R&M2003c). The motivation is to make a sodium channel with
+faster activation kinetics, by introducing cooperativity between a subset of channels.
+The model is based on concepts and implementation similar to Oz et al. 
 J.Comp. Neurosci. 39: 63, 2015, and Huang et al., PloSOne 7:e37729, 2012.
+The cooperative channels are modeled with the same kinetics as the non-cooperative
+channels, but are treated as a separate subset (fraction: p). The cooperativity is
+introduced by shifting the voltage "seen" by the channels by KJ*m^3*h, which moves
+the channels to a faster regime (essentially, they experience a depolarized membrane
+potential that depends on their current gating state, relative to the main population
+of channels).
 
 A subpopulation of Na channels (p [0..1]) experiences a small voltage-dependent shift
 in the gating kinetics. The shift is determined by KJ
+
+This version does not have all the temperature scaling. Does not pass modlunit.
+Should work at 22C, appears to work at other temperatures ok.
 
 Contact: pmanis@med.unc.edu
 
@@ -46,13 +55,14 @@ INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}
 
 PARAMETER {
         v (mV)
-        celsius (degC) : 22 (degC) model is defined on measurements made at room temp in Baltimore
+        celsius (degC) : 22 (degC) model is defined at room temp in Baltimore
         dt (ms)
         ena (mV)
         gbar =  0.07958 (mho/cm2) <0,1e9>
         q10 = 3.0 : q10 for rates
         p  = 0.1 (): fraction of cooperative channels (0-1)
-        KJ = 400 (mV) : coupling strength (0-1000mV is usable range)
+        KJ = 400 (mV) : coupling strength between cooperative channels (0-1000mV is usable range)
+                      : setting either KJ = 0 or p = 0 will remove cooperativity.
 }
 
 STATE {
@@ -71,7 +81,7 @@ ASSIGNED {
 LOCAL mexp, hexp, mexp2, hexp2
 
 BREAKPOINT {
-	SOLVE states
+	SOLVE states METHOD cnexp
     
     gna = gbar*(p*(m2^3*h2) + (1.-p)*(m^3)*h)
     ina = gna*(v - ena)
@@ -86,7 +96,7 @@ INITIAL {
     h = hinf
     m2 = minf2
     h2 = hinf2
-    vNa = KJ*m^3*h
+    vNa = v + KJ*m^3*h
 }
 
 PROCEDURE states() {  :Computes state variables m, h, and n
@@ -95,6 +105,7 @@ PROCEDURE states() {  :Computes state variables m, h, and n
 	h = h + hexp*(hinf-h)
 	m2 = m2 + mexp2*(minf2-m2)
 	h2 = h2 + hexp2*(hinf2-h2)
+    vNa = v + KJ*m^3*h
     
 VERBATIM
 	return 0;
