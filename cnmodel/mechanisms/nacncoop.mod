@@ -45,6 +45,7 @@ UNITS {
 }
 
 NEURON {
+        THREADSAFE
         SUFFIX nacncoop
         USEION na READ ena WRITE ina
         RANGE gbar, gna, ina, p, KJ 
@@ -81,7 +82,7 @@ ASSIGNED {
 LOCAL mexp, hexp, mexp2, hexp2
 
 BREAKPOINT {
-	SOLVE states METHOD cnexp
+    SOLVE states METHOD cnexp
     
     gna = gbar*(p*(m2^3*h2) + (1.-p)*(m^3)*h)
     ina = gna*(v - ena)
@@ -99,17 +100,13 @@ INITIAL {
     vNa = v + KJ*m^3*h
 }
 
-PROCEDURE states() {  :Computes state variables m, h, and n
-	trates(v)      :             at the current v and dt.
-	m = m + mexp*(minf-m)
-	h = h + hexp*(hinf-h)
-	m2 = m2 + mexp2*(minf2-m2)
-	h2 = h2 + hexp2*(hinf2-h2)
+DERIVATIVE states {  :Computes state variables m, h, and n
+    trates(v)      :             at the current v and dt.
+    m' = (m - minf)/mtau 
+    h' = (h - hinf)/htau
+    m2' = (m2 - minf2)/mtau2
+    h2' = (h2 - hinf2)/htau2
     vNa = v + KJ*m^3*h
-    
-VERBATIM
-	return 0;
-ENDVERBATIM
 }
 
 LOCAL qt
@@ -117,7 +114,7 @@ LOCAL qt
 PROCEDURE rates(v) {  :Computes rate and other constants at current v.
                       :Call once from HOC to initialize inf at resting v.
 
-	qt = q10^((celsius - 22)/10) : if you don't like room temp, it can be changed!
+    qt = q10^((celsius - 22)/10) : if you don't like room temp, it can be changed!
 
 : average sodium channel, standard non-cooperative channels
     minf = 1 / (1+exp(-(v + 38) / 7))
@@ -139,21 +136,21 @@ PROCEDURE rates(v) {  :Computes rate and other constants at current v.
 
 PROCEDURE trates(v) {  :Computes rate and other constants at current v.
                       :Call once from HOC to initialize inf at resting v.
-	LOCAL tinc
-	TABLE minf, mexp, hinf, hexp, minf2, mexp2, hinf2, hexp2
-	DEPEND dt, celsius FROM -150 TO 150 WITH 300
+    LOCAL tinc
+    TABLE minf, mexp, hinf, hexp, minf2, mexp2, hinf2, hexp2
+    DEPEND dt, celsius FROM -150 TO 150 WITH 300
 
     rates(v)    : not consistently executed from here if usetable_hh == 1
         : so don't expect the tau values to be tracking along with
         : the inf values in hoc
 
-	tinc = -dt :  * qt (note q10 is handled in mtau/htau calculation above
-	mexp = 1 - exp(tinc/mtau)
-	hexp = 1 - exp(tinc/htau)
-	mexp2 = 1 - exp(tinc/mtau2)
-	hexp2 = 1 - exp(tinc/htau2)
+    tinc = -dt :  * qt (note q10 is handled in mtau/htau calculation above
+    mexp = 1 - exp(tinc/mtau)
+    hexp = 1 - exp(tinc/htau)
+    mexp2 = 1 - exp(tinc/mtau2)
+    hexp2 = 1 - exp(tinc/htau2)
 
-	}
+    }
 
 FUNCTION vtrap(x,y) {  :Traps for 0 in denominator of rate eqns.
         if (fabs(x/y) < 1e-6) {
