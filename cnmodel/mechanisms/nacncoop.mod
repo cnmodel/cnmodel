@@ -61,8 +61,8 @@ PARAMETER {
         ena (mV)
         gbar =  0.07958 (mho/cm2) <0,1e9>
         q10 = 3.0 : q10 for rates
-        p  = 0.1 (): fraction of cooperative channels (0-1)
-        KJ = 400 (mV) : coupling strength between cooperative channels (0-1000mV is usable range)
+        p  = 0.0 (): fraction of cooperative channels (0-1)
+        KJ = 0 (mV) : coupling strength between cooperative channels (0-1000mV is usable range)
                       : setting either KJ = 0 or p = 0 will remove cooperativity.
 }
 
@@ -86,13 +86,12 @@ BREAKPOINT {
     
     gna = gbar*(p*(m2^3*h2) + (1.-p)*(m^3)*h)
     ina = gna*(v - ena)
-
 }
 
 UNITSOFF
 
 INITIAL {
-    trates(v)
+    rates(v)
     m = minf
     h = hinf
     m2 = minf2
@@ -101,11 +100,11 @@ INITIAL {
 }
 
 DERIVATIVE states {  :Computes state variables m, h, and n
-    trates(v)      :             at the current v and dt.
-    m' = (m - minf)/mtau 
-    h' = (h - hinf)/htau
-    m2' = (m2 - minf2)/mtau2
-    h2' = (h2 - hinf2)/htau2
+    rates(v)      :             at the current v and dt.
+    m' = (minf - m)/mtau 
+    h' = (hinf - h)/htau
+    m2' = (minf2 - m2)/mtau2
+    h2' = (hinf2 - h2)/htau2
     vNa = v + KJ*m^3*h
 }
 
@@ -116,7 +115,7 @@ PROCEDURE rates(v) {  :Computes rate and other constants at current v.
 
     qt = q10^((celsius - 22)/10) : if you don't like room temp, it can be changed!
 
-: average sodium channel, standard non-cooperative channels
+: average sodium channel
     minf = 1 / (1+exp(-(v + 38) / 7))
     hinf = 1 / (1+exp((v + 65) / 6))
     mtau =  (10 / (5*exp((v+60) / 18) + 36*exp(-(v+60) / 25))) + 0.04
@@ -132,32 +131,6 @@ PROCEDURE rates(v) {  :Computes rate and other constants at current v.
     htau2 =  (100 / (7*exp((vNa+60) / 11) + 10*exp(-(vNa+60) / 25))) + 0.6
     htau2 = htau2/qt
 
-}
-
-PROCEDURE trates(v) {  :Computes rate and other constants at current v.
-                      :Call once from HOC to initialize inf at resting v.
-    LOCAL tinc
-    TABLE minf, mexp, hinf, hexp, minf2, mexp2, hinf2, hexp2
-    DEPEND dt, celsius FROM -150 TO 150 WITH 300
-
-    rates(v)    : not consistently executed from here if usetable_hh == 1
-        : so don't expect the tau values to be tracking along with
-        : the inf values in hoc
-
-    tinc = -dt :  * qt (note q10 is handled in mtau/htau calculation above
-    mexp = 1 - exp(tinc/mtau)
-    hexp = 1 - exp(tinc/htau)
-    mexp2 = 1 - exp(tinc/mtau2)
-    hexp2 = 1 - exp(tinc/htau2)
-
-    }
-
-FUNCTION vtrap(x,y) {  :Traps for 0 in denominator of rate eqns.
-        if (fabs(x/y) < 1e-6) {
-                vtrap = y*(1 - x/y/2)
-        }else{
-                vtrap = x/(exp(x/y) - 1)
-        }
 }
 
 UNITSON

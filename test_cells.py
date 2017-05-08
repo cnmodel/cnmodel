@@ -25,15 +25,16 @@ h.celsius = 22
 default_durs = [10., 100., 20.]
 cclamp = False
 
-cellinfo = {'types': ['bushy', 'stellate', 'stellatenav11', 'dstellate', 'dstellateeager', 'sgc',
+cellinfo = {'types': ['bushy', 'bushycoop', 'stellate', 'stellatenav11', 'dstellate', 'dstellateeager', 'sgc',
                         'cartwheel', 'pyramidal', 'octopus', 'tuberculoventral'],
             'morphology': ['point', 'waxon', 'stick'],
-            'nav': ['std', 'jsrna', 'nav11'],
+            'nav': ['std', 'jsrna', 'nav11', 'nacncoop'],
             'species': ['guineapig', 'cat', 'rat', 'mouse'],
             'pulse': ['step', 'pulse']}
 
 # Format for ivranges is list of tuples. This allows finer increments in selected ranges, such as close to rest
-ccivrange = {'bushy': {'pulse': [(-0.5, 0.5, 0.025)]},
+ccivrange = {'bushy': {'pulse': [(-0.5, 0.5, 0.01)]},
+             'bushycoop': {'pulse': [(-0.5, 0.5, 0.01)]},
             'stellate': {'pulse': [(-0.2, 0.2, 0.02), (-0.015, 0, 0.005)]},
             'stellatenav11': {'pulse': [(-0.5, 1., 0.1)]}, # , (-0.015, 0, 0.005)]},
             'steldend': {'pulse': [(-1.0, 1.0, 0.1)]},
@@ -51,6 +52,8 @@ ccivrange = {'bushy': {'pulse': [(-0.5, 0.5, 0.025)]},
 # offset(for spikes), crossing (for IV) )}
 ## the "offset" refers to setting the axes back a bit
 scale = {'bushy': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
+                'crossing', [0, -60]),
+        'bushycoop': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
                 'crossing', [0, -60]),
         'stellate': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
             'crossing', [0, -60]),
@@ -115,6 +118,10 @@ class Tests():
                 morphology='cnmodel/morphology/bushy_stick.hoc', decorator=True,
                 nach=args.nav, ttx=args.ttx, debug=debugFlag)
             h.topology()
+
+        elif args.celltype == 'bushycoop' and args.morphology == 'point':
+            cell = cells.Bushy.create(model='mGBC', species=args.species, modelType=args.type,
+                ttx=args.ttx, nach=args.nav, debug=debugFlag)
 
         #
         # T-stellate tests

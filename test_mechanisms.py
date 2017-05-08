@@ -60,7 +60,8 @@ class ChannelKinetics():
         # on appropriate time scales)
         #
         self.tdur = {'CaPCalyx': [20., 10.], 
-                     'nav11': [10., 5.], 'jsrna': [10., 5.], 'ichanWT2005': [10., 5.], 'kht':[200., 20.], 'klt': [200., 20.], 'nacn': [10., 5.],
+                     'nav11': [10., 5.], 'jsrna': [10., 5.], 'ichanWT2005': [10., 5.], 'kht':[200., 20.], 'klt': [200., 20.],
+                     'nacn': [10., 5.], 'nacncoop': [10., 5.],
                      'hcno': [1000., 200.], 'ih': [1000., 200.], 'ihvcn': [1000., 200.],'hcnobo': [1000., 200.],
                      'ihsgcBasalMiddle': [1000., 200.], 'ihsgcApical': [1000., 200.], 
                      'kif': [100., 100.], 'kis': [100., 10.], 'napyr': [10, 5.], 'ihpyr': [1000., 200.],
@@ -93,12 +94,21 @@ class ChannelKinetics():
         leak = cnmodel.util.Mechanism('leak')
         Channel.set_parameters({'gbar': 1})
         leak.set_parameters({'gbar': 1e-12})
+#         if modfile == 'nacncoop':
+#             self.soma().nacncoop.p = 0.
+#             self.soma().nacncoop.KJ = 0.
+# #            Channel.set_parameters({'p': 0., 'KJ': 000.})
+
         self.soma = cnmodel.util.Section(L=10, diam=10, mechanisms=[Channel, leak])
         if modfile == 'bkpjk':
             ca_init = 100e-6
             self.soma().cai = ca_init
         else:
             ca_init = 70e-6
+        if modfile == 'nacncoop':
+            self.soma().nacncoop.p = 0.1
+            self.soma().nacncoop.KJ = 1000.
+#            Channel.set_parameters({'p': 0., 'KJ': 000.})
         h.celsius = 37. # set the temperature.
         self.vec={}
         for var in ['time', 'V', 'IChan', 'Vcmd']:
