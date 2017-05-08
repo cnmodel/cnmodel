@@ -424,7 +424,7 @@ class Cell(object):
                 erev = 0.
                 if m == 'leak':
                     erev = eval('section().'+m+'.erev')
-                if m in ['jsrna', 'na', 'nacn', 'nav11']:
+                if m in ['jsrna', 'na', 'nacn', 'nav11', 'nacncoop']:
                     erev = eval('section().ena')
                 if m in ['klt', 'kht', 'ka']:
                     erev = eval('section().ek')
