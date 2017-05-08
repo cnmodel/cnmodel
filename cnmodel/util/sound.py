@@ -484,7 +484,7 @@ def modnoise(t, rt, Fs, F0, dur, start, dBSPL, FMod, DMod, phaseshift, seed):
         waveform
     
     """
-    irpts = rt * Fs
+    irpts = int(rt * Fs)
     mxpts = len(t)+1
     pin = pipnoise(t, rt, Fs, dBSPL, dur, start, seed)
     env = (1 + (DMod/100.0) * np.sin((2*np.pi*FMod*t) - np.pi/2 + phaseshift)) # envelope...
@@ -526,9 +526,12 @@ def linearramp(pin, mxpts, irpts):
     """
     out = pin.copy()
     r = np.linspace(0, 1, irpts)
+    irpts = int(irpts)
+    print 'irpts: ', irpts
+    print len(out)
     out[:irpts] = out[:irpts]*r
-    print  out[mxpts-irpts:mxpts].shape
-    print r[::-1].shape
+    # print  out[mxpts-irpts:mxpts].shape
+    # print r[::-1].shape
     out[mxpts-irpts-1:mxpts] = out[mxpts-irpts-1:mxpts] * r[::-1]
     return out
 
