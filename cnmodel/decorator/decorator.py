@@ -46,7 +46,7 @@ class Decorator():
         # dictionary may help when adding other conductances.
 
         self.gmapper = {'nacn': 'gbar', 'kht': 'gbar', 'klt': 'gbar', 'leak': 'gbar',
-                        'ihvcn': 'gbar', 'jsrna': 'gbar', 'nav11': 'gbar'}
+                        'ihvcn': 'gbar', 'jsrna': 'gbar', 'nav11': 'gbar', 'nacncoop': 'gbar'}
         self._biophys(cell, verify=verify)
         print 'Decorator: Model Decorated with channels (if this appears more than once per cell, there is a problem)'
 
@@ -92,7 +92,7 @@ class Decorator():
             # print 'channel mapping keys: ', self.cMan.channelMap.keys()
             for mech in cell.channelMap[sectype].keys():
                 if mech not in self.gmapper.keys():
-                    print 'mech %s not found? ' % mech
+                    print 'Mechanism %s not found? ' % mech
                     continue
                 if mech in self.excludeMechs:
                     continue
