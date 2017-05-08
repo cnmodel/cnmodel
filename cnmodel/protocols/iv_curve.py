@@ -394,36 +394,37 @@ class IVCurve(Protocol):
             min_ind = np.argmin(trace)
             min_val = trace[min_ind]
             min_diff = trace[0] - min_val
-            tau_est = min_ind * self.dt * (1 - 1 / np.e)
+            tau_est = min_ind * self.dt * (1. - 1. / np.e)
+            #print ('minind: ', min_ind, tau_est)
             fit = fitting.Exp1().fit(trace[:min_ind],
                                      method='nelder',
                                      x=tx[:min_ind],
                                      xoffset=(tx[0], 'fixed'),
-                                     yoffset=(min_val, -120, 0),
-                                     amp=(min_diff, 0, 50),
-                                     tau=(tau_est, 0.5, 50),
+                                     yoffset=(min_val, -120., -10.),
+                                     amp=(min_diff, 0., 50.),
+                                     tau=(tau_est, 0.5, 50.),
                                      )
 
             # find first maximum in the trace (following with first minimum)
             max_ind = np.argmax(trace[min_ind:]) + min_ind
             max_val = trace[max_ind]
             max_diff = min_val - max_val
-            tau2_est = max_ind * self.dt * (1 - 1 / np.e)
+            tau2_est = max_ind * self.dt * (1. - 1. / np.e)
             amp1_est = fit.params['amp'].value
             tau1_est = fit.params['tau'].value
             amp2_est = fit.params['yoffset'] - max_val
-            
+            #print('tau1, tau2est: ', tau1_est, tau2_est)
             # fit up to first maximum with double exponential, using prior
             # fit as seed.
             fit = fitting.Exp2().fit(trace[:max_ind],
                                      method='nelder',
                                      x=tx[:max_ind],
                                      xoffset=(tx[0], 'fixed'),
-                                     yoffset=(max_val, -120, 0),
-                                     amp1=(amp1_est, 0, 200),
-                                     tau1=(tau1_est, 0.5, 50),
-                                     amp2=(amp2_est, -200, 0),
-                                     tau_ratio=(tau2_est/tau1_est, 2, 50),
+                                     yoffset=(max_val, -120., -10.),
+                                     amp1=(amp1_est, 0., 200.),
+                                     tau1=(tau1_est, 0.5, 50.),
+                                     amp2=(amp2_est, -200., -0.5),
+                                     tau_ratio=(tau2_est/tau1_est, 2., 50.),
                                      tau2='tau_ratio * tau1',
                                      )
             
