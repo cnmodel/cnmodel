@@ -76,7 +76,7 @@ class BushyRothman(Bushy):
     Rothman and Manis, 2003abc (Type II, Type II-I)
     """
 
-    def __init__(self, morphology=None, decorator=None, nach='nacncoop',
+    def __init__(self, morphology=None, decorator=None, nach='na',
                  ttx=False, species='guineapig', modelType=None, debug=False):
         """
         Initialize the bushy cell, using the default parameters for guinea pig from
@@ -127,7 +127,7 @@ class BushyRothman(Bushy):
                        'initialsegment': False, 'myelinatedaxon': False, 'unmyelinatedaxon': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Bushy',
                        'morphology': morphology, 'decorator': decorator}
-        self.irange=np.linspace(-2, 2, 11)  # note that this gets reset with decorator according to channels
+        self.i_test_range=(-1, 1, 0.05)  # note that this gets reset with decorator according to channels
         self.spike_threshold = -40
         self.vrange = [-70., -57.]  # set a default vrange for searching for rmp
         
@@ -135,7 +135,7 @@ class BushyRothman(Bushy):
             """
             instantiate a basic soma-only ("point") model
             """
-            print "<< Bushy model: Creating point cel >>"
+            print "<< Bushy model: Creating point cell using JSR parameters >>"
             soma = h.Section(name="Bushy_Soma_%x" % id(self))  # one compartment of about 29000 um2
             soma.nseg = 1
             self.add_section(soma, 'soma')
@@ -144,7 +144,7 @@ class BushyRothman(Bushy):
             instantiate a structured model with the morphology as specified by 
             the morphology file
             """
-            print "<< Bushy model: Creating structured cell>>"
+            print "<< Bushy model: Creating structured cell using JSR parameters >>"
             self.set_morphology(morphology_file=morphology)
 
         # decorate the morphology with ion channels
@@ -163,7 +163,7 @@ class BushyRothman(Bushy):
         self.get_mechs(self.soma)
         self.cell_initialize(vrange=self.vrange)
         if debug:
-            print "<< Bushy model: Created point cell>>"
+            print "<< Bushy model: Created point cell using JSR parameters >>"
 
     def species_scaling(self, species='guineapig', modelType='II', silent=True):
         """
@@ -207,7 +207,7 @@ class BushyRothman(Bushy):
             self.axonsf = 0.57
         elif species == 'guineapig' and modelType =='II-I':
             # guinea pig data from Rothman and Manis, 2003, type II=I
-            self.irange=(-0.4, 0.4, 0.02)
+            self.i_test_range=(-0.4, 0.4, 0.02)
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
@@ -336,21 +336,27 @@ class BushyRothman(Bushy):
                          'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
                 'dend': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar *0.5, 'kht': self.gBar.khtbar *0.5,
                          'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
+                'dendrite': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar *0.5, 'kht': self.gBar.khtbar *0.5,
+                         'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
                 'apic': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar * 0.25,
                          'ihvcn': self.gBar.ihbar *0.25, 'leak': self.gBar.leakbar * 0.25, },
             }
             self.irange = np.linspace(-2, 2, 7)
             self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'kht': {'gradient': 'llinear', 'gminf': 0., 'lambda': 100.},
+                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                     'nav11': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
+                            'dendrite': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'nav11': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
                             'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
                             }
 
+                            
         elif modelType == 'mGBC':
             # bushy from Xie and Manis, 2013, based on Cao and Oertel mouse conductances,
-            # BUT modified ad hoc for Spirou reconstructions. Use with hoc files
+            # BUT modified ad hoc for Spirou reconstructions.
             totcap = 26.0E-12 # uF/cm2 
             refarea = totcap  / self.c_m  # see above for units
             # original:
@@ -360,14 +366,14 @@ class BushyRothman(Bushy):
             #                    ihbar=0.25*30.0E-9/refarea,
             #                    leakbar=0.05*2.0E-9/refarea,  # was 0.5
             # )
-            self.gBar = Params(nabar=3200.E-9/refarea,
+            self.gBar = Params(nabar=1600.E-9/refarea,
                                khtbar=58.0E-9/refarea,
                                kltbar=40.0E-9/refarea,  # note doubled here... 
                                ihbar=0.25*30.0E-9/refarea,
-                               leakbar=0.1*2.0E-9/refarea,  # was 0.5
+                               leakbar=0.02*2.0E-9/refarea,  # was 0.5
             )
             print 'mGBC gbar:\n', self.gBar.show()
-            sodiumch = 'nacncoop'  # was jsrna
+            sodiumch = 'jsrna'
             self.channelMap = {
                 'axon': {sodiumch: self.gBar.nabar*1., 'klt': self.gBar.kltbar * 1.0, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
                          'leak': self.gBar.leakbar * 0.25},
@@ -379,19 +385,24 @@ class BushyRothman(Bushy):
                          'leak': self.gBar.leakbar * 0.25*1e-3},
                 'hillock': {sodiumch: self.gBar.nabar*4.0, 'klt': self.gBar.kltbar*1.0, 'kht': self.gBar.khtbar*3.0,
                              'ihvcn': 0., 'leak': self.gBar.leakbar, },
-                'initseg': {sodiumch: self.gBar.nabar*3.0, 'klt': self.gBar.kltbar*2.0, 'kht': self.gBar.khtbar*2,
+                'initseg': {sodiumch: self.gBar.nabar*3.0, 'klt': self.gBar.kltbar*2, 'kht': self.gBar.khtbar*2,
                             'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
                 'soma': {sodiumch: self.gBar.nabar*0.65, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar*1.5,
                          'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
-                'dend': {sodiumch: self.gBar.nabar * 0.2, 'klt': self.gBar.kltbar * 1.0, 'kht': self.gBar.khtbar *1,
+                'dend': {sodiumch: self.gBar.nabar * 0.2, 'klt': self.gBar.kltbar *1, 'kht': self.gBar.khtbar *1,
+                         'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
+                'dendrite': {sodiumch: self.gBar.nabar * 0.2, 'klt': self.gBar.kltbar *1, 'kht': self.gBar.khtbar *1,
                          'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
                 'apic': {sodiumch: self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar * 0.25,
                          'ihvcn': self.gBar.ihbar *0.25, 'leak': self.gBar.leakbar * 0.25, },
             }
-            self.irange = np.arange(-1., 2.1, 0.2 )
+            self.irange = np.arange(-1.5, 2.1, 0.25 )
             self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.},
                                      'kht': {'gradient': 'llinear', 'gminf': 0., 'lambda': 200.},
                                      sodiumch: {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
+                            'dendrite': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.},
+                                      'kht': {'gradient': 'llinear', 'gminf': 0., 'lambda': 200.},
+                                      sodiumch: {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
                             'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      sodiumch: {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
@@ -467,14 +478,6 @@ class BushyRothman(Bushy):
             soma.ena = self.e_na
             if debug:
                 print 'jsrna gbar: ', soma().jsrna.gbar
-        if nach == 'nacncoop':  # cooperative... 
-            print('Bushy model using nacncoop')
-            soma().nacncoop.gbar = gnabar
-            soma().nacncoop.KJ = 2000.
-            soma().nacncoop.p = 0.1
-            soma.ena = self.e_na
-            if debug:
-                print 'nacncoop gbar: ', soma().nacncoop.gbar
         elif nach == 'nav11':
             soma().nav11.gbar = gnabar * 0.5
             soma.ena = self.e_na

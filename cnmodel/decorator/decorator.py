@@ -127,6 +127,7 @@ class Decorator():
 
     def gbarAdjust(self, cell, sectype, mech, sec):
         gbar = cell.channelMap[sectype][mech]
+        gbar_orig = gbar
         if sectype not in cell.distMap.keys():  # no map for this section type
             return gbar
         elif mech not in cell.distMap[sectype].keys():
@@ -149,6 +150,7 @@ class Decorator():
             gbar = (gbar - gminf) * np.exp(-dist/rate) + gminf
         if gbar < 0.:
             gbar = 0.
+        print 'gbaradjust: orig/adj: ', gbar_orig, gbar, method, dist, sectype
         return gbar
 
     def channelValidate(self, cell, verify=False):
