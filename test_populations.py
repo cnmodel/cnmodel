@@ -22,29 +22,32 @@ from cnmodel.protocols import PopulationTest
 import pyqtgraph as pg
 import sys
 
-if len(sys.argv) < 3:
-    print "Usage:  python test_populations.py <pre_celltype> <post_celltype>"
-    sys.exit(1)
+def testpopulation():
+    if len(sys.argv) < 3:
+        print "Usage:  python test_populations.py <pre_celltype> <post_celltype>"
+        sys.exit(1)
 
-pop_types = {
-    'sgc': populations.SGC,
-    'bushy': populations.Bushy,
-    'tstellate': populations.TStellate,
-    'dstellate': populations.DStellate,
-    }
+    pop_types = {
+        'sgc': populations.SGC,
+        'bushy': populations.Bushy,
+        'tstellate': populations.TStellate,
+        'dstellate': populations.DStellate,
+        }
 
-pops = []
-for cell_type in sys.argv[1:3]:
-    if cell_type not in pop_types:
-        print '\nUnsupported cell type: "%s". Options are %s' % (cell_type, pop_types.keys())
-        sys.exit(-1)
-    pops.append(pop_types[cell_type]())
+    pops = []
+    for cell_type in sys.argv[1:3]:
+        if cell_type not in pop_types:
+            print '\nUnsupported cell type: "%s". Options are %s' % (cell_type, pop_types.keys())
+            sys.exit(-1)
+        pops.append(pop_types[cell_type]())
 
 
-pt = PopulationTest()
-pt.run(pops)
-pt.show()
+    pt = PopulationTest()
+    pt.run(pops)
+    pt.show()
 
-if sys.flags.interactive == 0:
-    pg.QtGui.QApplication.exec_()
+    if sys.flags.interactive == 0:
+        pg.QtGui.QApplication.exec_()
 
+if __name__ == '__main__':
+    testpopulation()

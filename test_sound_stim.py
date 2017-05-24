@@ -67,28 +67,30 @@ def sound_stim(seed, useMatlab=True):
 
 import sys
 
-usematlab = True
-if len(sys.argv) > 0:
-    if len(sys.argv) == 1:
-        print 'Call requires argument, must be either "matlab" or "cochlea"; default is "matlab"'
-        exit()
-    flag = sys.argv[1]
-    if flag not in ['matlab', 'cochlea']:
-        print 'Flag must be either "matlab" or "cochlea"; default is "matlab"'
-        exit()
-    if flag == 'cochlea':
-        usematlab=False
-if usematlab:
-    print 'Running with matlab simulator'
-else:
-    print 'Running with MR cochlea simulator'
+def runtest():
+    usematlab = True
+    if len(sys.argv) > 0:
+        if len(sys.argv) == 1:
+            print 'Call requires argument, must be either "matlab" or "cochlea"; default is "matlab"'
+            exit()
+        flag = sys.argv[1]
+        if flag not in ['matlab', 'cochlea']:
+            print 'Flag must be either "matlab" or "cochlea"; default is "matlab"'
+            exit()
+        if flag == 'cochlea':
+            usematlab=False
+    if usematlab:
+        print 'Running with matlab simulator'
+    else:
+        print 'Running with MR cochlea simulator'
             
-result = sound_stim(seed, useMatlab=usematlab)
+    result = sound_stim(seed, useMatlab=usematlab)
 
-win = pg.GraphicsWindow()
-p1 = win.addPlot(title='Rate-level function')
-for i, x in enumerate(result.keys()):
-    p1.plot(result[x]['levels'], [s.size for s in result[x]['spikes']], pen=(x, 6))
+    win = pg.GraphicsWindow()
+    p1 = win.addPlot(title='Rate-level function')
+    for i, x in enumerate(result.keys()):
+        p1.plot(result[x]['levels'], [s.size for s in result[x]['spikes']], pen=(x, 6))
 
-if sys.flags.interactive == 0:
-    pg.QtGui.QApplication.exec_()
+if __name__ == '__main__':
+    if sys.flags.interactive == 0:
+        pg.QtGui.QApplication.exec_()

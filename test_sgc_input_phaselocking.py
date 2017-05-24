@@ -92,11 +92,11 @@ class SGCInputTestPL(Protocol):
         self.win.show()
 
 
+if __name__ == '__main__':
+    prot = SGCInputTestPL()
+    prot.run()
+    prot.show()
 
-prot = SGCInputTestPL()
-prot.run()
-prot.show()
-
-import sys
-if sys.flags.interactive == 0:
-    pg.QtGui.QApplication.exec_()
+    import sys
+    if sys.flags.interactive == 0:
+        pg.QtGui.QApplication.exec_()
