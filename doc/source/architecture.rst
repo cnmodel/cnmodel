@@ -110,11 +110,18 @@ parameters clear, we have separated them from the source code and embedded
 them in annotated tables. These tables are found in `cnmodel/data`, and are
 automatically parsed by the model as they are needed.
 
+Morphology
+----------
+
+The model implements the ability to use morphological reconstructions of
+cells, as rendered in hoc files, the native NEURON format. These reconstructions
+can be decorated with ion channels and synapses according to pre-specified
+tables or pre-defined rules. 
 
 Unit testing
 ------------
 
-CNModel attempts to reproduce a large and complex set of published observations.
+CNModel attempts to reproduce several specific published observations.
 The complexity of the model makes it quite fragile--small modifications to one
 physiological parameter may have unexpected (and sometimes unnoticed) 
 consequences in the output of the model. 
@@ -138,6 +145,13 @@ that transparently invokes the periphery model in a background process.
 When using CNModel, is is generally not necessary to manually interact with
 MATLAB in any way; this interaction is wrapped within functions in the
 `cnmodel/an_model` subpackage.
+
+An alternative approach uses the Python version of the Zilany et al., model
+as implemented by Rudnicki and Hemmert (available from https://github.com/mrkrd/cochlea).
+ This version does not require MATLAB, and in some simulations may run slightly faster
+ because there is no delay associated with loading (and unloading) MATLAB. The
+ interface is otherwise exactly the same, and the model type can be selected
+ at runtime.
 
 At present, there is no mechanism for feedback from the cochlear nucleus model
 back into the auditory periphery model. As such, the output of the periphery

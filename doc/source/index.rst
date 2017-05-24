@@ -1,23 +1,18 @@
-Welcome to cnmodel's documentation!
+.. CNModel documentation master file, created by
+   sphinx-quickstart on Sun Apr  2 15:20:59 2017.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+Welcome to CNModel's documentation!
 ===================================
 
-
-CNModel is a model of the cochlear nucleus built with the goal of replicating
-the membrane properties, synaptic kinetics, network connectivity, and 
-physiological response properties described in the last several decades of
-literature.
-
-It is based on the NEURON simulation environment and expands on the auditory
-periphery model published by Zilany et al. (2014).
-
-
-Contents:
-
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
+   :caption: Contents:
 
+   readme
    architecture
-   api_ref
+   api_ref/index
 
 
 Indices and tables
@@ -27,3 +22,5 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
+.. automodule:: cnmodel
+   :members:
