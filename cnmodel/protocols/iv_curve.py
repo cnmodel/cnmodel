@@ -68,28 +68,34 @@ class IVCurve(Protocol):
         precur = [0.]
         self.pre_current_cmd = []
         npresteps = 0
-        if isinstance(ivrange, tuple):
-            ivrange = [ivrange]
-        for c in ivrange['pulse']:  # unpack current levels for the main pulse
+        if isinstance(ivrange['pulse'], tuple):
+            icmd = [ivrange['pulse']]  # convert to a list with tuple(s) embedded
+        else:
+            icmd = ivrange['pulse']  # was already a list with multiple tuples
+        for c in icmd:  # unpack current levels for the main pulse
             try:
                 (imin, imax, istep) = c # unpack a tuple... or list
             except:
-                raise TypeError("run_iv arguments must be a list of tuples [(imin, imax, istep), ...]")
+                raise TypeError("run_iv arguments must be a dict with tuples {'pulse': (imin, imax, istep), 'prepulse': ...}")
             nstep = np.floor((imax-imin)/istep) + 1
             icur.extend(imin + istep * np.arange(nstep))  # build the list
         self.current_cmd = np.array(sorted(icur))
         nsteps = self.current_cmd.shape[0]
         # Configure IClamp
         if durs is None:
-            durs = [10.0, 100.0, 50.0]
+            durs = [10.0, 100.0, 50.0]  # set default durs
 
         if 'prepulse' in ivrange.keys():
+            if isinstance(ivrange['prepulse'], tuple):
+                icmd = [ivrange['prepulse']]  # convert to a list with tuple(s) embedded
+            else:
+                icmd = ivrange['prepulse']  # was already a list with multiple tuples
             precur=[]
-            for c in ivrange['prepulse']:
+            for c in icmd:
                 try:
                     (imin, imax, istep) = c # unpack a tuple... or list
                 except:
-                    raise TypeError("run_iv arguments must be a list of tuples [(imin, imax, istep), ...]")
+                    raise TypeError("run_iv arguments must be a dict with tuples {'pulse': (imin, imax, istep), 'prepulse': ...}")
                 nstep = np.floor((imax-imin)/istep) + 1
                 precur.extend(imin + istep * np.arange(nstep))  # build the list
             self.pre_current_cmd = np.array(sorted(precur))
@@ -110,7 +116,7 @@ class IVCurve(Protocol):
                 }
         elif 'prepulse' in ivrange.keys():
             stim = {
-                'NP': 1,
+                'NP': 2,
                 'delay': durs[0],
                 'predur': durs[1],
                 'dur': durs[2],
@@ -123,7 +129,7 @@ class IVCurve(Protocol):
             self.p_dur = durs[2]
         else:
             stim = {
-                'NP': 2,
+                'NP': 1,
                 'delay': durs[0],
                 'dur': durs[1],
                 'amp': 1.0,

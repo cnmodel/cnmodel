@@ -3,7 +3,7 @@ import numpy as np
 
 def make_pulse(stim):
     """
-    Generate a pulse train for current / voltage command. Returns a tuple:
+    Generate a pulse train for current / voltage command. Returns a tuple.
     
     
     Parameters
@@ -52,19 +52,19 @@ def make_pulse(stim):
     
     dt = stim['dt']
     delay = int(np.floor(stim['delay'] / dt))
-    if stim['predur'] > 0.:
-        predur = int(np.floor(stim['predur'] / dt))
-    else:
-        predur = 0.
     ipi = int(np.floor((1000.0 / stim['Sfreq']) / dt))
     pdur = int(np.floor(stim['dur'] / dt))
     posttest = int(np.floor(stim['PT'] / dt))
     ndur = 5
+    if stim['predur'] > 0.:
+        predur = int(np.floor(stim['predur'] / dt))
+    else:
+        predur = 0.
     if stim['PT'] == 0:
         ndur = 1
+
     maxt = dt * (stim['delay'] + stim['predur'] + (ipi * (stim['NP'] + 3)) +
         posttest + pdur * ndur)
-    
     hold = stim.get('hold', None)
     
     w = np.zeros(int(np.floor(maxt / dt)))
