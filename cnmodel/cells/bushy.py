@@ -87,7 +87,7 @@ class BushyRothman(Bushy):
         Parameters
         ----------
         morphology : string (default: None)
-            Name of a .hoc file representing the morpholog. This file is used to constructe
+            Name of a .hoc file representing the morphology. This file is used to constructe
             an electrotonic (cable) model. 
             If None (default), then a "point" (really, single cylinder) model is made, exactly according to RM03.
             
