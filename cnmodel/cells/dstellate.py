@@ -24,6 +24,23 @@ class DStellate(Cell):
             raise ValueError ('DStellate type %s is unknown', type)
 
     def make_psd(self, terminal, psd_type, **kwds):
+        """
+        Connect a presynaptic terminal to one post section at the specified location, with the fraction
+        of the "standard" conductance determined by gbar.
+        The default condition is designed to pass the unit test (loc=0.5)
+        
+        Parameters
+        ----------
+        terminal : Presynaptic terminal (NEURON object)
+        
+        psd_type : either simple or multisite PSD for bushy cell
+        
+        kwds: dictionary of options. 
+            Two are currently handled:
+            postsize : expect a list consisting of [sectionno, location (float)]
+            AMPAScale : float to scale the ampa currents
+        
+        """
         pre_sec = terminal.section
         pre_cell = terminal.cell
         post_sec = self.soma
@@ -84,37 +101,41 @@ class DStellateRothman(DStellate):
             changing the sodium channel
             Changing "species" to mouse or cat (scales conductances)
             Shifting model type
+
         Parameters
         ----------
         morphology : string (default: None)
-            a file name to read the cell morphology from. If a valid file is found, a cell is constructed
-            as a cable model from the hoc file.
-            If None (default), the only a point model is made, exactly according to RM03.
+            Name of a .hoc file representing the morphology. This file is used to constructe
+            an electrotonic (cable) model. 
+            If None (default), then a "point" (really, single cylinder) model is made, exactly according to RM03.
             
         decorator : Python function (default: None)
             decorator is a function that "decorates" the morphology with ion channels according
             to a set of rules.
-            If None, a default set of channels aer inserted into the first soma section, and the
+            If None, a default set of channels is inserted into the first soma section, and the
             rest of the structure is "bare".
         
         nach : string (default: 'na')
-            nach selects the type of sodium channel that will be used in the model. A channel mechanims
+            nach selects the type of sodium channel that will be used in the model. A channel mechanism
             by that name must exist. 
         
         ttx : Boolean (default: False)
             If ttx is True, then the sodium channel conductance is set to 0 everywhere in the cell.
-            Currently, this is not implemented.
+            This flag duplicates the effects of tetrodotoxin in the model. Currently, the flag is not implemented.
         
         species: string (default 'guineapig')
-            species defines the channel density that will be inserted for different models. Note that
-            if a decorator function is specified, this argument is ignored.
+            species defines the pattern of ion channel densities that will be inserted, according to 
+            prior measurements in various species. Note that
+            if a decorator function is specified, this argument is ignored as the decorator will
+            specify the channel density.
             
         modelType: string (default: None)
-            modelType specifies the type of the model that will be used (e.g., "II", "II-I", etc).
-            modelType is passed to the decorator, or to species_scaling to adjust point models.
+            modelType specifies the subtype of the cell model that will be used (e.g., "II", "II-I", etc).
+            modelType is passed to the decorator, or to species_scaling to adjust point (single cylinder) models.
             
         debug: boolean (default: False)
-            debug is a boolean flag. When set, there will be multiple printouts of progress and parameters.
+            When True, there will be multiple printouts of progress and parameters.
+            
             
         Returns
         -------
@@ -269,6 +290,9 @@ class DStellateRothman(DStellate):
             raise ValueError("Dstellate setting Na channels: channel %s not known" % nach)
 
     def add_axon(self):
+        """
+        Add a default axon from the generic cell class to the bushy cell (see cell class).
+        """
         Cell.add_axon(self, self.soma, self.somaarea, self.c_m, self.R_a, self.axonsf)
 
     def add_dendrites(self):

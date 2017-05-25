@@ -25,7 +25,7 @@ class Bushy(Cell):
         """
         Connect a presynaptic terminal to one post section at the specified location, with the fraction
         of the "standard" conductance determined by gbar.
-        The default condition is to try to pass the default unit test (loc=0.5)
+        The default condition is designed to pass the unit test (loc=0.5)
         
         Parameters
         ----------
@@ -33,9 +33,10 @@ class Bushy(Cell):
         
         psd_type : either simple or multisite PSD for bushy cell
         
-        kwds: dict of options. Two are currently handled:
-        postsize : expect a list consisting of [sectionno, location (float)]
-        AMPAScale : float to scale the ampa currents
+        kwds: dictionary of options. 
+            Two are currently handled:
+            postsize : expect a list consisting of [sectionno, location (float)]
+            AMPAScale : float to scale the ampa currents
         
         """
         if 'postsite' in kwds:  # use a defined location instead of the default (soma(0.5)
@@ -79,41 +80,43 @@ class BushyRothman(Bushy):
     def __init__(self, morphology=None, decorator=None, nach='na',
                  ttx=False, species='guineapig', modelType=None, debug=False):
         """
-        Initialize the bushy cell, using the default parameters for guinea pig from
+        Create a bushy cell, using the default parameters for guinea pig from
         R&M2003, as a type II cell.
         Additional modifications to the cell can be made by calling methods below.
         
         Parameters
         ----------
         morphology : string (default: None)
-            a file name to read the cell morphology from. If a valid file is found, a cell is constructed
-            as a cable model from the hoc file.
-            If None (default), the only a point model is made, exactly according to RM03.
+            Name of a .hoc file representing the morpholog. This file is used to constructe
+            an electrotonic (cable) model. 
+            If None (default), then a "point" (really, single cylinder) model is made, exactly according to RM03.
             
         decorator : Python function (default: None)
             decorator is a function that "decorates" the morphology with ion channels according
             to a set of rules.
-            If None, a default set of channels aer inserted into the first soma section, and the
+            If None, a default set of channels is inserted into the first soma section, and the
             rest of the structure is "bare".
         
         nach : string (default: 'na')
-            nach selects the type of sodium channel that will be used in the model. A channel mechanims
+            nach selects the type of sodium channel that will be used in the model. A channel mechanism
             by that name must exist. 
         
         ttx : Boolean (default: False)
             If ttx is True, then the sodium channel conductance is set to 0 everywhere in the cell.
-            Currently, this is not implemented.
+            This flag duplicates the effects of tetrodotoxin in the model. Currently, the flag is not implemented.
         
         species: string (default 'guineapig')
-            species defines the channel density that will be inserted for different models. Note that
-            if a decorator function is specified, this argument is ignored.
+            species defines the pattern of ion channel densities that will be inserted, according to 
+            prior measurements in various species. Note that
+            if a decorator function is specified, this argument is ignored as the decorator will
+            specify the channel density.
             
         modelType: string (default: None)
-            modelType specifies the type of the model that will be used (e.g., "II", "II-I", etc).
-            modelType is passed to the decorator, or to species_scaling to adjust point models.
+            modelType specifies the subtype of the cell model that will be used (e.g., "II", "II-I", etc).
+            modelType is passed to the decorator, or to species_scaling to adjust point (single cylinder) models.
             
         debug: boolean (default: False)
-            debug is a boolean flag. When set, there will be multiple printouts of progress and parameters.
+            When True, there will be multiple printouts of progress and parameters.
             
         Returns
         -------
@@ -127,7 +130,8 @@ class BushyRothman(Bushy):
                        'initialsegment': False, 'myelinatedaxon': False, 'unmyelinatedaxon': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Bushy',
                        'morphology': morphology, 'decorator': decorator}
-        self.i_test_range=(-1, 1, 0.05)  # note that this gets reset with decorator according to channels
+        self.i_test_range={'pulse': (-1, 1, 0.05)}  # note that this gets reset with decorator according to channels
+                                                    # Changing the default values will cause the unit tests to fail!
         self.spike_threshold = -40
         self.vrange = [-70., -57.]  # set a default vrange for searching for rmp
         
@@ -168,7 +172,8 @@ class BushyRothman(Bushy):
     def species_scaling(self, species='guineapig', modelType='II', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
-        Used ONLY for point models.
+        This scaling should be used ONLY for point models, as no other compartments
+        are scaled.
         
         Parameters
         ----------
@@ -207,7 +212,7 @@ class BushyRothman(Bushy):
             self.axonsf = 0.57
         elif species == 'guineapig' and modelType =='II-I':
             # guinea pig data from Rothman and Manis, 2003, type II=I
-            self.i_test_range=(-0.4, 0.4, 0.02)
+            self.i_test_range = {'pulse': (-0.4, 0.4, 0.02)}
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
@@ -240,7 +245,7 @@ class BushyRothman(Bushy):
         """
         This routine defines channel density maps and distance map patterns
         for each type of compartment in the cell. The maps
-        are used by the ChannelDecorator class to(specifically, it's private
+        are used by the ChannelDecorator class (specifically, its private
         \_biophys function) to decorate the cell membrane.
         
         Parameters
@@ -249,7 +254,8 @@ class BushyRothman(Bushy):
             A string that defines the type of the model. Currently, 3 types are implemented:
             RM03: Rothman and Manis, 2003 somatic densities for guinea pig
             XM13: Xie and Manis, 2013, somatic densities for mouse
-            XM13PasDend: XM13, but with only passive dendrites, no channels.
+            mGBC: experimental mouse globular bushy cell with dendrites, axon, hillock and initial segment, for
+            use with fully reconstructed neurons.
         
         Returns
         -------
@@ -258,21 +264,24 @@ class BushyRothman(Bushy):
         Notes
         -----
         This routine defines the following variables for the class:
-        # conductances (gBar)
-        # a channelMap (dictonary of channel densities in defined anatomical compartments)
-        # a current injection range for IV's (when testing)
-        # a distance map, which defines how selected conductances in selected compartments
-        will change with distance. This includes both linear and exponential gradients,
-        the minimum conductance at the end of the gradient, and the space constant or
-        slope for the gradient.
+        
+            * conductances (gBar)
+            * a channelMap (dictonary of channel densities in defined anatomical compartments)
+            * a current injection range for IV's (used for testing)
+            * a distance map, which defines how each conductance in a selected compartment
+              changes with distance from the soma. The current implementation includes both
+              linear and exponential gradients,
+              the minimum conductance at the end of the gradient, and the space constant or
+              slope for the gradient.
         
         """
         
-        self.c_m = 1.0E-6  # in units of F/cm^2
-        #
-        # Create a model based on the Rothman and Manis 2003 conductance set from guinea pig
-        # 
+        self.c_m = 1E-6  # default in units of F/cm^2
         if modelType == 'RM03':
+            #
+            # Create a model based on the Rothman and Manis 2003 conductance set from guinea pig
+            # 
+            self.c_m = 0.9E-6  # default in units of F/cm^2
             totcap = 12.0E-12  # in units of F, from Rothman and Manis, 2003.
             refarea = totcap / self.c_m  # area is in cm^2
             # bushy Rothman-Manis, guinea pig type II
@@ -310,21 +319,18 @@ class BushyRothman(Bushy):
                             }
 
         elif modelType == 'XM13':
-            # bushy from Xie and Manis, 2013, based on Cao and Oertel mouse conductances
+            #
+            # Create a model for a mouse bushy cell from Xie and Manis, 2013
+            # based on Cao and Oertel mouse conductance values
+            # and Rothman and Manis kinetics.
+            self.c_m = 0.9E-6  # default in units of F/cm^2
             totcap = 26.0E-12 # uF/cm2 
             refarea = totcap  / self.c_m  # see above for units
-            # original:
-            # self.gBar = Params(nabar=500.E-9/refarea,
-            #                    khtbar=58.0E-9/refarea,
-            #                    kltbar=80.0E-9/refarea,  # note doubled here...
-            #                    ihbar=0.25*30.0E-9/refarea,
-            #                    leakbar=0.05*2.0E-9/refarea,  # was 0.5
-            # )
-            self.gBar = Params(nabar=800.E-9/refarea,
+            self.gBar = Params(nabar=1000.E-9/refarea,
                                khtbar=58.0E-9/refarea,
-                               kltbar=40.0E-9/refarea,  # note doubled here... 
-                               ihbar=0.25*30.0E-9/refarea,
-                               leakbar=0.02*2.0E-9/refarea,  # was 0.5
+                               kltbar=80.0E-9/refarea,  # note doubled here... 
+                               ihbar=30.0E-9/refarea,
+                               leakbar=2.0E-9/refarea,  # was 0.5
             )
             print 'XM13 gbar:\n', self.gBar.show()
             self.channelMap = {
@@ -342,9 +348,9 @@ class BushyRothman(Bushy):
                          'ihvcn': self.gBar.ihbar *0.25, 'leak': self.gBar.leakbar * 0.25, },
             }
             self.irange = np.linspace(-2, 2, 7)
-            self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'nav11': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
+            self.distMap = {'dend': {'klt': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
+                                     'kht': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
+                                     'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.}}, # linear with distance, gminf (factor) is multiplied by gbar
                             'dendrite': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'nav11': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
@@ -356,7 +362,7 @@ class BushyRothman(Bushy):
                             
         elif modelType == 'mGBC':
             # bushy from Xie and Manis, 2013, based on Cao and Oertel mouse conductances,
-            # BUT modified ad hoc for Spirou reconstructions.
+            # BUT modified ad hoc for SBEM reconstructions.
             totcap = 26.0E-12 # uF/cm2 
             refarea = totcap  / self.c_m  # see above for units
             # original:
@@ -397,51 +403,15 @@ class BushyRothman(Bushy):
                          'ihvcn': self.gBar.ihbar *0.25, 'leak': self.gBar.leakbar * 0.25, },
             }
             self.irange = np.arange(-1.5, 2.1, 0.25 )
-            self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.},
-                                     'kht': {'gradient': 'llinear', 'gminf': 0., 'lambda': 200.},
+            self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      sodiumch: {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
-                            'dendrite': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.},
-                                      'kht': {'gradient': 'llinear', 'gminf': 0., 'lambda': 200.},
-                                      sodiumch: {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
+                            'dendrite': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 20.},
+                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 20.},
+                                      sodiumch: {'gradient': 'linear', 'gminf': 0., 'lambda': 20.}}, # linear with distance, gminf (factor) is multiplied by gbar
                             'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      sodiumch: {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
-                            }
-
-        elif modelType == 'XM13PasDend':
-            # bushy form Xie and Manis, 2013, based on Cao and Oertel mouse conductances
-            # passive dendritestotcap = 26.0E-12 # uF/cm2 
-            totcap = 26.0E-12 # uF/cm2 
-            refarea = totcap  / self.c_m  # see above for units
-            self.gBar = Params(nabar=500.E-9/refarea,
-                               khtbar=58.0E-9/refarea,
-                               kltbar=80.0E-9/refarea,  # note doubled here... 
-                               ihbar=30.0E-9/refarea,
-                               leakbar=2.0E-9/refarea,
-            )
-            print 'XM13PassDend gbar:\n', self.gBar.show()
-            
-            self.channelMap = {
-                'axon': {'nav11': self.gBar.nabar*0, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
-                         'leak': self.gBar.leakbar * 0.25},
-                'hillock': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
-                            'leak': self.gBar.leakbar, },
-                'initseg': {'nav11': self.gBar.nabar*3, 'klt': self.gBar.kltbar*2, 'kht': self.gBar.khtbar*2,
-                            'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
-                'soma': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
-                         'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
-                'dend': {'nav11': self.gBar.nabar * 0.0, 'klt': self.gBar.kltbar*0 , 'kht': self.gBar.khtbar*0,
-                         'ihvcn': self.gBar.ihbar*0, 'leak': self.gBar.leakbar*0.5, },
-                'apic': {'nav11': self.gBar.nabar * 0.0, 'klt': self.gBar.kltbar * 0, 'kht': self.gBar.khtbar * 0.,
-                         'ihvcn': self.gBar.ihbar *0., 'leak': self.gBar.leakbar * 0.25, },
-            }
-            self.irange = np.linspace(-1, 1, 21)
-            self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.},
-                                     'kht': {'gradient': 'llinear', 'gminf': 0., 'lambda': 200.},
-                                     'nav11': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.}}, # linear with distance, gminf (factor) is multiplied by gbar
-                            'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
                             }
         else:
             raise ValueError('model type %s is not implemented' % modelType)
@@ -464,7 +434,7 @@ class BushyRothman(Bushy):
             
         Returns
         -------
-            Nothing
+            Nothing :
         
         """
         
@@ -494,11 +464,14 @@ class BushyRothman(Bushy):
             raise ValueError('Sodium channel %s is not recognized for Bushy cells', nach)
 
     def add_axon(self):
+        """
+        Add a default axon from the generic cell class to the bushy cell (see cell class).
+        """
         Cell.add_axon(self, self.c_m, self.R_a, self.axonsf)
 
     def add_pumps(self):
         """
-        Insert mechanisms for potassium ion, sodium ion, and a
+        Insert mechanisms for potassium ion management, sodium ion management, and a
         sodium-potassium pump at the soma.
         """
         soma = self.soma

@@ -15,6 +15,72 @@ class Cartwheel(Cell):
         else:
             raise ValueError ('Carthweel model is unknown', model)
 
+    def make_psd(self, terminal, psd_type, **kwds):
+        """
+        Connect a presynaptic terminal to one post section at the specified location, with the fraction
+        of the "standard" conductance determined by gbar.
+        The default condition is designed to pass the unit test (loc=0.5)
+        
+        Parameters
+        ----------
+        terminal : Presynaptic terminal (NEURON object)
+        
+        psd_type : either simple or multisite PSD for bushy cell
+        
+        kwds: dictionary of options. 
+            Two are currently handled:
+            postsize : expect a list consisting of [sectionno, location (float)]
+            AMPAScale : float to scale the ampa currents
+        
+        """
+        pre_sec = terminal.section
+        pre_cell = terminal.cell
+        post_sec = self.soma
+
+        if psd_type == 'simple':
+            return self.make_exp2_psd(post_sec, terminal)
+        
+        elif psd_type == 'multisite':
+            if pre_cell.type == 'granule':
+                # Max conductances for the glu mechanisms are calibrated by 
+                # running `synapses/tests/test_psd.py`. The test should fail
+                # if these values are incorrect:
+                AMPA_gmax = 0.526015135636368*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
+                NMDA_gmax = 0.28738714531937265*1e3
+                return self.make_glu_psd(post_sec, terminal, AMPA_gmax, NMDA_gmax)
+            elif pre_cell.type == 'cartwheel':
+                # Get GLY kinetic constants from database 
+                return self.make_gly_psd(post_sec, terminal, type='glyfast')
+            elif pre_cell.type == 'MLStellate':
+                # Get GLY kinetic constants from database 
+                return self.make_gly_psd(post_sec, terminal, type='glyfast')
+            else:
+                raise TypeError("Cannot make PSD for %s => %s" % 
+                                (pre_cell.type, self.type))
+        else:
+            raise ValueError("Unsupported psd type %s" % psd_type)
+
+    def make_terminal(self, post_cell, term_type, **kwds):
+        if term_type == 'simple':
+            return synapses.SimpleTerminal(pre_sec, post_cell, 
+                                           spike_source=self.spike_source, **kwds)
+        elif term_type == 'multisite':
+            if post_cell.type == 'pyramidal':
+                nzones, delay = 5, 0
+            elif post_cell.type == 'cartwheel':
+                nzones, delay = 5, 0
+            elif post_cell.type == 'MLStellate':
+                nzones, delay = 5, 0
+            else:
+                raise NotImplementedError("No knowledge as to how to connect Cartwheel cell to cell type %s" %
+                                        type(post_cell))
+            
+            pre_sec = self.soma
+            return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, 
+                                            delay=delay, **kwds)
+        else:
+            raise ValueError("Unsupported terminal type %s" % term_type)
+
 class CartwheelDefault(Cartwheel, Cell):
     """
     DCN cartwheel cell model.
@@ -23,40 +89,43 @@ class CartwheelDefault(Cartwheel, Cell):
     def __init__(self, morphology=None, decorator=None, ttx=False, nach='naRsg',
                  species='rat', modelType=None, debug=False):
         """        
-        initialize a cartwheel cell model, based on a Purkinje cell model from Raman.
+        Create cartwheel cell model, based on a Purkinje cell model from Raman.
         There are no variations available for this model.
         
         Parameters
         ----------
         morphology : string (default: None)
-            a file name to read the cell morphology from. If a valid file is found, a cell is constructed
-            as a cable model from the hoc file.
-            If None (default), the only a point model is made, exactly according to RM03.
+            Name of a .hoc file representing the morphology. This file is used to constructe
+            an electrotonic (cable) model. 
+            If None (default), then a "point" (really, single cylinder) model is made, exactly according to RM03.
             
         decorator : Python function (default: None)
             decorator is a function that "decorates" the morphology with ion channels according
             to a set of rules.
-            If None, a default set of channels aer inserted into the first soma section, and the
+            If None, a default set of channels is inserted into the first soma section, and the
             rest of the structure is "bare".
-            
-        nach : string (default: 'na')
-            nach selects the type of sodium channel that will be used in the model. A channel mechanims
-            by that name must exist. 
+        
+        nach : string (default: 'naRsg')
+            nach selects the type of sodium channel that will be used in the model. A channel mechanism
+            by that name must exist. naRsg is a resurgent sodium channel model.
         
         ttx : Boolean (default: False)
             If ttx is True, then the sodium channel conductance is set to 0 everywhere in the cell.
-            Currently, this is not implemented.
+            This flag duplicates the effects of tetrodotoxin in the model. Currently, the flag is not implemented.
         
-        species: string (default 'guineapig')
-            species defines the channel density that will be inserted for different models. Note that
-            if a decorator function is specified, this argument is ignored.
+        species: string (default 'rat')
+            species defines the pattern of ion channel densities that will be inserted, according to 
+            prior measurements in various species. Note that
+            if a decorator function is specified, this argument is ignored as the decorator will
+            specify the channel density.
             
         modelType: string (default: None)
-            modelType specifies the type of the model that will be used (e.g., "II", "II-I", etc).
-            modelType is passed to the decorator, or to species_scaling to adjust point models.
+            modelType specifies the subtype of the cell model that will be used.
+            modelType is passed to the decorator, or to species_scaling to adjust point (single cylinder) models.
+            Only type "I" is recognized for the cartwheel cell model.
             
         debug: boolean (default: False)
-            debug is a boolean flag. When set, there will be multiple printouts of progress and parameters.
+            When True, there will be multiple printouts of progress and parameters.
             
         Returns
         -------
@@ -111,6 +180,31 @@ class CartwheelDefault(Cartwheel, Cell):
             print "<< Cartwheel: Modified version of Raman Purkinje cell model created >>"
 
     def species_scaling(self, silent=True, species='rat', modelType='I'):
+        """
+        Adjust all of the conductances and the cell size according to the species requested.
+        This scaling should be used ONLY for point models, as no other compartments
+        are scaled.
+        
+        Parameters
+        ----------
+        species : string (default: 'rat')
+            name of the species to use for scaling the conductances in the base point model
+            Must be one of mouse, cat, guineapig
+        
+        modelType: string (default: 'I')
+            definition of model type from RM03 models, type II or type II-I
+        
+        silent : boolean (default: True)
+            run silently (True) or verbosely (False)
+        
+        Note
+        ----
+            For the cartwheel cell model, there is only a single scaling recognized. 
+        """        
+        if species is not 'rat':
+            raise ValueError ('Cartwheel species: only "rat" is recognized')
+        if modelType is not 'I':
+            raise ValueError ('Cartwheel modelType: only "I" is recognized')
         soma = self.soma
         dia = 18.
         self.set_soma_size_from_Diam(dia)# if species == 'rat' and modelType == 'I':
@@ -143,9 +237,19 @@ class CartwheelDefault(Cartwheel, Cell):
     def i_currents(self, V):
         """
         For the steady-state case, return the total current at voltage V
-        Used to find the zero current point
-        vrange brackets the interval
-        Overrides i_currents in cells.py
+        Used to find the zero current point.
+        Overrides i_currents in cells.py, because this model uses conductances
+        that are not specified in the default cell mode.
+        
+        Parameters
+        ----------
+        V : float, mV (no default)
+            Voltage at which the current for each conductance is computed.
+        
+        Returns
+        -------
+        I : float, nA
+             The sum of the currents at steady-state for all of the conductances.
         """
         for part in self.all_sections.keys():
             for sec in self.all_sections[part]:
@@ -176,10 +280,30 @@ class CartwheelDefault(Cartwheel, Cell):
         return np.sum([self.ix[i] for i in self.ix])
 
     def ghk(self, v, ci, co, z):
+        """
+        GHK flux equation, used to calculate current density through calcium channels
+        rather than standard Nernst equation.
+        
+        Parameters
+        ----------
+        v : float, mV
+            voltage for GHK calculation
+        ci : float, mM
+            internal ion concentration
+        co : float, mM
+            external ion concentraion
+        z : float, no units
+            valence
+        
+        Returns
+        -------
+        flux : A/m^2
+
+        """
         F = 9.6485e4  # (coul)
         R = 8.3145 # (joule/degC)
         T = h.celsius + 273.19  # Kelvin
-        E = (1e-3) * v
+        E = (1e-3) * v  # convert mV to V
         Ci = ci + (self.soma().cap.monovalPerm) * (self.soma().cap.monovalConc)  #       : Monovalent permeability
         if (np.fabs(1-np.exp(-z*(F*E)/(R*T))) < 1e-6):  #denominator is small -> Taylor series
             ghk = (1e-6) * z * F * (Ci-co*np.exp(-z*(F*E)/(R*T)))*(1-(z*(F*E)/(R*T)))
