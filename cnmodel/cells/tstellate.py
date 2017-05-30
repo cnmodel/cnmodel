@@ -134,7 +134,7 @@ class TStellateRothman(TStellate):
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'TStellate',
                        'morphology': morphology, 'decorator': decorator}
 
-        self.i_test_range=(-0.15, 0.15, 0.01)
+        self.i_test_range={'pulse': (-0.15, 0.15, 0.01)}
         
         if morphology is None:
             """

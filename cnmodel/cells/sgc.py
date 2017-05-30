@@ -189,7 +189,7 @@ class SGC_TypeI(SGC):
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'SGC',
                         'morphology': morphology, 'decorator': decorator}
 
-        self.i_test_range=[(-0.3, 0.3, 0.02), (-0.03, 0., 0.005)]
+        self.i_test_range={'pulse': [(-0.3, 0.3, 0.02), (-0.03, 0., 0.005)]}  # include finer range as well
 
         if morphology is None:
             """

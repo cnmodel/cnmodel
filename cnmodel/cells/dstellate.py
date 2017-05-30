@@ -149,7 +149,7 @@ class DStellateRothman(DStellate):
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'DStellate',
                        'morphology': morphology, 'decorator': decorator}
-        self.i_test_range=(-0.25, 0.25, 0.025)  # set range for ic command test
+        self.i_test_range = {'pulse': (-0.25, 0.25, 0.025)}  # set range for ic command test
 
         if morphology is None:
             """

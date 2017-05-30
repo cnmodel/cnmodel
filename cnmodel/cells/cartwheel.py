@@ -138,7 +138,7 @@ class CartwheelDefault(Cartwheel, Cell):
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Cartwheel',
                        'morphology': morphology, 'decorator': decorator,}
 
-        self.i_test_range=(-0.2, 0.2, 0.02)
+        self.i_test_range = {'pulse': (-0.2, 0.2, 0.02)}
        # self.spike_threshold = 0
         self.vrange = [-75., -52.]  # set a default vrange for searching for rmp
 

@@ -73,7 +73,7 @@ class PyramidalKanold(Pyramidal, Cell):
                        'morphology': morphology, 'decorator': decorator,
                    }
 
-        self.i_test_range=(-0.3, 0.401, 0.02)
+        self.i_test_range = {'pulse': (-0.3, 0.401, 0.02)}
 
         if morphology is None:
             """

@@ -144,7 +144,7 @@ class OctopusRothman(Octopus, Cell):
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelype': modelType, 'ttx': ttx, 'name': 'Octopus',
                         'morphology': morphology, 'decorator': decorator}
-        self.i_test_range=(-4.0, 4.0, 0.2)
+        self.i_test_range = {'pulse': (-4.0, 4.0, 0.2)}
         self.spike_threshold = -50
         self.vrange = [-70., -57.]  # set a default vrange for searching for rmp
         

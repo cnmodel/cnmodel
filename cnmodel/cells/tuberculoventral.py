@@ -128,7 +128,7 @@ class Tuberculoventral(Tuberculoventral):
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Tuberculoventral',
                        'morphology': morphology, 'decorator': decorator}
 
-        self.i_test_range=(-0.4, 0.6, 0.02)
+        self.i_test_range = {'pulse': (-0.4, 0.6, 0.02)}
         self.vrange = [-80., -60.]  # set a default vrange for searching for rmp
         
         if morphology is None:
