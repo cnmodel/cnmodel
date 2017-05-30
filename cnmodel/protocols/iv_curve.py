@@ -41,8 +41,10 @@ class IVCurve(Protocol):
             levels to test. Range values are inclusive, so the max value may
             appear in the test values. Using multiple ranges allows finer 
             measurements in some ranges.
-            For example:
+            For example::
+            
                 {'pulse': [(-1., 0., 1.), (-0.1, 0., 0.02)], 'prepulse': [(-0.5, 0, 0.1)]}
+         
                 Optional keys include 'pulsedur' : the duration of the pulse, in ms
                                       'prepulsecur: the duration of the prepulse, in ms
                 The prepulse or the pulse can have a single value if the other is ranged.

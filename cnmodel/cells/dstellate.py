@@ -81,9 +81,11 @@ class DStellateRothman(DStellate):
         initialize a radial stellate (D-stellate) cell, using the default parameters for guinea pig from
         R&M2003, as a type I-II cell.
         Modifications to the cell can be made by calling methods below. These include:
-            changing the sodium channel
-            Changing "species" to mouse or cat (scales conductances)
-            Shifting model type
+                
+            * changing the sodium channel
+            * Changing "species" to mouse or cat (scales conductances)
+            * Shifting model type
+                
         Parameters
         ----------
         morphology : string (default: None)

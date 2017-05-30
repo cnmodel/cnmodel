@@ -5,14 +5,11 @@ API Reference
    :maxdepth: 3
    :caption: API Classes
 
-   cnmodel.cells
-   cnmodel.morphology.classes
-   cnmodel.decorator
-   cnmodel.populations
-   cnmodel.synapses
-   cnmodel.protocols
-   cnmodel.sounds
-   cnmodel.util
+   
+.. automodule:: cnmodel
+   :members:
+
+
     
 Indices and tables
 ==================
@@ -21,6 +18,4 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-.. automodule:: cnmodel
-   :members:
 

@@ -19,6 +19,17 @@ import matplotlib.pyplot as MP
 
 
 class ManageANSpikes():
+    """
+    ManageANSpikes is a class to read the output of the Zilany et al. 2009 AN model into
+    python, and provides services to access that data.
+
+    Basic usage is to create an instance of the class, and specify the data directory
+    if necessary.
+
+    You may then get the data in the format of a list using one of the "get" routines.
+    The data is pulled from the nearest CF or the specified CF.
+
+    """
     def __init__(self):
         # self.datadir = environment['HOME'] + '/Desktop/Matlab/ZilanyCarney-JASAcode-2009/'
         self.data_dir = os.environ['HOME'] + '/Desktop/Matlab/ANData/'
@@ -93,7 +104,7 @@ class ManageANSpikes():
     def getANatFandSPL(self, spontclass='MS', freq=10000., CF=None, SPL=0):
         """
         getANatFandSPL:
-        ====================
+        ---------------
         Get the AN data at a particular frequency and SPL. Note that the tone freq is specified,
         but the CF of the fiber might be different. If CF is None, we try to get the closest
         fiber data to the tone Freq.
@@ -118,7 +129,7 @@ class ManageANSpikes():
     def get_AN_at_SPL(self, spl=None):
         """
         get_AN_at_SPL:
-        ====================
+        --------------
         grabs the AN data for the requested SPL for the data set currently loaded
         The data must exist, or we epically fail.
 
@@ -146,7 +157,7 @@ class ManageANSpikes():
     def read_all_ANdata(self, freq=10000., CFList=None, spontclass='HS', stim='BFTone'):
         """
         read_all_ANdata:
-        ================
+        ---------------
         Reads a bank of AN data, across frequency and intensity, for a given stimulus frequency
         Assumptions: the bank of data is consistent in terms of nReps and SPLs
 
@@ -165,7 +176,7 @@ class ManageANSpikes():
     def retrieve_from_all_AN(self, cf, SPL):
         """
         retrieve_from_all_AN:
-        ====================+
+        ---------------------
 
         :param cf:
         :param SPL:
@@ -264,7 +275,7 @@ class ManageANSpikes():
     def get_AN_info(self):
         """
         get_AN_info:
-        ============
+        -----------
         :return: Dictionary of nReps and SPLs that are in the current data set (instance).
         """
         if not self.data_read_flag:
@@ -322,7 +333,7 @@ class ManageANSpikes():
     def combine_reps(self, spkl):
         """
         combine_reps:
-        =============
+        -------------
         Just turns the spike list into one big linear sequence.
         :param spkl: a spike train (nreps of numpy arrays)
         :return: all the spikes in one long array.
@@ -352,7 +363,8 @@ class ManageANSpikes():
         return
 
     def flatten(self, x):
-        """flatten(sequence) -> list
+        """
+        flatten(sequence) -> list
 
         Returns a single, flat list which contains all elements retrieved
         from the sequence and all recursively contained sub-sequences

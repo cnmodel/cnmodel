@@ -160,16 +160,15 @@ class Cell(object):
         return None
 
     def set_d_lambda(self, freq=100, d_lambda=0.1):
-        """ Sets nseg in each section to an odd value so that its segments are no longer than
+        """
+        Sets nseg in each section to an odd value so that its segments are no longer than
         d_lambda x the AC length constant at frequency freq in that section.
         The defaults are reasonable values for most models
         Be sure to specify your own Ra and cm before calling geom_nseg()
 
         To understand why this works,
         and the advantages of using an odd value for nseg,
-        see  Hines, M.L. and Carnevale, N.T.
-            NEURON: a tool for neuroscientists.
-            The Neuroscientist 7:123-135, 2001.
+        see  Hines, M.L. and Carnevale, N.T. NEURON: a tool for neuroscientists. The Neuroscientist 7:123-135, 2001.
         This is a python version of the hoc code.
         
         Parameters
