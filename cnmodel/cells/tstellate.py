@@ -81,7 +81,7 @@ class TStellateRothman(TStellate):
     VCN T-stellate base model.
     Rothman and Manis, 2003abc (Type I-c, Type I-t)
     """
-    def __init__(self, morphology=None, decorator=None, nach='na', ttx=False,
+    def __init__(self, morphology=None, decorator=None, nach=None, ttx=False,
                 species='guineapig', modelType=None, debug=False):
         """
         Initialize a planar stellate (T-stellate) cell, using the default parameters for guinea pig from
@@ -103,9 +103,9 @@ class TStellateRothman(TStellate):
             If None, a default set of channels aer inserted into the first soma section, and the
             rest of the structure is "bare".
     
-        nach : string (default: 'na')
+        nach : string (default: None)
             nach selects the type of sodium channel that will be used in the model. A channel mechanism
-            by that name must exist. 
+            by that name must exist. The default is 'nacn', from R&M2003.
     
         ttx : Boolean (default: False)
             If ttx is True, then the sodium channel conductance is set to 0 everywhere in the cell.
@@ -130,6 +130,8 @@ class TStellateRothman(TStellate):
         super(TStellateRothman, self).__init__()
         if modelType == None:
             modelType = 'I-c'
+        if nach == None:
+            nach = 'na'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'TStellate',
                        'morphology': morphology, 'decorator': decorator}

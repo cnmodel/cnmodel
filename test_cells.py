@@ -238,7 +238,7 @@ if __name__ == '__main__':
     parser.add_argument('-m', action="store", dest="morphology",
         default='point', help=("Set morphology: %s " %
             [morph for morph in cellinfo['morphology']]))
-    parser.add_argument('--nav', action="store", dest="nav", default="na",
+    parser.add_argument('--nav', action="store", dest="nav", default=None,
         help=("Choose sodium channel: %s " % [ch for ch in cellinfo['nav']]))
     parser.add_argument('--ttx', action="store_true", dest="ttx", default=False,
         help=("Use TTX (no sodium current"))

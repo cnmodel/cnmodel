@@ -77,7 +77,7 @@ class BushyRothman(Bushy):
     Rothman and Manis, 2003abc (Type II, Type II-I)
     """
 
-    def __init__(self, morphology=None, decorator=None, nach='na',
+    def __init__(self, morphology=None, decorator=None, nach=None,
                  ttx=False, species='guineapig', modelType=None, debug=False):
         """
         Create a bushy cell, using the default parameters for guinea pig from
@@ -97,9 +97,9 @@ class BushyRothman(Bushy):
             If None, a default set of channels is inserted into the first soma section, and the
             rest of the structure is "bare".
         
-        nach : string (default: 'na')
+        nach : string (default: None)
             nach selects the type of sodium channel that will be used in the model. A channel mechanism
-            by that name must exist. 
+            by that name must exist. The default channel is set to 'nacn' (R&M03)
         
         ttx : Boolean (default: False)
             If ttx is True, then the sodium channel conductance is set to 0 everywhere in the cell.
@@ -126,6 +126,8 @@ class BushyRothman(Bushy):
         super(BushyRothman, self).__init__()
         if modelType == None:
             modelType = 'II'
+        if nach == None:
+            nach = 'na'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False, 'hillock': False, 
                        'initialsegment': False, 'myelinatedaxon': False, 'unmyelinatedaxon': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Bushy',

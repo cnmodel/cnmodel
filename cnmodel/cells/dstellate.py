@@ -92,7 +92,7 @@ class DStellateRothman(DStellate):
     VCN D-stellate model:
     as a type I-II from Rothman and Manis, 2003
     """
-    def __init__(self, morphology=None, decorator=None,  nach='na', ttx=False,
+    def __init__(self, morphology=None, decorator=None,  nach=None, ttx=False,
                 species='guineapig', modelType=None, debug=False):
         """
         initialize a radial stellate (D-stellate) cell, using the default parameters for guinea pig from
@@ -116,9 +116,9 @@ class DStellateRothman(DStellate):
             If None, a default set of channels is inserted into the first soma section, and the
             rest of the structure is "bare".
         
-        nach : string (default: 'na')
+        nach : string (default: None)
             nach selects the type of sodium channel that will be used in the model. A channel mechanism
-            by that name must exist. 
+            by that name must exist. A value of None will set the channel to a default for the model (nacn).
         
         ttx : Boolean (default: False)
             If ttx is True, then the sodium channel conductance is set to 0 everywhere in the cell.
@@ -146,6 +146,8 @@ class DStellateRothman(DStellate):
         super(DStellateRothman, self).__init__()
         if modelType == None:  # allow us to pass None to get the default
             modelType = 'I-II'
+        if nach == None:
+            nach = 'na'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'DStellate',
                        'morphology': morphology, 'decorator': decorator}

@@ -21,7 +21,7 @@ class PyramidalKanold(Pyramidal, Cell):
     DCN pyramidal cell
     Kanold and Manis, 1999, 2001, 2005
     """
-    def __init__(self,  morphology=None, decorator=None, nach='napyr', ttx=False,
+    def __init__(self,  morphology=None, decorator=None, nach=None, ttx=False,
                 species='rat', modelType=None, debug=False):
         """
         initialize a pyramidal cell, based on the Kanold-Manis (2001) pyramidal cell model.
@@ -38,12 +38,12 @@ class PyramidalKanold(Pyramidal, Cell):
         decorator : Python function (default: None)
             decorator is a function that "decorates" the morphology with ion channels according
             to a set of rules.
-            If None, a default set of channels aer inserted into the first soma section, and the
+            If None, a default set of channels is inserted into the first soma section, and the
             rest of the structure is "bare".
         
-        nach : string (default: 'na')
-            nach selects the type of sodium channel that will be used in the model. A channel mechanims
-            by that name must exist. 
+        nach : string (default: None)
+            nach selects the type of sodium channel that will be used in the model. A channel mechanim
+            by that name must exist. None implies the default channel, 'napyr'.
         
         ttx : Boolean (default: False)
             If ttx is True, then the sodium channel conductance is set to 0 everywhere in the cell.
@@ -51,7 +51,7 @@ class PyramidalKanold(Pyramidal, Cell):
         
         species: string (default 'guineapig')
             species defines the channel density that will be inserted for different models. Note that
-            if a decorator function is specified, this argument is ignored.
+            if a decorator function is specified, this argument is ignored (overridden by decorator).
             
         modelType: string (default: None)
             modelType specifies the type of the model that will be used (e.g., "II", "II-I", etc).
@@ -68,6 +68,8 @@ class PyramidalKanold(Pyramidal, Cell):
         super(PyramidalKanold, self).__init__()
         if modelType == None:
             modelType = 'POK'
+        if nach == None:
+            nach = 'napyr'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Pyramidal',
                        'morphology': morphology, 'decorator': decorator,
@@ -173,7 +175,7 @@ class PyramidalKanold(Pyramidal, Cell):
                 self.add_dendrites()
 
         else:
-            raise ValueError('Species %s or species-modelType %s is not recognized for Pyramidal cells' % (species, modelType))
+            raise ValueError('Species %s or species-modelType %s is not implemented for Pyramidal cells' % (species, modelType))
 
         self.status['species'] = species
         self.status['modelType'] = modelType

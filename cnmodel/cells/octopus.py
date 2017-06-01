@@ -94,7 +94,7 @@ class OctopusRothman(Octopus, Cell):
     Rothman and Manis, 2003abc (Type II, with high gklt and hcno - octopus cell h current).
     """
 
-    def __init__(self, morphology=None, decorator=None, nach='jsrna', ttx=False,
+    def __init__(self, morphology=None, decorator=None, nach=None, ttx=False,
                 species='guineapig', modelType=None, debug=False):
         """
         initialize the octopus cell, using the default parameters for guinea pig from
@@ -114,9 +114,9 @@ class OctopusRothman(Octopus, Cell):
             If None, a default set of channels aer inserted into the first soma section, and the
             rest of the structure is "bare".
         
-        nach : string (default: 'na')
-            nach selects the type of sodium channel that will be used in the model. A channel mechanims
-            by that name must exist. 
+        nach : string (default: None)
+            nach selects the type of sodium channel that will be used in the model. A channel mechanism
+            by that name must exist. None implies the default channel (jsrna for this model).
         
         ttx : Boolean (default: False)
             If ttx is True, then the sodium channel conductance is set to 0 everywhere in the cell.
@@ -141,6 +141,8 @@ class OctopusRothman(Octopus, Cell):
         super(OctopusRothman, self).__init__()
         if modelType == None:
             modelType = 'II-o'
+        if nach == None:
+            nach = 'jsrna'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelype': modelType, 'ttx': ttx, 'name': 'Octopus',
                         'morphology': morphology, 'decorator': decorator}

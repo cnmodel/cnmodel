@@ -76,6 +76,10 @@ def makeLayout(cols=1, rows=1, letters=True, margins=4, spacing=4, nmax=None):
 class Toy(Protocol):
     """
     Calls to encapsulate the model runs
+    Run a set of cells with defined parameters to show excitability patterns. 
+    Note that cells from Rothman and Manis are run at 22C; others at various
+    temperatures depending on how they were initially measured and defined.
+    
     """
     def __init__(self):
         super(Toy, self).__init__()
@@ -88,8 +92,7 @@ class Toy(Protocol):
         ---------
         name : str (no default)
             name of the cell type
-        n : int (no default
-            )
+        n : int (no default)
         """
         if len(self.celltypes[name][2]) > 2:
             injs = self.celltypes[name][2]
@@ -108,19 +111,18 @@ class Toy(Protocol):
         return cell + ', ' + self.celltypes[cell][1] + ':'
         
     def run(self):
-        print('running')
         sre = re.compile('(?P<cell>\w+)(?:[, ]*)(?P<type>[\w-]*)')  # regex for keys in cell types
-        self.celltypes = OrderedDict([('Bushy, II', (cells.Bushy, "II", (-0.5, 0.5, 11))),
-                                ('Bushy, II-I', (cells.Bushy, "II-I", (-0.5,0.5, 11))),
-                                ('Octopus, II-o', (cells.Octopus, 'II-o', (-2.5, 2.5, 11))),
-                                ('TStellate, I-c', (cells.TStellate, "I-c", (-0.15, 0.15, 9))), 
-                                ('TStellate, I-t', (cells.TStellate, "I-t", (-0.15, 0.15, 9))),
-                                ('DStellate, I-II', (cells.DStellate, 'I-II', (-0.2, 0.2, 9))),
-                                ('Pyramidal, I', (cells.Pyramidal, 'I', (-0.3, 0.4, 11))),
-                                ('Cartwheel, I', (cells.Cartwheel, 'I', (-0.12, 0.12, 7))),
-                                ('Tubercuoventral, I', (cells.Tuberculoventral, 'I', (-0.2, 0.2, 11))),
-                                ('SGC, bm', (cells.SGC, "bm", (-0.2, 0.2, 5))),
-                                ('SGC, a', (cells.SGC, "a", (-0.2, 0.2, 5))),
+        self.celltypes = OrderedDict([('Bushy, II', (cells.Bushy, "II", (-0.5, 0.5, 11), 22)),
+                                ('Bushy, II-I', (cells.Bushy, "II-I", (-0.5,0.5, 11), 22)),
+                                ('Octopus, II-o', (cells.Octopus, 'II-o', (-2.5, 2.5, 11), 22)),
+                                ('TStellate, I-c', (cells.TStellate, "I-c", (-0.15, 0.15, 9), 22)), 
+                                ('TStellate, I-t', (cells.TStellate, "I-t", (-0.15, 0.15, 9), 22)),
+                                ('DStellate, I-II', (cells.DStellate, 'I-II', (-0.2, 0.2, 9), 22)),
+                                ('Pyramidal, I', (cells.Pyramidal, 'I', (-0.3, 0.4, 11), 34)),
+                                ('Cartwheel, I', (cells.Cartwheel, 'I', (-0.2, 0.2, 9), 34)),
+                                ('Tubercuoventral, I', (cells.Tuberculoventral, 'I', (-0.35, 1, 11), 34)),
+                                ('SGC, bm', (cells.SGC, "bm", (-0.2, 0.2, 5), 22)),
+                                ('SGC, a', (cells.SGC, "a", (-0.2, 0.2, 5), 22)),
                                 ])
 
         dt = 0.025
@@ -152,7 +154,6 @@ class Toy(Protocol):
         vec = OrderedDict([])
         istim = OrderedDict([])
         ncells = len(self.celltypes.keys())
-#        print self.celltypes.keys()
         #
         # build plotting area
         #
@@ -166,25 +167,11 @@ class Toy(Protocol):
         win.show()
         row = 0
         col = 0
-        # print ncells
-        # print cols, rows
-        
-        # app2 = pg.mkQApp()
-        # win2 = pg.GraphicsWindow()
-        # self.win2=win2
-        # win2.resize(800, 600)
-        # cols2, rows2 = autorowcol(ncells)
-        # (plx2, widget2, gridlayout2) = makeLayout(cols=cols2, rows=rows2, nmax=ncells)
-        # win2.setLayout(gridlayout2)
-        # win2.show()
         
         for n, name in enumerate(self.celltypes.keys()):
             pl[name] = plx[row][col]
             pl[name].setLabels(left='Vm (mV)', bottom='Time (ms)')
             pl[name].setTitle(name)
-            # pl2[name] = plx2[row][col]
-            # pl2[name].setLabels(left='I (nA)', bottom='Time (ms)')
-            # pl2[name].setTitle(name)
             col += 1
             if col >= cols:
                 col = 0
@@ -193,6 +180,7 @@ class Toy(Protocol):
         for n, name in enumerate(self.celltypes.keys()):
             nrn_cell = netcells[name]  # get the Neuron object we are using for this cell class
             injcmds = self.celltypes[name][2]  # list of injections
+            temperature = self.celltypes[name][3]
             ninjs = len(injcmds)
             if ninjs > 2:  # 2 values or a range?
                 injcmds = np.linspace(injcmds[0], injcmds[1], num=injcmds[2], endpoint=True)
@@ -209,7 +197,6 @@ class Toy(Protocol):
                     istim[name] = h.iStim(0.5, sec=nrn_cell.soma)
                     istim[name].delay = 5.
                     istim[name].dur = 1e9 # these actually do not matter...
-                #istim[runname].iMax = 20.
                 vec[runname] = {'i_stim': h.Vector(secmd)}
         
                 rvec[runname]['v_soma'].record(nrn_cell.soma(0.5)._ref_v)
@@ -217,11 +204,11 @@ class Toy(Protocol):
                 rvec[runname]['time'].record(h._ref_t)
                 # connect current command vector
                 h.dt = dt
+                h.celsius = temperature
                 vec[runname]['i_stim'].play(istim[name]._ref_i, h.dt, 0, sec=nrn_cell.soma)
 
                 nrn_cell.cell_initialize()
                 self.custom_init()
-                # Now run all cells at one time for the selected individual current levels
                 h.t = 0.
                 h.tstop = tend
                 while h.t < h.tstop:
@@ -232,15 +219,8 @@ class Toy(Protocol):
                 # h.batch_run(h.tstop, h.dt, "v.dat")
                 
                 pl[name].plot(np.array(rvec[runname]['time']), np.array(rvec[runname]['v_soma']))
-#                pl2[name].plot(np.array(rvec[runname]['time']), np.array(rvec[runname]['i_inj']), pen='r')
-#                pl2[name].plot(np.linspace(0., h.tstop, len(vec[runname]['i_stim'])), np.array(vec[runname]['i_stim']))
-                # if n < 10:
-                #     print np.min(np.array(rvec[runname]['i_inj'])), np.max(np.array(rvec[runname]['i_inj']))
-                #     print np.array(rvec[runname]['time'])
-                    
 
-        # get overall Rin, etc; need to initialize all cells first
-        #self.custom_init()
+        # get overall Rin, etc; need to initialize all cells
         nrn_cell.cell_initialize()
         for n, name in enumerate(self.celltypes.keys()):
             nrn_cell = netcells[name]

@@ -76,7 +76,7 @@ class Tuberculoventral(Tuberculoventral):
     Tuberculoventral Neuron (DCN) base model
     Adapted from T-stellate model, using target parameters from Kuo et al. J. Neurophys. 2012
     """
-    def __init__(self, morphology=None, decorator=None, nach='nav11', ttx=False,
+    def __init__(self, morphology=None, decorator=None, nach='default', ttx=False,
                 species='mouse', modelType=None, debug=False):
         """
         Initialize a DCN Tuberculoventral cell, using the default parameters for guinea pig from
@@ -124,6 +124,9 @@ class Tuberculoventral(Tuberculoventral):
         super(Tuberculoventral, self).__init__()
         if modelType == None:
             modelType = 'TVmouse'
+        if nach == 'default':
+            nach = 'nacncoop'
+            
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Tuberculoventral',
                        'morphology': morphology, 'decorator': decorator}
@@ -156,7 +159,7 @@ class Tuberculoventral(Tuberculoventral):
             self.soma.ena = self.e_na
             self.soma().ihvcn.eh = self.e_h
             self.soma().leak.erev = self.e_leak
-            self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
+            self.species_scaling(silent=True, species=species, modelType=modelType)  # adjust the default parameters
         else:  # decorate according to a defined set of rules on all cell compartments
             self.decorate()
 #        print 'Mechanisms inserted: ', self.mechanisms

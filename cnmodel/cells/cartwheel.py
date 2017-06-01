@@ -86,7 +86,7 @@ class CartwheelDefault(Cartwheel, Cell):
     DCN cartwheel cell model.
     
     """
-    def __init__(self, morphology=None, decorator=None, ttx=False, nach='naRsg',
+    def __init__(self, morphology=None, decorator=None, ttx=False, nach=None,
                  species='rat', modelType=None, debug=False):
         """        
         Create cartwheel cell model, based on a Purkinje cell model from Raman.
@@ -105,9 +105,9 @@ class CartwheelDefault(Cartwheel, Cell):
             If None, a default set of channels is inserted into the first soma section, and the
             rest of the structure is "bare".
         
-        nach : string (default: 'naRsg')
+        nach : string (default: None)
             nach selects the type of sodium channel that will be used in the model. A channel mechanism
-            by that name must exist. naRsg is a resurgent sodium channel model.
+            by that name must exist. The default is naRsg, a resurgent sodium channel model.
         
         ttx : Boolean (default: False)
             If ttx is True, then the sodium channel conductance is set to 0 everywhere in the cell.
@@ -134,6 +134,8 @@ class CartwheelDefault(Cartwheel, Cell):
         super(CartwheelDefault, self).__init__()
         if modelType == None:
             modelType = 'I'
+        if nach == None:
+            nach = 'naRsg'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Cartwheel',
                        'morphology': morphology, 'decorator': decorator,}

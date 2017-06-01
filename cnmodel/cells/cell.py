@@ -513,6 +513,7 @@ class Cell(object):
         """
         if vrange is None:
             vrange = [-80., -50.]
+
         try:
             v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1])
         except:
@@ -522,10 +523,16 @@ class Cell(object):
             i1 = self.i_currents(V=vrange[1])
             raise ValueError('vrange not good for %s : %f at %6.1f, %f at %6.1f' %
                              (self.status['name'], i0, vrange[0], i1, vrange[1]))
+        # check to be sure all the currents that are needed are calculated
+        # can't do this until i_currents has populated self.ix, so do it now... 
+        for m in self.mechanisms:
+            if m not in self.ix.keys():
+                raise ValueError('Mechanism %s is missing from i_currents calculation', m)
+ 
         if showinfo:
-            print('\n  [soma] find_i0  Species: %s  cell type: %s' % (self.status['species'], self.status['modelType']))
+            print('\n  [soma] find_i0  Species: %s  cell type: %s  Temp %6.1f' % (self.status['species'],
+                self.status['modelType'], h.celsius))
             print('    *** found V0 = %f' % v0)
-            print('    *** using conductances: ', self.ix.keys())
             print('    *** and cell has mechanisms: ', self.mechanisms)
         return v0
 
@@ -547,7 +554,7 @@ class Cell(object):
         """
         if auto_initialize:
             self.cell_initialize(vrange=vrange)
-        gnames = {# R&M03:
+        gnames = {# R&M 03 and related:
                     'nacn': 'gna', 'na': 'gna', 'jsrna': 'gna', 'nav11': 'gna', 'nacncoop': 'gna',
                     'leak': 'gbar',
                     'klt': 'gklt', 'kht': 'gkht',
@@ -575,7 +582,7 @@ class Cell(object):
             gsum += eval(gx)
            # print('{0:>12s} : gx '.format(m))
         # convert gsum from us/cm2 to nS using cell area
-        print ('gsum, self.somaarea: ', gsum, self.somaarea)
+#        print ('gsum, self.somaarea: ', gsum, self.somaarea)
         gs = mho2ns(gsum, self.somaarea)
         Rin = 1e3/gs  # convert to megohms
         tau = Rin*self.totcap*1e-3  # convert to msec

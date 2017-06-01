@@ -129,7 +129,7 @@ class SGC_TypeI(SGC):
     Spiral ganglion cell model
     
     """
-    def __init__(self, morphology=None, decorator=None, nach='jsrna', ttx=False,
+    def __init__(self, morphology=None, decorator=None, nach=None, ttx=False,
                  species='guineapig', 
                  modelType='bm', cf=None, sr=None, debug=False):
         """
@@ -151,8 +151,8 @@ class SGC_TypeI(SGC):
             rest of the structure is "bare".
 
         nach : string (default: 'na')
-            nach selects the type of sodium channel that will be used in the model. A channel mechanims
-            by that name must exist. 
+            nach selects the type of sodium channel that will be used in the model. A channel mechanim
+            by that name must exist. The default is jsrna (Rothman et al., 1993)
         
         ttx : Boolean (default: False)
             If ttx is True, then the sodium channel conductance is set to 0 everywhere in the cell.
@@ -185,6 +185,8 @@ class SGC_TypeI(SGC):
         super(SGC_TypeI, self).__init__(cf=cf, sr=sr)
         if modelType == None:
             modelType = 'bm'  # modelTypes are: a (apical), bm (basal middle)
+        if nach == None:
+            nach = 'jsrna'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'SGC',
                         'morphology': morphology, 'decorator': decorator}
