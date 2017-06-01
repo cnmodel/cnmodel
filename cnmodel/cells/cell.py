@@ -512,17 +512,25 @@ class Cell(object):
         The voltage at which I = 0 in the vrange specified
         """
         if vrange is None:
-            vrange = [-80., -50.]
-
+             vrange = self.vrange
         try:
-            v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1])
+            v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1], maxiter=1000)
         except:
             print('find i0 failed:')
             print(self.ix)
             i0 = self.i_currents(V=vrange[0])
             i1 = self.i_currents(V=vrange[1])
-            raise ValueError('vrange not good for %s : %f at %6.1f, %f at %6.1f' %
-                             (self.status['name'], i0, vrange[0], i1, vrange[1]))
+            ivi = []
+            ivv = []
+            for v in np.arange(vrange[0], vrange[1], 1.):
+                ivi.append(self.i_currents(V=v))
+                ivv.append(v)
+            print ('iv: ')
+            for i in range(len(ivi)):
+                print('%6.1f  %9.4f' % (ivv[i], ivi[i]))
+            print('This means the voltage range for the search might be too large\nor too far away from the target')
+            raise ValueError('vrange not good for %s : %f at %6.1f, %f at %6.1f, temp=%6.1f' %
+                             (self.status['name'], i0, vrange[0], i1, vrange[1], h.celsius))
         # check to be sure all the currents that are needed are calculated
         # can't do this until i_currents has populated self.ix, so do it now... 
         for m in self.mechanisms:

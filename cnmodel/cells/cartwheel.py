@@ -271,7 +271,7 @@ class CartwheelDefault(Cartwheel, Cell):
         if 'kpkjslow' in self.mechanisms:
              self.ix['kpkjslow'] = self.soma().kpkjslow.gk*(V - self.soma().ek)
         if 'kpksk' in self.mechanisms:
-             self.ix['kdpyr'] = self.soma().kpksk.gk*(V - self.soma().ek)
+             self.ix['kpksk'] = self.soma().kpksk.gk*(V - self.soma().ek)
         if 'bkpkj' in self.mechanisms:
              self.ix['bkpkj'] = self.soma().bkpkj.gbkpkj*(V - self.soma().ek)
         if 'hpkj' in self.mechanisms:

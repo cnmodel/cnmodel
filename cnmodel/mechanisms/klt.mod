@@ -53,7 +53,7 @@ PARAMETER {
     gbar = 0.01592 (mho/cm2) <0,1e9>
     zss = 0.5   <0,1>   : steady state inactivation of glt
     q10tau = 3.0
-    q10g = 1.0
+    q10g = 2.0
 }
 
 STATE {

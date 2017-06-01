@@ -60,7 +60,7 @@ def make_cell(typ):
     elif typ == 'dstellate_eager': # From Eager et al.
         cell = cells.DStellate.create(model='Eager', debug=True, ttx=False)
     elif typ == 'bushy':
-        cell = cells.Bushy.create(debug=True, ttx=True)
+        cell = cells.Bushy.create(debug=True, ttx=False)
     else:
         raise ValueError("Unknown cell type '%s'" % typ)
     return cell

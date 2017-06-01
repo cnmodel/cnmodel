@@ -63,7 +63,6 @@ class TStellate(Cell):
                 NMDA_gmax = 0.4531929783503451*1e3
                 if 'AMPAScale' in kwds:
                     AMPA_gmax = AMPA_gmax * kwds['AMPAScale']  # allow scaling of AMPA conductances
-                NMDA_gmax = 0.4531929783503451*1e3
                 if 'NMDAScale' in kwds:
                     NMDA_gmax = NMDA_gmax*kwds['NMDAScale']
                 return self.make_glu_psd(post_sec, terminal, AMPA_gmax, NMDA_gmax, loc=loc)
@@ -137,7 +136,7 @@ class TStellateRothman(TStellate):
                        'morphology': morphology, 'decorator': decorator}
 
         self.i_test_range={'pulse': (-0.15, 0.15, 0.01)}
-        
+        self.vrange = [-75., -60.]
         if morphology is None:
             """
             instantiate a basic soma-only ("point") model
@@ -169,7 +168,7 @@ class TStellateRothman(TStellate):
 #        print 'Mechanisms inserted: ', self.mechanisms
         
         self.get_mechs(self.soma)
-        self.cell_initialize()
+        self.cell_initialize(vrange=self.vrange)
         if debug:
                 print "<< T-stellate: JSR Stellate Type 1 cell model created >>"
 
@@ -559,7 +558,7 @@ class TStellateNav11(TStellate):
             self.decorate()
     
         self.get_mechs(self.soma)
-        self.cell_initialize()
+        self.cell_initialize(vrange=self.vrange)
 #        self.print_mechs(self.soma)
         if debug:
                 print "<< T-stellate: Xie&Manis 2013 cell model created >>"

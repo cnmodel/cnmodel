@@ -65,7 +65,7 @@ PARAMETER {
         gbar = 0.01592 (mho/cm2) <0,1e9>
         nf = 0.85 <0,1> :proportion of n vs p kinetics
         q10tau = 3.0
-        q10g = 1.0
+        q10g = 2.0
 }
 
 STATE {
@@ -83,7 +83,7 @@ BREAKPOINT {
 
 INITIAL {
     qg = q10g^((celsius-22)/10 (degC))
-    q10 = q10tau^((celsius - 22)/10 (degC)) : if you don't like room temp, it can be changed!
+    q10 = q10tau^((celsius - 22)/10 (degC))
     rates(v)
     p = pinf
     n = ninf
