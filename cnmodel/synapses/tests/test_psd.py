@@ -121,7 +121,7 @@ if __name__ == '__main__':
     if len(sys.argv[0]) > 1:
         testcell = sys.argv[1]
     if testcell not in ['bushy', 'tstellate', 'dstellate', 'all']:
-        print ('test cell type %s not yet supported' % testcell)
+        print ('PSD test for cell type %s is not yet supported.' % testcell)
         exit(1)
     else:
         if testcell in ['bushy']:

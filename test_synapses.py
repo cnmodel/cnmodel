@@ -70,10 +70,10 @@ def runtest():
 
     st = SynapseTest()
     st.run(preCell.soma, postCell.soma, nTerminals, iterations=niter)
-    st.show()
-
+    st.show_result()
+    return st  # need to keep st alive in memory
 
 if __name__ == '__main__':
-    runtest()
+    st = runtest()
     if sys.flags.interactive == 0:
         pg.QtGui.QApplication.exec_()

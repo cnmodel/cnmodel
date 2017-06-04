@@ -286,18 +286,20 @@ class SynapseTest(Protocol):
                         amImax.append(am)
                         nmOmax.append(opnm)
                         amOmax.append(opam)
-#                        break
-#                if nmImax != 0:
-#                    break
+                        break
+                if nmImax != 0:
+                    break
             
             return {'nmda': OrderedDict([('Imax', np.mean(nmImax)),
                     ('Omax', np.mean(nmOmax)),
-                    ('OmaxMax', np.max(nmOmax)),
-                    ('OmaxMin', np.min(nmOmax))]), 
+#                    ('OmaxMax', np.max(nmOmax)),  # was used for testing... 
+#                    ('OmaxMin', np.min(nmOmax))
+                    ]), 
                     'ampa': OrderedDict([('Imax', np.mean(amImax)),
                     ('Omax', np.mean(amOmax)),
-                    ('OmaxMax', np.max(amOmax)),
-                    ('OmaxMin', np.min(amOmax))])}
+#                    ('OmaxMax', np.max(amOmax)),
+#                    ('OmaxMin', np.min(amOmax))
+                    ])}
         
         elif isinstance(synapse.psd, GlyPSD) and len(synapse.psd.all_psd) > 0:
             # find a psd with ampa and nmda currents
@@ -413,9 +415,7 @@ class SynapseTest(Protocol):
         if hasattr(self, 'win'):
             self.win.hide()
 
-    def show(self, releasePlot=True, probabilityPlot=True, glyPlot=False, plotFocus='EPSC'):
-        self.win = pg.GraphicsWindow()
-        self.win.resize(1000, 1000)
+    def show_result(self, releasePlot=True, probabilityPlot=True, glyPlot=False, plotFocus='EPSC'):
         synapse = self.synapses[0]
         
         #
@@ -453,7 +453,10 @@ class SynapseTest(Protocol):
             else:
                 print "   (no NMDA/AMPA current; release might have failed)"
 
-
+        self.win = pg.GraphicsWindow()
+        self.win.resize(1000, 1000)
+        self.win.show()
+        
         #
         # Plot pre/postsynaptic currents
         #
@@ -491,7 +494,6 @@ class SynapseTest(Protocol):
                 if p.hname().find('NMDA', 0, 6) < 0:
                     g6.plot(t, self['isyn%03d' % k]) # glutamate
             g6.axes.set_ylabel('iAMPA')
-
 
         # 
         # Analyze the individual events. 
