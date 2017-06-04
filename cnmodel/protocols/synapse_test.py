@@ -270,10 +270,10 @@ class SynapseTest(Protocol):
         synapse = self.synapses[0]
         if isinstance(synapse.psd, GluPSD) and len(synapse.psd.nmda_psd) > 0:
             # find a psd with ampa and nmda currents
-            nmImax = 0
-            amImax = 0
-            nmOmax = 0
-            amOmax = 0
+            nmImax = []
+            amImax = []
+            nmOmax = []
+            amOmax = []
             #self.win.nextRow()
             for syn in self.synapses:
                 for i in range(syn.psd.n_psd):
@@ -281,17 +281,23 @@ class SynapseTest(Protocol):
                     am = np.abs(syn.psd.get_vector('ampa', 'i', i)).max()
                     opnm = np.abs(syn.psd.get_vector('nmda', 'Open', i)).max()
                     opam = np.abs(syn.psd.get_vector('ampa', 'Open', i)).max()
-                    if nm > 1e-6 or am > 1e-6:
-                        nmImax = nm
-                        amImax = am
-                        nmOmax = opnm
-                        amOmax = opam
-                        break
-                if nmImax != 0:
-                    break
+                    if nm > 1e-6 or am > 1e-6: # only count releases, not failures
+                        nmImax.append(nm)
+                        amImax.append(am)
+                        nmOmax.append(opnm)
+                        amOmax.append(opam)
+#                        break
+#                if nmImax != 0:
+#                    break
             
-            return {'nmda': OrderedDict([('Imax', nmImax), ('Omax', nmOmax)]), 
-                    'ampa': OrderedDict([('Imax', amImax), ('Omax', amOmax)])}
+            return {'nmda': OrderedDict([('Imax', np.mean(nmImax)),
+                    ('Omax', np.mean(nmOmax)),
+                    ('OmaxMax', np.max(nmOmax)),
+                    ('OmaxMin', np.min(nmOmax))]), 
+                    'ampa': OrderedDict([('Imax', np.mean(amImax)),
+                    ('Omax', np.mean(amOmax)),
+                    ('OmaxMax', np.max(amOmax)),
+                    ('OmaxMin', np.min(amOmax))])}
         
         elif isinstance(synapse.psd, GlyPSD) and len(synapse.psd.all_psd) > 0:
             # find a psd with ampa and nmda currents

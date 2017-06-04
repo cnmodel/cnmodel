@@ -6,6 +6,7 @@ from ..util import nstomho
 #from .. import data
 from ..util import Params
 import numpy as np
+from cnmodel import data
 
 __all__ = ['Bushy', 'BushyRothman']
 
@@ -54,14 +55,19 @@ class Bushy(Cell):
             if terminal.cell.type == 'sgc':
                 # Max conductances for the glu mechanisms are calibrated by 
                 # running `synapses/tests/test_psd.py`. The test should fail
-                # if these values are incorrect:
-                AMPA_gmax = 3.314707700918133*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
-                NMDA_gmax = 0.4531929783503451*1e3
+                # if these values are incorrect
+                self.AMPAR_gmax = data.get('sgc_synapse', species=self.species,
+                        post_type=self.type, field='AMPAR_gmax')*1e3
+                self.NMDAR_gmax = data.get('sgc_synapse', species=self.species,
+                        post_type=self.type, field='NMDAR_gmax')*1e3
+#               original values (now in synapses.py):
+#                self.AMPA_gmax = 3.314707700918133*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
+#                self.NMDA_gmax = 0.4531929783503451*1e3
                 if 'AMPAScale' in kwds:
                     AMPA_gmax = AMPA_gmax * kwds['AMPAScale']  # allow scaling of AMPA conductances
                 if 'NMDAScale' in kwds:
-                    NMDA_gmax = NMDA_gmax*kwds['NMDAScale']
-                return self.make_glu_psd(post_sec, terminal, AMPA_gmax, NMDA_gmax, loc=loc)
+                    NMDA_gmax = NMDA_gmax*kwds['NMDAScale']  # and NMDA... 
+                return self.make_glu_psd(post_sec, terminal, self.AMPAR_gmax, self.NMDAR_gmax, loc=loc)
             elif terminal.cell.type == 'dstellate':
                 return self.make_gly_psd(post_sec, terminal, type='glyslow', loc=loc)
             else:

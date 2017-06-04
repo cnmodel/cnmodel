@@ -192,7 +192,7 @@ class SGC_TypeI(SGC):
                         'morphology': morphology, 'decorator': decorator}
 
         self.i_test_range={'pulse': [(-0.3, 0.3, 0.02), (-0.03, 0., 0.005)]}  # include finer range as well
-
+        self.vrange = [-75., -55.]
         if morphology is None:
             """
             instantiate a basic soma-only ("point") model
@@ -225,7 +225,7 @@ class SGC_TypeI(SGC):
             self.decorate()
 #        print 'Mechanisms inserted: ', self.mechanisms
         self.get_mechs(self.soma)
-        self.cell_initialize()
+        self.cell_initialize(vrange=self.vrange)
         if debug:
             print "<< SGC: Spiral Ganglion Cell created >>"
 

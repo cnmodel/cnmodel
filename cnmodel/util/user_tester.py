@@ -70,16 +70,16 @@ class UserTester(object):
                 enans = np.isnan(expect) | (expect == intnan)
                 assert np.all(inans == enans)
                 mask = ~inans
-                print 'user_tester: info dtype fields is none'
-                print 'info: '  , info[mask]
-                print 'expect: ', expect[mask]
+                # print 'user_tester: info dtype fields is none'
+                # print 'info: '  , info[mask]
+                # print 'expect: ', expect[mask]
                 assert np.allclose(info[mask], expect[mask], rtol=self.rtol)
             else:
                 for k in info.dtype.fields.keys():
                     self.compare_results(info[k], expect[k])
         elif np.isscalar(info):
-            print 'isscalar(info)'
-            print 'info:   ', info, 'expected: ', expect
+#            print 'isscalar(info)'
+#            print 'info:   ', info, 'expected: ', expect
             assert np.allclose(info, expect, rtol=self.rtol)
         else:
             try:

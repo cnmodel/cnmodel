@@ -76,7 +76,7 @@ class PyramidalKanold(Pyramidal, Cell):
                    }
 
         self.i_test_range = {'pulse': (-0.3, 0.401, 0.02)}
-
+        self.vrange = [-75., -60.]
         if morphology is None:
             """
             instantiate a basic soma-only ("point") model
@@ -104,7 +104,7 @@ class PyramidalKanold(Pyramidal, Cell):
         else:  # decorate according to a defined set of rules on all cell compartments
             self.decorate()
         self.get_mechs(self.soma)
-        self.cell_initialize()
+        self.cell_initialize(vrange=self.vrange)
         if debug:
             print "<< PYR: POK Pyramidal Cell created >>"
 

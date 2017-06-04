@@ -41,27 +41,41 @@ class DStellate(Cell):
             AMPAScale : float to scale the ampa currents
         
         """
-        pre_sec = terminal.section
-        pre_cell = terminal.cell
-        post_sec = self.soma
-
+        if 'postsite' in kwds:  # use a defined location instead of the default (soma(0.5)
+            postsite = kwds['postsite']
+            loc = postsite[1]  # where on the section?
+            uname = 'sections[%d]' % postsite[0]  # make a name to look up the neuron section object
+            post_sec = self.hr.get_section(uname)  # Tell us where to put the synapse.
+        else:
+            loc = 0.5
+            post_sec = self.soma
         if psd_type == 'simple':
-            return self.make_exp2_psd(post_sec, terminal)
+            return self.make_exp2_psd(post_sec, terminal, loc=loc)
         
         elif psd_type == 'multisite':
-            if pre_cell.type == 'sgc':
+            if terminal.cell.type == 'sgc':
                 # Max conductances for the glu mechanisms are calibrated by 
                 # running `synapses/tests/test_psd.py`. The test should fail
-                # if these values are incorrect:
-                AMPA_gmax = 0.526015135636368*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
-                NMDA_gmax = 0.28738714531937265*1e3
-                return self.make_glu_psd(post_sec, terminal, AMPA_gmax, NMDA_gmax)
-            elif pre_cell.type == 'dstellate':
+                # if these values are incorrect
+                self.AMPAR_gmax = data.get('sgc_synapse', species=self.species,
+                        post_type=self.type, field='AMPAR_gmax')*1e3
+                self.NMDAR_gmax = data.get('sgc_synapse', species=self.species,
+                        post_type=self.type, field='NMDAR_gmax')*1e3
+                # old values:
+                # AMPA_gmax = 0.22479596944138733*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
+                # NMDA_gmax = 0.12281291946623739*1e3
+                if 'AMPAScale' in kwds:
+                    self.AMPAR_gmax = self.AMPAR_gmax * kwds['AMPAScale']  # allow scaling of AMPA conductances
+                if 'NMDAScale' in kwds:
+                    self.NMDAR_gmax = self.NMDAR_gmax*kwds['NMDAScale']
+                return self.make_glu_psd(post_sec, terminal, self.AMPAR_gmax, self.NMDAR_gmax, loc=loc)
+
+            elif terminal.cell.type == 'dstellate':
                 # Get GLY kinetic constants from database 
-                return self.make_gly_psd(post_sec, terminal, type='glyfast')
+                return self.make_gly_psd(post_sec, terminal, type='glyfast', loc=loc)
             else:
                 raise TypeError("Cannot make PSD for %s => %s" % 
-                                (pre_cell.type, self.type))
+                                (terminal.cell.type, self.type))
         else:
             raise ValueError("Unsupported psd type %s" % psd_type)
 
@@ -151,8 +165,8 @@ class DStellateRothman(DStellate):
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'DStellate',
                        'morphology': morphology, 'decorator': decorator}
-        self.i_test_range = {'pulse': (-0.25, 0.25, 0.025)}  # set range for ic command test
-
+        self.i_test_range = {'pulse': [(-0.3, 0.3, 0.03), (-0.05, 0., 0.005)]}  # set range for ic command test
+        self.vrange = [-75., -55.]
         if morphology is None:
             """
             instantiate a basic soma-only ("point") model
@@ -182,7 +196,7 @@ class DStellateRothman(DStellate):
             self.decorate()
     #        print 'Mechanisms inserted: ', self.mechanisms
         self.get_mechs(self.soma)
-        self.cell_initialize()
+        self.cell_initialize(self.vrange)
 
         if debug:
             print "<< D-stellate: JSR Stellate Type I-II cell model created >>"
