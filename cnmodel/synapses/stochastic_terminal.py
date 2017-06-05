@@ -254,8 +254,8 @@ class StochasticTerminal(Terminal):
         Data is average of 3 cells studied with recovery curves and individually fit, at 100 Hz.
         """
         self.relsite.F = 0.23047
-        self.relsite.k0 = 1.23636 #/ 1000.0
-        self.relsite.kmax = 45.34474 #/ 1000.0
+        self.relsite.k0 = 1.23636
+        self.relsite.kmax = 45.34474
         self.relsite.taud = 98.09
         self.relsite.kd = 0.01183
         self.relsite.taus = 17614.50
@@ -295,75 +295,6 @@ class StochasticTerminal(Terminal):
         self.relsite.dD = 4.00335
         self.relsite.dF = 0.72605
         self.relsite.glu = 5.61985
-
-        # estimates for 400 Hz
-        # self.relsite.F = 0.09
-        # self.relsite.k0 = 1.2;
-        # self.relsite.kmax = 30.;
-        # self.relsite.taud = 0.01
-        # self.relsite.kd = 0.75
-        # self.relsite.taus = 0.015
-        # self.relsite.ks = 1000.0
-        # self.relsite.kf = 5.0
-        # self.relsite.tauf = 0.3
-        # self.relsite.dD = 1.0
-        # self.relsite.dF = 0.025
-        # self.relsite.glu = 4
-
-        # self.relsite.F = 0.085426
-        # self.relsite.k0 = 1.199372
-        # self.relsite.kmax = 24.204277
-        # self.relsite.taud = 0.300000
-        # self.relsite.kd = 1.965292
-        # self.relsite.taus = 2.596443
-        # self.relsite.ks = 0.056385
-        # self.relsite.kf = 0.721157
-        # self.relsite.tauf = 0.034560
-        # self.relsite.dD = 0.733980
-        # self.relsite.dF = 0.025101
-        # self.relsite.glu = 3.877192
-
-        # average of 8 cells, all at 100 Hz with no recovery
-        # self.relsite.F =    0.2450
-        # self.relsite.k0 =   1.6206/1000.0
-        # self.relsite.kmax = 26.0607/1000.0
-        # self.relsite.taud = 0.0798
-        # self.relsite.kd =   0.9679
-        # self.relsite.taus = 9.3612
-        # self.relsite.ks =   14.3474
-        # self.relsite.kf =    4.2168
-        # self.relsite.tauf =  0.1250
-        # self.relsite.dD =    4.2715
-        # self.relsite.dF =    0.6322
-        # self.relsite.glu =   8.6160
-
-        # average of 5 cells, mostly 100 Hz, but some 50, 200 and 400
-        # self.relsite.F =    0.15573
-        # self.relsite.k0 =   2.32272/1000.
-        # self.relsite.kmax = 28.98878/1000.
-        # self.relsite.taud = 0.16284
-        # self.relsite.kd =   2.52092
-        # self.relsite.taus = 17.97092
-        # self.relsite.ks =   19.63906
-        # self.relsite.kf =   7.44154
-        # self.relsite.tauf = 0.10193
-        # self.relsite.dD =   2.36659
-        # self.relsite.dF =   0.38516
-        # self.relsite.glu =  8.82600
-
-        #original average - probably skewed.
-        # self.relsite.F = 0.23382
-        # self.relsite.k0 = 0.67554/1000.0
-        # self.relsite.kmax = 52.93832/1000.0
-        # self.relsite.taud = 8.195
-        # self.relsite.kd = 0.28734
-        # self.relsite.taus = 17.500
-        # self.relsite.ks = 4.57098
-        # self.relsite.kf = 16.21564
-        # self.relsite.tauf = 123.36
-        # self.relsite.dD = 2.21580
-        # self.relsite.dF = 1.17146
-        # self.relsite.glu = 1.90428
 
 
     def bushy_ipsc_single(self, select=None):

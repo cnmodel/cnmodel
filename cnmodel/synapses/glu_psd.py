@@ -50,7 +50,7 @@ class GluPSD(PSD):
     def __init__(self, section, terminal, ampa_gmax, nmda_gmax,
                  gvar=0, eRev=0, ampa_params=None, loc=0.5):
         PSD.__init__(self, section, terminal)
-        
+        # print('\033[0;33;40m  ^^^^^ GVAR = %.4f ^^^^^\033[0;37;40m ' % gvar)
         ampa_params = {} if ampa_params is None else ampa_params
         
         # and then make a set of postsynaptic receptor mechanisms

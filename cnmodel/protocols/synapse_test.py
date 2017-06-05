@@ -191,7 +191,7 @@ class SynapseTest(Protocol):
             #     assert (np.all(self.isoma[0] != self.isoma[1]))
 #        print np.all(self.isoma[0] == self.isoma[1])
         
-    def release_events(self):
+    def release_events(self, syn_no=0):
         """
         Analyze results and return a dict of values related to terminal release 
         probability:
@@ -217,7 +217,7 @@ class SynapseTest(Protocol):
         
         
         """
-        synapse = self.synapses[0]
+        synapse = self.synapses[syn_no]
         
         ret = {}
         #
@@ -523,7 +523,7 @@ class SynapseTest(Protocol):
         # Print average values from events
         #
         nst = range(self.stim['NP'])
-        analysisWindow = [nst[0:2], nst[-10:-1]]
+        analysisWindow = [nst[0:2], nst[-5:]]
         print analysisWindow
         print events[eventno]['rise time']
         RT_mean2080_early = np.nanmean(events[eventno]['rise time'][analysisWindow[0]])
@@ -569,12 +569,12 @@ class SynapseTest(Protocol):
             p7.setYLink(p6)
             self.win.ci.layout.setColumnFixedWidth(1, 200)
             
-            events = self.all_releases
+            rel_events = self.all_releases
             all_latencies = []
-            for i, trial in enumerate(events):
+            for i, trial in enumerate(rel_events):
                 for syn in trial:
-                    p6.plot(syn['time'], syn['latency'], pen=None, symbolBrush=(i, len(events)), 
-                        symbolPen=(i, len(events)), symbolSize=4, symbol='o')
+                    p6.plot(syn['time'], syn['latency'], pen=None, symbolBrush=(i, len(rel_events)), 
+                        symbolPen=(i, len(rel_events)), symbolSize=4, symbol='o')
                     all_latencies.append(syn['latency'])
             all_latencies = np.concatenate(all_latencies)
             (hist, binedges) = np.histogram(all_latencies)
@@ -582,17 +582,19 @@ class SynapseTest(Protocol):
             curve.rotate(-90)
             curve.scale(-1, 1)
 
-        if probabilityPlot:
-            self.win.nextRow()
-            p8 = self.win.addPlot(labels={'left': 'Release Prob', 'bottom': 'Time (ms)'})
-            p8.setXLink(p1)
-            events = self.all_releases
-
-            # for i, trial in enumerate(events):
-            #     for syn in trial:
-            #         p6.plot(syn['time'], syn['latency'], pen=None, symbolBrush=(i, len(events)),
-            #             symbolPen=(i, len(events)), symbolSize=4, symbol='o')
-            #         all_latencies.append(syn['latency'])
+        # if probabilityPlot:
+        #     self.win.nextRow()
+        #     p8 = self.win.addPlot(labels={'left': 'Release Prob', 'bottom': 'Time (ms)'})
+        #     p8.setXLink(p1)
+        #     times = self.release_timings()
+        #     for isyn, syn in enumerate(self.synapses):
+        #         syn_events = self.release_events(syn_no=isyn)
+        #         Pr = syn_events['n_releases']/syn_events['n_requests']  # Pr for each stimulus
+        #         # print Pr
+        #
+        #     i = 0  # ultimately would like to plot this for each synapse
+        #     p8.plot(events[0]['pulse time'], Pr, pen=None, symbolBrush=(i, len(self.all_releases)),
+        #             symbolPen=(i, len(events)), symbolSize=4, symbol='o')
             
         #
         # Plot GlyR state variables

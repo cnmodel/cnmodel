@@ -63,16 +63,23 @@ def sgc_psd_test(cell_class, seed, plot=False, tstop=5.0, n_syn=20):
     if not ampa_correct:
         AMPAR_gmax = data.get('sgc_synapse', species='mouse', post_type=celltyp, field='AMPAR_gmax')
         ratio = exp_ampa_gmax/ampa_gmax
-        print('AMPA Receptor conductance in model should be %.18f (currently is %.18f)'
-                % (AMPAR_gmax * ratio, AMPAR_gmax))
+        print('AMPA Receptor conductance in model should be %.16f (table is %.16f)'
+                % (AMPAR_gmax * ratio, exp_ampa_gmax))
     nmda_correct = np.allclose(exp_nmda_gmax, nmda_gmax)
     if not nmda_correct:
         NMDAR_gmax = data.get('sgc_synapse', species='mouse', post_type=celltyp, field='NMDAR_gmax')
         ratio = exp_nmda_gmax/nmda_gmax
-        print('NMDA Receptor conductance in model should be %.18f (currently is %.18f)'
-                % (NMDAR_gmax * ratio, NMDAR_gmax))
-    assert abs(exp_epsc_cv / epsc_cv - 1) < 0.1
-    assert np.allclose((exp_ampa_gmax, exp_nmda_gmax), (ampa_gmax, nmda_gmax))
+        print('NMDA Receptor conductance in model should be %.16f (table is %.16f)'
+                % (NMDAR_gmax * ratio, exp_nmda_gmax))
+    cv_correct = (abs(exp_epsc_cv / epsc_cv - 1.0) < 0.1)
+    print 'cv_correct: ', cv_correct
+    if not cv_correct:
+        ratio = exp_epsc_cv/epsc_cv
+        print('CV Receptor in synapses.py model should be %.6f (measured = %.6f; table = %.6f)'
+                % (epsc_cv * ratio, epsc_cv, exp_epsc_cv))
+        print ((abs(exp_epsc_cv / (epsc_cv * ratio) - 1.0) < 0.1))
+    assert cv_correct
+    assert ampa_correct and nmda_correct
 
 
 def measure_gmax(cell, n_syn=20, tstop=5.0, plot=False):

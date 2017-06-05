@@ -53,7 +53,6 @@ class SGC(Cell):
         elif term_type == 'multisite':
             n_rsites = data.get('sgc_synapse', species='mouse', post_type=post_cell.type,
                             field='n_rsites')
-            
             opts = {'nzones': n_rsites, 'delay': 0, 'dep_flag' : 1}
             opts.update(kwds)
             # when created, depflag is set True (1) so that we compute the DKR D*F to get release

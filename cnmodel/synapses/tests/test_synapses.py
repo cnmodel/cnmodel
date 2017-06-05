@@ -87,7 +87,7 @@ class SynapseTester(UserTester):
         st = SynapseTest()
         st.run(pre_cell.soma, post_cell.soma, n_term, seed=seed)
         if self.audit:
-            st.show()
+            st.show_result()
         
         info = dict(
             rel_events=st.release_events(),
@@ -100,8 +100,6 @@ class SynapseTester(UserTester):
         #import weakref
         #global last_syn
         #last_syn = weakref.ref(st.synapses[0].terminal.relsi)
-        
-        
         
         return info
     

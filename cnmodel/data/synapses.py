@@ -10,18 +10,18 @@ conditions that minimize the effects of short-term plasticity.
 
 n_rsites is the number of release sites per SGC terminal.
 
-------------------------------------------------------------------------------------------------
-             bushy             tstellate          dstellate        pyramidal    octopus         tuberculoventral
+-----------------------------------------------------------------------------------------------------------------------------------
+             bushy             tstellate          dstellate         octopus        pyramidal      tuberculoventral
                                                            
-AMPA_gmax    15.0±6.5 [1]      2.2±1.5 [2]        2.2±1.5 [7]                   0.87±0.23 [3]   2.2±1.5 [7]
-AMPAR_gmax   3.3147077 [10]    0.2247959 [10]     0.5260151 [10]
-NMDA_gmax    10.8±4.6 [1]      2.4±1.6 [2]        2.4±1.6 [7]                   0.17±0.046 [3]  2.4±1.6 [7]
-NMDAR_gmax   0.4531933 [10]    0.1228130 [10]     0.2873873 [10]
-EPSC_cv      0.12 [8]          0.20 [9]           0.27 [9]         
+AMPA_gmax    15.0±6.5 [1]      2.2±1.5 [2]        0.49±0.29 [7]     0.87±0.23 [3]                 2.2±1.5 [7]
+AMPAR_gmax   3.3147077 [10]    2.2157100 [10]     1.7587450 [10]
+NMDA_gmax    10.8±4.6 [1]      2.4±1.6 [2]        0.552±0.322 [7]   0.17±0.046 [3]                2.4±1.6 [7]
+NMDAR_gmax   0.4531933 [10]    1.2127097 [10]     0.9960820 [10]
+EPSC_cv      0.12 [8]          0.499759 [9]       0.27 [9]         
                                                      
-n_rsites     100 [5]           45 [6]             20 [6]                                        15 [8]
+n_rsites     100 [5]           4 [6]              1 [4]                                           15 [8]
 
-------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------
 
 [1] Derived from Cao, X. & Oertel, D. (2010). Single-terminal conductance was
     reported as 21.5±15.4 nS. The ratio of NMDA current to 
@@ -36,6 +36,8 @@ n_rsites     100 [5]           45 [6]             20 [6]                        
     total current is 0.53, so AMPA and NMDA currents are:
        AMPA_gmax = 4.6±3.1 nS * 0.47 = 2.2±1.5 nS
        NMDA_gmax = 4.6±3.1 nS * 0.53 = 2.4±1.6 nS
+    Estimated number of inputs per AN fiber:
+        0.3 nA step, 0.08 nA mini size = ~ 4 inputs per AN fiber
     Age>p17, Temperature=33C, [Mg2+]=1.3mM, [Ca2+]=2.4mM
     Units are nS
 
@@ -45,24 +47,39 @@ n_rsites     100 [5]           45 [6]             20 [6]                        
        AMPA_gmax = 0.87±0.23 nS * 0.8 = 0.70±0.18 nS
        NMDA_gmax = 0.87±0.23 nS * 0.2 = 0.17±0.046 nS
     Age>p17, Temperature=33C, [Mg2+]=1.3mM, [Ca2+]=2.4mM
-    Units are NS
+    Units are nS
+
+[4] Assumption based on mini size and lack of discernable EPSC step (guess).
+    Should be verified.
 
 [5] Oleskevich & Walmsley ~2002, Wang & Manis 2005. Units are nS
 
-[6] Value was chosen to satisfy the CV of EPSC amplitude determined in [9]
+[6] A value of 45 would be chosen to satisfy the CV of EPSC amplitude determined in [9].
+    However, those measures are for simultaneous stimulation of multiple AN fibers.
+    A value of 4 is included here to correspond to measures in Cao and Oertel (2010)
+    (see note [2])
 
-[7] Data copied from t-stellate column (no literature on these cells)
+[7] (Xie and Manis, unpublished, 2017):
+    Measurements from CBA/CaJ mouse "radiate" multipolar cells in the AVCN.
+    Single terminal conductance = (1.2 ± 0.70 nA/70 mV)/ 35 inputs = 0.490 ± 0.286 nS
+    (see connections.py) 
+    Single terminal conductance from mini = 34 pA/70 mV = 0.486 nS (single mini)
+    Assume same AMPA/NMDA ratio as tstellate cells, but measures made where NMDA = 0
+    (at negative V):
+       AMPA_gmax = 0.490±0.286 nS * 1.0 = 0.490±0.286 nS
+       NMDA_gmax = 0.490±0.286 nS * 0.53/0.47 = 0.552±0.322 nS
+    Age > P35, Temperature=34C, [Mg2+]=1.5mM, [Ca2+]=2.5mM
 
 [8] Thin air.
 
-[9] Reanalysis of evoked EPSCs in stellate cells
+[9] Reanalysis of evoked EPSCs in stellate cells (Manis/Xie, 2014)
 
 [10]  Maximum AMPA open conductance per synaptic site (units are pS). 
       These values are calculated by running python cnmodel/synapses/tests/test_psd.py
       for a specific cell type (if the cell uses the receptor mechanisms; this is 
       not necessary for simple exp2syn style mechanisms)
       to ensure that maximum AMPA conductance during PSG matches [1, 2 or 3]
-      For a bushy cell, the original default values are:
+      For a bushy cell, the original default values  (bushy cell) were:
           AMPAR_gmax   3.314707700918133
           NMDAR_gmax   0.4531929783503451
       These values will also depend on the number of release sites per
@@ -74,7 +91,7 @@ n_rsites     100 [5]           45 [6]             20 [6]                        
       of the value is in no way intended to specificy biological precision.
 
       For example, a change in the rate constants in the AMPA_Trussell AMPA
-      receptor model could (and probably would() change the open probability,
+      receptor model could (and probably would) change the open probability,
       and therefore the maximal conductance of an EPSC. However, as this is
       only a representation of the EPSC, the "receptor" conductance should
       be scaled so that the computed EPSC has the same maximal conductance
@@ -132,13 +149,13 @@ add_table_data('sgc_epsp_kinetics', row_key='field', col_key='post_type',
 EPSC shape parameters obtained from fits of Xie & Manis 2013 Equation 3 to measured EPSCs.
 
 ------------------------------------------------------------------------------------------------
-             bushy              tstellate        dstellate        pyramidal    octopus         tuberculoventral
-                                                                  
-tau_r        0.253 [11]         0.19 [11]                          
-tau_f        0.16 [11]          1.073 [11]                         
-tau_s        0.765 [11]         3.3082 [11]                        
-F            0.984 [11]         0.917 [11]                        
-                                                 
+             bushy         tstellate        dstellate        pyramidal    octopus         tuberculoventral
+                                                             
+tau_r        0.253 [11]    0.19 [11]                          
+tau_f        0.16 [11]     1.073 [11]                         
+tau_s        0.765 [11]    3.3082 [11]                        
+F            0.984 [11]    0.917 [11]                        
+                                            
 ------------------------------------------------------------------------------------------------
 
 [11] Xie & Manis 2013, Table 3
@@ -153,14 +170,14 @@ add_table_data('sgc_release_dynamics', row_key='field', col_key='post_type',
 Kinetic parameters correspond to variables as described by Dittman et al. 
 (2000), their Table 1.
 
-F: Resting release probability
+F: ~ Resting release probability
 
 ------------------------------------------------------------------------------------------------
              bushy             tstellate         dstellate        pyramidal    octopus         tuberculoventral
                                                                   
 F            0.29366 [1]       0.43435 [1]       0.43435 [2]    
-k0           0.52313e-3 [1]    0.06717e-3 [1]    0.06717e-3 [2] 
-kmax         19.33805e-3 [1]   52.82713e-3 [1]   52.82713e-3 [2]
+k0           0.52313 [1]       0.06717 [1]       0.06717 [2] 
+kmax         19.33805 [1]      52.82713 [1]      52.82713 [2]
 kd           0.11283 [1]       0.08209 [1]       0.08209 [2]    
 ks           11.531 [1]        14.24460 [1]      14.24460 [2]   
 kf           17.78 [1]         18.16292 [1]      18.16292 [2]   
@@ -172,12 +189,13 @@ dF           0.60364 [1]       1.44543 [1]       1.44543 [2]
 
 ------------------------------------------------------------------------------------------------
 
-[1] Xie & Manis 2013, Table 1
+[1] Xie & Manis 2013, Table 1. Although independently measured in > P30 CBA/CaJ mice,
+    the values are similar to the measurements from Yang and Xu-Friedman, 2008
+    in P14-P21 CBA/CaJ mice.
 
 [2] Data copied from t-stellate column (no literature on these cells)
 
 """)
-
 
 
 add_table_data('gly_kinetics', row_key='field', col_key='post_type', 
@@ -192,14 +210,27 @@ KV, KU, and XMax are kinetic parameters for the cleft transmitter mechanism.
 
 
 ------------------------------------------------------------------------------------------------
-             bushy              tstellate        dstellate        pyramidal    octopus         tuberculoventral
+             bushy              tstellate        dstellate        pyramidal         tuberculoventral
                                                                   
-KV           1e9 [1]            531.0 [1]        531.0 [1]
-KU           4.46 [1]           4.17 [1]         4.17 [1]
-XMax         0.733 [1]          0.731 [1]        0.731 [1]
+KV           1e9 [1]            531.0 [1]        531.0 [1]        531.0 [2]
+KU           4.46 [1]           4.17 [1]         4.17 [1]         4.17 [2] 
+XMax         0.733 [1]          0.731 [1]        0.731 [1]        0.731 [2]
 
 ------------------------------------------------------------------------------------------------
 
 [1] Xie & Manis 2013
 
+[2] Copied from tstellate data (Kuo et al., J. Neurophysiol. indicate glycinergic IPSCs in TV
+    and pyramidal cells are fast, with a decay time constant similar to that seen in tstellate
+    cells). In pyramidal cells, this is consistent with the brief cross-correlation tip (Voigt
+    and Young, 1980) and brief somatic current source (Manis and Brownell, 1983).
+
+
 """)
+
+
+# Mouse data
+# TV conductance onto pyr cells: 2.1 nS SD 2.9 nS (Kuo et al., 2012)
+# TV conductance onto TV cells: 1.8 ns SD 2.3 nS.
+#
+
