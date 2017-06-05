@@ -60,10 +60,15 @@ class Bushy(Cell):
                         post_type=self.type, field='AMPAR_gmax')*1e3
                 self.NMDAR_gmax = data.get('sgc_synapse', species=self.species,
                         post_type=self.type, field='NMDAR_gmax')*1e3
+                self.Pr = data.get('sgc_synapse', species=self.species,
+                        post_type=self.type, field='Pr')
+                # adjust gmax to correct for initial Pr
+                self.AMPAR_gmax = self.AMPAR_gmax/self.Pr
+                self.NMDAR_gmax = self.NMDAR_gmax/self.Pr
 #               original values (now in synapses.py):
 #                self.AMPA_gmax = 3.314707700918133*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
 #                self.NMDA_gmax = 0.4531929783503451*1e3
-                if 'AMPAScale' in kwds:
+                if 'AMPAScale' in kwds:  # normally, this should not be done!
                     AMPA_gmax = AMPA_gmax * kwds['AMPAScale']  # allow scaling of AMPA conductances
                 if 'NMDAScale' in kwds:
                     NMDA_gmax = NMDA_gmax*kwds['NMDAScale']  # and NMDA... 

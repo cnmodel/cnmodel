@@ -28,7 +28,7 @@ def testcircuit():
     # created at this stage.
     sgc.connect(bushy, tstellate, dstellate)
     dstellate.connect(tstellate, bushy)
-    tstellate.connect(bushy)
+    #tstellate.connect(bushy)  # this will fail - we don't know about this connection yet.
 
     # Select cells to record from.
     # At this time, we actually instantiate the selected cells.

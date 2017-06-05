@@ -14,12 +14,12 @@ n_rsites is the number of release sites per SGC terminal.
              bushy             tstellate          dstellate         octopus        pyramidal      tuberculoventral
                                                            
 AMPA_gmax    15.0±6.5 [1]      2.2±1.5 [2]        0.49±0.29 [7]     0.87±0.23 [3]                 2.2±1.5 [7]
-AMPAR_gmax   3.3147077 [10]    2.2157100 [10]     1.7587450 [10]
+AMPAR_gmax   3.3147077 [10]    2.2157100 [10]     1.7587450 [10]    1.0 [10]
 NMDA_gmax    10.8±4.6 [1]      2.4±1.6 [2]        0.552±0.322 [7]   0.17±0.046 [3]                2.4±1.6 [7]
-NMDAR_gmax   0.4531933 [10]    1.2127097 [10]     0.9960820 [10]
-EPSC_cv      0.12 [8]          0.499759 [9]       0.886406 [9]         
-                                                     
-n_rsites     100 [5]           4 [6]              1 [4]                                           15 [8]
+NMDAR_gmax   0.4531933 [10]    1.2127097 [10]     0.9960820 [10]    1.0 [10]
+EPSC_cv      0.12 [8]          0.499759 [9]       0.886406 [9]      1.0 [9]
+Pr           0.316 [11]        0.475 [11]         0.410 [11]        0.2 [11]                       
+n_rsites     100 [5]           4 [6]              1 [4]             1 [4]                         15 [8]
 
 -----------------------------------------------------------------------------------------------------------------------------------
 
@@ -100,7 +100,12 @@ n_rsites     100 [5]           4 [6]              1 [4]                         
       additional knowledge of the ligand time course), a numerical solution
       is required.
 
-
+[11]  Pr is the initial release probability. The value can be computed by
+      setting Pr to 1 in this file, and running the cnmodel test_synapses.py
+      with the appropriate presynaptic source and postsynaptic target,
+      once all other parameters are set. The Pr is used to rescale
+      the AMPAR_gmax so that the total current matches the data in 
+      AMPA_gmax in the table (on average).
 """)
 
 
@@ -120,18 +125,20 @@ PA is a polyamine block parameter ued in the AMPAR mechanism (concentration in m
 ------------------------------------------------------------------------------------------------
              bushy              tstellate        dstellate        pyramidal    octopus         tuberculoventral
                                                                   
-Ro1          107.85 [4]         39.25 [4]        39.25 [7]                                     39.25 [7]
-Ro2          0.6193 [4]         4.40 [4]         4.40 [7]                                      4.40 [7] 
-Rc1          3.678 [4]          0.667 [4]        0.667 [7]                                     0.667 [7]
-Rc2          0.3212 [4]         0.237 [4]        0.237 [7]                                     0.237 [7]
-tau_g        0.10 [4]           0.25 [4]         0.25 [7]         
-amp_g        0.770 [4]          1.56625 [4]      1.56625 [7]      
-                                                                  
-PA           45 [12]            0.1 [12]         0.1 [7]                                       0.1 [7]
+Ro1          107.85 [4]         39.25 [4]        39.25 [7]                     107.85 [5]      39.25 [7]
+Ro2          0.6193 [4]         4.40 [4]         4.40 [7]                      0.6193 [5]      4.40 [7] 
+Rc1          3.678 [4]          0.667 [4]        0.667 [7]                     3.678 [5]       0.667 [7]
+Rc2          0.3212 [4]         0.237 [4]        0.237 [7]                     0.3212 [5]      0.237 [7]
+tau_g        0.10 [4]           0.25 [4]         0.25 [7]                      0.10 [5]  
+amp_g        0.770 [4]          1.56625 [4]      1.56625 [7]                   0.770 [5] 
+                                                                                         
+PA           45 [12]            0.1 [12]         0.1 [7]                       45 [5]          0.1 [7]
 
 ------------------------------------------------------------------------------------------------
 
 [4] Xie & Manis 2013, Table 2
+
+[5] copied from bushy cells; no direct data.
 
 [7] Data copied from t-stellate column (no literature on these cells). Unpublished data suggests these
     should be slightly different, but is complicated by electrotonically distant synaptic sites that
@@ -150,15 +157,16 @@ EPSC shape parameters obtained from fits of Xie & Manis 2013 Equation 3 to measu
 
 ------------------------------------------------------------------------------------------------
              bushy         tstellate        dstellate        pyramidal    octopus         tuberculoventral
-                                                             
-tau_r        0.253 [11]    0.19 [11]                          
-tau_f        0.16 [11]     1.073 [11]                         
-tau_s        0.765 [11]    3.3082 [11]                        
+                                                                          0.253 [13]
+tau_r        0.253 [11]    0.19 [11]                                      0.16 [13]
+tau_f        0.16 [11]     1.073 [11]                                     0.765 [13]
+tau_s        0.765 [11]    3.3082 [11]                                    0.984 [13]
 F            0.984 [11]    0.917 [11]                        
                                             
 ------------------------------------------------------------------------------------------------
 
 [11] Xie & Manis 2013, Table 3
+[13] Copied from bushy cells; no direct data
 
 """)
 
@@ -174,18 +182,18 @@ F: ~ Resting release probability
 
 ------------------------------------------------------------------------------------------------
              bushy             tstellate         dstellate        pyramidal    octopus         tuberculoventral
-                                                                  
-F            0.29366 [1]       0.43435 [1]       0.43435 [2]    
-k0           0.52313 [1]       0.06717 [1]       0.06717 [2] 
-kmax         19.33805 [1]      52.82713 [1]      52.82713 [2]
-kd           0.11283 [1]       0.08209 [1]       0.08209 [2]    
-ks           11.531 [1]        14.24460 [1]      14.24460 [2]   
-kf           17.78 [1]         18.16292 [1]      18.16292 [2]   
-taud         15.16 [1]         3.98 [1]          3.98 [2]       
-taus         17912.2 [1]       16917.120 [1]     16917.120 [2]  
-tauf         9.75 [1]          11.38 [1]         11.38 [2]      
-dD           0.57771 [1]       2.46535 [1]       2.46535 [2]    
-dF           0.60364 [1]       1.44543 [1]       1.44543 [2]
+                                                                               
+F            0.29366 [1]       0.43435 [1]       0.43435 [2]                   0.29366 [14] 
+k0           0.52313 [1]       0.06717 [1]       0.06717 [2]                   0.52313 [14] 
+kmax         19.33805 [1]      52.82713 [1]      52.82713 [2]                  19.33805 [14]
+kd           0.11283 [1]       0.08209 [1]       0.08209 [2]                   0.11283 [14] 
+ks           11.531 [1]        14.24460 [1]      14.24460 [2]                  11.531 [14]  
+kf           17.78 [1]         18.16292 [1]      18.16292 [2]                  17.78 [14]   
+taud         15.16 [1]         3.98 [1]          3.98 [2]                      15.16 [14]   
+taus         17912.2 [1]       16917.120 [1]     16917.120 [2]                 17912.2 [14] 
+tauf         9.75 [1]          11.38 [1]         11.38 [2]                     9.75 [14]    
+dD           0.57771 [1]       2.46535 [1]       2.46535 [2]                   0.57771 [14] 
+dF           0.60364 [1]       1.44543 [1]       1.44543 [2]                   0.60364 [14] 
 
 ------------------------------------------------------------------------------------------------
 
@@ -195,6 +203,7 @@ dF           0.60364 [1]       1.44543 [1]       1.44543 [2]
 
 [2] Data copied from t-stellate column (no literature on these cells)
 
+[14] Data copied from bushy cell column (no literature on these cells)
 """)
 
 
@@ -210,11 +219,11 @@ KV, KU, and XMax are kinetic parameters for the cleft transmitter mechanism.
 
 
 ------------------------------------------------------------------------------------------------
-             bushy              tstellate        dstellate        pyramidal         tuberculoventral
-                                                                  
-KV           1e9 [1]            531.0 [1]        531.0 [1]        531.0 [2]
-KU           4.46 [1]           4.17 [1]         4.17 [1]         4.17 [2] 
-XMax         0.733 [1]          0.731 [1]        0.731 [1]        0.731 [2]
+             bushy        tstellate        dstellate     pyramidal         tuberculoventral
+                                                         
+KV           1e9 [1]      531.0 [1]        531.0 [1]     531.0 [2]
+KU           4.46 [1]     4.17 [1]         4.17 [1]      4.17 [2] 
+XMax         0.733 [1]    0.731 [1]        0.731 [1]     0.731 [2]
 
 ------------------------------------------------------------------------------------------------
 
