@@ -3,7 +3,7 @@ from ..util import nstomho
 from ..util import Params
 import numpy as np
 from .cell import Cell
-
+from .. import data
 """
 Original hoc code from RMmodel.hoc
 // including the "Octopus" cell:
@@ -71,14 +71,23 @@ class Octopus(Cell):
             if terminal.cell.type == 'sgc':
                 # Max conductances for the glu mechanisms are calibrated by 
                 # running `synapses/tests/test_psd.py`. The test should fail
-                # if these values are incorrect:
-                AMPA_gmax = 3.314707700918133*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
-                NMDA_gmax = 0.4531929783503451*1e3
+                # if these values are incorrect
+                self.AMPAR_gmax = data.get('sgc_synapse', species=self.species,
+                        post_type=self.type, field='AMPAR_gmax')*1e3
+                self.NMDAR_gmax = data.get('sgc_synapse', species=self.species,
+                        post_type=self.type, field='NMDAR_gmax')*1e3
+                self.Pr = data.get('sgc_synapse', species=self.species,
+                        post_type=self.type, field='Pr')
+                # adjust gmax to correct for initial Pr
+                self.AMPAR_gmax = self.AMPAR_gmax/self.Pr
+                self.NMDAR_gmax = self.NMDAR_gmax/self.Pr
+                # AMPA_gmax = 3.314707700918133*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
+                # NMDA_gmax = 0.4531929783503451*1e3
                 if 'AMPAScale' in kwds:
-                    AMPA_gmax = AMPA_gmax * kwds['AMPAScale']  # allow scaling of AMPA conductances
+                    self.AMPAR_gmax = self.AMPAR_gmax * kwds['AMPAScale']  # allow scaling of AMPA conductances
                 if 'NMDAScale' in kwds:
-                    NMDA_gmax = NMDA_gmax*kwds['NMDAScale']
-                return self.make_glu_psd(post_sec, terminal, AMPA_gmax, NMDA_gmax, loc=loc)
+                    self.NMDAR_gmax = self.NMDAR_gmax*kwds['NMDAScale']
+                return self.make_glu_psd(post_sec, terminal, self.AMPAR_gmax, self.NMDAR_gmax, loc=loc)
             elif terminal.cell.type == 'dstellate':
                 return self.make_gly_psd(post_sec, terminal, type='glyslow', loc=loc)
             else:

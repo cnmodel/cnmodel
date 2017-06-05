@@ -25,6 +25,10 @@ def test_sgc_dstellate_psd(plot=False):
     sgc_psd_test(cells.DStellate, seed=54743998, plot=plot, n_syn=50)
 
 
+def test_sgc_octopus_psd(plot=False):
+    sgc_psd_test(cells.Octopus, seed=54743998, plot=plot, n_syn=50)
+
+
 def sgc_psd_test(cell_class, seed, plot=False, tstop=5.0, n_syn=20):
     """
     Tests a multisite synapse from the SGC to a target cell.
@@ -64,13 +68,13 @@ def sgc_psd_test(cell_class, seed, plot=False, tstop=5.0, n_syn=20):
         AMPAR_gmax = data.get('sgc_synapse', species='mouse', post_type=celltyp, field='AMPAR_gmax')
         ratio = exp_ampa_gmax/ampa_gmax
         print('AMPA Receptor conductance in model should be %.16f (table is %.16f)'
-                % (AMPAR_gmax * ratio, exp_ampa_gmax))
+                % (AMPAR_gmax * ratio, AMPAR_gmax))
     nmda_correct = np.allclose(exp_nmda_gmax, nmda_gmax)
     if not nmda_correct:
         NMDAR_gmax = data.get('sgc_synapse', species='mouse', post_type=celltyp, field='NMDAR_gmax')
         ratio = exp_nmda_gmax/nmda_gmax
         print('NMDA Receptor conductance in model should be %.16f (table is %.16f)'
-                % (NMDAR_gmax * ratio, exp_nmda_gmax))
+                % (NMDAR_gmax * ratio, NMDAR_gmax))
     cv_correct = (abs(exp_epsc_cv / epsc_cv - 1.0) < 0.1)
     print 'cv_correct: ', cv_correct
     if not cv_correct:
@@ -137,6 +141,8 @@ if __name__ == '__main__':
             test_sgc_tstellate_psd(plot=True)
         if testcell in ['dstellate']:
             test_sgc_dstellate_psd(plot=True)
+        if testcell in ['octopus']:
+            test_sgc_octopus_psd(plot=True)
         if testcell in ['all']:
             test_sgc_bushy_psd(plot=True)
             test_sgc_tstellate_psd(plot=True)

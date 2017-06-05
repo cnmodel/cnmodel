@@ -33,7 +33,7 @@ def runtest():
 
 
     convergence = {
-        'sgc': {'bushy': 1, 'tstellate': 6, 'dstellate': 10, 'dstellate_eager': 10},
+        'sgc': {'bushy': 1, 'tstellate': 1, 'dstellate': 1, 'dstellate_eager': 10},
         'dstellate': {'bushy': 10, 'tstellate': 15, 'dstellate': 5},
         }
 
@@ -71,7 +71,7 @@ def runtest():
     
 
     st = SynapseTest()
-    st.run(preCell.soma, postCell.soma, nTerminals, iterations=niter)
+    st.run(preCell.soma, postCell.soma, nTerminals, vclamp=-65., iterations=niter)
     st.show_result()
     return st  # need to keep st alive in memory
 

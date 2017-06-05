@@ -7,26 +7,31 @@ add_table_data('sgc_synapse', row_key='field', col_key='post_type',
 AMPA_gmax and NMDA_gmax are the estimated average peak conductances (in nS) 
 resulting from an action potential in a single auditory nerve terminal, under 
 conditions that minimize the effects of short-term plasticity.
+AMPA_gmax are from values measured at -65 mV (or -70mV), and represent SINGLE TERMINAL 
+conductances
+AMPAR_gmax are the individual synapse postsynaptic conductance
+NMDA_gmax values are taken as the fraction of the current that is NMDAR dependent
+at +40 mV (see below)
 
 n_rsites is the number of release sites per SGC terminal.
 
 -----------------------------------------------------------------------------------------------------------------------------------
              bushy             tstellate          dstellate         octopus        pyramidal      tuberculoventral
                                                            
-AMPA_gmax    15.0±6.5 [1]      2.2±1.5 [2]        0.49±0.29 [7]     0.87±0.23 [3]                 2.2±1.5 [7]
-AMPAR_gmax   3.3147077 [10]    2.2157100 [10]     1.7587450 [10]    1.0 [10]
+AMPA_gmax    21.05±15.4 [1]    4.6±3.1 [2]        0.49±0.29 [7]     0.87±0.23 [3]                 2.2±1.5 [7]
+AMPAR_gmax   4.6516398 [10]    4.632848  [10]     1.7587450 [10]    16.975147 [10]
 NMDA_gmax    10.8±4.6 [1]      2.4±1.6 [2]        0.552±0.322 [7]   0.17±0.046 [3]                2.4±1.6 [7]
-NMDAR_gmax   0.4531933 [10]    1.2127097 [10]     0.9960820 [10]    1.0 [10]
-EPSC_cv      0.12 [8]          0.499759 [9]       0.886406 [9]      1.0 [9]
-Pr           0.316 [11]        0.475 [11]         0.410 [11]        0.2 [11]                       
+NMDAR_gmax   0.4531933 [10]    1.2127097 [10]     0.9960820 [10]    0.6562702 [10]
+EPSC_cv      0.12 [8]          0.499759 [9]       0.886406 [9]      1.393382 [9]
+Pr           1.000 [11]        1.000 [11]         1.000 [11]        1.000 [11]
 n_rsites     100 [5]           4 [6]              1 [4]             1 [4]                         15 [8]
 
 -----------------------------------------------------------------------------------------------------------------------------------
 
 [1] Derived from Cao, X. & Oertel, D. (2010). Single-terminal conductance was
-    reported as 21.5±15.4 nS. The ratio of NMDA current to 
+    reported as 21.5±15.4 nS (1.4±1.0 nA at -65 mV). The ratio of NMDA current to 
     total current is 0.3, so AMPA and NMDA currents are:
-       AMPA_gmax = 21.5±15.4 nS * 0.7 = 15±6.5 nS
+       AMPA_gmax = 21.5±15.4 nS (measured at -65 mV)
        NMDA_gmax = 21.5±15.4 nS * 0.3 = 10.8±4.6 nS
     Age>p17, Temperature=33C, [Mg2+]=1.3mM, [Ca2+]=2.4mM
     Units are nS.
@@ -34,7 +39,7 @@ n_rsites     100 [5]           4 [6]              1 [4]             1 [4]       
 [2] Derived from Cao, X. & Oertel, D. (2010). Single-terminal conductance was
     estimated as 4.6±3.1 nS. The ratio of NMDA current to 
     total current is 0.53, so AMPA and NMDA currents are:
-       AMPA_gmax = 4.6±3.1 nS * 0.47 = 2.2±1.5 nS
+       AMPA_gmax = 4.6±3.1 nS
        NMDA_gmax = 4.6±3.1 nS * 0.53 = 2.4±1.6 nS
     Estimated number of inputs per AN fiber:
         0.3 nA step, 0.08 nA mini size = ~ 4 inputs per AN fiber
@@ -44,7 +49,7 @@ n_rsites     100 [5]           4 [6]              1 [4]             1 [4]       
 [3] Derived from Cao, X. & Oertel, D. (2010). Single-terminal conductance was
     estimated as 52±14 nS / 60 = 0.87±0.23 nS. The ratio of NMDA current to 
     total current is 0.2, so AMPA and NMDA currents are:
-       AMPA_gmax = 0.87±0.23 nS * 0.8 = 0.70±0.18 nS
+       AMPA_gmax = 0.87±0.23 nS
        NMDA_gmax = 0.87±0.23 nS * 0.2 = 0.17±0.046 nS
     Age>p17, Temperature=33C, [Mg2+]=1.3mM, [Ca2+]=2.4mM
     Units are nS
@@ -66,7 +71,7 @@ n_rsites     100 [5]           4 [6]              1 [4]             1 [4]       
     Single terminal conductance from mini = 34 pA/70 mV = 0.486 nS (single mini)
     Assume same AMPA/NMDA ratio as tstellate cells, but measures made where NMDA = 0
     (at negative V):
-       AMPA_gmax = 0.490±0.286 nS * 1.0 = 0.490±0.286 nS
+       AMPA_gmax = 0.490±0.286 nS
        NMDA_gmax = 0.490±0.286 nS * 0.53/0.47 = 0.552±0.322 nS
     Age > P35, Temperature=34C, [Mg2+]=1.5mM, [Ca2+]=2.5mM
 

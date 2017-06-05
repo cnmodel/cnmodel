@@ -61,6 +61,11 @@ class DStellate(Cell):
                         post_type=self.type, field='AMPAR_gmax')*1e3
                 self.NMDAR_gmax = data.get('sgc_synapse', species=self.species,
                         post_type=self.type, field='NMDAR_gmax')*1e3
+                self.Pr = data.get('sgc_synapse', species=self.species,
+                        post_type=self.type, field='Pr')
+                # adjust gmax to correct for initial Pr
+                self.AMPAR_gmax = self.AMPAR_gmax/self.Pr
+                self.NMDAR_gmax = self.NMDAR_gmax/self.Pr
                 # old values:
                 # AMPA_gmax = 0.22479596944138733*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
                 # NMDA_gmax = 0.12281291946623739*1e3
