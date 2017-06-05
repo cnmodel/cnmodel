@@ -51,6 +51,8 @@ def runtest():
             cell = cells.DStellate.create(model='Eager', debug=True, ttx=False)
         elif cellType == 'bushy':
             cell = cells.Bushy.create(debug=True, ttx=True)
+        elif cellType == 'octopus':
+            cell = cells.Octopus.create(debug=True, ttx=True)
         else:
             raise ValueError("Unknown cell type '%s'" % cellType)
         c.append(cell)
