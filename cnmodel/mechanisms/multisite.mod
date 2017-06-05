@@ -26,13 +26,13 @@ kd (0.7) : affinity of fast recovery process for calcium sensor
 kf (0.5) : affinity of facilitation process
 tf (0.01) : rate of facilitation process (slow) seconds
 dD (0.02): calcium that drives recovery (ca influx per AP)
-dF (0.02): calcium that drives facilitiation
+dF (0.02): calcium that drives facilitation
 
 Added latency and variable delay (latstd, latency standard deviation in msec)
 around the mean spike time. 4/5/2011 pbm.
 
 Version 4 uses a log-normal distribution to determine release latencies. 
-The calcuation is built-in instead of being passed through an array. 
+The calculation is built-in instead of being passed through an array. 
 The lognormal distribution describes the individual vesicle release time
 course at this synapse as measured by Isaacson and Walmsley, 1996. Note that
 they used a gamma distribution in some plots, but the lognormal distribution 
@@ -304,7 +304,7 @@ PROCEDURE release_multisite() {
     : Loops over multiple zones using release probability Fn*Dn to decide whether
     : each site will release, and selecting an appropriate release latency. 
     
-    : The syanpse can release one vesicle per AP per zone, with a probability 0<p<1.
+    : The synapse can release one vesicle per AP per zone, with a probability 0<p<1.
     : The probability, p, is defined by the time evolution of a Dittman-Regher model
     : of release, whose parameters are set during initialization.
     : The vesicle can be released over a variable time interval defined by a lognormal
