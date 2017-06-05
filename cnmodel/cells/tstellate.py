@@ -31,6 +31,8 @@ class TStellate(Cell):
         of the "standard" conductance determined by gbar.
         The default condition is to try to pass the default unit test (loc=0.5)
         
+        Scaling is corrected by initial release probability now.
+        
         Parameters
         ----------
         terminal : Presynaptic terminal (NEURON object)
@@ -41,6 +43,7 @@ class TStellate(Cell):
             Available options:
             postsize : expect a list consisting of [sectionno, location (float)]
             AMPAScale : float to scale the ampa currents
+        
         
         """
         if 'postsite' in kwds:  # use a defined location instead of the default (soma(0.5)
