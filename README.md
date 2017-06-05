@@ -17,15 +17,16 @@ Installation requirements
 -------------------------
 This package depends on the following:
 
-   1. Python 2.7.10 with at least numpy, scipy, Qt4.8 and pyqtgraph. An Anaconda install with the appropriate scientific packages works well.
-   2. A Python-linked version of NEURON (www.neuron.yale.edu). The code has been tested with NEURON 7.3 and 7.4.
-   3. A C compiler (gcc). Needed for compilation of C files for matlab, and compilation of the mechanisms for NEURON.
-   4. Matlab (2011 or later). Matlab is needed for the auditory nerve model to run. The C compiler is needed to compile the C files in the auditory nerve model. 
-   5. neuronvis (available at https://github.com/campagnola/neuronvis). This provides a library that can read and visualize hoc files.
-   6. lmfit (avaliable at https://lmfit.github.io/lmfit-py/index.html). You need to use a version < 0.9.0 (the code works with 0.8.0); API changes in lmfit for 0.9.0 break the handling of the fit parameters. This is not fixed yet. Install with "pip install 'lmfit==0.8.0'" and check that the correct version is imported when running Python (import lmfit; print lmfit.__version__). 
+   1. Python 2.7.10 with numpy (1.11), scipy (0.19.0), lmfit (0.9.6), Qt4.8.7, pyqt4 (4.11.4) and pyqtgraph (0.9.10). An Anaconda install with the appropriate scientific packages works well. lmfit is best obtained via pip to install the latest versions. This package is not yet compatible with Python 3.x.
+   2. neuronvis (available at https://github.com/campagnola/neuronvis or https://github.com/pbmanis/neuronvis). This provides a library that can read and visualize hoc files.
+   3. A Python-linked version of NEURON (www.neuron.yale.edu). The code has been tested with NEURON 7.3 and 7.4.
+   4. A C compiler (gcc). Needed for compilation of C files for matlab, and compilation of the mechanisms for NEURON.
+   5. The Zilany et al (JASA 2014) cochlea model (available at https://www.urmc.rochester.edu/MediaLibraries/URMCMedia/labs/carney-lab/codes/Zilany-2014-Code-and-paper.zip).
 
-It is easiest to set up a model using a separate directory, with links (ln -s) to CNModel and neuronvis, rather than installing those as libraries in the Python environment.
-
+   6. You will need either Matlab or cochlea.
+      1. Matlab should be 2011 or later. Matlab is needed for the auditory nerve model to run. The C compiler is needed to compile the C files in the auditory nerve model.
+      2. Cochlea can be downloaded from https://github.com/mrkrd/cochlea. 
+   
 Testing
 -------
 Before testing, enter the CNModel directory, and compile the NEURON mod files:
@@ -36,12 +37,21 @@ This will create a directory ("x86_64" or "special") in the top CNModel director
 
     python toy_model.py
      
-should generate a plot of 9 sets of traces showing responses of individual neuron models to depolarizing and hyperpolarizing current steps.
+should generate a plot with several sets of traces showing responses of individual neuron models to depolarizing and hyperpolarizing current steps.
+
+
 The test suite can be run as:
 
     python test.py
 
 This will test each of the models against reference data, the synapse mechanisms, a number of internal routines, and the auditory nerve model. The tests should pass for each component. Failures may indicate incorrect installation or incorrect function within individual components.
+
+Additional tests are included in the main directory. For example, test\_mechanisms.py runs a voltage clamp protocol on a selected mechanism and displays the result. test\_cells.py can run protocols on selected cell models.
+
+Building Models
+---------------
+
+It is easiest to set up a model based on this package by using a separate directory, with links (ln -s) to CNModel and neuronvis (and possibly the mechanisms), rather than installing those as libraries in the Python environment. This helps to separate the detailed specifications from the hypotheses that are being examined in the modeling.
 
 
 
