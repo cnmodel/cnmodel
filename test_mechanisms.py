@@ -144,11 +144,11 @@ class ChannelKinetics():
             stim['dur'] = 100
             stim['amp'] = V
             stim['PT'] = 0.0
-            self.vcPost.amp2=V
+            self.vcPost.amp2 = V
             self.vec['IChan'].record(self.vcPost._ref_i, sec=self.soma)
             self.vec['V'].record(self.soma()._ref_v, sec=self.soma)
             self.vec['time'].record(h._ref_t)
-            print 'V = ', V, 
+            print 'V = %6.1f' % V, 
             h.tstop = self.vcPost.dur1+self.vcPost.dur2+self.vcPost.dur3
             h.finitialize(v_init)
             h.run()
@@ -161,9 +161,9 @@ class ChannelKinetics():
             (self.ivmin[1,i], r2) = Util.measure('minormax', self.t, self.ichan, tdelay+0.1, tdelay+tstep[0]/5.0)
             self.ivss[0,i] = V
             self.ivmin[0,i] = V
-            print ' T = ', h.celsius
-        self.p2.plot(self.ivss[0,:], self.ivss[1,:], symbol='o', symbolsize=2.0, pen= pg.mkPen(color))
-        self.p4.plot(self.ivmin[0,:], self.ivmin[1,:], symbol='s', symbolsize=2.0, pen=pg.mkPen(color))
+            print ' T = %4.1f' % h.celsius
+        self.p2.plot(self.ivss[0,:], self.ivss[1,:], symbol='o', symbolSize=4.0, pen= pg.mkPen(color))
+        self.p4.plot(self.ivmin[0,:], self.ivmin[1,:], symbol='s', symbolSize=4.0, pen=pg.mkPen(color))
 
 
     def computeKinetics(self, ch):
@@ -183,8 +183,12 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print "\n\nUsage: python test_mechanisms.py <mechname>"
         print "  Available mechanisms:"
-        for n in mechs:
-            print "    ", n
+        for i, n in enumerate(mechs):
+            if n == 'Mechanism':
+                continue
+            print "%20s" % n,
+            if i > 0 and (i % 5) == 0:
+                print ""
         sys.exit(1)
 
     if sys.argv[1:] in nottestablemechs:
