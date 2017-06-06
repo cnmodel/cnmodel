@@ -228,9 +228,9 @@ class DStellateRothman(DStellate):
         if species == 'mouse' and modelType == 'I-II':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
             self.set_soma_size_from_Cm(25.0)
-            self.adjust_na_chans(soma, gbar=800.)
+            self.adjust_na_chans(soma, gbar=1800.)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
-            soma().klt.gbar = nstomho(20.0, self.somaarea)
+            soma().klt.gbar = nstomho(14.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(2.0, self.somaarea)
             soma().ihvcn.eh = -43 # Rodrigues and Oertel, 2006
             soma().leak.gbar = nstomho(2.0, self.somaarea)

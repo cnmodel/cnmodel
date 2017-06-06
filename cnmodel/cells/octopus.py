@@ -37,7 +37,7 @@ class Octopus(Cell):
         elif modelType == 'Spencer':
             return OctopusSpencer(**kwds)
         else:
-            raise ValueError ('Octopus cell type %s is unknown', type)
+            raise ValueError ('Octopus cell type %s is unknown' % modelType)
 
     def make_psd(self, terminal, psd_type, **kwds):
         """
@@ -217,17 +217,6 @@ class OctopusRothman(Octopus, Cell):
             run silently (True) or verbosely (False)
         """
         soma = self.soma
-        # if species == 'mouse' and type == 'II-o':
-        #     # use conductance levels for a mouse
-        #     #print 'Mouse octopus cell'
-        #     self.set_soma_size_from_Cm(26.0)
-        #     self.adjust_na_chans(soma)
-        #     soma().kht.gbar = nstomho(58.0, self.somaarea)
-        #     soma().klt.gbar = nstomho(80.0, self.somaarea)
-        #     soma().hcno.gbar = nstomho(30.0, self.somaarea)
-        #     soma().leak.gbar = nstomho(2.0, self.somaarea)
-        #     self.vm0 = self.find_i0()
-        #     self.axonsf = 0.57
 
         if species == 'guineapig' and modelType =='II-o':
             self.set_soma_size_from_Cm(25.0)
@@ -237,6 +226,15 @@ class OctopusRothman(Octopus, Cell):
             soma().klt.gbar = 0.0407  # nstomho(3196.0, self.somaarea)  #  40.7 mmho/cm2
             soma().hcnobo.gbar = 0.0076  #nstomho(40.0, self.somaarea)  # 7.6 mmho/cm2, cf. Bal and Oertel, Spencer et al. 25 u dia cell
             soma().leak.gbar = 0.0005  # nstomho(2.0, self.somaarea)
+            self.axonsf = 1.0
+        elif species == 'mouse' and modelType =='II-o':
+            self.set_soma_size_from_Cm(25.0)
+            self.print_soma_info()
+            self.adjust_na_chans(soma)
+            soma().kht.gbar = nstomho(150.0, self.somaarea)  # 6.1 mmho/cm2
+            soma().klt.gbar = nstomho(3196.0, self.somaarea)  #  40.7 mmho/cm2
+            soma().hcnobo.gbar = nstomho(40.0, self.somaarea)  # 7.6 mmho/cm2, cf. Bal and Oertel, Spencer et al. 25 u dia cell
+            soma().leak.gbar = nstomho(2.0, self.somaarea)
             self.axonsf = 1.0
         else:
             raise ValueError('Species "%s" or species-type "%s" is not recognized for octopus cells' %  (species, type))
@@ -269,10 +267,11 @@ class OctopusRothman(Octopus, Cell):
         if self.status['ttx']:
             gnabar = 0.0
         else:
-            gnabar = 0.04244 # 4.2441  # nstomho(1000.0, self.somaarea)  # mmho/cm2 - 4244.1 moh - 4.2441
+            gnabar = nstomho(1000.0, self.somaarea)  # mmho/cm2 - 4244.1 moh - 4.2441
         nach = self.status['na']
+        print 'nach: ', nach
         if nach == 'jsrna':
-            soma().jsrna.gbar = gnabar * 0.2
+            soma().jsrna.gbar = gnabar * 1
             soma.ena = self.e_na
             if debug:
                 print 'octopus using jsrna, gbar: ', soma().jsrna.gbar

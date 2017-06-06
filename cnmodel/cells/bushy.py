@@ -205,12 +205,25 @@ class BushyRothman(Bushy):
         knownspecies = ['mouse', 'guineapig', 'cat']
         soma = self.soma
         if species == 'mouse' and modelType == 'II':
-            # use conductance levels from Cao et al.,  J. Neurophys., 2007.
+            # use conductance levels from Cao et al.,  J. Neurophys., 2007. as 
+            # indicated in Xie and Manis, 2013
            # print 'Mouse bushy cell'
             self.set_soma_size_from_Cm(26.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(58.0, self.somaarea)
             soma().klt.gbar = nstomho(80.0, self.somaarea)
+            soma().ihvcn.gbar = nstomho(30.0, self.somaarea)
+            soma().leak.gbar = nstomho(2.0, self.somaarea)
+            self.vrange = [-70., -55.]  # need to specify non-default range for convergence
+            self.axonsf = 0.57
+        elif species == 'mouse' and modelType == 'II-I':
+            # use typ0e II conductance levels from Cao et al.,  J. Neurophys., 2007. as 
+            # indicated in Xie and Manis, 2013
+           # print 'Mouse bushy cell'
+            self.set_soma_size_from_Cm(26.0)
+            self.adjust_na_chans(soma)
+            soma().kht.gbar = nstomho(58.0, self.somaarea)
+            soma().klt.gbar = nstomho(14.0, self.somaarea)  # same ratio as for guinea pig relative to type II
             soma().ihvcn.gbar = nstomho(30.0, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             self.vrange = [-70., -55.]  # need to specify non-default range for convergence
