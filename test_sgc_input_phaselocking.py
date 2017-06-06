@@ -13,27 +13,47 @@ class SGCInputTestPL(Protocol):
     def set_cell(self, cell='bushy'):
         self.cell = cell
     
-    def run(self, temp=34.0, dt=0.025, seed=575982035):
+    def run(self, temp=34.0, dt=0.025, seed=575982035, stimulus='tone'):
+        assert stimulus in ['tone', 'SAM', 'clicks']  # cases available
         if self.cell == 'bushy':
-            postCell = cells.Bushy.create()
+            postCell = cells.Bushy.create(species='mouse')
         elif self.cell == 'tstellate':
-            postCell = cells.TStellate.create()
+            postCell = cells.TStellate.create(species='mouse')
         elif self.cell == 'octopus':
-            postCell = cells.Octopus.create()
+            postCell = cells.Octopus.create(species='mouse')
         elif self.cell == 'dstellate':
-            postCell = cells.DStellate.create()
+            postCell = cells.DStellate.create(species='mouse')
         else:
-            raise ValueError('cell %s is not yet implemented for phaselocking')
+            raise ValueError('cell %s is not yet implemented for phaselocking' % self.cell)
         self.post_cell = postCell
+        self.stimulus = stimulus
         self.run_duration = 1.  # in seconds
         self.pip_duration = 0.8  # in seconds
         self.pip_start = [0.02]  # in seconds
         self.Fs = 100e3  # in Hz
-        self.f0 = 1500.  # stimulus in Hz
-        self.cf = 1500.  # SGCs in Hz
-        self.stim = sound.TonePip(rate=self.Fs, duration=self.run_duration, f0=self.f0, dbspl=60,
-                                  ramp_duration=2.5e-3, pip_duration=self.pip_duration,
-                                  pip_start=self.pip_start)
+        self.f0 = 4000.  # stimulus in Hz
+        self.cf = 4000.  # SGCs in Hz
+        self.fMod = 100.  # mod freq, Hz
+        self.dMod = 50.  # % mod depth, Hz
+        self.dbspl = 60.
+        if self.stimulus == 'SAM':
+            self.stim = sound.SAMTone(rate=self.Fs, duration=self.run_duration, f0=self.f0, 
+                          fmod=self.fMod, dmod=self.dMod, dbspl=self.dbspl,
+                          ramp_duration=2.5e-3, pip_duration=self.pip_duration,
+                          pip_start=self.pip_start)
+        if self.stimulus == 'tone':
+            self.f0 = 1000.
+            self.cf = 1000.
+            self.stim = sound.TonePip(rate=self.Fs, duration=self.run_duration, f0=self.f0, dbspl=self.dbspl,
+                          ramp_duration=2.5e-3, pip_duration=self.pip_duration,
+                          pip_start=self.pip_start)
+
+        if self.stimulus == 'clicks':
+            self.click_rate = 0.020  # msec
+            self.stim = sound.ClickTrain(rate=self.Fs, duration=self.run_duration,
+                        f0=self.f0, dbspl=self.dbspl, click_start=0.010, click_duration=100.e-6,
+                        click_interval=self.click_rate, nclicks=int((self.run_duration-0.01)/self.click_rate),
+                        ramp_duration=2.5e-3)
         
         n_sgc = data.get('convergence', species='mouse', post_type=postCell.type, pre_type='sgc')[0]
         self.n_sgc = int(np.round(n_sgc))
@@ -100,7 +120,22 @@ class SGCInputTestPL(Protocol):
         prespk = self.pre_cells[0]._spiketrain  # just sample one...
         spkin = prespk[np.where(prespk > phasewin[0]*1e3)]
         spikesinwin = spkin[np.where(spkin <= phasewin[1]*1e3)]
-        vs = PU.vector_strength(spikesinwin, self.f0)
+        print "\nCell type: %s" % self.cell
+        print "Stimulus: "
+
+        # set freq for VS calculation
+        if self.stimulus == 'tone':
+            f0 = self.f0
+            print "Tone: f0=%.3f at %3.1f dbSPL, cell CF=%.3f" % (self.f0, self.dbspl, self.cf)
+        if self.stimulus == 'SAM':
+            f0 = self.fMod
+            print ("SAM Tone: f0=%.3f at %3.1f dbSPL, fMod=%3.1f  dMod=%5.2f, cell CF=%.3f" %
+                 (self.f0, self.dbspl, self.fMod, self.dMod, self.cf))
+        if self.stimulus == 'clicks':
+            f0 = 1./self.click_rate
+            print "Clicks: interval %.3f at %3.1f dbSPL, cell CF=%.3f " % (self.click_rate, self.dbspl, self.cf)
+        vs = PU.vector_strength(spikesinwin, f0)
+        
         print 'AN Vector Strength: %7.3f, d=%.2f (us) Rayleigh: %7.3f  p = %.3e  n = %d' % (vs['r'], vs['d']*1e6, vs['R'], vs['p'], vs['n'])
         (hist, binedges) = np.histogram(vs['ph'])
         curve = p6.plot(binedges, hist, stepMode=True, fillBrush=(100, 100, 255, 150), fillLevel=0)
@@ -109,7 +144,7 @@ class SGCInputTestPL(Protocol):
         p7 = self.win.addPlot(title='%s phase' % self.cell, row=2, col=1)
         spkin = bspk[np.where(bspk > phasewin[0]*1e3)]
         spikesinwin = spkin[np.where(spkin <= phasewin[1]*1e3)]
-        vs = PU.vector_strength(spikesinwin, self.f0)
+        vs = PU.vector_strength(spikesinwin, f0)
         print '%s Vector Strength: %7.3f, d=%.2f (us) Rayleigh: %7.3f  p = %.3e  n = %d' % (self.cell, vs['r'], vs['d']*1e6, vs['R'], vs['p'], vs['n'])
         (hist, binedges) = np.histogram(vs['ph'])
         curve = p7.plot(binedges, hist, stepMode=True, fillBrush=(100, 100, 255, 150), fillLevel=0)
@@ -124,10 +159,14 @@ if __name__ == '__main__':
         cell = sys.argv[1]
     else:
         cell = 'bushy'
+    if len(sys.argv) > 2:
+        stimulus = sys.argv[2]
+    else:
+        stimulus = 'tone'
     print 'cell type: ', cell
     prot = SGCInputTestPL()
     prot.set_cell(cell)
-    prot.run()
+    prot.run(stimulus=stimulus)
     prot.show()
 
     import sys
