@@ -315,16 +315,20 @@ class ClickTrain(Sound):
     ----------
     rate : float
         sample frequency (Hz)
-    click_starts : float (seconds)
-        array of start time for clicks 
+    click_start : float (seconds)
+        time for first click
     click_duration : float (seconds)
         duration of each click
+    click_interval : float (seconds)
+        Interval between clicks
+    nclicks : int
+        number of clicks in the train
     dbspl : float
         maximum sound pressure level of pip    
     
     """
     def __init__(self, **kwds):
-        for k in ['click_starts', 'click_duration', 'dbspl', 'rate']:
+        for k in ['click_start', 'click_duration', 'click_interval', 'nclicks', 'dbspl', 'rate']:
             if k not in kwds:
                 raise TypeError("Missing rquired argument '%s'" % k)
         Sound.__init__(self, **kwds)
@@ -340,7 +344,8 @@ class ClickTrain(Sound):
         
         """
         o = self.opts
-        return clicks(self.time, o['rate'], o['click_starts'], o['click_duration'], o['dbspl'])
+        return clicks(self.time, o['rate'], o['click_start'], o['click_duration'], 
+            o['click_interval'], o['nclicks'], o['dbspl'])
 
 class SAMTone(Sound):
     """ SAM tones with cosine-ramped edges.
@@ -364,9 +369,9 @@ class SAMTone(Sound):
         Duration of a single ramp period (from minimum to maximum). 
         This may not be more than half of pip_duration.
     fMod : float
-        SAM modulation frequency
-    fMod : float
-        Modulation depth
+        SAM modulation frequency, Hz
+    dMod : float
+        Modulation depth, %
         
     """
     def __init__(self, **kwds):
@@ -527,8 +532,8 @@ def linearramp(pin, mxpts, irpts):
     out = pin.copy()
     r = np.linspace(0, 1, irpts)
     irpts = int(irpts)
-    print 'irpts: ', irpts
-    print len(out)
+    # print 'irpts: ', irpts
+    # print len(out)
     out[:irpts] = out[:irpts]*r
     # print  out[mxpts-irpts:mxpts].shape
     # print r[::-1].shape
@@ -634,7 +639,7 @@ def piptone(t, rt, Fs, F0, dBSPL, pip_dur, pip_start):
     return pin
 
 
-def clicks(t, Fs, click_starts, click_duration, dbspl):
+def clicks(t, Fs, click_start, click_duration, click_interval, nclicks, dbspl):
     """
     Create a waveform with clicks. Output is in 
     Pascals.
@@ -645,10 +650,14 @@ def clicks(t, Fs, click_starts, click_duration, dbspl):
         array of time values
     Fs : float
         sample frequency (Hz)
-    click_starts : float (seconds)
-        array of start time for clicks 
+    click_start : float (seconds)
+        delay to first click in train 
     click_duration : float (seconds)
         duration of each click
+    click_interval : float (seconds)
+        interval between click starts
+    nclicks : int
+        number of clicks in the click train
     dspl : float
         maximum sound pressure level of pip
 
@@ -658,13 +667,14 @@ def clicks(t, Fs, click_starts, click_duration, dbspl):
         waveform
 
     """
-    totdur = np.max(click_starts) + click_duration
-    click_pts = int(totdur * Fs) + 1
     swave = np.zeros(t.size)
     amp = dbspl_to_pa(dbspl)
     td = int(np.floor(click_duration * Fs))
-    for start_time in click_starts:
-        t0 = int(np.floor(start_time * Fs))
+    for n in range(nclicks):
+        t0s = click_start + n*click_interval  # time for nth click
+        t0 = int(np.floor(t0s * Fs))  # index
+        if t0+td > t.size:
+            raise ValueError('Clicks: train duration exceeds waveform duration')
         swave[t0:t0+td] = amp
     return swave
 
