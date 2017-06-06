@@ -44,7 +44,7 @@ ccivrange = {'bushy': {'pulse': [(-0.5, 0.5, 0.01)]},
             'cartwheel': {'pulse': [(-0.2, 0.1, 0.02)]},
             'pyramidal': {'pulse': [(-0.3, 0.3, 0.025), (-0.040, 0.025, 0.005)], 'prepulse': [(-0.25, -0.25, 0.25)]},
             'tuberculoventral': {'pulse': [(-0.35, 1.0, 0.05), (-0.040, 0.01, 0.005)]},
-            'octopus': {'pulse': [(-3., 3., 0.2)]},
+            'octopus': {'pulse': [(-2., 4., 0.2)]},
             }
 
 # scales holds some default scaling to use in the cciv plots
@@ -146,19 +146,19 @@ class Tests():
         #
         elif args.celltype == 'octopus' and args.morphology == 'point':
             cell = cells.Octopus.create(species=args.species, modelType=args.type,
-                nach='jsrna', ttx=args.ttx, debug=debugFlag)
+                nach=args.nav, ttx=args.ttx, debug=debugFlag)
 
         elif args.celltype == 'octopus' and args.morphology == 'stick':
             cell = cells.Octopus.create(model='Spencer', species=args.species, modelType=args.type,
                 morphology='cnmodel/morphology/octopus_spencer_stick.hoc', decorator=True,
-                nach='jsrna', ttx=args.ttx, debug=debugFlag)
+                nach=args.nav, ttx=args.ttx, debug=debugFlag)
             h.topology()
 
         #
         # D-stellate tests
         #
         elif args.celltype == 'dstellate':
-            cell = cells.DStellate.create(debug=debugFlag, ttx=args.ttx, modelType=args.type)
+            cell = cells.DStellate.create(debug=debugFlag, species=args.species, ttx=args.ttx, modelType=args.type)
 
         elif args.celltype == 'dstellateeager':
             cell = cells.DStellateEager.create(debug=debugFlag, ttx=args.ttx, modelType=args.type)
