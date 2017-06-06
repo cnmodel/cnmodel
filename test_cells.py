@@ -35,7 +35,7 @@ cellinfo = {'types': ['bushy', 'bushycoop', 'stellate', 'stellatenav11', 'dstell
 # Format for ivranges is list of tuples. This allows finer increments in selected ranges, such as close to rest
 ccivrange = {'bushy': {'pulse': [(-0.5, 0.5, 0.01)]},
              'bushycoop': {'pulse': [(-0.5, 0.5, 0.01)]},
-            'stellate': {'pulse': [(-0.2, 0.2, 0.02), (-0.015, 0, 0.005)]},
+            'stellate': {'pulse': [(-1, 1, 0.1), (-0.015, 0, 0.005)]},
             'stellatenav11': {'pulse': [(-0.5, 1., 0.1)]}, # , (-0.015, 0, 0.005)]},
             'steldend': {'pulse': [(-1.0, 1.0, 0.1)]},
             'dstellate': {'pulse': [(-0.2, 0.2, 0.0125)]},

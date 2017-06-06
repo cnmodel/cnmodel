@@ -9,7 +9,7 @@ NEURON {
 	THREADSAFE
 	SUFFIX leak
 	NONSPECIFIC_CURRENT i
-	RANGE gbar, erev
+	RANGE gbar, erev, q10g
 }
 
 PARAMETER {

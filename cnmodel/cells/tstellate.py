@@ -140,15 +140,17 @@ class TStellateRothman(TStellate):
         """
         
         super(TStellateRothman, self).__init__()
+        self.i_test_range={'pulse': (-0.15, 0.15, 0.01)}
         if modelType == None:
             modelType = 'I-c'
-        if nach == None:
+        if nach == None and species == 'guineapig':
             nach = 'na'
+        if nach == None and species == 'mouse':
+            nach = 'nav11'
+            self.i_test_range={'pulse': (-1.0, 1.0, 0.05)}
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'TStellate',
                        'morphology': morphology, 'decorator': decorator}
-
-        self.i_test_range={'pulse': (-0.15, 0.15, 0.01)}
         self.vrange = [-75., -60.]
         if morphology is None:
             """
@@ -205,18 +207,27 @@ class TStellateRothman(TStellate):
         soma = self.soma
         if species == 'mouse' and modelType == 'I-c':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
+            # model description in Xie and Manis 2013. Note that
+            # conductances were not scaled for temperature (rates were)
+            # so here we reset the default Q10's for conductance (g) to 1.0
             print 'Mouse Tstellate cell, Xie and Manis, 2013'
+            self.vrange = [-75., -55.]
             self.set_soma_size_from_Cm(25.0)
-            self.adjust_na_chans(soma, gbar=1800.)
+            #self.adjust_na_chans(soma, gbar=800.)
             self.e_k = -84.
             self.e_na = 50.
-            soma.ek = self.e_k
+            soma().nav11.gbar = nstomho(1800., self.somaarea)
+            soma().nav11.vsna = 4.3
             soma.ena = self.e_na
+            soma.ek = self.e_k
             soma().kht.gbar = nstomho(250.0, self.somaarea)
+            soma().kht.q10g = 1.0 # no scaling of conductance
             soma().ka.gbar = nstomho(0.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(18.0, self.somaarea)
+            soma().ihvcn.q10g = 1.0
             soma().ihvcn.eh = -43 # Rodrigues and Oertel, 2006
             soma().leak.gbar = nstomho(8.0, self.somaarea)
+            soma().leak.q10g = 1.0
             soma().leak.erev = -65.0
             self.axonsf = 0.5
         elif species == 'guineapig' and modelType == 'I-c':  # values from R&M 2003, Type I
@@ -323,7 +334,7 @@ class TStellateRothman(TStellate):
         elif modelType  == 'XM13':
             totcap = 25.0E-12  # Base model from Xie and Manis, 2013 for type I stellate cell
             refarea = totcap / self.c_m  # see above for units
-            self.gBar = Params(nabar=800.0E-9/refarea,
+            self.gBar = Params(nabar=1800.0E-9/refarea,
                                khtbar=250.0E-9/refarea,
                                kltbar=0.0E-9/refarea,
                                ihbar=18.0E-9/refarea,
@@ -427,6 +438,7 @@ class TStellateRothman(TStellate):
             if debug:
                 print "tstellate using inva11"
             print 'nav11 gbar: ', soma().nav11.gbar
+            print 'nav11 vsna: ', soma().nav11.vsna
         elif nach == 'na':
             soma().na.gbar = gnabar
             soma.ena = self.e_na

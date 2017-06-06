@@ -471,6 +471,8 @@ class Cell(object):
                 self.ix['na'] = self.soma().nav11.gna*(V - self.soma().ena)
         if 'jsrna' in self.mechanisms:
             self.ix['jsrna'] = self.soma().jsrna.gna*(V - self.soma().ena)
+        if 'nav11' in self.mechanisms:
+            self.ix['nav11'] = self.soma().nav11.gna*(V - self.soma().ena)
         if 'nacncoop' in self.mechanisms:
             self.ix['nacncoop'] = self.soma().nacncoop.gna*(V - self.soma().ena)
         if 'klt' in self.mechanisms:

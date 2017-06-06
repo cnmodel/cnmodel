@@ -135,16 +135,21 @@ class BushyRothman(Bushy):
                  
         """
         super(BushyRothman, self).__init__()
+        self.i_test_range={'pulse': (-1, 1, 0.05)}  # note that this gets reset with decorator according to channels
+                                                    # Changing the default values will cause the unit tests to fail!
         if modelType == None:
             modelType = 'II'
-        if nach == None:
+        if nach == None and species == 'guineapig':
             nach = 'na'
+        if nach == None and species == 'mouse':
+            nach = 'nav11'
+            self.i_test_range={'pulse': (-1, 1, 0.05)}
+        
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False, 'hillock': False, 
                        'initialsegment': False, 'myelinatedaxon': False, 'unmyelinatedaxon': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Bushy',
                        'morphology': morphology, 'decorator': decorator}
-        self.i_test_range={'pulse': (-1, 1, 0.05)}  # note that this gets reset with decorator according to channels
-                                                    # Changing the default values will cause the unit tests to fail!
+
         self.spike_threshold = -40
         self.vrange = [-70., -57.]  # set a default vrange for searching for rmp
         
@@ -206,14 +211,19 @@ class BushyRothman(Bushy):
         soma = self.soma
         if species == 'mouse' and modelType == 'II':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007. as 
-            # indicated in Xie and Manis, 2013
-           # print 'Mouse bushy cell'
+            # model description in Xie and Manis 2013. Note that
+            # conductances were not scaled for temperature (rates were)
+            # so here we reset the default Q10's for conductance (g) to 1.0
             self.set_soma_size_from_Cm(26.0)
-            self.adjust_na_chans(soma)
+            self.adjust_na_chans(soma)  # nav11 does not have q10g
             soma().kht.gbar = nstomho(58.0, self.somaarea)
             soma().klt.gbar = nstomho(80.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(30.0, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
+            soma().kht.q10g = 1.0
+            soma().klt.q10g = 1.0
+            soma().ihvcn.q10g = 1.0
+            soma().leak.q10g = 1.0
             self.vrange = [-70., -55.]  # need to specify non-default range for convergence
             self.axonsf = 0.57
         elif species == 'mouse' and modelType == 'II-I':
@@ -475,12 +485,12 @@ class BushyRothman(Bushy):
             if debug:
                 print 'jsrna gbar: ', soma().jsrna.gbar
         elif nach == 'nav11':
-            soma().nav11.gbar = gnabar * 0.5
+            soma().nav11.gbar = gnabar
             soma.ena = self.e_na
             soma().nav11.vsna = 4.3
             if debug:
                 print "bushy using inva11"
-            print 'nav11 gbar: ', soma().nav11.gbar
+#            print 'nav11 gbar: ', soma().nav11.gbar
         elif nach in ['na', 'nacn']:
             soma().na.gbar = gnabar
             soma.ena = self.e_na
