@@ -156,7 +156,7 @@ class TStellateRothman(TStellate):
             """
             instantiate a basic soma-only ("point") model
             """
-            print( "<< TStellate model: Creating point cell using JSR parameters, type={:s} >>".format(modelType))
+            print( "<< TStellate model: Creating point cell, type={:s} >>".format(modelType))
             soma = h.Section(name="TStellate_Soma_%x" % id(self))  # one compartment of about 29000 um2
             soma.nseg = 1
             self.add_section(soma, 'soma')
@@ -165,7 +165,7 @@ class TStellateRothman(TStellate):
             instantiate a structured model with the morphology as specified by 
             the morphology file
             """
-            print "<< TStellate model: Creating structured cell using JSR parameters >>"
+            print "<< TStellate: Creating cell with morphology = %s>>" % morphology
             self.set_morphology(morphology_file=morphology)
 
         # decorate the morphology with ion channels
@@ -210,7 +210,7 @@ class TStellateRothman(TStellate):
             # model description in Xie and Manis 2013. Note that
             # conductances were not scaled for temperature (rates were)
             # so here we reset the default Q10's for conductance (g) to 1.0
-            print 'Mouse Tstellate cell, Xie and Manis, 2013'
+            print '  Setting Conductances for mouse I-c Tstellate cell, Xie and Manis, 2013'
             self.vrange = [-75., -55.]
             self.set_soma_size_from_Cm(25.0)
             #self.adjust_na_chans(soma, gbar=800.)
@@ -231,6 +231,7 @@ class TStellateRothman(TStellate):
             soma().leak.erev = -65.0
             self.axonsf = 0.5
         elif species == 'guineapig' and modelType == 'I-c':  # values from R&M 2003, Type I
+            print '  Setting Conductances for Guinea Pig I-c, Rothman and Manis, 2003'
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
@@ -240,6 +241,7 @@ class TStellateRothman(TStellate):
             soma().leak.erev = -65.0
             self.axonsf = 0.5
         elif species == 'guineapig' and modelType =='I-t':
+            print '  Setting Conductances for Guinea Pig, I-t, Rothman and Manis, 2003'
             # guinea pig data from Rothman and Manis, 2003, type It
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma)
@@ -250,6 +252,7 @@ class TStellateRothman(TStellate):
             soma().leak.erev = -65.0
             self.axonsf = 0.5
         elif species == 'cat' and modelType == 'I-c':  # a cat is a big guinea pig Type I
+            print '  Setting Conductances for Cat I-c, based on Rothman and Manis, 2003'
             self.set_soma_size_from_Cm(30.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)

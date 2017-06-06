@@ -84,8 +84,9 @@ class Bushy(Cell):
 
 class BushyRothman(Bushy):
     """
-    VCN bushy cell model.
-    Rothman and Manis, 2003abc (Type II, Type II-I)
+    VCN bushy cell models.
+        Rothman and Manis, 2003abc (Type II, Type II-I)
+        Xie and Manis, 2013
     """
 
     def __init__(self, morphology=None, decorator=None, nach=None,
@@ -157,7 +158,7 @@ class BushyRothman(Bushy):
             """
             instantiate a basic soma-only ("point") model
             """
-            print "<< Bushy model: Creating point cell using JSR parameters >>"
+            print "<< Bushy model: Creating point cell >>"
             soma = h.Section(name="Bushy_Soma_%x" % id(self))  # one compartment of about 29000 um2
             soma.nseg = 1
             self.add_section(soma, 'soma')
@@ -166,7 +167,7 @@ class BushyRothman(Bushy):
             instantiate a structured model with the morphology as specified by 
             the morphology file
             """
-            print "<< Bushy model: Creating structured cell using JSR parameters >>"
+            print "<< Bushy model: Creating cell with morphology from %s >>" % morphology
             self.set_morphology(morphology_file=morphology)
 
         # decorate the morphology with ion channels
@@ -185,7 +186,7 @@ class BushyRothman(Bushy):
         self.get_mechs(self.soma)
         self.cell_initialize(vrange=self.vrange)
         if debug:
-            print "<< Bushy model: Created point cell using JSR parameters >>"
+            print "   << Created cell >>"
 
     def species_scaling(self, species='guineapig', modelType='II', silent=True):
         """
@@ -214,22 +215,21 @@ class BushyRothman(Bushy):
             # model description in Xie and Manis 2013. Note that
             # conductances were not scaled for temperature (rates were)
             # so here we reset the default Q10's for conductance (g) to 1.0
+            print '  Setting conductances for mouse II bushy cell, Xie and Manis, 2013'
             self.set_soma_size_from_Cm(26.0)
             self.adjust_na_chans(soma)  # nav11 does not have q10g
             soma().kht.gbar = nstomho(58.0, self.somaarea)
             soma().klt.gbar = nstomho(80.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(30.0, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
-            soma().kht.q10g = 1.0
-            soma().klt.q10g = 1.0
-            soma().ihvcn.q10g = 1.0
-            soma().leak.q10g = 1.0
+            for q10g in [soma().kht.q10g, soma().klt.q10g, soma().ihvcn.q10g, soma().leak.q10g]:
+                 q10g = 2.0
             self.vrange = [-70., -55.]  # need to specify non-default range for convergence
             self.axonsf = 0.57
         elif species == 'mouse' and modelType == 'II-I':
             # use typ0e II conductance levels from Cao et al.,  J. Neurophys., 2007. as 
             # indicated in Xie and Manis, 2013
-           # print 'Mouse bushy cell'
+            print '  Setting conductances for mouse II-I bushy cell, based on Xie and Manis, 2013'
             self.set_soma_size_from_Cm(26.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(58.0, self.somaarea)
@@ -239,6 +239,7 @@ class BushyRothman(Bushy):
             self.vrange = [-70., -55.]  # need to specify non-default range for convergence
             self.axonsf = 0.57
         elif species == 'guineapig' and modelType =='II':
+            print '  Setting conductances for guinea pig II bushy cell, Rothman and Manis, 2003'
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
@@ -248,6 +249,7 @@ class BushyRothman(Bushy):
             self.axonsf = 0.57
         elif species == 'guineapig' and modelType =='II-I':
             # guinea pig data from Rothman and Manis, 2003, type II=I
+            print '  Setting conductances for guinea pig II-I bushy cell, Rothman and Manis, 2003'
             self.i_test_range = {'pulse': (-0.4, 0.4, 0.02)}
             self.set_soma_size_from_Cm(12.0)
             self.adjust_na_chans(soma)
@@ -257,6 +259,7 @@ class BushyRothman(Bushy):
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             self.axonsf = 0.57
         elif species == 'cat' and modelType == 'II':  # a cat is a big guinea pig
+            print '  Setting conductances for cat II bushy cell, based on Rothman and Manis, 2003'
             self.set_soma_size_from_Cm(35.0)
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
@@ -485,7 +488,7 @@ class BushyRothman(Bushy):
             if debug:
                 print 'jsrna gbar: ', soma().jsrna.gbar
         elif nach == 'nav11':
-            soma().nav11.gbar = gnabar
+            soma().nav11.gbar = gnabar * 0.5  # (see Cells.py in EImodel)
             soma.ena = self.e_na
             soma().nav11.vsna = 4.3
             if debug:

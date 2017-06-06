@@ -189,7 +189,7 @@ class IVCurve(Protocol):
         playvector.play(istim._ref_i, h.dt, 0, sec=self.cell.soma)
 
         # GO
-        #h('secondorder=0')  # direct call fails; let hoc do the work
+        h('secondorder=0')  # direct call fails; let hoc do the work
         h.dt = self.dt
         h.celsius = self.temp
         h.tstop = self.tend
@@ -201,10 +201,11 @@ class IVCurve(Protocol):
             Rin, tau, v = r['Rin'], r['tau'], r['v']
             print '    *** Rin: %9.0f  tau: %9.1f   v: %6.1f' % (Rin, tau, v)
 
+        self.cell.vm0 = None
         self.cell.cell_initialize()  # initialize the cell to it's rmp
         self.custom_init()
         while h.t < h.tstop:
-            h.fadvance()
+           h.fadvance()
 
         k1 = int(stim['delay']/h.dt - 1)
 #            print ('   V before step: {0:9.5f}'.format(self['v_soma'][k1]))

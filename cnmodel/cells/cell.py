@@ -516,7 +516,7 @@ class Cell(object):
         if vrange is None:
              vrange = self.vrange
         try:
-            v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1], maxiter=1000)
+            v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1], maxiter=5000)
         except:
             print('find i0 failed:')
             print(self.ix)
@@ -537,7 +537,7 @@ class Cell(object):
         # can't do this until i_currents has populated self.ix, so do it now... 
         for m in self.mechanisms:
             if m not in self.ix.keys():
-                raise ValueError('Mechanism %s is missing from i_currents calculation', m)
+                raise ValueError('Mechanism %s in cell is missing from i_currents calculation', m)
  
         if showinfo:
             print('\n  [soma] find_i0  Species: %s  cell type: %s  Temp %6.1f' % (self.status['species'],

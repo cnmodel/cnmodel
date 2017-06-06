@@ -94,6 +94,7 @@ class Tests():
         cell
             Instantiated cell of the selected celltype
         """
+        h.celsius = float(args.temp)
         #
         # Spiral Ganglion cell tests
         #
@@ -194,7 +195,6 @@ class Tests():
             raise ValueError ("Cell Type %s and configurations nav=%s or config=%s are not available" %
                  (args.celltype, args.nav, args.morphology))
 
-        print("Cell model: %s" % cell.__class__.__name__)
         print(cell.__doc__)
         self.cell = cell
 
@@ -207,6 +207,10 @@ class Tests():
         args : argparse args from command line
         
         """
+        V0 = self.cell.find_i0(showinfo=True)
+        self.cell.cell_initialize()
+        print 'Currents at nominal Vrest= %.2f I = 0: I = %g ' % (V0, self.cell.i_currents(V=V0))
+        self.cell.print_mechs(self.cell.soma)
         if args.cc is True:
             # define the current clamp electrode and default settings
             self.iv = IVCurve()
@@ -260,8 +264,8 @@ if __name__ == '__main__':
 #    h.load_file("stdrun.hoc")
 #    h.load_file(os.path.join(path, "custom_init.hoc")) # replace init with one that gets closer to steady state
 
-    print 'species: ', args.species
-    print 'Morphology configuration: ', args.morphology
+    # print 'Species: ', args.species
+    # print 'Morphology configuration: ', args.morphology
     sites = None
     if args.pulsetype == 'step':
         ptype = None
