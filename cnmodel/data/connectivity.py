@@ -6,9 +6,11 @@ mouse_convergence = u"""
 Convergence defines the average number of presynaptic cells of a particular
 type (rows) that synapse onto a single postsynaptic cell of a particular
 type (columns).
-Note: Bushy, pyramidal and octopus cells are known to have no (or very few)
+Note: Bushy and pyramidal are known to have no (or very few)
 collaterals within the CN, and so they are not listed as presynaptic cells in
-this table.
+this table. Octopus cells have collaterals (including in granule cell domains),
+and should be added to this table when data are available (Golding et al.,
+J. Neurosci. 15: 3138, 1995)
 
 -------------------------------------------------------------------------------
                   bushy       tstellate   dstellate   octopus     pyramidal    tuberculoventral
