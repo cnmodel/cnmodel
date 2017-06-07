@@ -44,7 +44,6 @@ PARAMETER {
         ena (mV)
         gbar =  0.07958 (mho/cm2) <0,1e9>
         q10tau = 3.0 : q10 for rates
-        q10g = 2.0 : q10 for conductances
 }
 
 STATE {
@@ -56,7 +55,6 @@ ASSIGNED {
     gna (mho/cm2)
     minf hinf
     mtau (ms) htau (ms)
-    qg ()  : computed q10 for gnabar based on q10g
     q10 ()
     
     }
@@ -65,8 +63,7 @@ LOCAL mexp, hexp
 
 BREAKPOINT {
 	SOLVE states METHOD cnexp
-    
-    gna = qg*gbar*(m^3)*h
+    gna = gbar*(m^3)*h
     ina = gna*(v - ena)
 }
 
@@ -90,7 +87,6 @@ LOCAL qt
 PROCEDURE rates(v) {  :Computes rate and other constants at current v.
                       :Call once from HOC to initialize inf at resting v.
 
-    qg = q10g^((celsius-22)/10 (degC))
 	q10 = q10tau^((celsius - 22)/10) : if you don't like room temp, it can be changed!
 
 : average sodium channel

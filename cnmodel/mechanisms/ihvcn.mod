@@ -23,7 +23,7 @@ NEURON {
     THREADSAFE
     SUFFIX ihvcn
     NONSPECIFIC_CURRENT i
-    RANGE gbar, gh, ih, eh, q10g
+    RANGE gbar, gh, i, eh
     GLOBAL rinf, rtau
 }
 
@@ -34,7 +34,6 @@ PARAMETER {
     dt (ms)
     gbar = 0.00318 (mho/cm2) <0,1e9>
     q10tau = 3.0
-    q10g = 2.0
 }
 
 STATE {
@@ -48,19 +47,17 @@ ASSIGNED {
     i (mA/cm2)
     rinf
     rtau (ms)
-    qg ()  : computed q10 for gnabar based on q10g
     q10 ()
 }
 
 BREAKPOINT {
     SOLVE states METHOD cnexp
 
-    gh = qg*gbar*r
+    gh = gbar*r
     i = gh*(v - eh)
 }
 
 INITIAL {
-    qg = q10g^((celsius-22)/10 (degC))
     q10 = q10tau^((celsius - 22)/10 (degC)) : if you don't like room temp, it can be changed!
     rates(v)
     r = rinf
