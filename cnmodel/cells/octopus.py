@@ -153,8 +153,8 @@ class OctopusRothman(Octopus, Cell):
         if nach == None:
             nach = 'jsrna'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': species, 'modelype': modelType, 'ttx': ttx, 'name': 'Octopus',
-                        'morphology': morphology, 'decorator': decorator}
+                       'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Octopus',
+                        'morphology': morphology, 'decorator': decorator, 'temperature': None}
         self.i_test_range = {'pulse': (-4.0, 4.0, 0.2)}
         self.spike_threshold = -50
         self.vrange = [-70., -57.]  # set a default vrange for searching for rmp
@@ -178,12 +178,18 @@ class OctopusRothman(Octopus, Cell):
             self.e_leak = -73. # from McGinley et al., 2016
             self.e_h = -38. # from McGinley et al. 
             self.R_a = 195  # McGinley et al. 
-            self.mechanisms = ['klt', 'kht', 'hcnobo', 'leak', nach]
+            if self.status['species'] == 'mouse':
+                self.mechanisms = ['klt', 'kht', 'hcnobo', 'leak', nach]
+            else:
+                self.mechanisms = ['klt', 'kht', 'ihvcn', 'leak', nach]
             for mech in self.mechanisms:
                 self.soma.insert(mech)
             self.soma.ek = self.e_k
             self.soma.ena = self.e_na
-            self.soma().hcnobo.eh = self.e_h
+            if self.status['species'] == 'mouse':
+                self.soma().hcnobo.eh = self.e_h
+            else:
+                self.soma().ihvcn.eh = self.e_h
             self.soma().leak.erev = self.e_leak
             self.soma.Ra = self.R_a
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
@@ -191,9 +197,7 @@ class OctopusRothman(Octopus, Cell):
             self.decorate()
 #        print 'Mechanisms inserted: ', self.mechanisms
         self.get_mechs(self.soma)
-        self.cell_initialize(vrange=self.vrange)
-        print 'soma area: ', self.somaarea
-        print 'soma cap: ', self.totcap
+#        self.cell_initialize(vrange=self.vrange)
         
         if debug:
             print "<< octopus: octopus cell model created >>"
@@ -220,16 +224,26 @@ class OctopusRothman(Octopus, Cell):
 
         if species == 'guineapig' and modelType =='II-o':
             self.set_soma_size_from_Cm(25.0)
-            self.print_soma_info()
-            self.adjust_na_chans(soma)
-            soma().kht.gbar = 0.0061  # nstomho(150.0, self.somaarea)  # 6.1 mmho/cm2
-            soma().klt.gbar = 0.0407  # nstomho(3196.0, self.somaarea)  #  40.7 mmho/cm2
-            soma().hcnobo.gbar = 0.0076  #nstomho(40.0, self.somaarea)  # 7.6 mmho/cm2, cf. Bal and Oertel, Spencer et al. 25 u dia cell
-            soma().leak.gbar = 0.0005  # nstomho(2.0, self.somaarea)
+            self._valid_temperatures = (22., 38.)
+            if self.status['temperature'] is None:
+                self.set_temperature(22.)
+            sf = 1.0
+            if self.status['temperature'] == 38.:  # adjust for 2003 model conductance levels at 38
+                sf = 3.03  # Q10 of 2, 22->38C. (p3106, R&M2003c)
+                # note that kinetics are scaled in the mod file.
+#            self.print_soma_info()
+            self.adjust_na_chans(soma, sf=sf)
+            soma().kht.gbar = sf*nstomho(150.0, self.somaarea)  # 6.1 mmho/cm2
+            soma().klt.gbar = sf*nstomho(3196.0, self.somaarea)  #  40.7 mmho/cm2
+            soma().ihvcn.gbar = sf*nstomho(40.0, self.somaarea)  # 7.6 mmho/cm2, cf. Bal and Oertel, Spencer et al. 25 u dia cell
+            soma().leak.gbar = sf*nstomho(2.0, self.somaarea)
             self.axonsf = 1.0
         elif species == 'mouse' and modelType =='II-o':
             self.set_soma_size_from_Cm(25.0)
-            self.print_soma_info()
+            self._valid_temperatures = (34., )
+            if self.status['temperature'] is None:
+                self.set_temperature(34.)
+#            self.print_soma_info()
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(150.0, self.somaarea)  # 6.1 mmho/cm2
             soma().klt.gbar = nstomho(3196.0, self.somaarea)  #  40.7 mmho/cm2
@@ -240,12 +254,13 @@ class OctopusRothman(Octopus, Cell):
             raise ValueError('Species "%s" or species-type "%s" is not recognized for octopus cells' %  (species, type))
         self.status['species'] = species
         self.status['modelType'] = modelType
-        self.cell_initialize(showinfo=True)
+#        self.cell_initialize(showinfo=True)
+        self.check_temperature()
         if not silent:
             print 'set cell as: ', species
             print ' with Vm rest = %6.3f' % self.vm0
 
-    def adjust_na_chans(self, soma, debug=False):
+    def adjust_na_chans(self, soma, sf=1.0, gbar=1000., debug=False):
         """
         adjust the sodium channel conductance
         Parameters
@@ -267,16 +282,16 @@ class OctopusRothman(Octopus, Cell):
         if self.status['ttx']:
             gnabar = 0.0
         else:
-            gnabar = nstomho(1000.0, self.somaarea)  # mmho/cm2 - 4244.1 moh - 4.2441
+            gnabar = sf* nstomho(gbar, self.somaarea)  # mmho/cm2 - 4244.1 moh - 4.2441
         nach = self.status['na']
         print 'nach: ', nach
         if nach == 'jsrna':
-            soma().jsrna.gbar = gnabar * 1
+            soma().jsrna.gbar = gnabar * 0.5
             soma.ena = self.e_na
             if debug:
                 print 'octopus using jsrna, gbar: ', soma().jsrna.gbar
         elif nach == 'nav11':
-            soma().nav11.gbar = gnabar * 0.5
+            soma().nav11.gbar = gnabar
             soma.ena = self.e_na
             soma().nav11.vsna = 4.3
             if debug:
@@ -345,7 +360,7 @@ class OctopusSpencer(Octopus, Cell):
             modelType = 'Spencer'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Octopus',
-                        'morphology': morphology, 'decorator': decorator}
+                        'morphology': morphology, 'decorator': decorator, 'temperature': None}
         self.i_test_range=(-4.0, 4.0, 0.2)
         self.spike_threshold = -50
         self.vrange = [-70., -57.]  # set a default vrange for searching for rmp
@@ -385,7 +400,7 @@ class OctopusSpencer(Octopus, Cell):
             self.decorated.channelValidate(self, verify=True)
 #        print 'Mechanisms inserted: ', self.mechanisms
         self.get_mechs(self.soma)
-        self.cell_initialize(vrange=self.vrange)
+#        self.cell_initialize(vrange=self.vrange)
         
         if debug:
             print "<< octopus: octopus cell model created >>"
@@ -430,8 +445,10 @@ class OctopusSpencer(Octopus, Cell):
             self.set_soma_size_from_Section(self.soma)
             totcap = self.totcap
             refarea = self.somaarea # totcap / self.c_m  # see above for units
-            self.print_soma_info()
-            
+#            self.print_soma_info()
+            self._valid_temperatures = (34., )
+            if self.status['temperature'] is None:
+                self.set_temperature(34.)            
             self.gBar = Params(nabar=0., #0.0407,  # S/cm2
                                nabar_ais=0., # 0.42441,
                                khtbar=0.0061,
@@ -465,8 +482,9 @@ class OctopusSpencer(Octopus, Cell):
 
         else:
             raise ValueError('model type %s is not implemented' % modelType)
+        self.check_temperature()
 
-    def species_scaling(self, species='guineapig', modelType='Spencer', silent=True):
+    def species_scaling(self, species='mouse', modelType='Spencer', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
         Used ONLY for point models.
@@ -484,22 +502,14 @@ class OctopusSpencer(Octopus, Cell):
             run silently (True) or verbosely (False)
         """
         soma = self.soma
-        # if species == 'mouse' and type == 'II-o':
-        #     # use conductance levels for a mouse
-        #     #print 'Mouse octopus cell'
-        #     self.set_soma_size_from_Cm(26.0)
-        #     self.adjust_na_chans(soma)
-        #     soma().kht.gbar = nstomho(58.0, self.somaarea)
-        #     soma().klt.gbar = nstomho(80.0, self.somaarea)
-        #     soma().hcno.gbar = nstomho(30.0, self.somaarea)
-        #     soma().leak.gbar = nstomho(2.0, self.somaarea)
-        #     self.vm0 = self.find_i0()
-        #     self.axonsf = 0.57
 
-        if species == 'guineapig' and modelType =='II-o':
+        if species == 'mouse' and modelType =='Spencer':
             self.set_soma_size_from_Cm(25.0)
+            self._valid_temperatures = (34., )
+            if self.status['temperature'] is None:
+                self.set_temperature(34.)
             self.print_soma_info()
-            self.adjust_na_chans(soma)
+#            self.adjust_na_chans(soma)
             soma().kht.gbar = 0.0061  # nstomho(150.0, self.somaarea)  # 6.1 mmho/cm2
             soma().klt.gbar = 0.0407  # nstomho(3196.0, self.somaarea)  #  40.7 mmho/cm2
             soma().hcnobo.gbar = 0.0076  #nstomho(40.0, self.somaarea)  # 7.6 mmho/cm2, cf. Bal and Oertel, Spencer et al. 25 u dia cell

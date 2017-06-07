@@ -113,6 +113,9 @@ class BushyRothman(Bushy):
             nach selects the type of sodium channel that will be used in the model. A channel mechanism
             by that name must exist. The default channel is set to 'nacn' (R&M03)
         
+        temperature : float (default: 22)
+            temperature to run the cell at. 
+                 
         ttx : Boolean (default: False)
             If ttx is True, then the sodium channel conductance is set to 0 everywhere in the cell.
             This flag duplicates the effects of tetrodotoxin in the model. Currently, the flag is not implemented.
@@ -149,10 +152,10 @@ class BushyRothman(Bushy):
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False, 'hillock': False, 
                        'initialsegment': False, 'myelinatedaxon': False, 'unmyelinatedaxon': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Bushy',
-                       'morphology': morphology, 'decorator': decorator}
+                       'morphology': morphology, 'decorator': decorator, 'temperature': None}
 
         self.spike_threshold = -40
-        self.vrange = [-70., -57.]  # set a default vrange for searching for rmp
+        self.vrange = [-70., -55.]  # set a default vrange for searching for rmp
         
         if morphology is None:
             """
@@ -184,7 +187,7 @@ class BushyRothman(Bushy):
             self.decorate()
 #        print 'Mechanisms inserted: ', self.mechanisms
         self.get_mechs(self.soma)
-        self.cell_initialize(vrange=self.vrange)
+#        self.cell_initialize(vrange=self.vrange)  # no need to do this just yet.
         if debug:
             print "   << Created cell >>"
 
@@ -193,6 +196,11 @@ class BushyRothman(Bushy):
         Adjust all of the conductances and the cell size according to the species requested.
         This scaling should be used ONLY for point models, as no other compartments
         are scaled.
+        
+        This scaling routine also sets the temperature for the model to a default value. Some models
+        can be run at multiple temperatures, and so a default from one of the temperatures is used.
+        The calling cell.set_temperature(newtemp) will change the conductances and reinitialize
+        the cell to the new temperature settings.
         
         Parameters
         ----------
@@ -216,21 +224,26 @@ class BushyRothman(Bushy):
             # conductances were not scaled for temperature (rates were)
             # so here we reset the default Q10's for conductance (g) to 1.0
             print '  Setting conductances for mouse II bushy cell, Xie and Manis, 2013'
+            self._valid_temperatures = (34., )
+            if self.status['temperature'] is None:
+                self.status['temperature'] = 34. 
             self.set_soma_size_from_Cm(26.0)
-            self.adjust_na_chans(soma)  # nav11 does not have q10g
+            self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(58.0, self.somaarea)
             soma().klt.gbar = nstomho(80.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(30.0, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
-            for q10g in [soma().kht.q10g, soma().klt.q10g, soma().ihvcn.q10g, soma().leak.q10g]:
-                 q10g = 2.0
             self.vrange = [-70., -55.]  # need to specify non-default range for convergence
             self.axonsf = 0.57
+            
         elif species == 'mouse' and modelType == 'II-I':
             # use typ0e II conductance levels from Cao et al.,  J. Neurophys., 2007. as 
             # indicated in Xie and Manis, 2013
             print '  Setting conductances for mouse II-I bushy cell, based on Xie and Manis, 2013'
             self.set_soma_size_from_Cm(26.0)
+            self._valid_temperatures = (34.,)
+            if self.status['temperature'] is None:
+                self.status['temperature'] =34. 
             self.adjust_na_chans(soma)
             soma().kht.gbar = nstomho(58.0, self.somaarea)
             soma().klt.gbar = nstomho(14.0, self.somaarea)  # same ratio as for guinea pig relative to type II
@@ -238,35 +251,43 @@ class BushyRothman(Bushy):
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             self.vrange = [-70., -55.]  # need to specify non-default range for convergence
             self.axonsf = 0.57
+            
         elif species == 'guineapig' and modelType =='II':
             print '  Setting conductances for guinea pig II bushy cell, Rothman and Manis, 2003'
+            self._valid_temperatures = (22., 38.)
+            if self.status['temperature'] is None:
+                self.status['temperature'] = 22. 
+            sf = 1.0
+            if self.status['temperature'] == 38.:  # adjust for 2003 model conductance levels at 38
+                sf = 2  # Q10 of 2, 22->38C. (p3106, R&M2003c)
+                # note that kinetics are scaled in the mod file.
             self.set_soma_size_from_Cm(12.0)
-            self.adjust_na_chans(soma)
-            soma().kht.gbar = nstomho(150.0, self.somaarea)
-            soma().klt.gbar = nstomho(200.0, self.somaarea)
-            soma().ihvcn.gbar = nstomho(20.0, self.somaarea)
-            soma().leak.gbar = nstomho(2.0, self.somaarea)
+            self.adjust_na_chans(soma, sf=sf)
+            soma().kht.gbar = sf*nstomho(150.0, self.somaarea)
+            soma().klt.gbar = sf*nstomho(200.0, self.somaarea)
+            soma().ihvcn.gbar = sf*nstomho(20.0, self.somaarea)
+            soma().leak.gbar = sf*nstomho(2.0, self.somaarea)
             self.axonsf = 0.57
+            
         elif species == 'guineapig' and modelType =='II-I':
             # guinea pig data from Rothman and Manis, 2003, type II=I
             print '  Setting conductances for guinea pig II-I bushy cell, Rothman and Manis, 2003'
+            self._valid_temperatures = (22., 38.)
+            if self.status['temperature'] is None:
+                self.status['temperature'] = 22. 
+            sf = 1.0
+            if self.status['temperature'] == 38.:  # adjust for 2003 model conductance levels at 38
+                sf = 3.03  # Q10 of 2, 22->38C. (p3106, R&M2003c)
+                # note that kinetics are scaled in the mod file.
             self.i_test_range = {'pulse': (-0.4, 0.4, 0.02)}
             self.set_soma_size_from_Cm(12.0)
-            self.adjust_na_chans(soma)
-            soma().kht.gbar = nstomho(150.0, self.somaarea)
-            soma().klt.gbar = nstomho(35.0, self.somaarea)
-            soma().ihvcn.gbar = nstomho(3.5, self.somaarea)
-            soma().leak.gbar = nstomho(2.0, self.somaarea)
+            self.adjust_na_chans(soma, sf=sf)
+            soma().kht.gbar = sf*nstomho(150.0, self.somaarea)
+            soma().klt.gbar = sf*nstomho(35.0, self.somaarea)
+            soma().ihvcn.gbar = sf*nstomho(3.5, self.somaarea)
+            soma().leak.gbar = sf*nstomho(2.0, self.somaarea)
             self.axonsf = 0.57
-        elif species == 'cat' and modelType == 'II':  # a cat is a big guinea pig
-            print '  Setting conductances for cat II bushy cell, based on Rothman and Manis, 2003'
-            self.set_soma_size_from_Cm(35.0)
-            self.adjust_na_chans(soma)
-            soma().kht.gbar = nstomho(150.0, self.somaarea)
-            soma().klt.gbar = nstomho(200.0, self.somaarea)
-            soma().ihvcn.gbar = nstomho(20.0, self.somaarea)
-            soma().leak.gbar = nstomho(2.0, self.somaarea)
-            self.axonsf = 1.0
+
         else:
             errmsg = 'Species "%s" or species-type "%s" is not recognized for Bushy cells' %  (species, modelType)
             errmsg += 'Valid species are: \n'
@@ -274,8 +295,11 @@ class BushyRothman(Bushy):
                 errmsg += '   %s\n' % s
             errmsg += '-'*40
             raise ValueError(errmsg)
+
         self.status['species'] = species
         self.status['modelType'] = modelType
+        self.check_temperature()
+#        self.cell_initialize(vrange=self.vrange)  # no need to do this just yet.
         if not silent:
            print ' set cell as: ', species
            print ' with Vm rest = %6.3f' % self.vm0
@@ -326,11 +350,18 @@ class BushyRothman(Bushy):
             # bushy Rothman-Manis, guinea pig type II
             # model gave cell conductance in nS, but we want S/cm^2 for NEURON
             # so conversion is 1e-9*nS = uS, and refarea is already in cm2
-            self.gBar = Params(nabar=1000.0E-9/refarea,
-                               khtbar=150.0E-9/refarea,
-                               kltbar=200.0E-9/refarea,
-                               ihbar=20.0E-9/refarea,
-                               leakbar=2.0E-9/refarea,
+            self._valid_temperatures = (22., 38.)
+            sf = 1.0
+            if self.status['temperature'] == None:
+                self.status['temperature'] = 22.
+            sf = 1.0
+            if self.status['temperature'] == 38:
+                sf = 3.03
+            self.gBar = Params(nabar=sf*1000.0E-9/refarea,
+                               khtbar=sf*150.0E-9/refarea,
+                               kltbar=sf*200.0E-9/refarea,
+                               ihbar=sf*20.0E-9/refarea,
+                               leakbar=sf*2.0E-9/refarea,
             )
             print 'RM03 gbar:\n', self.gBar.show()
             
@@ -365,6 +396,9 @@ class BushyRothman(Bushy):
             self.c_m = 0.9E-6  # default in units of F/cm^2
             totcap = 26.0E-12 # uF/cm2 
             refarea = totcap  / self.c_m  # see above for units
+            self._valid_temperatures = (34., )
+            if self.status['temperature'] == None:
+                self.status['temperature'] = 34.
             self.gBar = Params(nabar=1000.E-9/refarea,
                                khtbar=58.0E-9/refarea,
                                kltbar=80.0E-9/refarea,  # note doubled here... 
@@ -411,6 +445,9 @@ class BushyRothman(Bushy):
             #                    ihbar=0.25*30.0E-9/refarea,
             #                    leakbar=0.05*2.0E-9/refarea,  # was 0.5
             # )
+            self._valid_temperatures = (34.,)
+            if self.status['temperature'] == None:
+                self.status['temperature'] = 34.
             self.gBar = Params(nabar=1600.E-9/refarea,
                                khtbar=58.0E-9/refarea,
                                kltbar=40.0E-9/refarea,  # note doubled here... 
@@ -454,8 +491,9 @@ class BushyRothman(Bushy):
                             }
         else:
             raise ValueError('model type %s is not implemented' % modelType)
+        self.check_temperature()
 
-    def adjust_na_chans(self, soma, gbar=1000., debug=False):
+    def adjust_na_chans(self, soma, sf=1.0, gbar=1000., debug=False):
         """
         adjust the sodium channel conductance
         
@@ -480,7 +518,7 @@ class BushyRothman(Bushy):
         if self.status['ttx']:
             gnabar = 0.0
         else:
-            gnabar = nstomho(gbar, self.somaarea)
+            gnabar = nstomho(gbar, self.somaarea)*sf
         nach = self.status['na']
         if nach == 'jsrna':
             soma().jsrna.gbar = gnabar
@@ -488,7 +526,7 @@ class BushyRothman(Bushy):
             if debug:
                 print 'jsrna gbar: ', soma().jsrna.gbar
         elif nach == 'nav11':
-            soma().nav11.gbar = gnabar * 0.5  # (see Cells.py in EImodel)
+            soma().nav11.gbar = gnabar  # (see Cells.py in EImodel)
             soma.ena = self.e_na
             soma().nav11.vsna = 4.3
             if debug:

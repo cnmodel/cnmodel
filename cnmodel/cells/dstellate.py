@@ -169,7 +169,7 @@ class DStellateRothman(DStellate):
             nach = 'na'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'DStellate',
-                       'morphology': morphology, 'decorator': decorator}
+                       'morphology': morphology, 'decorator': decorator, 'temperature': None}
         self.i_test_range = {'pulse': [(-0.3, 0.3, 0.03), (-0.05, 0., 0.005)]}  # set range for ic command test
         self.vrange = [-75., -55.]
         if morphology is None:
@@ -201,7 +201,7 @@ class DStellateRothman(DStellate):
             self.decorate()
     #        print 'Mechanisms inserted: ', self.mechanisms
         self.get_mechs(self.soma)
-        self.cell_initialize(self.vrange)
+#        self.cell_initialize(self.vrange)
 
         if debug:
             print "<< D-stellate: JSR Stellate Type I-II cell model created >>"
@@ -227,6 +227,9 @@ class DStellateRothman(DStellate):
         soma = self.soma
         if species == 'mouse' and modelType == 'I-II':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
+            self._valid_temperatures = (34., )
+            if self.status['temperature'] is None:
+                self.set_temperature(34.)
             self.set_soma_size_from_Cm(25.0)
             self.adjust_na_chans(soma, gbar=1800.)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
@@ -236,32 +239,33 @@ class DStellateRothman(DStellate):
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             self.axonsf = 0.5
         elif species == 'guineapig' and modelType == 'I-II':  # values from R&M 2003, Type II-I
+            self._valid_temperatures = (22., 38.)
+            if self.status['temperature'] is None:
+                self.set_temperature(22.)
+            sf = 1.0
+            if self.status['temperature'] == 38.:  # adjust for 2003 model conductance levels at 38
+                sf = 3.03  # Q10 of 2, 22->38C. (p3106, R&M2003c)
+                self.i_test_range={'pulse': (-0.3, 0.3, 0.03)}
             self.set_soma_size_from_Cm(12.0)
-            self.adjust_na_chans(soma, gbar=1000.)
-            soma().kht.gbar = nstomho(150.0, self.somaarea)
-            soma().klt.gbar = nstomho(20.0, self.somaarea)
-            soma().ihvcn.gbar = nstomho(2.0, self.somaarea)
-            soma().leak.gbar = nstomho(2.0, self.somaarea)
+            self.adjust_na_chans(soma, gbar=1000., sf=sf)
+            soma().kht.gbar = sf*nstomho(150.0, self.somaarea)
+            soma().klt.gbar = sf*nstomho(20.0, self.somaarea)
+            soma().ihvcn.gbar = sf*nstomho(2.0, self.somaarea)
+            soma().leak.gbar = sf*nstomho(2.0, self.somaarea)
             self.axonsf = 0.5
-        elif species == 'cat' and modelType == 'I-II':  # a cat is a big guinea pig Type I
-            self.set_soma_size_from_Cm(35.0)
-            self.adjust_na_chans(soma)
-            soma().kht.gbar = nstomho(150.0, self.somaarea)
-            soma().klt.gbar = nstomho(20.0, self.somaarea)
-            soma().ihvcn.gbar = nstomho(2.0, self.somaarea)
-            soma().leak.gbar = nstomho(2.0, self.somaarea)
-            self.axonsf = 1.0
+
         else:
             raise ValueError('Species %s or species-modelType %s is not recognized for D-Stellate cells' %  (species, modelType))
         self.status['species'] = species
         self.status['modelType'] = modelType
-        self.cell_initialize(showinfo=False)
+        self.check_temperature()
+#        self.cell_initialize(showinfo=False)
         if not silent:
             print 'set cell as: ', species
             print ' with Vm rest = %6.3f' % self.vm0
 
 
-    def adjust_na_chans(self, soma, gbar=1000., debug=False):
+    def adjust_na_chans(self, soma, sf=1.0, gbar=1000., debug=False):
         """
         adjust the sodium channel conductance
         
@@ -284,7 +288,7 @@ class DStellateRothman(DStellate):
         if self.status['ttx']:
             gnabar = 0.0
         else:
-            gnabar = nstomho(gbar, self.somaarea)
+            gnabar = nstomho(gbar, self.somaarea)*sf
         nach = self.status['na']
         if nach == 'jsrna':
             soma().jsrna.gbar = gnabar

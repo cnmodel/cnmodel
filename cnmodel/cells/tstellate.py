@@ -93,7 +93,8 @@ class TStellateRothman(TStellate):
     VCN T-stellate base model.
     Rothman and Manis, 2003abc (Type I-c, Type I-t)
     """
-    def __init__(self, morphology=None, decorator=None, nach=None, ttx=False,
+    def __init__(self, morphology=None, decorator=None, nach=None,
+                ttx=False,
                 species='guineapig', modelType=None, debug=False):
         """
         Initialize a planar stellate (T-stellate) cell, using the default parameters for guinea pig from
@@ -144,14 +145,14 @@ class TStellateRothman(TStellate):
         if modelType == None:
             modelType = 'I-c'
         if nach == None and species == 'guineapig':
-            nach = 'na'
+            nach = 'nacn'
         if nach == None and species == 'mouse':
             nach = 'nav11'
             self.i_test_range={'pulse': (-1.0, 1.0, 0.05)}
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'TStellate',
-                       'morphology': morphology, 'decorator': decorator}
-        self.vrange = [-75., -60.]
+                       'morphology': morphology, 'decorator': decorator, 'temperature': None}
+        self.vrange = [-70., -40.]
         if morphology is None:
             """
             instantiate a basic soma-only ("point") model
@@ -192,6 +193,11 @@ class TStellateRothman(TStellate):
         Adjust all of the conductances and the cell size according to the species requested.
         Used ONLY for point models.
         
+        This scaling routine also sets the temperature for the model to a default value. Some models
+        can be run at multiple temperatures, and so a default from one of the temperatures is used.
+        The calling cell.set_temperature(newtemp) will change the conductances and reinitialize
+        the cell to the new temperature settings.
+        
         Parameters
         ----------
         species : string (default: 'guineapig')
@@ -213,6 +219,9 @@ class TStellateRothman(TStellate):
             print '  Setting Conductances for mouse I-c Tstellate cell, Xie and Manis, 2013'
             self.vrange = [-75., -55.]
             self.set_soma_size_from_Cm(25.0)
+            self._valid_temperatures = (34.,)
+            if self.status['temperature'] is None:
+                self.set_temperature(34.)
             #self.adjust_na_chans(soma, gbar=800.)
             self.e_k = -84.
             self.e_na = 50.
@@ -221,51 +230,57 @@ class TStellateRothman(TStellate):
             soma.ena = self.e_na
             soma.ek = self.e_k
             soma().kht.gbar = nstomho(250.0, self.somaarea)
-            soma().kht.q10g = 1.0 # no scaling of conductance
             soma().ka.gbar = nstomho(0.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(18.0, self.somaarea)
-            soma().ihvcn.q10g = 1.0
             soma().ihvcn.eh = -43 # Rodrigues and Oertel, 2006
             soma().leak.gbar = nstomho(8.0, self.somaarea)
-            soma().leak.q10g = 1.0
             soma().leak.erev = -65.0
             self.axonsf = 0.5
+            
         elif species == 'guineapig' and modelType == 'I-c':  # values from R&M 2003, Type I
             print '  Setting Conductances for Guinea Pig I-c, Rothman and Manis, 2003'
+            self.vrange = [-75., -55.]
             self.set_soma_size_from_Cm(12.0)
-            self.adjust_na_chans(soma)
-            soma().kht.gbar = nstomho(150.0, self.somaarea)
-            soma().ka.gbar = nstomho(0.0, self.somaarea)
-            soma().ihvcn.gbar = nstomho(0.5, self.somaarea)
-            soma().leak.gbar = nstomho(2.0, self.somaarea)
+            self._valid_temperatures = (22., 38.)
+            if self.status['temperature'] is None:
+                self.set_temperature(22.)
+            sf = 1.0
+            if self.status['temperature'] == 38.:  # adjust for 2003 model conductance levels at 38
+                sf = 3.03  # Q10 of 2, 22->38C. (p3106, R&M2003c)
+                # note that kinetics are scaled in the mod file.
+            self.adjust_na_chans(soma, sf=sf)
+            soma().kht.gbar = nstomho(150.0, self.somaarea)*sf
+            soma().ka.gbar = nstomho(0.0, self.somaarea)*sf
+            soma().ihvcn.gbar = nstomho(0.5, self.somaarea)*sf
+            soma().leak.gbar = nstomho(2.0, self.somaarea)*sf
             soma().leak.erev = -65.0
             self.axonsf = 0.5
+            
         elif species == 'guineapig' and modelType =='I-t':
             print '  Setting Conductances for Guinea Pig, I-t, Rothman and Manis, 2003'
             # guinea pig data from Rothman and Manis, 2003, type It
             self.set_soma_size_from_Cm(12.0)
-            self.adjust_na_chans(soma)
-            soma().kht.gbar = nstomho(80.0, self.somaarea)
-            soma().ka.gbar = nstomho(65.0, self.somaarea)
-            soma().ihvcn.gbar = nstomho(0.5, self.somaarea)
-            soma().leak.gbar = nstomho(2.0, self.somaarea)
+            self._valid_temperatures = (22., 38.)
+            if self.status['temperature'] is None:
+                self.set_temperature(22.)
+            sf = 1.0
+            if self.status['temperature'] == 38.:  # adjust for 2003 model conductance levels at 38
+                sf = 3.03  # Q10 of 2, 22->38C. (p3106, R&M2003c)
+                # note that kinetics are scaled in the mod file.
+            self.adjust_na_chans(soma, sf)
+            soma().kht.gbar = nstomho(80.0, self.somaarea)*sf
+            soma().ka.gbar = nstomho(65.0, self.somaarea)*sf
+            soma().ihvcn.gbar = nstomho(0.5, self.somaarea)*sf
+            soma().leak.gbar = nstomho(2.0, self.somaarea)*sf
             soma().leak.erev = -65.0
             self.axonsf = 0.5
-        elif species == 'cat' and modelType == 'I-c':  # a cat is a big guinea pig Type I
-            print '  Setting Conductances for Cat I-c, based on Rothman and Manis, 2003'
-            self.set_soma_size_from_Cm(30.0)
-            self.adjust_na_chans(soma)
-            soma().kht.gbar = nstomho(150.0, self.somaarea)
-            soma().ka.gbar = nstomho(0.0, self.somaarea)
-            soma().ihvcn.gbar = nstomho(0.5, self.somaarea)
-            soma().leak.gbar = nstomho(2.0, self.somaarea)
-            soma().leak.erev = -65.0
-            self.axonsf = 1.0
+
         else:
             raise ValueError('Species %s or species-type %s is not recognized for T-stellate cells' % (species, type))
 
         self.status['species'] = species
         self.status['modelType'] = modelType
+        self.check_temperature()
 
     def channel_manager(self, modelType='RM03'):
         """
@@ -304,12 +319,19 @@ class TStellateRothman(TStellate):
             totcap = 12.0E-12  # TStellate cell (type I) from Rothman and Manis, 2003, as base model
             refarea = totcap / self.c_m  # see above for units
             # Type I stellate Rothman and Manis, 2003c
-            self.gBar = Params(nabar=1000.0E-9/refarea,
-                               khtbar=150.0E-9/refarea,
-                               kltbar=0.0E-9/refarea,
-                               ihbar=0.5E-9/refarea,
-                               leakbar=2.0E-9/refarea,
+            self._valid_temperatures = (22., 38.)
+            if self.status['temperature'] is None:
+                self.set_temperature(22.)
+            sf = 1.0
+            if self.status['temperature'] == 38.:  # adjust for 2003 model conductance levels at 38
+                sf = 3.03  # Q10 of 2, 22->38C. (p3106, R&M2003c)
+            self.gBar = Params(nabar=sf*1000.0E-9/refarea,
+                               khtbar=sf*150.0E-9/refarea,
+                               kltbar=sf*0.0E-9/refarea,
+                               ihbar=sf*0.5E-9/refarea,
+                               leakbar=sf*2.0E-9/refarea,
             )
+            
             self.channelMap = {
                 'axon': {'nacn': 0.0, 'klt': 0., 'kht': self.gBar.khtbar,
                          'ihvcn': 0., 'leak': self.gBar.leakbar / 4.},
@@ -337,6 +359,9 @@ class TStellateRothman(TStellate):
         elif modelType  == 'XM13':
             totcap = 25.0E-12  # Base model from Xie and Manis, 2013 for type I stellate cell
             refarea = totcap / self.c_m  # see above for units
+            self._valid_temperatures = (34.,)
+            if self.status['temperature'] is None:
+                self.set_temperature(34.)
             self.gBar = Params(nabar=1800.0E-9/refarea,
                                khtbar=250.0E-9/refarea,
                                kltbar=0.0E-9/refarea,
@@ -375,6 +400,9 @@ class TStellateRothman(TStellate):
             # passive dendritestotcap = 26.0E-12 # uF/cm2 
             totcap = 26.0E-12 # uF/cm2 
             refarea = totcap  / self.c_m  # see above for units
+            self._valid_temperatures = (34.,)
+            if self.status['temperature'] is None:
+                self.set_temperature(34.)
             self.gBar = Params(nabar=1000.0E-9/refarea,
                                khtbar=150.0E-9/refarea,
                                kltbar=0.0E-9/refarea,
@@ -405,8 +433,9 @@ class TStellateRothman(TStellate):
                             }
         else:
             raise ValueError('model type %s is not implemented' % modelType)
+        self.check_temperature()
         
-    def adjust_na_chans(self, soma, gbar=1000., debug=False):
+    def adjust_na_chans(self, soma, sf=1.0, gbar=1000., debug=False):
         """
         Adjust the sodium channel conductance, depending on the type of conductance
         
@@ -427,10 +456,10 @@ class TStellateRothman(TStellate):
         if self.status['ttx']:
             gnabar = 0.0
         else:
-            gnabar = nstomho(gbar, self.somaarea)
+            gnabar = nstomho(gbar, self.somaarea)*sf
         nach = self.status['na']
         if nach == 'jsrna':
-            soma().jsrna.gbar = gnabar
+            soma().jsrna.gbar = gnabar*sf
             soma.ena = self.e_na
             if debug:
                 print 'jsrna gbar: ', soma().jsrna.gbar

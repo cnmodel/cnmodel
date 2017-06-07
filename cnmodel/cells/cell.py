@@ -10,6 +10,31 @@ from .. import data
 from .. import morphology
 from .. import decorator
 
+def custom_init(vinit=-60.):
+    """
+    perform a custom initialization of the current section to vinit
+    """
+    initdur = 1e6
+    tdt = h.dt
+    dtstep = 1e3
+    h.finitialize()
+    h.t = -initdur
+    tmp = h.cvode.active()
+    if tmp != 0:
+        h.cvode.active(0)
+    h.dt = dtstep
+    while h.t < 0:
+        h.fadvance()
+    if tmp != 0:
+        h.cvode.active(1)
+    h.t = 0
+    if h.cvode.active():
+        h.cvode.re_init()
+    else:
+        h.fcurrent()
+    h.frecord_init()
+    h.dt = tdt
+    h.fcurrent()
 
 class Cell(object):
     """
@@ -58,7 +83,6 @@ class Cell(object):
         self.c_m = 0.9  # specific membrane capacitance,  uf/cm^2
         self.R_a = 150  # axial resistivity of cytoplasm/axoplasm, ohm.cm
         self.e_leak = -65
-
         # Recommended current (min, max, step) for testing this cell
         self.i_test_range=(-0.5, 0.5, 0.05)
         
@@ -69,6 +93,25 @@ class Cell(object):
         # self.find_i0()
         self.vm0 = None
 
+    def check_temperature(self):
+        if self.status['temperature'] not in self._valid_temperatures:
+            tstring = ', '.join('%3.1f ' % t for t in self._valid_temperatures)
+            raise ValueError('Bushy %s %s temperature %3.1f is invalid; must be in: [%s]' %
+                 (self.status['species'], self.status['modelType'], self.status['temperature'], tstring))
+
+    def set_temperature(self, temperature):
+        """
+        Set the temperature setting for this cell. 
+        """
+        if self.status['decorator'] is None:
+            self.status['temperature'] = temperature
+            species = self.status['species']
+            modelType = self.status['modelType']
+            self.species_scaling(species=species, modelType=modelType)
+        else:
+            self.status['temperature'] = temperature
+            self.decorate()  # call the decorator
+            
     def set_morphology(self, morphology_file=None):
         """
         Set the cell's morphological structure from a file that defines sections
@@ -459,8 +502,10 @@ class Cell(object):
         for part in self.all_sections.keys():
             for sec in self.all_sections[part]:
                 sec.v = V
+        h.celsius = self.status['temperature']
         h.t = 0.
-        h.finitialize()  # force variables to steady-state values in mod file
+        #h.finitialize()  # force variables to steady-state values in mod file
+        custom_init()
         self.ix = {}
 
         if 'na' in self.mechanisms:
@@ -473,6 +518,8 @@ class Cell(object):
             self.ix['jsrna'] = self.soma().jsrna.gna*(V - self.soma().ena)
         if 'nav11' in self.mechanisms:
             self.ix['nav11'] = self.soma().nav11.gna*(V - self.soma().ena)
+        if 'nacn' in self.mechanisms:
+            self.ix['nacn'] = self.soma().nacn.gna*(V - self.soma().ena)
         if 'nacncoop' in self.mechanisms:
             self.ix['nacncoop'] = self.soma().nacncoop.gna*(V - self.soma().ena)
         if 'klt' in self.mechanisms:
@@ -515,8 +562,12 @@ class Cell(object):
         """
         if vrange is None:
              vrange = self.vrange
+        # print( vrange)
+        # print (self.i_currents(V=vrange[0]), self.i_currents(V=vrange[1]))
+        # v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1], maxiter=10000)
+        # print( 'v0: ', v0)
         try:
-            v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1], maxiter=5000)
+            v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1], maxiter=10000)
         except:
             print('find i0 failed:')
             print(self.ix)

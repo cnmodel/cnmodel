@@ -189,23 +189,18 @@ class IVCurve(Protocol):
         playvector.play(istim._ref_i, h.dt, 0, sec=self.cell.soma)
 
         # GO
-        h('secondorder=0')  # direct call fails; let hoc do the work
-        h.dt = self.dt
-        h.celsius = self.temp
+        # h('secondorder=0')  # direct call fails; let hoc do the work
+        h.celsius = self.cell.status['temperature']
+        self.cell.cell_initialize()
         h.tstop = self.tend
-        self.cell.vm0 = None
-        self.cell.cell_initialize()  # initialize the cell to it's rmp
-        if initflag:
-            self.custom_init()
-            r = self.cell.compute_rmrintau(auto_initialize=False)
-            Rin, tau, v = r['Rin'], r['tau'], r['v']
-            print '    *** Rin: %9.0f  tau: %9.1f   v: %6.1f' % (Rin, tau, v)
-
-        self.cell.vm0 = None
-        self.cell.cell_initialize()  # initialize the cell to it's rmp
+        h.dt = self.dt
         self.custom_init()
-        while h.t < h.tstop:
-           h.fadvance()
+        h.t = 0.
+        h.tstop = self.tend
+        # while h.t < h.tstop:
+       #      h.fadvance()
+        h.batch_save() # save nothing
+        h.batch_run(h.tstop, h.dt, "v.dat")
 
         k1 = int(stim['delay']/h.dt - 1)
 #            print ('   V before step: {0:9.5f}'.format(self['v_soma'][k1]))
@@ -440,18 +435,24 @@ class IVCurve(Protocol):
             fits.append(fit)
             fit_inds.append(i)
         # convert fits to record array
-        dtype = [(k, float) for k in fits[0].params] + [('index', int)]
-        fit_data = np.empty(len(fits), dtype=dtype)
-        for i, fit in enumerate(fits):
-            for k,v in fit.params.items():
-                fit_data[i][k] = v.value
-            fit_data[i]['index'] = fit_inds[i]
+        print len(fits) # fits[0].params
+        if len(fits) > 0:
+            dtype = [(k, float) for k in fits[0].params] + [('index', int)]
+            fit_data = np.empty(len(fits), dtype=dtype)
+            for i, fit in enumerate(fits):
+                for k,v in fit.params.items():
+                    fit_data[i][k] = v.value
+                fit_data[i]['index'] = fit_inds[i]
         
-        if 'tau' in fit_data.dtype.fields:
-            tau = fit_data['tau'].mean()
+            if 'tau' in fit_data.dtype.fields:
+                tau = fit_data['tau'].mean()
+            else:
+                tau = fit_data['tau1'].mean()
         else:
-            tau = fit_data['tau1'].mean()
-        
+            slope = 0.
+            intercept = 0.
+            tau = 0.
+            fit_data = []
         ret = {'slope': slope, 
                 'intercept': intercept,
                 'tau': tau,
@@ -462,7 +463,7 @@ class IVCurve(Protocol):
         else:
             return ret
 
-    def show(self, cell=None):
+    def show(self, cell=None, rmponly=False):
         """
         Plot results from run_iv()
         
@@ -512,7 +513,8 @@ class IVCurve(Protocol):
             Vplot.plot(t, Vm[i], pen=colors[i])
             Iplot.plot(t, Iinj[i], pen=colors[i])
 
-
+        if rmponly:
+            return
         # I/V relationships
         IVplot.plot(Icmd, self.peak_vm(), symbol='o', symbolBrush=(50, 150, 50, 255), symbolSize=4.0)
         IVplot.plot(Icmd, self.steady_vm(), symbol='s', symbolSize=4.0)

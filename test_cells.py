@@ -35,10 +35,10 @@ cellinfo = {'types': ['bushy', 'bushycoop', 'stellate', 'stellatenav11', 'dstell
 # Format for ivranges is list of tuples. This allows finer increments in selected ranges, such as close to rest
 ccivrange = {'bushy': {'pulse': [(-0.5, 0.5, 0.01)]},
              'bushycoop': {'pulse': [(-0.5, 0.5, 0.01)]},
-            'stellate': {'pulse': [(-1, 1, 0.1), (-0.015, 0, 0.005)]},
+            'stellate': {'pulse': [(-0.3, 0.301, 0.025), (-0.015, 0, 0.005)]},
             'stellatenav11': {'pulse': [(-0.5, 1., 0.1)]}, # , (-0.015, 0, 0.005)]},
             'steldend': {'pulse': [(-1.0, 1.0, 0.1)]},
-            'dstellate': {'pulse': [(-0.2, 0.2, 0.0125)]},
+            'dstellate': {'pulse': [(-0.3, 0.301, 0.015)]},
             'dstellateeager': {'pulse': [(-0.6, 1.0, 0.025)]},
             'sgc': {'pulse': [(-0.3, 0.3, 0.01)]},
             'cartwheel': {'pulse': [(-0.2, 0.1, 0.02)]},
@@ -131,6 +131,11 @@ class Tests():
              cell = cells.TStellate.create(model='RM03', species=args.species, modelType=args.type,
                  nach=args.nav, ttx=args.ttx, debug=debugFlag)
 
+        elif args.celltype == 'stellate' and args.morphology == 'stick':
+             cell = cells.TStellate.create(model='RM03', species=args.species, modelType=args.type,
+                 nach=args.nav, ttx=args.ttx, debug=debugFlag, 
+                 morphology='cnmodel/morphology/tstellate_stick.hoc', decorator=True)
+
         elif args.celltype == 'stellatenav11' and args.morphology == 'point':  # note this uses a different model...
             print 'test_cells: Stellate NAV11'
             cell = cells.TStellateNav11.create(model='Nav11', species=args.species, modelType=None,
@@ -207,6 +212,8 @@ class Tests():
         args : argparse args from command line
         
         """
+        self.cell.set_temperature(float(args.temp))
+        # print self.cell.status
         V0 = self.cell.find_i0(showinfo=True)
         self.cell.cell_initialize()
         print 'Currents at nominal Vrest= %.2f I = 0: I = %g ' % (V0, self.cell.i_currents(V=V0))
@@ -219,6 +226,13 @@ class Tests():
             ret = self.iv.input_resistance_tau()
             print('    From IV: Rin = {:7.1f}  Tau = {:7.1f}  Vm = {:7.1f}'.format(ret['slope'], ret['tau'], ret['intercept']))
             self.iv.show(cell=self.cell)
+
+        elif args.rmp is True:
+            print self.cell.status['temperature']
+            self.iv = IVCurve()
+            self.iv.run({'pulse': (0, 0, 1)}, self.cell, durs=default_durs,
+                   sites=sites, reppulse=ptype, temp=float(args.temp))
+            self.iv.show(cell=self.cell, rmponly=True)
 
         elif args.vc is True:
             # define the voltage clamp electrode and default settings
@@ -253,6 +267,9 @@ if __name__ == '__main__':
         help="Run in voltage clamp mode")
     clampgroup.add_argument('--cc', action='store_true',
         help="Run in current clamp mode")
+    clampgroup.add_argument('--rmp', action='store_true',
+        help="Run to get RMP in current clamp mode")
+
 
     args = parser.parse_args()
     if args.celltype not in cellinfo['types']:
