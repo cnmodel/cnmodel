@@ -10,31 +10,6 @@ from .. import data
 from .. import morphology
 from .. import decorator
 
-def custom_init(vinit=-60.):
-    """
-    perform a custom initialization of the current section to vinit
-    """
-    initdur = 1e6
-    tdt = h.dt
-    dtstep = 1e3
-    h.finitialize()
-    h.t = -initdur
-    tmp = h.cvode.active()
-    if tmp != 0:
-        h.cvode.active(0)
-    h.dt = dtstep
-    while h.t < 0:
-        h.fadvance()
-    if tmp != 0:
-        h.cvode.active(1)
-    h.t = 0
-    if h.cvode.active():
-        h.cvode.re_init()
-    else:
-        h.fcurrent()
-    h.frecord_init()
-    h.dt = tdt
-    h.fcurrent()
 
 class Cell(object):
     """
@@ -201,6 +176,7 @@ class Cell(object):
             if sec in self.all_sections[s]:
                 return s
         return None
+
 
     def set_d_lambda(self, freq=100, d_lambda=0.1):
         """
@@ -489,14 +465,61 @@ class Cell(object):
                     gx = eval('sec().'+m+'.gbar')
                     print('            %s: %f' % (m, gx))
 
+    def custom_init(self, v_init=-60.):
+        """
+        Perform a custom initialization of the current model/section. 
+        
+        This initialization follows the scheme outlined in the
+        NEURON book, 8.4.2, p 197 for initializing to steady state.
+        
+        N.B.: For a complex model with dendrites/axons and different channels,
+        this initialization will not find the steady-state the whole cell,
+        leading to initial transient currents. In that case, this initialization
+        should be followed with a 0.1-5 second run (depends on the rates in the
+        various channel mechanisms) with no current injection or active point
+        processes to allow the system to settle to a steady- state. Use either
+        h.svstate or h.batch_save to save states and restore them. Batch is
+        preferred
+
+        Parameters
+        ----------
+        v_init : float (default: -60 mV)
+            Voltage to start the initialization process. This should
+            be close to the expected resting state.
+        """
+        initdur = 1e10
+        tdt = h.dt  # save current step size
+        dtstep = 1e9
+        h.finitialize(v_init) 
+        h.t = -initdur  # set time to large negative value (avoid activating
+                        # point processes, we hope)
+        tmp = h.cvode.active()  # check state of variable step integrator
+        if tmp != 0:   # turn off CVode variable step integrator if it was active
+            h.cvode.active(0)  # now just use backward Euler with large step
+        h.dt = dtstep
+        while h.t < -1e9:  # Step forward
+            h.fadvance()
+        if tmp != 0:
+            h.cvode.active(1)  # restore integrator
+        h.t = 0
+        if h.cvode.active():
+            h.cvode.re_init()  # update d(state)/dt and currents
+        else:
+            h.fcurrent()  # recalculate currents
+        h.frecord_init()  # save new state variables
+        h.dt = tdt  # restore original time step
+        # h.fcurrent()  # one more time (not necessary...)
+        
+        
     def i_currents(self, V):
         """
         For the steady-state case, return the total current at voltage V
         Used to find the zero current point
         vrange brackets the interval
-        Implemented here are the basic known mechanisms; if you add more
-        mechanisms, they will need to be accomadated in this routine.
-        This function could be replaced for specific cell types.
+        Implemented here are the basic known mechanisms. If you add or need
+        more mechanisms, they either need to be accomadated in this routine,
+        or this routine needs to be implemented (overridden) in the
+        specific cell class. 
         
         """
         for part in self.all_sections.keys():
@@ -504,8 +527,7 @@ class Cell(object):
                 sec.v = V
         h.celsius = self.status['temperature']
         h.t = 0.
-        #h.finitialize()  # force variables to steady-state values in mod file
-        custom_init()
+        self.custom_init(V)
         self.ix = {}
 
         if 'na' in self.mechanisms:
@@ -575,7 +597,7 @@ class Cell(object):
             i1 = self.i_currents(V=vrange[1])
             ivi = []
             ivv = []
-            for v in np.arange(vrange[0], vrange[1], 1.):
+            for v in np.arange(vrange[0], vrange[1], 0.5):
                 ivi.append(self.i_currents(V=v))
                 ivv.append(v)
             print ('iv: ')

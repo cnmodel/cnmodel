@@ -286,7 +286,7 @@ class OctopusRothman(Octopus, Cell):
         nach = self.status['na']
         print 'nach: ', nach
         if nach == 'jsrna':
-            soma().jsrna.gbar = gnabar * 0.5
+            soma().jsrna.gbar = gnabar
             soma.ena = self.e_na
             if debug:
                 print 'octopus using jsrna, gbar: ', soma().jsrna.gbar
@@ -332,7 +332,7 @@ class OctopusSpencer(Octopus, Cell):
             rest of the structure is "bare".
         
         nach : string (default: 'na')
-            nach selects the type of sodium channel that will be used in the model. A channel mechanims
+            nach selects the type of sodium channel that will be used in the model. A channel mechanism
             by that name must exist. 
         
         ttx : Boolean (default: False)
@@ -361,9 +361,9 @@ class OctopusSpencer(Octopus, Cell):
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Octopus',
                         'morphology': morphology, 'decorator': decorator, 'temperature': None}
-        self.i_test_range=(-4.0, 4.0, 0.2)
+        self.i_test_range=(-4.0, 6.0, 0.25)
         self.spike_threshold = -50
-        self.vrange = [-70., -57.]  # set a default vrange for searching for rmp
+        self.vrange = [-75., -63.]  # set a default vrange for searching for rmp
         
         if morphology is None:
             """
@@ -438,47 +438,65 @@ class OctopusSpencer(Octopus, Cell):
         
         #
         # Create a model based on the Spencer model
-        # 6
+        # Channel decoration and stick model from Figure 2
+        # densities from Tables 2 and 3
         if modelType == 'Spencer':
 #            print self.c_m
             self.c_m = 0.9
-            self.set_soma_size_from_Section(self.soma)
+#            self.set_soma_size_from_Section(self.soma)
             totcap = self.totcap
             refarea = self.somaarea # totcap / self.c_m  # see above for units
 #            self.print_soma_info()
-            self._valid_temperatures = (34., )
+            self._valid_temperatures = (34., )  # 34 for consistency with other mouse models, but
+                                                # Spencer data used "33". This affects very slightly
+                                                # the HCN channel conductance.
             if self.status['temperature'] is None:
                 self.set_temperature(34.)            
             self.gBar = Params(nabar=0., #0.0407,  # S/cm2
-                               nabar_ais=0., # 0.42441,
-                               khtbar=0.0061,
-                               khtbar_hillock=0.0061,
-                               khtbar_dend=0.0061,
-                               kltbar=0.0407,
+                               nabar_ais=0.42441,
+                               kltbar_ais=0.,
+                               khtbar_ais=0.,
+                               ihbar_ais=0.,
+                               kltbar_soma=0.0407,
+                               khtbar_soma=0.0061,
+                               ihbar_soma=0.0076,
                                kltbar_dend=0.0027,
-                               kltbar_hillock=0.0407,
-                               ihbar=0.0076,
+                               khtbar_dend=0.0,
                                ihbar_dend=0.0006,
-                               leakbar=0.0002,
+                               khtbar_hillock=0.0,
+                               kltbar_hillock=0.0,
+                               ihbar_hillock=0.,
+                               leakbar=0.0020,
             )
             
             self.channelMap = {
-                # 'axon': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
-                #          'leak': self.gBar.leakbar / 2.},
-                'hillock': {'jsrna': 0., 'klt': self.gBar.kltbar_hillock, 'kht': self.gBar.khtbar_hillock, 'ihvcn': 0.,
+                'soma': {'jsrna': self.gBar.nabar, 'klt': self.gBar.kltbar_soma, 'kht': self.gBar.khtbar_soma,
+                         'hcnobo': self.gBar.ihbar_soma, 'leak': self.gBar.leakbar, },
+                'hillock': {'jsrna': 0., 'klt': self.gBar.kltbar_hillock, 'kht': self.gBar.khtbar_hillock,
+                            'hcnobo': self.gBar.ihbar_hillock,
                             'leak': self.gBar.leakbar, },
-                # initial segment:
-                'unmyelinatedaxon': {'jsrna': self.gBar.nabar_ais, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
-                            'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
-                'soma': {'jsrna': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
-                         'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
-                'primarydendrite': {'jsrna': self.gBar.nabar*0., 'klt': self.gBar.kltbar_dend, 'kht': self.gBar.khtbar * 0.,
-                         'ihvcn': self.gBar.ihbar_dend, 'leak': self.gBar.leakbar, },
+                # axon initial segment:
+                'unmyelinatedaxon': {'jsrna': self.gBar.nabar_ais, 'klt': self.gBar.kltbar_ais, 'kht': self.gBar.khtbar_ais,
+                            'hcnobo': self.gBar.ihbar_ais, 'leak': self.gBar.leakbar, },
+                'primarydendrite': {'jsrna': 0., 'klt': self.gBar.kltbar_dend, 'kht': self.gBar.khtbar_dend,
+                         'hcnobo': self.gBar.ihbar_dend, 'leak': self.gBar.leakbar, },
             }
-            self.distMap = {'primardendrite': {'klt': {'gradient': 'flat', 'gminf': 0., 'lambda': 100.},
+            
+            self.distMap = {'primarydendrite': {'klt': {'gradient': 'flat', 'gminf': 0., 'lambda': 100.},
                                      'kht': {'gradient': 'flat', 'gminf': 0., 'lambda': 100.},
-                                     'ihvcn': {'gradient': 'flat', 'gminf': 0., 'lambda': 100.}}, # all flat with distance
+                                     'hcnobo': {'gradient': 'flat', 'gminf': 0., 'lambda': 100.}}, # all flat with distance
                             }
+            # reversal potential map
+            self.channelErevMap = {
+                'soma': {'jsrna': 55., 'klt': -70, 'kht': -70,
+                         'hcnobo': -38, 'leak': -62., },
+                'hillock': {'jsrna': 55., 'klt': -70, 'kht': -70,
+                         'hcnobo': -38, 'leak': -62., },
+                'unmyelinatedaxon': {'jsrna': 55., 'klt': -70, 'kht': -70,
+                         'hcnobo': -38, 'leak': -62., },
+                'primarydendrite': {'jsrna': 55., 'klt': -70, 'kht': -70,
+                         'hcnobo': -38, 'leak': -62., },
+            }
 
         else:
             raise ValueError('model type %s is not implemented' % modelType)
@@ -504,16 +522,17 @@ class OctopusSpencer(Octopus, Cell):
         soma = self.soma
 
         if species == 'mouse' and modelType =='Spencer':
+            print('Octopus: Mouse, Spencer point model - not a valid model')
             self.set_soma_size_from_Cm(25.0)
             self._valid_temperatures = (34., )
             if self.status['temperature'] is None:
                 self.set_temperature(34.)
             self.print_soma_info()
 #            self.adjust_na_chans(soma)
-            soma().kht.gbar = 0.0061  # nstomho(150.0, self.somaarea)  # 6.1 mmho/cm2
-            soma().klt.gbar = 0.0407  # nstomho(3196.0, self.somaarea)  #  40.7 mmho/cm2
-            soma().hcnobo.gbar = 0.0076  #nstomho(40.0, self.somaarea)  # 7.6 mmho/cm2, cf. Bal and Oertel, Spencer et al. 25 u dia cell
-            soma().leak.gbar = 0.0005  # nstomho(2.0, self.somaarea)
+            # soma().kht.gbar = 0.0061  # nstomho(150.0, self.somaarea)  # 6.1 mmho/cm2
+            # soma().klt.gbar = 0.0407  # nstomho(3196.0, self.somaarea)  #  40.7 mmho/cm2
+            # soma().hcnobo.gbar = 0.0076  #nstomho(40.0, self.somaarea)  # 7.6 mmho/cm2, cf. Bal and Oertel, Spencer et al. 25 u dia cell
+            # soma().leak.gbar = 0.0005  # nstomho(2.0, self.somaarea)
             self.axonsf = 1.0
         else:
             raise ValueError('Species "%s" or species-type "%s" is not recognized for octopus cells' %  (species, type))

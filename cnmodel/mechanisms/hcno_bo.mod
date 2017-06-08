@@ -58,15 +58,16 @@ ASSIGNED {
 STATE { h1 h2 }
 
 BREAKPOINT {
-    SOLVE states METHOD derivimplicit
-    gh = q10*gbar*(h1*frac + h2*(1.0-frac))
+    SOLVE states METHOD cnexp
+    : SOLVE states METHOD derivimplicit
+    gh = gbar*(h1*frac + h2*(1.0-frac))
     i = gh * (v - eh)
 } 
 
 INITIAL {
     ct = 1e-3*zeta1*F/(R*(c0+celsius))
     
-    q10 = q10tau^((celsius - 33.0)/10.0 (degC)) : if you don't like room temp, it can be changed!
+    q10 = q10tau^((celsius - 33.0)/10.0 (degC)) : Measurements at 33
     rates(v)
     h1=hinf
     h2=hinf
