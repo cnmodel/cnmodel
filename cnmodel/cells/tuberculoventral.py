@@ -129,7 +129,7 @@ class Tuberculoventral(Tuberculoventral):
             
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Tuberculoventral',
-                       'morphology': morphology, 'decorator': decorator}
+                       'morphology': morphology, 'decorator': decorator, 'temperature': None}
 
         self.i_test_range = {'pulse': (-0.4, 0.6, 0.02)}
         self.vrange = [-80., -60.]  # set a default vrange for searching for rmp
@@ -165,7 +165,7 @@ class Tuberculoventral(Tuberculoventral):
 #        print 'Mechanisms inserted: ', self.mechanisms
         
         self.get_mechs(self.soma)
-        self.cell_initialize(vrange=self.vrange)
+#        self.cell_initialize(vrange=self.vrange)
         if debug:
                 print "<< Tuberculoventral cell model created >>"
 
@@ -200,6 +200,9 @@ class Tuberculoventral(Tuberculoventral):
             print 'decorate as TVmouse'
             self.vrange=[-80., -50.]
             self.set_soma_size_from_Cm(35.0)
+            self._valid_temperatures = (34.,)
+            if self.status['temperature'] is None:
+                self.set_temperature(34.)
             self.adjust_na_chans(soma, gbar=8000.)
             soma().kht.gbar = nstomho(2000.0, self.somaarea)
             soma().ka.gbar = nstomho(65.0, self.somaarea)
@@ -213,10 +216,8 @@ class Tuberculoventral(Tuberculoventral):
 
         self.status['species'] = species
         self.status['modelType'] = modelType
-        # self.cell_initialize(showinfo=False)
-        # if not silent:
-        #     print 'set cell as: ', species
-        #     print ' with Vm rest = %f' % self.vm0
+        self.check_temperature()
+
 
     def channel_manager(self, modelType='RM03'):
         """

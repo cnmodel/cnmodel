@@ -234,8 +234,8 @@ class OctopusRothman(Octopus, Cell):
 #            self.print_soma_info()
             self.adjust_na_chans(soma, sf=sf)
             soma().kht.gbar = sf*nstomho(150.0, self.somaarea)  # 6.1 mmho/cm2
-            soma().klt.gbar = sf*nstomho(3196.0, self.somaarea)  #  40.7 mmho/cm2
-            soma().ihvcn.gbar = sf*nstomho(40.0, self.somaarea)  # 7.6 mmho/cm2, cf. Bal and Oertel, Spencer et al. 25 u dia cell
+            soma().klt.gbar = sf*nstomho(1000.0, self.somaarea)  #  40.7 mmho/cm2  3195?
+            soma().ihvcn.gbar = sf*nstomho(30.0, self.somaarea)  # 7.6 mmho/cm2, cf. Bal and Oertel, Spencer et al. 25 u dia cell 40ns?
             soma().leak.gbar = sf*nstomho(2.0, self.somaarea)
             self.axonsf = 1.0
         elif species == 'mouse' and modelType =='II-o':
