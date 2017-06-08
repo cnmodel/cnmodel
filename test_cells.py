@@ -26,7 +26,7 @@ default_durs = [10., 100., 20.]
 cclamp = False
 
 cellinfo = {'types': ['bushy', 'bushycoop', 'stellate', 'stellatenav11', 'dstellate', 'dstellateeager', 'sgc',
-                        'cartwheel', 'pyramidal', 'octopus', 'tuberculoventral'],
+                      'cartwheel', 'pyramidal', 'octopus', 'tuberculoventral'],
             'morphology': ['point', 'waxon', 'stick'],
             'nav': ['std', 'jsrna', 'nav11', 'nacncoop'],
             'species': ['guineapig', 'cat', 'rat', 'mouse'],
@@ -35,7 +35,7 @@ cellinfo = {'types': ['bushy', 'bushycoop', 'stellate', 'stellatenav11', 'dstell
 # Format for ivranges is list of tuples. This allows finer increments in selected ranges, such as close to rest
 ccivrange = {'bushy': {'pulse': [(-0.5, 0.5, 0.01)]},
              'bushycoop': {'pulse': [(-0.5, 0.5, 0.01)]},
-            'stellate': {'pulse': [(-0.3, 0.301, 0.025), (-0.015, 0, 0.005)]},
+            'stellate': {'pulse': [(-1., 1.01, 0.05), (-0.015, 0, 0.005)]},
             'stellatenav11': {'pulse': [(-0.5, 1., 0.1)]}, # , (-0.015, 0, 0.005)]},
             'steldend': {'pulse': [(-1.0, 1.0, 0.1)]},
             'dstellate': {'pulse': [(-0.3, 0.301, 0.015)]},
@@ -44,7 +44,7 @@ ccivrange = {'bushy': {'pulse': [(-0.5, 0.5, 0.01)]},
             'cartwheel': {'pulse': [(-0.2, 0.1, 0.02)]},
             'pyramidal': {'pulse': [(-0.3, 0.3, 0.025), (-0.040, 0.025, 0.005)], 'prepulse': [(-0.25, -0.25, 0.25)]},
             'tuberculoventral': {'pulse': [(-0.35, 1.0, 0.05), (-0.040, 0.01, 0.005)]},
-            'octopus': {'pulse': [(-2., 4., 0.2)]},
+            'octopus': {'pulse': [(-2., 6., 0.2)]},
             }
 
 # scales holds some default scaling to use in the cciv plots
@@ -151,11 +151,11 @@ class Tests():
         # Octopus cell tests
         #
         elif args.celltype == 'octopus' and args.morphology == 'point':
-            cell = cells.Octopus.create(species=args.species, modelType=args.type,
+            cell = cells.Octopus.create(species=args.species, modelType='RM03', # args.type,
                 nach=args.nav, ttx=args.ttx, debug=debugFlag)
 
-        elif args.celltype == 'octopus' and args.morphology == 'stick':
-            cell = cells.Octopus.create(model='Spencer', species=args.species, modelType=args.type,
+        elif args.celltype == 'octopus' and args.morphology == 'stick':  # Go to spencer et al. model
+            cell = cells.Octopus.create(modelType='Spencer', species=args.species,
                 morphology='cnmodel/morphology/octopus_spencer_stick.hoc', decorator=True,
                 nach=args.nav, ttx=args.ttx, debug=debugFlag)
             h.topology()

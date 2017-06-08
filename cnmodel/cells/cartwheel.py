@@ -138,7 +138,7 @@ class CartwheelDefault(Cartwheel, Cell):
             nach = 'naRsg'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Cartwheel',
-                       'morphology': morphology, 'decorator': decorator,}
+                       'morphology': morphology, 'decorator': decorator, 'temperature': None}
 
         self.i_test_range = {'pulse': (-0.2, 0.2, 0.02)}
        # self.spike_threshold = 0
@@ -176,7 +176,7 @@ class CartwheelDefault(Cartwheel, Cell):
             self.decorate()
 #        print 'Mechanisms inserted: ', self.mechanisms
         self.get_mechs(self.soma)
-        self.cell_initialize(vrange=self.vrange)
+#        self.cell_initialize(vrange=self.vrange)
         
         if debug:
             print "<< Cartwheel: Modified version of Raman Purkinje cell model created >>"
@@ -210,6 +210,9 @@ class CartwheelDefault(Cartwheel, Cell):
         soma = self.soma
         dia = 18.
         self.set_soma_size_from_Diam(dia)# if species == 'rat' and modelType == 'I':
+        self._valid_temperatures = (34.,)
+        if self.status['temperature'] is None:
+            self.set_temperature(34.)
         #self.print_mechs(self.soma)
         #     self.set_soma_size_from_Cm(12.0)
         self.soma().bkpkj.gbar = nstomho(2., self.somaarea) # 2030
@@ -231,7 +234,8 @@ class CartwheelDefault(Cartwheel, Cell):
 
         self.status['species'] = species
         self.status['modelType'] = modelType
-        self.cell_initialize(showinfo=False)
+#        self.cell_initialize(showinfo=False)
+        self.check_temperature()
         if not silent:
             print 'set cell as: ', species
             print ' with Vm rest = %f' % self.vm0
@@ -256,6 +260,7 @@ class CartwheelDefault(Cartwheel, Cell):
         for part in self.all_sections.keys():
             for sec in self.all_sections[part]:
                 sec.v = V
+        h.celsius = self.status['temperature']
         h.finitialize()
         self.ix = {}
 

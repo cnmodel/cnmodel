@@ -188,7 +188,7 @@ class SGC_TypeI(SGC):
             nach = 'jsrna'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'SGC',
-                        'morphology': morphology, 'decorator': decorator}
+                        'morphology': morphology, 'decorator': decorator, 'temperature': None}
 
         self.i_test_range={'pulse': [(-0.3, 0.3, 0.02), (-0.03, 0., 0.005)]}  # include finer range as well
         self.vrange = [-75., -55.]
@@ -224,7 +224,7 @@ class SGC_TypeI(SGC):
             self.decorate()
 #        print 'Mechanisms inserted: ', self.mechanisms
         self.get_mechs(self.soma)
-        self.cell_initialize(vrange=self.vrange)
+#        self.cell_initialize(vrange=self.vrange)
         if debug:
             print "<< SGC: Spiral Ganglion Cell created >>"
 
@@ -261,6 +261,9 @@ class SGC_TypeI(SGC):
         soma = self.soma
         if species == 'mouse':
             self.set_soma_size_from_Cm(12.0)
+            self._valid_temperatures = (34.,)
+            if self.status['temperature'] is None:
+                self.set_temperature(34.)
             self.adjust_na_chans(soma, gbar=350.)
             soma().kht.gbar = nstomho(58.0, self.somaarea)
             soma().klt.gbar = nstomho(80.0, self.somaarea)
@@ -278,6 +281,9 @@ class SGC_TypeI(SGC):
         elif species == 'guineapig':
             # guinea pig data from Rothman and Manis, 2003, modelType II
             self.set_soma_size_from_Cm(12.0)
+            self._valid_temperatures = (22.,)
+            if self.status['temperature'] is None:
+                self.set_temperature(22.)
             self.adjust_na_chans(soma, gbar=1000.)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
             soma().klt.gbar = nstomho(200.0, self.somaarea)
@@ -297,7 +303,8 @@ class SGC_TypeI(SGC):
 
         self.status['species'] = species
         self.status['modelType'] = modelType
-        self.cell_initialize(showinfo=False)
+#        self.cell_initialize(showinfo=False)
+        self.check_temperature()
         if not silent:
             print 'set cell as: ', species
             print ' with Vm rest = %f' % self.vm0
@@ -347,6 +354,7 @@ class SGC_TypeI(SGC):
                 sec.v = V
 
         h.t = 0.
+        h.celsius = self.status['temperature']
         h.finitialize()
         self.ix = {}
         if 'na' in self.mechanisms:

@@ -72,7 +72,7 @@ class PyramidalKanold(Pyramidal, Cell):
             nach = 'napyr'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Pyramidal',
-                       'morphology': morphology, 'decorator': decorator,
+                       'morphology': morphology, 'decorator': decorator, 'temperature': None,
                    }
 
         self.i_test_range = {'pulse': (-0.3, 0.401, 0.02)}
@@ -104,7 +104,7 @@ class PyramidalKanold(Pyramidal, Cell):
         else:  # decorate according to a defined set of rules on all cell compartments
             self.decorate()
         self.get_mechs(self.soma)
-        self.cell_initialize(vrange=self.vrange)
+#        self.cell_initialize(vrange=self.vrange)
         if debug:
             print "<< PYR: POK Pyramidal Cell created >>"
 
@@ -131,6 +131,9 @@ class PyramidalKanold(Pyramidal, Cell):
         soma = self.soma
         if species == 'rat' and modelType in ['I', 'POK']:  # canonical K&M2001 model cell
             self.set_soma_size_from_Cm(12.0)
+            self._valid_temperatures = (34.,)
+            if self.status['temperature'] is None:
+                self.set_temperature(34.)
             soma().napyr.gbar = nstomho(350, self.somaarea)
             soma().nap.gbar = 0.0
             soma().kdpyr.gbar = nstomho(80, self.somaarea) # used to be 20?
@@ -158,6 +161,9 @@ class PyramidalKanold(Pyramidal, Cell):
             self.set_soma_size_from_Diam(30.0)
             # self.set_soma_size_from_Cm(80.0)
             # print 'diameter: %7.1f' % self.soma.diam
+            self._valid_temperatures = (34.,)
+            if self.status['temperature'] is None:
+                self.set_temperature(34.)
             self.refarea = self.somaarea
             soma().napyr.gbar = nstomho(550, self.refarea)
             soma().nap.gbar = nstomho(60.0, self.refarea)
@@ -179,7 +185,8 @@ class PyramidalKanold(Pyramidal, Cell):
 
         self.status['species'] = species
         self.status['modelType'] = modelType
-        self.cell_initialize(showinfo=True)
+#        self.cell_initialize(showinfo=True)
+        self.check_temperature()
         if not silent:
             print 'set cell as: ', species, modelType
             print ' with Vm rest = %f' % self.vm0
@@ -198,6 +205,7 @@ class PyramidalKanold(Pyramidal, Cell):
         for part in self.all_sections.keys():
             for sec in self.all_sections[part]:
                 sec.v = V
+        h.celsius = self.status['temperature']
         h.finitialize()
         self.ix = {}
 
