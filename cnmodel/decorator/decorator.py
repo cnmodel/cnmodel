@@ -46,7 +46,11 @@ class Decorator():
         # dictionary may help when adding other conductances.
 
         self.gmapper = {'nacn': 'gbar', 'kht': 'gbar', 'klt': 'gbar', 'leak': 'gbar',
-                        'ihvcn': 'gbar', 'jsrna': 'gbar', 'nav11': 'gbar', 'nacncoop': 'gbar'}
+                        'ihvcn': 'gbar', 'jsrna': 'gbar', 'nav11': 'gbar', 'nacncoop': 'gbar',
+                        'hcnobo': 'gbar'}
+        self.erev_mapper = {'nacn': 'ena', 'kht': 'ek', 'klt': 'ek', 'leak': 'erev',
+                        'ihvcn': 'eh', 'jsrna': 'ena', 'nav11': 'ena', 'nacncoop': 'ena',
+                        'hcnobo': 'eh'}
         self._biophys(cell, verify=verify)
         print 'Decorator: Model Decorated with channels (if this appears more than once per cell, there is a problem)'
 
@@ -118,8 +122,26 @@ class Decorator():
                     gbar = gbar * parMap[mech]
                     if verify:
                         print '  new gbar: ', gbar
-                for sec in cell.hr.sec_groups[s]:
-                    setattr(cell.hr.get_section(sec), setup, gbar)
+                for sec in cell.hr.sec_groups[s]:  # set cpmdictamces///
+                    setattr(cell.hr.get_section(sec), setup, gbar)  # set conductance magnitude
+                    if hasattr(cell, 'channelErevMap'):  # may not always have this mapping
+                        secobj = cell.hr.get_section(sec)  # get the NEURON section object
+                        mechsinsec = cell.get_mechs(secobj)  # get list of mechanisms in this section
+                        if mech in mechsinsec:  # confirm that the mechanism is really there
+                            setrev = False  # We try two ways for different mechanisms - just flag it
+                            try:
+                                setattr(secobj, self.erev_mapper[mech], cell.channelErevMap[sectype][mech])
+                                setrev = True
+                                continue  # don't bother with second approach
+                            except:
+                                pass  # no error
+                            try:
+                                setattr(secobj(), self.erev_mapper[mech] + '_' + mech, cell.channelErevMap[sectype][mech])
+                                setrev = True
+                            except:
+                                pass  # no error report
+                            if not setrev:  # here is our error report - soft, not crash.
+                                print ("Failed to set reversal potential in section %s for mechanism %s" % (sec, mech))
         if verify:
             self.channelValidate(cell)
         return cell
@@ -177,18 +199,25 @@ class Decorator():
                 if mech in self.excludeMechs:
                     continue
                 if verify:
-                    print '\tSection: %s  found mechanism: %s at ' % (s, mech), cell.channelMap[sectype][mech]
+                    print '\tSection: %-15ss  found mechanism: %-8ss at %.5f' % (s, mech, cell.channelMap[sectype][mech])
                 x = nu.Mechanism(mech) # , {gmapper[mech]: self.channelMap[cellType][sectype][mech]})
                 setup = ('%s_%s' % (self.gmapper[mech], mech))
                 for sec in cell.hr.sec_groups[s]:
                     bar = getattr(cell.hr.get_section(sec), setup)
+                    # print 'mech', mech
+                    # print 'bar: ', bar
+                    try:
+                        Erev = getattr(cell.hr.get_section(sec), self.erev_mapper[mech])
+                    except:
+                        Erev=-999.
+                    # print 'erev: ', Erev
                     if sec in secstuff.keys():
-                        secstuff[sec] += ', g_%s = %g ' % (mech, bar)
+                        secstuff[sec] += ', g_%s = %g [%.1f]' % (mech, bar, Erev)
                     else:
-                        secstuff[sec] = '(%10s) g_%-6s = %g ' % (sectype, mech, bar)
+                        secstuff[sec] = '(%10s) g_%-6s = %g [%.1f] ' % (sectype, mech, bar, Erev)
         if verify:
             for i, k in enumerate(secstuff.keys()):
-                print '%-20s ' % k, secstuff[k]
+                print '**%-20s ' % k, secstuff[k]
                 
 
     def remapSectionType(self, sectype):
