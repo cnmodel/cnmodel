@@ -30,9 +30,7 @@ class Octopus(Cell):
     
     @classmethod
     def create(cls, modelType='RM03', **kwds):
-        print 'modelType: ', modelType
         if modelType in ['RM03', 'II-o']:
-            print 'making RM03'
             return OctopusRothman(**kwds)
         elif modelType == 'Spencer':
             return OctopusSpencer(**kwds)
@@ -284,7 +282,6 @@ class OctopusRothman(Octopus, Cell):
         else:
             gnabar = sf* nstomho(gbar, self.somaarea)  # mmho/cm2 - 4244.1 moh - 4.2441
         nach = self.status['na']
-        print 'nach: ', nach
         if nach == 'jsrna':
             soma().jsrna.gbar = gnabar
             soma.ena = self.e_na

@@ -156,7 +156,7 @@ class BushyRothman(Bushy):
 
         self.spike_threshold = -40
         self.vrange = [-70., -55.]  # set a default vrange for searching for rmp
-        
+        print 'model type, species: ', modelType, species, nach
         if morphology is None:
             """
             instantiate a basic soma-only ("point") model
@@ -224,6 +224,7 @@ class BushyRothman(Bushy):
             # conductances were not scaled for temperature (rates were)
             # so here we reset the default Q10's for conductance (g) to 1.0
             print '  Setting conductances for mouse II bushy cell, Xie and Manis, 2013'
+            self.vrange = [-68., -55.]  # set a default vrange for searching for rmp
             self._valid_temperatures = (34., )
             if self.status['temperature'] is None:
                 self.status['temperature'] = 34. 
@@ -233,7 +234,6 @@ class BushyRothman(Bushy):
             soma().klt.gbar = nstomho(80.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(30.0, self.somaarea)
             soma().leak.gbar = nstomho(2.0, self.somaarea)
-            self.vrange = [-70., -55.]  # need to specify non-default range for convergence
             self.axonsf = 0.57
             
         elif species == 'mouse' and modelType == 'II-I':
@@ -289,10 +289,10 @@ class BushyRothman(Bushy):
             self.axonsf = 0.57
 
         else:
-            errmsg = 'Species "%s" or species-type "%s" is not recognized for Bushy cells' %  (species, modelType)
-            errmsg += 'Valid species are: \n'
+            errmsg = 'Species "%s" or model type "%s" is not recognized for Bushy cells.' %  (species, modelType)
+            errmsg += '\n  Valid species are: \n'
             for s in knownspecies:
-                errmsg += '   %s\n' % s
+                errmsg += '    %s\n' % s
             errmsg += '-'*40
             raise ValueError(errmsg)
 
@@ -526,9 +526,10 @@ class BushyRothman(Bushy):
             if debug:
                 print 'jsrna gbar: ', soma().jsrna.gbar
         elif nach == 'nav11':
-            soma().nav11.gbar = gnabar  # (see Cells.py in EImodel)
-            soma.ena = self.e_na
-            soma().nav11.vsna = 4.3
+            soma().nav11.gbar = gnabar
+            soma.ena = 50 # self.e_na
+            print('gnabar: ', soma().nav11.gbar, ' vs: 0.0192307692308')
+#            soma().nav11.vsna = 4.3
             if debug:
                 print "bushy using inva11"
 #            print 'nav11 gbar: ', soma().nav11.gbar

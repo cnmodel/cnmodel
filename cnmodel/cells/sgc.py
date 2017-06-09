@@ -331,7 +331,7 @@ class SGC_TypeI(SGC):
             soma.ena = self.e_na
             soma().nav11.vsna = 4.3
             if debug:
-                print "bushy using inva11"
+                print "sgc using inva11"
             print 'nav11 gbar: ', soma().nav11.gbar
         elif nach in ['na', 'nacn']:
             soma().na.gbar = gnabar
@@ -339,7 +339,7 @@ class SGC_TypeI(SGC):
             if debug:
                 print 'na gbar: ', soma().na.gbar
         else:
-            raise ValueError('Sodium channel %s is not recognized for Bushy cells', nach)
+            raise ValueError('Sodium channel %s is not recognized for SGC cells', nach)
 
     def i_currents(self, V):
         """

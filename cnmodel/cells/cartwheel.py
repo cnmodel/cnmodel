@@ -87,7 +87,7 @@ class CartwheelDefault(Cartwheel, Cell):
     
     """
     def __init__(self, morphology=None, decorator=None, ttx=False, nach=None,
-                 species='rat', modelType=None, debug=False):
+                 species='mouse', modelType=None, debug=False):
         """        
         Create cartwheel cell model, based on a Purkinje cell model from Raman.
         There are no variations available for this model.
@@ -181,7 +181,7 @@ class CartwheelDefault(Cartwheel, Cell):
         if debug:
             print "<< Cartwheel: Modified version of Raman Purkinje cell model created >>"
 
-    def species_scaling(self, silent=True, species='rat', modelType='I'):
+    def species_scaling(self, silent=True, species='mouse', modelType='I'):
         """
         Adjust all of the conductances and the cell size according to the species requested.
         This scaling should be used ONLY for point models, as no other compartments
@@ -203,8 +203,8 @@ class CartwheelDefault(Cartwheel, Cell):
         ----
             For the cartwheel cell model, there is only a single scaling recognized. 
         """        
-        if species is not 'rat':
-            raise ValueError ('Cartwheel species: only "rat" is recognized')
+        if species is not 'mouse':
+            raise ValueError ('Cartwheel species: only "mouse" is recognized')
         if modelType is not 'I':
             raise ValueError ('Cartwheel modelType: only "I" is recognized')
         soma = self.soma
