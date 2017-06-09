@@ -33,7 +33,7 @@ cellinfo = {'types': ['bushy', 'bushycoop', 'stellate', 'stellatenav11', 'dstell
             'pulse': ['step', 'pulse']}
 
 # Format for ivranges is list of tuples. This allows finer increments in selected ranges, such as close to rest
-ccivrange = {'bushy': {'pulse': [(-0.5, 0.5, 0.01)]},
+ccivrange = {'bushy': {'pulse': [(-1, 1, 0.01)]},
              'bushycoop': {'pulse': [(-0.5, 0.5, 0.01)]},
             'stellate': {'pulse': [(-1., 1.01, 0.05), (-0.015, 0, 0.005)]},
             'stellatenav11': {'pulse': [(-0.5, 1., 0.1)]}, # , (-0.015, 0, 0.005)]},
@@ -41,7 +41,7 @@ ccivrange = {'bushy': {'pulse': [(-0.5, 0.5, 0.01)]},
             'dstellate': {'pulse': [(-0.3, 0.301, 0.015)]},
             'dstellateeager': {'pulse': [(-0.6, 1.0, 0.025)]},
             'sgc': {'pulse': [(-0.3, 0.3, 0.01)]},
-            'cartwheel': {'pulse': [(-0.2, 0.1, 0.02)]},
+            'cartwheel': {'pulse': [(-0.5, 0.5, 0.05)]},
             'pyramidal': {'pulse': [(-0.3, 0.3, 0.025), (-0.040, 0.025, 0.005)], 'prepulse': [(-0.25, -0.25, 0.25)]},
             'tuberculoventral': {'pulse': [(-0.35, 1.0, 0.05), (-0.040, 0.01, 0.005)]},
             'octopus': {'pulse': [(-2., 6., 0.2)]},
@@ -111,7 +111,7 @@ class Tests():
 
         elif args.celltype == 'bushy' and args.morphology == 'waxon':
             cell = cells.Bushy.create(model='RM03', species=args.species, modelType=args.type,
-                nach=args.nav, ttx=args.ttx, debug=debugFlag, )
+                nach=args.nav, ttx=args.ttx, debug=debugFlag)
             cell.add_axon()
 
         elif args.celltype == 'bushy' and args.morphology == 'stick':
@@ -213,9 +213,9 @@ class Tests():
         
         """
         self.cell.set_temperature(float(args.temp))
-        # print self.cell.status
+        print self.cell.status
         V0 = self.cell.find_i0(showinfo=True)
-        self.cell.cell_initialize()
+#        self.cell.cell_initialize()
         print 'Currents at nominal Vrest= %.2f I = 0: I = %g ' % (V0, self.cell.i_currents(V=V0))
         self.cell.print_mechs(self.cell.soma)
         if args.cc is True:
@@ -228,7 +228,7 @@ class Tests():
             self.iv.show(cell=self.cell)
 
         elif args.rmp is True:
-            print self.cell.status['temperature']
+            print 'temperature: ', self.cell.status['temperature']
             self.iv = IVCurve()
             self.iv.run({'pulse': (0, 0, 1)}, self.cell, durs=default_durs,
                    sites=sites, reppulse=ptype, temp=float(args.temp))
@@ -241,7 +241,7 @@ class Tests():
             self.vc.show(cell=self.cell)
 
         else:
-            raise ValueError("Nothing to run. Specify one of --cc, --vc, --democlamp.")
+            raise ValueError("Nothing to run. Specify one of --cc, --vc, --rmp.")
 
 
 if __name__ == '__main__':

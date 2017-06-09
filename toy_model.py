@@ -12,8 +12,12 @@ from neuron import h
 import numpy as np
 import cnmodel.cells as cells
 from cnmodel.protocols import Protocol
+from cnmodel.util import custom_init
 from collections import OrderedDict
 import re
+import pyqtgraph.exporters
+from cnmodel.util import pyqtgraphPlotHelpers as PH
+
 
 try:  # check for pyqtgraph install
     import pyqtgraph as pg
@@ -72,6 +76,13 @@ def makeLayout(cols=1, rows=1, letters=True, margins=4, spacing=4, nmax=None):
 
     return(plots, widget, gridLayout)
 
+def getnextrowcol(plx, row, col, cols):
+    col += 1
+    if col >= cols:
+        col = 0
+        row += 1
+    return (plx[row][col], row, col)
+    
 
 class Toy(Protocol):
     """
@@ -94,12 +105,12 @@ class Toy(Protocol):
             name of the cell type
         n : int (no default)
         """
-        if len(self.celltypes[name][2]) > 2:
-            injs = self.celltypes[name][2]
+        if len(self.celltypes[name][3]) > 2:
+            injs = self.celltypes[name][3]
             injarr = np.linspace(injs[0], injs[1], injs[2], endpoint=True)
             return '%.3f' % injarr[n]
         else:
-            return '%.3f' % self.celltypes[name][2][n]
+            return '%.3f' % self.celltypes[name][3][n]
 
     def getname(self, cell, ninj):
         name = self.make_name(cell)
@@ -111,18 +122,21 @@ class Toy(Protocol):
         return cell + ', ' + self.celltypes[cell][1] + ':'
         
     def run(self):
-        sre = re.compile('(?P<cell>\w+)(?:[, ]*)(?P<type>[\w-]*)')  # regex for keys in cell types
-        self.celltypes = OrderedDict([('Bushy, II', (cells.Bushy, "II", (-0.5, 0.5, 11), 22)),
-                                ('Bushy, II-I', (cells.Bushy, "II-I", (-0.5,0.5, 11), 22)),
-                                ('Octopus, II-o', (cells.Octopus, 'II-o', (-2.5, 2.5, 11), 22)),
-                                ('TStellate, I-c', (cells.TStellate, "I-c", (-0.15, 0.15, 9), 22)), 
-                                ('TStellate, I-t', (cells.TStellate, "I-t", (-0.15, 0.15, 9), 22)),
-                                ('DStellate, I-II', (cells.DStellate, 'I-II', (-0.2, 0.2, 9), 22)),
-                                ('Pyramidal, I', (cells.Pyramidal, 'I', (-0.3, 0.4, 11), 34)),
-                                ('Cartwheel, I', (cells.Cartwheel, 'I', (-0.2, 0.2, 9), 34)),
-                                ('Tubercuoventral, I', (cells.Tuberculoventral, 'I', (-0.35, 1, 11), 34)),
-                                ('SGC, bm', (cells.SGC, "bm", (-0.2, 0.2, 5), 22)),
-                                ('SGC, a', (cells.SGC, "a", (-0.2, 0.2, 5), 22)),
+        sre = re.compile('(?P<cell>\w+)(?:[, ]*)(?P<type>[\w-]*)(?:[, ]*)(?P<species>[\w-]*)')  # regex for keys in cell types
+        self.celltypes = OrderedDict([('Bushy, II', (cells.Bushy,      "II",   'guineapig', (-0.5, 0.5, 11), 22)),
+                                ('Bushy, II-I',     (cells.Bushy,      "II-I", 'guineapig', (-0.5,0.5, 11), 22)),
+                                ('DStellate, I-II', (cells.DStellate,  'I-II', 'guineapig', (-0.3, 0.3, 9), 22)),
+                                ('TStellate, I-c',  (cells.TStellate,  "I-c",  'guineapig', (-0.15, 0.15, 9), 22)), 
+                                ('TStellate, I-t',  (cells.TStellate,  "I-t",  'guineapig', (-0.15, 0.15, 9), 22)),
+                                ('Octopus, II-o',   (cells.Octopus,    'II-o', 'guineapig', (-2.5, 2.5, 11), 22)),
+                                ('Bushy, II, Mouse',       (cells.Bushy,      "II",   'mouse', (-1, 1, 11), 34)),
+                                ('TStellate, I-c, Mouse',  (cells.TStellate,  "I-c",  'mouse', (-1, 1, 9), 34)), 
+                                ('DStellate, I-II, Mouse', (cells.DStellate,  'I-II', 'mouse', (-0.5, 0.5, 9), 34)),
+                                ('Pyramidal, I, Rat',    (cells.Pyramidal,  'I',    'rat', (-0.3, 0.4, 11), 34)),
+                                ('Cartwheel, I, Mouse',    (cells.Cartwheel,  'I',    'mouse', (-0.5, 0.5, 9), 34)),
+                                ('Tuberculoventral, I, Mouse', (cells.Tuberculoventral, 'I', 'mouse', (-0.35, 1, 11), 34)),
+                                ('SGC, bm, Mouse',         (cells.SGC,        "bm",   'mouse', (-0.2, 0.2, 5), 34)),
+                                ('SGC, a, Mouse',          (cells.SGC,         "a",   'mouse', (-0.2, 0.2, 5), 34)),
                                 ])
 
         dt = 0.025
@@ -143,10 +157,11 @@ class Toy(Protocol):
             g = sre.match(c)
             cellname = g.group('cell')
             modelType = g.group('type')
+            species = self.celltypes[c][2]
             if g.group('type') == '':
                 netcells[c] = self.celltypes[c][0].create()
             else:
-                netcells[c] = self.celltypes[c][0].create(modelType=modelType, debug=False)
+                netcells[c] = self.celltypes[c][0].create(modelType=modelType, species=species, debug=False)
         # dicts to hold data
         pl = OrderedDict([])
         pl2 = OrderedDict([])
@@ -154,39 +169,59 @@ class Toy(Protocol):
         vec = OrderedDict([])
         istim = OrderedDict([])
         ncells = len(self.celltypes.keys())
+        print('ncells: ', ncells)
         #
         # build plotting area
         #
         app = pg.mkQApp()
         win = pg.GraphicsWindow()
-        self.win=win
+        self.win = win
+        self.win.setBackground('w')
         win.resize(800, 600)
         cols, rows = autorowcol(ncells)
-        (plx, widget, gridlayout) = makeLayout(cols=cols, rows=rows, nmax=ncells)
-        win.setLayout(gridlayout)
-        win.show()
+        # (plx, widget, gridlayout) = makeLayout(cols=cols, rows=rows, nmax=ncells)
+        # win.setLayout(gridlayout)
+        # win.show()
+        #
+        # row = 0
+        # col = 0
+        # plrc = plx[row][col]
+        # for n, name in enumerate(self.celltypes.keys()):
+        #     while plx[row][col] == 0:
+        #         plrc, row, col = getnextrowcol(plx, row, col, cols)
+        #     pl[name] = plrc
+        #     pl[name].setLabels(left='Vm (mV)', bottom='Time (ms)')
+        #     pl[name].setTitle(name)
+        #     plrc, row, col = getnextrowcol(plx, row, col, cols)
+        # initialize some recording vectors
+        print (pl.keys())
         row = 0
         col = 0
-        
-        for n, name in enumerate(self.celltypes.keys()):
-            pl[name] = plx[row][col]
-            pl[name].setLabels(left='Vm (mV)', bottom='Time (ms)')
-            pl[name].setTitle(name)
-            col += 1
-            if col >= cols:
-                col = 0
-                row += 1
-        # initialize some recording vectors
+        labelStyle = {'color': '#000', 'font-size': '9pt', 'weight': 'normal'}
+        tickStyle = QtGui.QFont('Arial', 9, QtGui.QFont.Light)
         for n, name in enumerate(self.celltypes.keys()):
             nrn_cell = netcells[name]  # get the Neuron object we are using for this cell class
-            injcmds = self.celltypes[name][2]  # list of injections
-            temperature = self.celltypes[name][3]
+            injcmds = self.celltypes[name][3]  # list of injections
+            temperature = self.celltypes[name][4]
+            nrn_cell.set_temperature(float(temperature))
             ninjs = len(injcmds)
             if ninjs > 2:  # 2 values or a range?
                 injcmds = np.linspace(injcmds[0], injcmds[1], num=injcmds[2], endpoint=True)
                 ninjs = len(injcmds)
             print( 'cell: ', name)
             print( 'injs: ', injcmds)
+            pl[name] = win.addPlot(labels={'left': 'V (mV)', 'bottom': 'Time (ms)'})
+            # pl[name].axes['left']['item'].setLabel(**labelStyle)
+            # pl[name].axes['left']['item'].setStyle(tickFont = tickStyle)
+            # pl[name].axes['bottom']['item'].setLabel(**labelStyle)
+            # pl[name].axes['bottom']['item'].setStyle(tickFont = tickStyle)
+            PH.nice_plot(pl[name])
+            pl[name].setTitle(title=name, font=QtGui.QFont('Arial', 10) )
+            col += 1
+            if col >= cols:
+                col = 0
+                win.nextRow()
+                row += 1
             for ninj in range(ninjs):  # for each current level
                 iname = self.current_name(name, ninj)
                 runname = name + ' ' + iname 
@@ -198,35 +233,37 @@ class Toy(Protocol):
                     istim[name].delay = 5.
                     istim[name].dur = 1e9 # these actually do not matter...
                 vec[runname] = {'i_stim': h.Vector(secmd)}
-        
                 rvec[runname]['v_soma'].record(nrn_cell.soma(0.5)._ref_v)
                 rvec[runname]['i_inj'].record(istim[name]._ref_i)
                 rvec[runname]['time'].record(h._ref_t)
-                # connect current command vector
-                h.dt = dt
-                h.celsius = temperature
                 vec[runname]['i_stim'].play(istim[name]._ref_i, h.dt, 0, sec=nrn_cell.soma)
-
+                h.celsius = temperature
                 nrn_cell.cell_initialize()
-                self.custom_init()
+                h.dt = dt
+                custom_init(v_init=nrn_cell.vm0)
                 h.t = 0.
                 h.tstop = tend
                 while h.t < h.tstop:
                     h.fadvance()
-                # h.t = 0.
-                # h.tstop = tend
-                # h.batch_save() # save nothing
-                # h.batch_run(h.tstop, h.dt, "v.dat")
+                #h.batch_save() # save nothing
+                #h.batch_run(h.tstop, h.dt, "v.dat")
                 
-                pl[name].plot(np.array(rvec[runname]['time']), np.array(rvec[runname]['v_soma']))
-
+                pl[name].plot(np.array(rvec[runname]['time']), np.array(rvec[runname]['v_soma']), pen=pg.mkPen('k', width=0.75))
+            pl[name].setRange(xRange=(0., 120.), yRange=(-160., 40.))
+            PH.noaxes(pl[name])
+            PH.calbar(pl[self.celltypes.keys()[0]], calbar=[0, -120., 10., 20.], unitNames={'x': 'ms', 'y': 'mV'})
+            text = (u"{0:2d}oC {1:.2f}-{2:.2f} nA".format(int(temperature), np.min(injcmds), np.max(injcmds)))
+            ti = pg.TextItem(text, anchor=(1, 0))
+            ti.setFont(QtGui.QFont('Arial', 9))
+            ti.setPos(120., -120.)
+            pl[name].addItem(ti)
         # get overall Rin, etc; need to initialize all cells
         nrn_cell.cell_initialize()
         for n, name in enumerate(self.celltypes.keys()):
             nrn_cell = netcells[name]
             nrn_cell.vm0 = nrn_cell.soma.v
             pars = nrn_cell.compute_rmrintau(auto_initialize=False)
-            print(u'{0:>14s} [{1:>14s}]   *** Rin = {2:6.1f} M\u03A9  \u03C4 = {3:6.1f} ms   Vm = {4:6.1f} mV'.
+            print(u'{0:>14s} [{1:>24s}]   *** Rin = {2:6.1f} M\u03A9  \u03C4 = {3:6.1f} ms   Vm = {4:6.1f} mV'.
                 format(nrn_cell.status['name'], name, pars['Rin'], pars['tau'], pars['v']))
 
 
@@ -235,3 +272,5 @@ if __name__ == "__main__":
     t.run()
     if sys.flags.interactive == 0:
         pg.QtGui.QApplication.exec_()
+    # exporter = pg.exporters.ImageExporter(t.win.scene())
+    # exporter.export('~/Desktop/Model_Figure2.svg')
