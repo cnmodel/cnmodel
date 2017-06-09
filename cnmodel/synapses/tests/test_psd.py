@@ -131,7 +131,7 @@ def measure_gmax(cell, n_syn=20, tstop=5.0, plot=False):
 if __name__ == '__main__':
     if len(sys.argv[0]) > 1:
         testcell = sys.argv[1]
-    if testcell not in ['bushy', 'tstellate', 'dstellate', 'all']:
+    if testcell not in ['bushy', 'tstellate', 'dstellate', 'octopus', 'all']:
         print ('PSD test for cell type %s is not yet supported.' % testcell)
         exit(1)
     else:
@@ -147,6 +147,7 @@ if __name__ == '__main__':
             test_sgc_bushy_psd(plot=True)
             test_sgc_tstellate_psd(plot=True)
             test_sgc_dstellate_psd(plot=True)
+            test_sgc_octopus(plot=True)
             
 #    pg.show()
     if sys.flags.interactive == 0:

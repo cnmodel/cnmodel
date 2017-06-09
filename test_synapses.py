@@ -33,7 +33,7 @@ def runtest():
 
 
     convergence = {
-        'sgc': {'bushy': 1, 'tstellate': 1, 'dstellate': 1, 'dstellate_eager': 10},
+        'sgc': {'bushy': 1, 'tstellate': 1, 'dstellate': 1, 'dstellate_eager': 10, 'octopus': 10},
         'dstellate': {'bushy': 10, 'tstellate': 15, 'dstellate': 5},
         }
 

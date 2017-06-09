@@ -152,7 +152,7 @@ class TStellateRothman(TStellate):
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'TStellate',
                        'morphology': morphology, 'decorator': decorator, 'temperature': None}
-        self.vrange = [-70., -40.]
+        self.vrange = [-70., -55.]
         if morphology is None:
             """
             instantiate a basic soma-only ("point") model

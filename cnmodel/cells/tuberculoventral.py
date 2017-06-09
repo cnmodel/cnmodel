@@ -6,7 +6,7 @@ from .cell import Cell
 #from .. import synapses
 from ..util import nstomho
 from ..util import Params
-#from .. import data
+from .. import data
 
 __all__ = ['Tuberculoventral'] 
 
@@ -44,7 +44,7 @@ class Tuberculoventral(Cell):
             loc = postsite[1]  # where on the section?
             uname = 'sections[%d]' % postsite[0]  # make a name to look up the neuron section object
             post_sec = self.hr.get_section(uname)  # Tell us where to put the synapse.
-        else:
+        else:  # place synapses on the soma at the middle of the section.
             loc = 0.5
             post_sec = self.soma
         
@@ -52,17 +52,25 @@ class Tuberculoventral(Cell):
             return self.make_exp2_psd(post_sec, terminal, loc=loc)
         elif psd_type == 'multisite':
             if terminal.cell.type == 'sgc':
-                # Max conductances for the glu mechanisms are calibrated by 
-                # running `synapses/tests/test_psd.py`. The test should fail
-                # if these values are incorrect:
-                AMPA_gmax = 3.314707700918133*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
-                NMDA_gmax = 0.4531929783503451*1e3
+                self.AMPAR_gmax = data.get('sgc_synapse', species=self.species,
+                        post_type=self.type, field='AMPAR_gmax')*1e3
+                self.NMDAR_gmax = data.get('sgc_synapse', species=self.species,
+                        post_type=self.type, field='NMDAR_gmax')*1e3
+                self.Pr = data.get('sgc_synapse', species=self.species,
+                        post_type=self.type, field='Pr')
+                # adjust gmax to correct for initial Pr
+                self.AMPAR_gmax = self.AMPAR_gmax/self.Pr
+                self.NMDAR_gmax = self.NMDAR_gmax/self.Pr
                 if 'AMPAScale' in kwds:
                     AMPA_gmax = AMPA_gmax * kwds['AMPAScale']  # allow scaling of AMPA conductances
                 if 'NMDAScale' in kwds:
                     NMDA_gmax = NMDA_gmax*kwds['NMDAScale']
-                return self.make_glu_psd(post_sec, terminal, AMPA_gmax, NMDA_gmax, loc=loc)
+                return self.make_glu_psd(post_sec, terminal, AMPAR_gmax, NMDAR_gmax, loc=loc)
             elif terminal.cell.type == 'dstellate':
+                # WBI input determines tone/noise response for TV cells (Nelken and Young)
+                return self.make_gly_psd(post_sec, terminal, type='glyfast', loc=loc)
+            elif terminal.cell.type == 'tuberculoventral': 
+                # Evidence from Kuo et al that TV cells have synapses with each other
                 return self.make_gly_psd(post_sec, terminal, type='glyfast', loc=loc)
             else:
                 raise TypeError("Cannot make PSD for %s => %s" % 
@@ -76,7 +84,7 @@ class Tuberculoventral(Tuberculoventral):
     Tuberculoventral Neuron (DCN) base model
     Adapted from T-stellate model, using target parameters from Kuo et al. J. Neurophys. 2012
     """
-    def __init__(self, morphology=None, decorator=None, nach='default', ttx=False,
+    def __init__(self, morphology=None, decorator=None, nach=None, ttx=False,
                 species='mouse', modelType=None, debug=False):
         """
         Initialize a DCN Tuberculoventral cell, using the default parameters for guinea pig from
@@ -124,7 +132,7 @@ class Tuberculoventral(Tuberculoventral):
         super(Tuberculoventral, self).__init__()
         if modelType == None:
             modelType = 'TVmouse'
-        if nach == 'default':
+        if nach == None:
             nach = 'nacncoop'
             
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
@@ -150,8 +158,7 @@ class Tuberculoventral(Tuberculoventral):
             print "<< Tuberculoventral model: Creating structured cell >>"
             self.set_morphology(morphology_file=morphology)
 
-        # decorate the morphology with ion channels
-        if decorator is None:   # basic model, only on the soma
+        if decorator is None:   # basic model, only on the soma ("point")
             self.mechanisms = ['kht', 'ka', 'ihvcn', 'leak', nach]
             for mech in self.mechanisms:
                 self.soma.insert(mech)
@@ -191,19 +198,22 @@ class Tuberculoventral(Tuberculoventral):
         if species == 'mouse' and modelType == 'TVmouse':
             """#From Kuo 150 Mohm, 10 msec tau
             Firing at 600 pA about 400 Hz
-            These values from brute_force runs, getting 380 Hz at 600 pA at 35C
-            Input resistance and vm is ok, time constnat is short
+            The values for the conductances were determined from
+            a brute_force exploration of the parameter space
+            for Na and K channel conductances, getting 380 Hz at 600 pA at 34C
+            Input resistance and Vm is ok, time constant is short
                 *** Rin:       143  tau:       2.9   v:  -68.4
             Attempts to get longer time constant - cannot keep rate up.
             """
             # Adapted from TStellate model type I-c'
             print 'decorate as TVmouse'
-            self.vrange=[-80., -50.]
+            self.vrange=[-80., -55.]
             self.set_soma_size_from_Cm(35.0)
             self._valid_temperatures = (34.,)
             if self.status['temperature'] is None:
                 self.set_temperature(34.)
             self.adjust_na_chans(soma, gbar=8000.)
+            #soma.ek = -77.0 
             soma().kht.gbar = nstomho(2000.0, self.somaarea)
             soma().ka.gbar = nstomho(65.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(2.5, self.somaarea)  # 1.25
@@ -258,7 +268,7 @@ class Tuberculoventral(Tuberculoventral):
             self.set_soma_size_from_Section(self.soma)
             totcap = self.totcap
             refarea = self.somaarea # totcap / self.c_m  # see above for units
-            self.gBar = Params(nabar=1520.0E-9/refarea,
+            self.gBar = Params(nabar=1520.0E-9/refarea, # these values may not corrrespond to the values for point model.
                                khtbar=160.0E-9/refarea,
                                kltbar=0.0E-9/refarea,
                                kabar=65.0/refarea,
@@ -328,7 +338,7 @@ class Tuberculoventral(Tuberculoventral):
             if debug:
                 print 'jsrna gbar: ', soma().jsrna.gbar
         elif nach == 'nav11':
-            soma().nav11.gbar = gnabar * 0.5
+            soma().nav11.gbar = gnabar
             soma.ena = self.e_na
             soma().nav11.vsna = 4.3
             if debug:
@@ -346,42 +356,5 @@ class Tuberculoventral(Tuberculoventral):
                 print 'nacn gbar: ', soma().nacn.gbar
         else:
             raise ValueError("Tuberculoventral setting Na channels: channel %s not known" % nach)
-
-    # def add_axon(self):
-    #     Cell.add_axon(self, self.soma, self.somaarea, self.c_m, self.R_a, self.axonsf)
-    #
-    # def add_dendrites(self):
-    #     """
-    #     Add 2 simple unbranched dendrites the basic model.
-    #     The dendrites have some kht and ih current
-    #     """
-    #     print 'adding dendrites'
-    #     cs = False  # not implemented outside here - internal Cesium.
-    #     nDend = range(2) # these will be simple, unbranced, N=2 dendrites
-    #     dendrites=[]
-    #     for i in nDend:
-    #         dendrites.append(h.Section(cell=self.soma))
-    #     for i in nDend:
-    #         dendrites[i].connect(self.soma)
-    #         dendrites[i].L = 200. # length of the dendrite (not tapered)
-    #         dendrites[i].diam = 1.0 # dendrite diameter
-    #         dendrites[i].nseg = 21 # # segments in dendrites
-    #         dendrites[i].Ra = 150 # ohm.cm
-    #         dendrites[i].insert('kht')
-    #         if cs is False:
-    #             dendrites[i]().kht.gbar = 0.000 # a little Ht
-    #         else:
-    #             dendrites[i]().kht.gbar = 0.0
-    #         dendrites[i].insert('leak') # leak
-    #         dendrites[i]().leak.gbar = 0.001
-    #         dendrites[i]().leak.erev = -78.0
-    #         dendrites[i].insert('ihvcn') # some H current
-    #         dendrites[i]().ihvcn.gbar = 0.0000
-    #         dendrites[i]().ihvcn.eh = -43.0
-    #         dendrites[i].ek = self.e_k
-    #     self.maindend = dendrites
-    #     self.status['dendrites'] = True
-    #     self.add_section(self.maindend, 'maindend')
-
 
 
