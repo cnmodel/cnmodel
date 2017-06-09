@@ -5,6 +5,7 @@ import scipy.optimize
 import neuron
 from neuron import h
 from ..util import nstomho, mho2ns
+from ..util import custom_init
 from .. import synapses
 from .. import data
 from .. import morphology
@@ -71,8 +72,8 @@ class Cell(object):
     def check_temperature(self):
         if self.status['temperature'] not in self._valid_temperatures:
             tstring = ', '.join('%3.1f ' % t for t in self._valid_temperatures)
-            raise ValueError('Bushy %s %s temperature %3.1f is invalid; must be in: [%s]' %
-                 (self.status['species'], self.status['modelType'], self.status['temperature'], tstring))
+            raise ValueError('Cell %s %s %s temperature %3.1f is invalid; must be in: [%s]' %
+                 (self.type, self.status['species'], self.status['modelType'], self.status['temperature'], tstring))
 
     def set_temperature(self, temperature):
         """
@@ -465,52 +466,7 @@ class Cell(object):
                     gx = eval('sec().'+m+'.gbar')
                     print('            %s: %f' % (m, gx))
 
-    def custom_init(self, v_init=-60.):
-        """
-        Perform a custom initialization of the current model/section. 
-        
-        This initialization follows the scheme outlined in the
-        NEURON book, 8.4.2, p 197 for initializing to steady state.
-        
-        N.B.: For a complex model with dendrites/axons and different channels,
-        this initialization will not find the steady-state the whole cell,
-        leading to initial transient currents. In that case, this initialization
-        should be followed with a 0.1-5 second run (depends on the rates in the
-        various channel mechanisms) with no current injection or active point
-        processes to allow the system to settle to a steady- state. Use either
-        h.svstate or h.batch_save to save states and restore them. Batch is
-        preferred
 
-        Parameters
-        ----------
-        v_init : float (default: -60 mV)
-            Voltage to start the initialization process. This should
-            be close to the expected resting state.
-        """
-        initdur = 1e10
-        tdt = h.dt  # save current step size
-        dtstep = 1e9
-        h.finitialize(v_init) 
-        h.t = -initdur  # set time to large negative value (avoid activating
-                        # point processes, we hope)
-        tmp = h.cvode.active()  # check state of variable step integrator
-        if tmp != 0:   # turn off CVode variable step integrator if it was active
-            h.cvode.active(0)  # now just use backward Euler with large step
-        h.dt = dtstep
-        while h.t < -1e9:  # Step forward
-            h.fadvance()
-        if tmp != 0:
-            h.cvode.active(1)  # restore integrator
-        h.t = 0
-        if h.cvode.active():
-            h.cvode.re_init()  # update d(state)/dt and currents
-        else:
-            h.fcurrent()  # recalculate currents
-        h.frecord_init()  # save new state variables
-        h.dt = tdt  # restore original time step
-        # h.fcurrent()  # one more time (not necessary...)
-        
-        
     def i_currents(self, V):
         """
         For the steady-state case, return the total current at voltage V
@@ -527,7 +483,8 @@ class Cell(object):
                 sec.v = V
         h.celsius = self.status['temperature']
         h.t = 0.
-        self.custom_init(V)
+        h.finitialize(V)
+        h.fcurrent()
         self.ix = {}
 
         if 'na' in self.mechanisms:
@@ -619,6 +576,8 @@ class Cell(object):
             print('    *** and cell has mechanisms: ', self.mechanisms)
         return v0
 
+
+
     def compute_rmrintau(self, auto_initialize=True, vrange=None):
         """
         Run the model for 2 msec after initialization - then
@@ -635,34 +594,37 @@ class Cell(object):
         A dictionary containing: Rin (Mohm), tau (ms) and Vm (mV)
         
         """
+        gnames = {# R&M 03 and related:
+                'nacn': 'gna', 'na': 'gna', 'jsrna': 'gna', 'nav11': 'gna', 'nacncoop': 'gna',
+                'leak': 'gbar',
+                'klt': 'gklt', 'kht': 'gkht',
+                'ka': 'gka',
+                'ihvcn': 'gh', 'hcno': 'gh', 'hcnobo': 'gh',
+                # pyramidal cell specific:
+                'napyr': 'gna', 'nap': 'gnap',
+                'kdpyr': 'gk', 'kif': 'gkif', 'kis': 'gkis',
+                'ihpyr': 'gh',
+                'kcnq': 'gk',
+                # cartwheel cell specific:
+                'bkpkj': 'gbkpkj', 'hpkj': 'gh',
+                'kpkj': 'gk', 'kpkj2': 'gk', 'kpkjslow': 'gk',
+                'kpksk': 'gk', 'lkpkj': 'gbar',
+                'naRsg': 'gna',
+                # SGC Ih specific:
+                'ihsgcApical': 'gh',  'ihsgcBasalMiddle': 'gh',
+              }
         if auto_initialize:
             self.cell_initialize(vrange=vrange)
-        gnames = {# R&M 03 and related:
-                    'nacn': 'gna', 'na': 'gna', 'jsrna': 'gna', 'nav11': 'gna', 'nacncoop': 'gna',
-                    'leak': 'gbar',
-                    'klt': 'gklt', 'kht': 'gkht',
-                    'ka': 'gka',
-                    'ihvcn': 'gh', 'hcno': 'gh', 'hcnobo': 'gh',
-                    # pyramidal cell specific:
-                    'napyr': 'gna', 'nap': 'gnap',
-                    'kdpyr': 'gk', 'kif': 'gkif', 'kis': 'gkis',
-                    'ihpyr': 'gh',
-                    'kcnq': 'gk',
-                    # cartwheel cell specific:
-                    'bkpkj': 'gbkpkj', 'hpkj': 'gh',
-                    'kpkj': 'gk', 'kpkj2': 'gk', 'kpkjslow': 'gk',
-                    'kpksk': 'gk', 'lkpkj': 'gbar',
-                    'naRsg': 'gna',
-                    # SGC Ih specific:
-                    'ihsgcApical': 'gh',  'ihsgcBasalMiddle': 'gh',
+            custom_init()
 
-                  }
         gsum = 0.
         section = self.soma
         u = self.get_mechs(section)
         for m in u:
-            gx = 'section().'+m+'.'+gnames[m]
-            gsum += eval(gx)
+#            gx = 'section().'+m+'.'+gnames[m]
+            gm = '%s_%s' % (gnames[m], m)
+            gsum += getattr(section(), gm) 
+            #eval(gx)
            # print('{0:>12s} : gx '.format(m))
         # convert gsum from us/cm2 to nS using cell area
 #        print ('gsum, self.somaarea: ', gsum, self.somaarea)
