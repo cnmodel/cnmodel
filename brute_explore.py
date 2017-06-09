@@ -17,9 +17,13 @@ import cnmodel
 import cnmodel.cells as cells
 from cnmodel.protocols import IVCurve, VCCurve
 from cnmodel.util import nstomho
+from cnmodel.util import custom_init
 from cnmodel.util.stim import make_pulse
 import pyqtgraph as pg
-
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from itertools import izip, product
 
 path = os.path.dirname(cnmodel.__file__)
 h.load_file("stdrun.hoc")
@@ -71,7 +75,7 @@ def find_minimumFI(target, slmap):
         frd = np.fabs(fr-target['fr'])
         diffs[i] = np.sqrt((wFR*frd)**2) #  + wRin*rind**2 + wtau*taud**2)
     best = np.argmin(diffs)
-    return slmap[best]['pars'], slmap[best]['spikes']
+    return slmap[best]['pars'], slmap[best]['spikes'], diffs
     
 def find_minimum(target, slmap):
     """
@@ -100,15 +104,13 @@ def find_minimum(target, slmap):
         rind = 1.0 - (rin/target['Rin'])
         taud = 1.0 - (tau/target['tau'])
         diffs[i] = np.sqrt(wVm*vmd**2 + wRin*rind**2 + wtau*taud**2)
-    print diffs
     best = np.argmin(diffs)
-    return slmap[best]['pars'], slmap[best]['vals']
+    return slmap[best]['pars'], slmap[best]['vals'], diffs
  
 def brute_search_rmtauvm(cell):
-    print 'setup'
-    erevs = np.arange(-90., -50., 1.)
-    leaks = np.arange(0., 10.1, 0.1)
-    ihgbar = np.arange(0.5, 6.1, 0.05)
+    erevs = np.arange(-75., -55., 2.)
+    leaks = np.arange(0., 10.1, 0.5)
+    ihgbar = np.arange(0.5, 6.1, 0.5)
     nsomas = len(erevs)
     nleaks = len(leaks)
     nih = len(ihgbar)
@@ -124,8 +126,9 @@ def brute_search_rmtauvm(cell):
                 cell.vm0 = None
                 cell.get_mechs(cell.soma)
                 cell.vrange=[-100., 100.]
-                h.celsius = 35
-                h.batch_run(20., 0.025, "cellinit.dat")
+                h.celsius = 34
+                custom_init()
+                h.batch_run(20., 0.025,  "cellinit.dat")
                 
 #                cell.cell_initialize(vrange=cell.vrange)
                 resting = cell.compute_rmrintau(auto_initialize=True, vrange=cell.vrange)
@@ -133,11 +136,13 @@ def brute_search_rmtauvm(cell):
                      (erev, cell.soma().leak.gbar*1000., cell.soma().ihvcn.gbar*1000., len(slmap)))
                 sys.stdout.write(' Vm: %5.1f Rin: %6.1f, tau: %6.1f  %3d' %
                      (resting['v'], resting['Rin'], resting['tau'], len(slmap)))
-                     
-                if  ((8. < resting['tau'] < 12.) and
-                    (-73. < resting['v'] < -67.) and
+                inrange = False     
+                if  ((5. < resting['tau'] < 12.) and
+                    (-73. < resting['v'] < -67.) and # -67
                     (120. < resting['Rin'] < 170.)):
-                    slmap.append({'vals': resting, 'pars': {'soma': somasize, 'ihbar': ihbar, 'leakbar': leakbar}})
+                        inrange=True
+                slmap.append({'vals': resting, 'criteria': inrange, 
+                              'pars': {'erev': erev, 'ihbar': ihbar, 'leakbar': leakbar}})
                     
                     # print ('somasize: %.1f leakbar: %.3f, ihbar: %.3f v: %.2f, Rin: %.1f  tau: %.1f' %
                     # (somasize, cell.soma().leak.gbar*1000., cell.soma().ihvcn.gbar*1000., resting['v'], resting['Rin'], resting['tau']))
@@ -151,9 +156,9 @@ def tune_fi(cell, iinj, Vplot=None):
     """
     Given basic parameters, adjust nachans ka and kht for firing rate at specific current in 100 msec pulse.
     """
-    nabars = np.arange(200., 1200., 40.)
-    khtbars = np.arange(80., 800., 40.)
-    kabars = np.arange(65., 260., 60.)
+    nabars = np.arange(1000., 8000., 400.)
+    khtbars = np.arange(100., 2000., 100.)
+    kabars = np.arange(65., 75., 25.)
     dt = 0.025
     tend = 120.
     stim = {
@@ -185,6 +190,7 @@ def tune_fi(cell, iinj, Vplot=None):
     slmap = []
     rn = 0
     nlst = 0
+    s2 = 0
     for ina, nabar in enumerate(nabars):
         cell.adjust_na_chans(cell.soma, gbar=nabar)
         cxs = len(nabars)
@@ -198,10 +204,9 @@ def tune_fi(cell, iinj, Vplot=None):
                 vecs['time'].record(h._ref_t)
                 
                 vecs['nostim'].play(istim._ref_i, h.dt, 0, sec=cell.soma)
-                h.batch_run(100., 0.025, "cellinit.dat")                
+#                h.batch_run(100., 0.025, "cellinit.dat")                
 
                 cell.cell_initialize()  # initialize the cell to it's rmp
-                
                 # connect current command vector
                 vecs['i_stim'].play(istim._ref_i, h.dt, 0, sec=cell.soma)
                 # GO
@@ -214,20 +219,22 @@ def tune_fi(cell, iinj, Vplot=None):
 #                print '    *** Rin: %9.0f  tau: %9.1f   v: %6.1f' % (Rin, tau, v)
 
                 cell.cell_initialize(vrange=cell.vrange)  # initialize the cell to it's rmp
+                custom_init()
                 while h.t < h.tstop:
                     h.fadvance()
                 st = spike_times(np.array(vecs['v_soma']), dt, threshold=-20.)
 #                sys.stdout.write("%d" % rn)
+                print( "st: ", st)
                 rn += 1
                 if Vplot is not None:
                     Vplot.plot(vecs['time'], vecs['v_soma'], pen=colors[ina])
                 if len(st) > 2:
                     sys.stdout.write("\r" + 'spks: %d  gna: %.1f ght: %.3f, ga: %.3f  n=%d' %
-                         (len(st), cell.soma().jsrna.gbar*1000., cell.soma().kht.gbar*1000., cell.soma().ka.gbar*1000., len(slmap)))
-                
-                    slmap.append({'spikes': len(st), 'pars': {'na': nabar, 'kht': khtbar, 'ka': kabar}})
+                         (len(st), cell.soma().nacncoop.gbar*1000., cell.soma().kht.gbar*1000., cell.soma().ka.gbar*1000., len(slmap)))
+                    s2 += 1
+                slmap.append({'spikes': len(st), 'pars': {'na': nabar, 'kht': khtbar, 'ka': kabar}})
 
-    print('space explored: %d found %d\n' % (rn, len(slmap)))
+    print('space explored: %d found %d\n' % (rn, s2))
     return slmap
 
 
@@ -238,24 +245,72 @@ if __name__ == '__main__':
 #        morphology='cnmodel/morphology/tv_stick.hoc', decorator=True)
 #    cell.set_d_lambda(freq=2000) 
 #    h.topology()
-    cell = cellobj.create(debug=False, ttx=False, nach='nacn', modelType='TVmouse', species='mouse')
+    cell = cellobj.create(debug=False, ttx=False, nach='nacncoop', modelType='TVmouse', species='mouse')
     # init the cell (should do this inside loops...)
     if sys.argv[1] == 'rm':
         slmap = brute_search_rmtauvm(cell)
-        pars, vals = find_minimum(target, slmap)
-        print pars
-        print vals
+        if len(slmap) > 0:
+            pars, vals, diffs = find_minimum(target, slmap)
+        print pars, vals
+        # extract x and y space
+        xe = np.array([a['pars']['erev'] for a in slmap])
+        xh = np.array([a['pars']['ihbar'] for a in slmap])
+        xl = np.array([a['pars']['leakbar'] for a in slmap])
+        zV = np.array([a['vals']['v'] for a in slmap])
+        zR = np.array([a['vals']['Rin'] for a in slmap])
+        zT = np.array([a['vals']['tau'] for a in slmap])
+        zD = np.array(diffs)
+
+        ok = [i for i, a in enumerate(slmap) if a['criteria'] is True]
+        print xe[ok]
+        print xh[ok]
+        print xl[ok]
+        print zV[ok]
+        print zR[ok]
+        print zT[ok]
+        print zD[ok]
+        xlu = np.unique(xl)
+        xhu = np.unique(xh)
+        xeu = np.unique(xe)
+        fig = plt.figure()
+        ax = fig.gca(projection='3d')
+        x, y = np.meshgrid(xl, xh)
+
+        surf = ax.plot_surface(x, y, zD, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+        ax.set_xlabel('gleak')
+        ax.set_ylabel('gh')
+        ax.set_zlabel('Diff')
+        fig.colorbar(surf, shrink=0.5, aspect=5)
+        plt.show()
 
     if sys.argv[1] == 'fi':
-        app = pg.mkQApp()
-        win = pg.GraphicsWindow('hi there')
-        win.resize(1000, 800)
-        Vplot = win.addPlot(labels={'left': 'Vm (mV)', 'bottom': 'Time (ms)'})
-        slmap = tune_fi(cell, 0.600, Vplot)
-        pg.show()
-        if sys.flags.interactive == 0:
-            pg.QtGui.QApplication.exec_()
-        pars, vals = find_minimumFI({'fr': 40.}, slmap)
+        # app = pg.mkQApp()
+        # win = pg.GraphicsWindow('hi there')
+        # win.resize(1000, 800)
+        # Vplot = win.addPlot(labels={'left': 'Vm (mV)', 'bottom': 'Time (ms)'})
+        slmap = tune_fi(cell, 0.600)
+        # pg.show()
+        # if sys.flags.interactive == 0:
+        #     pg.QtGui.QApplication.exec_()
+        pars, vals, diffs = find_minimumFI({'fr': 40.}, slmap)
+        xn = np.array([a['pars']['na'] for a in slmap])
+        xh = np.array([a['pars']['kht'] for a in slmap])
+        xa = np.array([a['pars']['ka'] for a in slmap])
+        zS = np.array([a['spikes'] for a in slmap])
+        zD = np.array(diffs)
+
+#        ok = [i for i, a in enumerate(slmap) if a['criteria'] is True]
+
+        fig = plt.figure()
+        ax = fig.gca(projection='3d')
+        x, y = np.meshgrid(xn, xh)
+
+        surf = ax.plot_surface(x, y, zS, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+        ax.set_xlabel('gna')
+        ax.set_ylabel('gkht')
+        ax.set_zlabel('Spikes')
+        fig.colorbar(surf, shrink=0.5, aspect=5)
+        plt.show()
         print pars
         print vals
 
