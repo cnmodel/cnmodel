@@ -6,7 +6,6 @@ from neuron import h
 import cnmodel.util as util
 from .protocol import Protocol
 
-
 class PopulationTest(Protocol):
     def reset(self):
         super(PopulationTest, self).reset()
@@ -90,8 +89,8 @@ class PopulationTest(Protocol):
         h.dt = dt
         self.temp = temp
         self.dt = dt
+        util.custom_init()
         
-        self.custom_init()
         h.run()
             
 

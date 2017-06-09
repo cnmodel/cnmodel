@@ -16,7 +16,7 @@ try:
     HAVE_PG = True
 except ImportError:
     HAVE_PG = False
-
+from ..util import custom_init
 from ..util.stim import make_pulse
 
 #import matplotlib as MP # must call first... before pylag/pyplot or backends
@@ -98,7 +98,7 @@ class VCCurve(Protocol):
             self['i_inj'] = vstim._ref_i
             self['time'] = h._ref_t
             vstim.amp2 = self.voltage_cmd[i]
-            self.custom_init(vinit=-60.)
+            custom_init(vinit=-60.)
             h.tstop = tend
             while h.t < h.tstop:
                     h.fadvance()

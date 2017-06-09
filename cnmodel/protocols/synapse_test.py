@@ -166,7 +166,7 @@ class SynapseTest(Protocol):
 
             for i, s in enumerate(synapses):
                 s.terminal.relsite.rseed = util.random.current_seed() + nrep
-            self.custom_init()
+            util.custom_init()
             h.run()
 
             # add up psd current across all runs

@@ -13,6 +13,7 @@ except ImportError:
 
 from ..util.stim import make_pulse
 from ..util import fitting
+from ..util import custom_init
 from .protocol import Protocol
 
 
@@ -188,17 +189,15 @@ class IVCurve(Protocol):
         # connect current command vector
         playvector.play(istim._ref_i, h.dt, 0, sec=self.cell.soma)
 
-        # GO
         # h('secondorder=0')  # direct call fails; let hoc do the work
         h.celsius = self.cell.status['temperature']
         self.cell.cell_initialize()
-        h.tstop = self.tend
         h.dt = self.dt
-        self.custom_init()
+        custom_init(v_init=self.cell.vm0)
         h.t = 0.
         h.tstop = self.tend
         # while h.t < h.tstop:
-       #      h.fadvance()
+        #     h.fadvance()
         h.batch_save() # save nothing
         h.batch_run(h.tstop, h.dt, "v.dat")
 
