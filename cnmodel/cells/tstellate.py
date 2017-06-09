@@ -184,7 +184,7 @@ class TStellateRothman(TStellate):
 #        print 'Mechanisms inserted: ', self.mechanisms
         
         self.get_mechs(self.soma)
-        self.cell_initialize(vrange=self.vrange)
+#        self.cell_initialize(vrange=self.vrange)
         if debug:
                 print "<< T-stellate: JSR Stellate Type 1 cell model created >>"
 
