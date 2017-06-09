@@ -6,7 +6,7 @@ from .cell import Cell
 #from .. import synapses
 from ..util import nstomho
 from ..util import Params
-from .. import data
+#from .. import data
 
 __all__ = ['Tuberculoventral'] 
 
@@ -44,7 +44,7 @@ class Tuberculoventral(Cell):
             loc = postsite[1]  # where on the section?
             uname = 'sections[%d]' % postsite[0]  # make a name to look up the neuron section object
             post_sec = self.hr.get_section(uname)  # Tell us where to put the synapse.
-        else:  # place synapses on the soma at the middle of the section.
+        else:
             loc = 0.5
             post_sec = self.soma
         
@@ -52,6 +52,9 @@ class Tuberculoventral(Cell):
             return self.make_exp2_psd(post_sec, terminal, loc=loc)
         elif psd_type == 'multisite':
             if terminal.cell.type == 'sgc':
+                # Max conductances for the glu mechanisms are calibrated by 
+                # running `synapses/tests/test_psd.py`. The test should fail
+                # if these values are incorrect
                 self.AMPAR_gmax = data.get('sgc_synapse', species=self.species,
                         post_type=self.type, field='AMPAR_gmax')*1e3
                 self.NMDAR_gmax = data.get('sgc_synapse', species=self.species,
@@ -66,11 +69,9 @@ class Tuberculoventral(Cell):
                 if 'NMDAScale' in kwds:
                     NMDA_gmax = NMDA_gmax*kwds['NMDAScale']
                 return self.make_glu_psd(post_sec, terminal, AMPAR_gmax, NMDAR_gmax, loc=loc)
-            elif terminal.cell.type == 'dstellate':
-                # WBI input determines tone/noise response for TV cells (Nelken and Young)
+            elif terminal.cell.type == 'dstellate':  # WBI input -Voigt, Nelken, Young
                 return self.make_gly_psd(post_sec, terminal, type='glyfast', loc=loc)
-            elif terminal.cell.type == 'tuberculoventral': 
-                # Evidence from Kuo et al that TV cells have synapses with each other
+            elif terminal.cell.type == 'tuberculoventral':  # TV cells talk to each other-Kuo et al.
                 return self.make_gly_psd(post_sec, terminal, type='glyfast', loc=loc)
             else:
                 raise TypeError("Cannot make PSD for %s => %s" % 
@@ -158,7 +159,8 @@ class Tuberculoventral(Tuberculoventral):
             print "<< Tuberculoventral model: Creating structured cell >>"
             self.set_morphology(morphology_file=morphology)
 
-        if decorator is None:   # basic model, only on the soma ("point")
+        # decorate the morphology with ion channels
+        if decorator is None:   # basic model, only on the soma
             self.mechanisms = ['kht', 'ka', 'ihvcn', 'leak', nach]
             for mech in self.mechanisms:
                 self.soma.insert(mech)
@@ -194,32 +196,27 @@ class Tuberculoventral(Tuberculoventral):
             run silently (True) or verbosely (False)
         """
         soma = self.soma
-        print 'species: ', species, 'modelType: ', modelType
         if species == 'mouse' and modelType == 'TVmouse':
             """#From Kuo 150 Mohm, 10 msec tau
             Firing at 600 pA about 400 Hz
-            The values for the conductances were determined from
-            a brute_force exploration of the parameter space
-            for Na and K channel conductances, getting 380 Hz at 600 pA at 34C
-            Input resistance and Vm is ok, time constant is short
-                *** Rin:       143  tau:       2.9   v:  -68.4
+            These values from brute_force runs, getting 380 Hz at 600 pA at 35C
+            Input resistance and vm is ok, time constnat is short
+                *** Rin:       168  tau:       7.8   v:  -68.4
             Attempts to get longer time constant - cannot keep rate up.
             """
             # Adapted from TStellate model type I-c'
-            print 'decorate as TVmouse'
-            self.vrange=[-80., -55.]
+            self.vrange=[-80., -58.]
             self.set_soma_size_from_Cm(35.0)
             self._valid_temperatures = (34.,)
             if self.status['temperature'] is None:
                 self.set_temperature(34.)
-            self.adjust_na_chans(soma, gbar=8000.)
-            #soma.ek = -77.0 
-            soma().kht.gbar = nstomho(2000.0, self.somaarea)
+            self.adjust_na_chans(soma, gbar=5800.)
+            soma().kht.gbar = nstomho(400.0, self.somaarea) # was 2000
             soma().ka.gbar = nstomho(65.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(2.5, self.somaarea)  # 1.25
             soma().ihvcn.eh = -43 # Rodrigues and Oertel, 2006
-            soma().leak.gbar = nstomho(4.25, self.somaarea)  # 5.5
-            soma().leak.erev = -70.0
+            soma().leak.gbar = nstomho(4.5, self.somaarea)  # 5.5
+            soma().leak.erev = -72.0
             self.axonsf = 0.5
         else:
             raise ValueError('Species %s or species-type %s is not recognized for Tuberculoventralcells' % (species, type))
@@ -268,7 +265,7 @@ class Tuberculoventral(Tuberculoventral):
             self.set_soma_size_from_Section(self.soma)
             totcap = self.totcap
             refarea = self.somaarea # totcap / self.c_m  # see above for units
-            self.gBar = Params(nabar=1520.0E-9/refarea, # these values may not corrrespond to the values for point model.
+            self.gBar = Params(nabar=1520.0E-9/refarea,
                                khtbar=160.0E-9/refarea,
                                kltbar=0.0E-9/refarea,
                                kabar=65.0/refarea,
@@ -325,7 +322,6 @@ class Tuberculoventral(Tuberculoventral):
             gnabar = nstomho(gbar, self.somaarea)
         nach = self.status['na']
         if nach == 'nacncoop':
-            print('TV model using nacncoop')
             soma().nacncoop.gbar = gnabar
             soma().nacncoop.KJ = 2000.
             soma().nacncoop.p = 0.25
@@ -338,7 +334,7 @@ class Tuberculoventral(Tuberculoventral):
             if debug:
                 print 'jsrna gbar: ', soma().jsrna.gbar
         elif nach == 'nav11':
-            soma().nav11.gbar = gnabar
+            soma().nav11.gbar = gnabar * 0.5
             soma.ena = self.e_na
             soma().nav11.vsna = 4.3
             if debug:
@@ -356,5 +352,42 @@ class Tuberculoventral(Tuberculoventral):
                 print 'nacn gbar: ', soma().nacn.gbar
         else:
             raise ValueError("Tuberculoventral setting Na channels: channel %s not known" % nach)
+
+    # def add_axon(self):
+    #     Cell.add_axon(self, self.soma, self.somaarea, self.c_m, self.R_a, self.axonsf)
+    #
+    # def add_dendrites(self):
+    #     """
+    #     Add 2 simple unbranched dendrites the basic model.
+    #     The dendrites have some kht and ih current
+    #     """
+    #     print 'adding dendrites'
+    #     cs = False  # not implemented outside here - internal Cesium.
+    #     nDend = range(2) # these will be simple, unbranced, N=2 dendrites
+    #     dendrites=[]
+    #     for i in nDend:
+    #         dendrites.append(h.Section(cell=self.soma))
+    #     for i in nDend:
+    #         dendrites[i].connect(self.soma)
+    #         dendrites[i].L = 200. # length of the dendrite (not tapered)
+    #         dendrites[i].diam = 1.0 # dendrite diameter
+    #         dendrites[i].nseg = 21 # # segments in dendrites
+    #         dendrites[i].Ra = 150 # ohm.cm
+    #         dendrites[i].insert('kht')
+    #         if cs is False:
+    #             dendrites[i]().kht.gbar = 0.000 # a little Ht
+    #         else:
+    #             dendrites[i]().kht.gbar = 0.0
+    #         dendrites[i].insert('leak') # leak
+    #         dendrites[i]().leak.gbar = 0.001
+    #         dendrites[i]().leak.erev = -78.0
+    #         dendrites[i].insert('ihvcn') # some H current
+    #         dendrites[i]().ihvcn.gbar = 0.0000
+    #         dendrites[i]().ihvcn.eh = -43.0
+    #         dendrites[i].ek = self.e_k
+    #     self.maindend = dendrites
+    #     self.status['dendrites'] = True
+    #     self.add_section(self.maindend, 'maindend')
+
 
 
