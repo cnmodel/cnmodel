@@ -48,7 +48,7 @@ def test_pyramidal():
 
 def test_cartwheel():
     reset(raiseError=False)
-    cell = cells.Cartwheel.create(species='rat', modelType='I')
+    cell = cells.Cartwheel.create(species='mouse', modelType='I')
     CellTester('cartwheel_rat_I', cell)
 
 def test_sgc_basal_middle():
