@@ -147,7 +147,7 @@ class BushyRothman(Bushy):
             nach = 'na'
         if nach == None and species == 'mouse':
             nach = 'nav11'
-            self.i_test_range={'pulse': (-1, 1, 0.05)}
+            self.i_test_range={'pulse': (-1, 1.2, 0.05)}
         
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False, 'hillock': False, 
                        'initialsegment': False, 'myelinatedaxon': False, 'unmyelinatedaxon': False,
@@ -310,6 +310,9 @@ class BushyRothman(Bushy):
         for each type of compartment in the cell. The maps
         are used by the ChannelDecorator class (specifically, its private
         \_biophys function) to decorate the cell membrane.
+        These settings are only used if the decorator is called; otherwise
+        for point cells, the species_scaling routine defines the channel
+        densities.
         
         Parameters
         ----------
