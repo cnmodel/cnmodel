@@ -65,7 +65,7 @@ def runtest():
         print "Warning: Unknown convergence for %s => %s, assuming %d" % (sys.argv[1], sys.argv[2], nTerminals)
 
     if sys.argv[1:3] == ['sgc', 'bushy']:
-        niter = 1
+        niter = 5
     else:
         niter = 20
     
@@ -73,6 +73,13 @@ def runtest():
     st = SynapseTest()
     st.run(preCell.soma, postCell.soma, nTerminals, vclamp=-65., iterations=niter)
     st.show_result()
+    st.plots['VPre'].setYRange(-70., 10.)
+    st.plots['EPSC'].setYRange(-2.0, 0.5)
+    st.plots['latency2080'].setYRange(0., 1.0)
+    st.plots['halfwidth'].setYRange(0., 1.0)
+    st.plots['RT'].setYRange(0., 0.2)
+    st.plots['latency'].setYRange(0., 1.0)
+    st.plots['latency_distribution'].setYRange(0., 1.0)
     return st  # need to keep st alive in memory
 
 if __name__ == '__main__':

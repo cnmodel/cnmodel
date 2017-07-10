@@ -14,7 +14,7 @@ class SynapseTest(Protocol):
         super(SynapseTest, self).reset()
 
     def run(self, pre_sec, post_sec, n_synapses, temp=34.0, dt=0.025, 
-            vclamp=40.0, iterations=1, tstop=200.0, stim_params=None, **kwds):
+            vclamp=40.0, iterations=1, tstop=240.0, stim_params=None, **kwds):
         """ 
         Basic synapse test. Connects sections of two cells with *n_synapses*.
         The cells are allowed to negotiate the details of the connecting 
@@ -42,7 +42,7 @@ class SynapseTest(Protocol):
         self.post_sec = synapses[0].psd.section
         self.pre_cell = pre_cell
         self.post_cell = post_cell
-        
+        self.plots={}  # store plot information here
         #
         # voltage clamp the target cell
         #
@@ -61,7 +61,7 @@ class SynapseTest(Protocol):
         
         istim = h.iStim(0.5, sec=pre_cell.soma)
         stim = {
-            'NP': 10,
+            'NP': 20,
             'Sfreq': 100.0,
             'delay': 10.0,
             'dur': 0.5,
@@ -366,7 +366,7 @@ class SynapseTest(Protocol):
             istart = int(tstart / self.dt)   # pulse start index
             tp[i] = tstart - stim['delay']
             iend = istart + pscpts
-            #        print 'istart: %d iend: %d, len(isoma): %d\n' % (istart, iend, len(isoma))
+            print 'istart: %d iend: %d, len(isoma): %d\n' % (istart, iend, len(self.isoma[runno]))
             ipsc[i, :] = np.abs(self.isoma[runno][istart:iend])
             psc_pk = minStart + np.argmax(ipsc[i, minStart:-(extend_pts+1)]) # position of the peak
             
@@ -465,6 +465,7 @@ class SynapseTest(Protocol):
         p1 = self.win.addPlot(title=self.pre_cell.status['name'])
         p1.setLabels(left='V pre (mV)', bottom='Time (ms)')
         p1.plot(t, self['v_pre'])
+        self.plots['VPre'] = p1
         
         if plotFocus == 'EPSC':
             self.win.nextRow()
@@ -474,6 +475,7 @@ class SynapseTest(Protocol):
             p2.plot(t, np.mean(self.isoma, axis=0), pen=pg.mkPen('w', width=2))
             p2.setLabels(left='Total PSD current (nA)', bottom='Time (ms)')
             p2.setXLink(p1)
+            self.plots['EPSC'] = p2
         else:
             # todo: resurrect this?
             g2 = mpl.subplot2grid((6, 1), (1, 0), rowspan=1)
@@ -507,16 +509,19 @@ class SynapseTest(Protocol):
         p3.plot(events[eventno]['pulse time'], events[eventno]['20% latency'], pen=None, symbol='o')
         p3.plot(events[eventno]['pulse time'], events[eventno]['80% latency'], pen=None, symbol='t')
         p3.setXLink(p1)
+        self.plots['latency2080'] = p3
         
         self.win.nextRow()
         p4 = self.win.addPlot(labels={'left': 'Half Width (ms)', 'bottom': 'Pulse Time (ms)'})
         p4.plot(events[eventno]['pulse time'], events[eventno]['half width'], pen=None, symbol='o')
         p4.setXLink(p1)
+        self.plots['halfwidth'] = p4
         
         self.win.nextRow()
         p5 = self.win.addPlot(labels={'left': 'Rise Time (ms)', 'bottom': 'Pulse Time (ms)'})
         p5.plot(events[eventno]['pulse time'], events[eventno]['rise time'], pen=None, symbol='o')
         p5.setXLink(p1)
+        self.plots['RT'] = p5
         
         
         #
@@ -565,8 +570,10 @@ class SynapseTest(Protocol):
             self.win.nextRow()
             p6 = self.win.addPlot(labels={'left': 'Release latency', 'bottom': 'Time (ms)'})
             p6.setXLink(p1)
+            self.plots['latency'] = p6
             p7 = self.win.addPlot(labels={'left': 'Release latency', 'bottom': 'Num. Releases'})
             p7.setYLink(p6)
+            self.plots['latency_distribution'] = p7
             self.win.ci.layout.setColumnFixedWidth(1, 200)
             
             rel_events = self.all_releases

@@ -46,15 +46,30 @@ class ChannelKinetics():
         self.app = pg.mkQApp()
         self.win = pg.GraphicsWindow(title="VC Plots")
        # self.win.show()
-        self.win.resize(800,600)
-
-        self.p1 = self.win.addPlot(title="I (VC)")
-        self.win.nextCol()
-        self.p2 = self.win.addPlot(title="I_ss")
-        self.win.nextRow()
-        self.p3 = self.win.addPlot(title="Vcmd")
-        self.win.nextCol()
-        self.p4 = self.win.addPlot(title="I_min")
+        self.win.resize(600,800)
+#        self.widget = QtGui.QWidget()
+        self.gridLayout = QtGui.QGridLayout()
+#        self.widget.setLayout(self.gridLayout)
+        self.gridLayout.setContentsMargins(9, 9, 4, 4)
+        self.gridLayout.setSpacing(1)
+        self.p1 = pg.PlotWidget(title="I (VC)")
+        self.gridLayout.addWidget(self.p1, 0, 0, 2, 1)
+        self.p3 = pg.PlotWidget(title="V command")
+        self.gridLayout.addWidget(self.p3, 2, 0, 1, 1)
+        self.p2 = pg.PlotWidget(title="I_ss")
+        self.gridLayout.addWidget(self.p2, 0, 1, 1, 1)
+        self.p4 = pg.PlotWidget(title="I_max")
+        self.gridLayout.addWidget(self.p4, 1, 1, 1, 1)
+        self.p5 = pg.PlotWidget(title="I_min")
+        self.gridLayout.addWidget(self.p5, 2, 1, 1, 1)
+        self.win.setLayout(self.gridLayout)
+        # self.p1 = self.win.addPlot(title="I (VC)")
+        # self.win.nextCol()
+        # self.p2 = self.win.addPlot(title="I_ss")
+        # self.win.nextRow()
+        # self.p3 = self.win.addPlot(title="Vcmd")
+        # self.win.nextCol()
+        # self.p4 = self.win.addPlot(title="I_min")
         #
         # self.tdur is a table of durations for the pulse and post-pulse for each channel type (best to highlight features
         # on appropriate time scales)
@@ -135,6 +150,7 @@ class ChannelKinetics():
             stimamp = np.linspace(-100, 60, num=35, endpoint=True)
         self.ivss = np.zeros((2, stimamp.shape[0]))
         self.ivmin = np.zeros((2, stimamp.shape[0]))
+        self.ivmax = np.zeros((2, stimamp.shape[0]))
 
         for i, V in enumerate(stimamp):
             stim={}
@@ -157,13 +173,16 @@ class ChannelKinetics():
             self.v = np.array(self.vec['V'])
             self.p1.plot(self.t, self.ichan, pen=pg.mkPen(color))
             self.p3.plot(self.t, self.v, pen=pg.mkPen(color))
-            (self.ivss[1,i], r2) = Util.measure('mean', self.t, self.ichan, tdelay+tstep[0]-10., tdelay+tstep[0])
-            (self.ivmin[1,i], r2) = Util.measure('minormax', self.t, self.ichan, tdelay+0.1, tdelay+tstep[0]/5.0)
+            (self.ivss[1, i], r2) = Util.measure('mean', self.t, self.ichan, tdelay+tstep[0]-10., tdelay+tstep[0])
+            (self.ivmin[1, i], r2) = Util.measure('min', self.t, self.ichan, tdelay+0.1, tdelay+tstep[0]/5.0)
+            (self.ivmax[1, i], r2) = Util.measure('max', self.t, self.ichan, tdelay+0.1, tdelay+tstep[0]/5.0)
             self.ivss[0,i] = V
             self.ivmin[0,i] = V
+            self.ivmax[0,i] = V
             print ' T = %4.1f' % h.celsius
         self.p2.plot(self.ivss[0,:], self.ivss[1,:], symbol='o', symbolSize=4.0, pen= pg.mkPen(color))
-        self.p4.plot(self.ivmin[0,:], self.ivmin[1,:], symbol='s', symbolSize=4.0, pen=pg.mkPen(color))
+        self.p4.plot(self.ivmax[0,:], self.ivmax[1,:], symbol='t', symbolSize=4.0, pen=pg.mkPen(color))
+        self.p5.plot(self.ivmin[0,:], self.ivmin[1,:], symbol='s', symbolSize=4.0, pen=pg.mkPen(color))
 
 
     def computeKinetics(self, ch):
