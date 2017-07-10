@@ -98,7 +98,7 @@ class VCCurve(Protocol):
             self['i_inj'] = vstim._ref_i
             self['time'] = h._ref_t
             vstim.amp2 = self.voltage_cmd[i]
-            custom_init(vinit=-60.)
+            custom_init(v_init=-60.)
             h.tstop = tend
             while h.t < h.tstop:
                     h.fadvance()
