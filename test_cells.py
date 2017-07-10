@@ -33,14 +33,14 @@ cellinfo = {'types': ['bushy', 'bushycoop', 'stellate', 'stellatenav11', 'dstell
             'pulse': ['step', 'pulse']}
 
 # Format for ivranges is list of tuples. This allows finer increments in selected ranges, such as close to rest
-ccivrange = {'bushy': {'pulse': [(-1, 1, 0.01)]},
-             'bushycoop': {'pulse': [(-0.5, 0.5, 0.01)]},
+ccivrange = {'bushy': {'pulse': [(-1, 1.2, 0.05)]},
+             'bushycoop': {'pulse': [(-0.5, 0.7, 0.02)]},
             'stellate': {'pulse': [(-1., 1.01, 0.05), (-0.015, 0, 0.005)]},
             'stellatenav11': {'pulse': [(-0.5, 1., 0.1)]}, # , (-0.015, 0, 0.005)]},
             'steldend': {'pulse': [(-1.0, 1.0, 0.1)]},
             'dstellate': {'pulse': [(-0.3, 0.301, 0.015)]},
             'dstellateeager': {'pulse': [(-0.6, 1.0, 0.025)]},
-            'sgc': {'pulse': [(-0.3, 0.3, 0.01)]},
+            'sgc': {'pulse': [(-0.3, 0.6, 0.02)]},
             'cartwheel': {'pulse': [(-0.5, 0.5, 0.05)]},
             'pyramidal': {'pulse': [(-0.3, 0.3, 0.025), (-0.040, 0.025, 0.005)], 'prepulse': [(-0.25, -0.25, 0.25)]},
             'tuberculoventral': {'pulse': [(-0.35, 1.0, 0.05), (-0.040, 0.01, 0.005)]},
@@ -121,7 +121,7 @@ class Tests():
             h.topology()
 
         elif args.celltype == 'bushycoop' and args.morphology == 'point':
-            cell = cells.Bushy.create(model='mGBC', species=args.species, modelType=args.type,
+            cell = cells.Bushy.create(model='RM03', species=args.species, modelType=args.type,
                 ttx=args.ttx, nach=args.nav, debug=debugFlag)
 
         #
