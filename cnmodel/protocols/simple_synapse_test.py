@@ -80,7 +80,7 @@ class SimpleSynapseTest(Protocol):
             self['t'] = h._ref_t
             self['v_soma'] = post_cell.soma(0.5)._ref_v
             self['i_soma'] = vccontrol._ref_i
-            self.custom_init()
+            util.custom_init()
             h.run()
         
     def show(self):
