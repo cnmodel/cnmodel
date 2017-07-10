@@ -129,14 +129,14 @@ class Toy(Protocol):
                                 ('TStellate, I-c',  (cells.TStellate,  "I-c",  'guineapig', (-0.15, 0.15, 9), 22)), 
                                 ('TStellate, I-t',  (cells.TStellate,  "I-t",  'guineapig', (-0.15, 0.15, 9), 22)),
                                 ('Octopus, II-o',   (cells.Octopus,    'II-o', 'guineapig', (-2.5, 2.5, 11), 22)),
-                                ('Bushy, II, Mouse',       (cells.Bushy,      "II",   'mouse', (-1, 1, 11), 34)),
+                                ('Bushy, II, Mouse',       (cells.Bushy,      "II",   'mouse', (-1, 1.2, 13), 34)),
                                 ('TStellate, I-c, Mouse',  (cells.TStellate,  "I-c",  'mouse', (-1, 1, 9), 34)), 
                                 ('DStellate, I-II, Mouse', (cells.DStellate,  'I-II', 'mouse', (-0.5, 0.5, 9), 34)),
                                 ('Pyramidal, I, Rat',    (cells.Pyramidal,  'I',    'rat', (-0.3, 0.4, 11), 34)),
                                 ('Cartwheel, I, Mouse',    (cells.Cartwheel,  'I',    'mouse', (-0.5, 0.5, 9), 34)),
                                 ('Tuberculoventral, I, Mouse', (cells.Tuberculoventral, 'I', 'mouse', (-0.35, 1, 11), 34)),
-                                ('SGC, bm, Mouse',         (cells.SGC,        "bm",   'mouse', (-0.2, 0.2, 5), 34)),
-                                ('SGC, a, Mouse',          (cells.SGC,         "a",   'mouse', (-0.2, 0.2, 5), 34)),
+                                ('SGC, bm, Mouse',         (cells.SGC,        "bm",   'mouse', (-0.2, 0.6, 9), 34)),
+                                ('SGC, a, Mouse',          (cells.SGC,         "a",   'mouse', (-0.2, 0.6, 9), 34)),
                                 ])
 
         dt = 0.025
@@ -252,7 +252,7 @@ class Toy(Protocol):
             pl[name].setRange(xRange=(0., 120.), yRange=(-160., 40.))
             PH.noaxes(pl[name])
             PH.calbar(pl[self.celltypes.keys()[0]], calbar=[0, -120., 10., 20.], unitNames={'x': 'ms', 'y': 'mV'})
-            text = (u"{0:2d}oC {1:.2f}-{2:.2f} nA".format(int(temperature), np.min(injcmds), np.max(injcmds)))
+            text = (u"{0:2d}\u00b0C {1:.2f}-{2:.2f} nA".format(int(temperature), np.min(injcmds), np.max(injcmds)))
             ti = pg.TextItem(text, anchor=(1, 0))
             ti.setFont(QtGui.QFont('Arial', 9))
             ti.setPos(120., -120.)
