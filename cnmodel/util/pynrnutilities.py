@@ -407,10 +407,15 @@ def an_syn(alpha=0.1, spont=10, driven=100, delay=50, dur=100, post = 20,
 def findspikes(t, v, thresh):
     """ findspikes identifies the times of action potential in the trace v, with the
     times in t. An action potential is simply timed at the first point that exceeds
-    the threshold. """
+    the threshold.
+    """
     tm = np.array(t)
-    s0 = np.array(v) > thresh # find points above threshold
+    s0 = np.array(v) > thresh # np.where(v > thresh) # np.array(v) > thresh # find points above threshold
+
+#    print ('v: ', v)
     dsp = tm[s0]
+    if dsp.shape[0] == 1:
+        dsp = np.array(dsp)
     sd = np.append(True, np.diff(dsp) > 1.0) # find first points of spikes
     if len(dsp) > 0:
         sp = dsp[sd]
