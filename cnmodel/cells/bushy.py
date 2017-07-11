@@ -36,7 +36,7 @@ class Bushy(Cell):
         
         kwds: dictionary of options. 
             Two are currently handled:
-            postsize : expect a list consisting of [sectionno, location (float)]
+            postsite : expect a list consisting of [sectionno, location (float)]
             AMPAScale : float to scale the ampa currents
         
         """
@@ -69,9 +69,9 @@ class Bushy(Cell):
 #                self.AMPA_gmax = 3.314707700918133*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
 #                self.NMDA_gmax = 0.4531929783503451*1e3
                 if 'AMPAScale' in kwds:  # normally, this should not be done!
-                    AMPA_gmax = AMPA_gmax * kwds['AMPAScale']  # allow scaling of AMPA conductances
+                    self.AMPAR_gmax = self.AMPAR_gmax * kwds['AMPAScale']  # allow scaling of AMPA conductances
                 if 'NMDAScale' in kwds:
-                    NMDA_gmax = NMDA_gmax*kwds['NMDAScale']  # and NMDA... 
+                    self.NMDAR_gmax = self.NMDAR_gmax * kwds['NMDAScale']  # and NMDA... 
                 return self.make_glu_psd(post_sec, terminal, self.AMPAR_gmax, self.NMDAR_gmax, loc=loc)
             elif terminal.cell.type == 'dstellate':
                 return self.make_gly_psd(post_sec, terminal, type='glyslow', loc=loc)
