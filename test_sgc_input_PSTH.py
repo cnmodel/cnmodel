@@ -9,19 +9,21 @@ from cnmodel.util import custom_init
 import cnmodel.util.pynrnutilities as PU
 from cnmodel import data
 
+synapseType = 'simple'
+species = 'mouse'  # tables for other species do not yet exist
 
 def runTrial(cell, info):
     """
     info is a dict
     """
     if cell == 'bushy':
-        post_cell = cells.Bushy.create(species='mouse')
+        post_cell = cells.Bushy.create(species=species)
     elif cell == 'tstellate':
-        post_cell = cells.TStellate.create(species='mouse')
+        post_cell = cells.TStellate.create(species=species)
     elif cell == 'octopus':
-        post_cell = cells.Octopus.create(species='mouse')
+        post_cell = cells.Octopus.create(species=species)
     elif cell == 'dstellate':
-        post_cell = cells.DStellate.create(species='mouse')
+        post_cell = cells.DStellate.create(species=species)
     else:
         raise ValueError('cell %s is not yet implemented for PSTH testing' % self.cell)
     pre_cells = []
@@ -30,12 +32,18 @@ def runTrial(cell, info):
     xmtr = {}
     for nsgc, sgc in enumerate(range(info['n_sgc'])):
         pre_cells.append(cells.DummySGC(cf=info['cf'], sr=info['sr']))
-        synapses.append(pre_cells[-1].connect(post_cell))
-        for i in range(synapses[-1].terminal.n_rzones):
-            xmtr['xmtr%04d'%j] = h.Vector()
-            xmtr['xmtr%04d'%j].record(synapses[-1].terminal.relsite._ref_XMTR[i])
-            j = j + 1
-        synapses[-1].terminal.relsite.Dep_Flag = False  # no depression in these simulations
+        if synapseType == 'simple':
+            synapses.append(pre_cells[-1].connect(post_cell, type=synapseType))
+            print np.array(synapses[-1].terminal.netcon.weight)
+            synapses[-1].terminal.netcon.weight[0] =info['gmax']*2.0
+            print np.array(synapses[-1].terminal.netcon.weight)
+        elif synapseType == 'multisite':
+            synapses.append(pre_cells[-1].connect(post_cell, post_opts={'AMPAScale': 2.0, 'NMDAScale': 2.0}, type=synapseType))
+            for i in range(synapses[-1].terminal.n_rzones):
+                xmtr['xmtr%04d'%j] = h.Vector()
+                xmtr['xmtr%04d'%j].record(synapses[-1].terminal.relsite._ref_XMTR[i])
+                j = j + 1
+            synapses[-1].terminal.relsite.Dep_Flag = False  # no depression in these simulations
         pre_cells[-1].set_sound_stim(info['stim'], seed = info['seed'] + nsgc, simulator=info['simulator'])
     Vm = h.Vector()
     Vm.record(post_cell.soma(0.5)._ref_v)
@@ -89,15 +97,17 @@ class SGCInputTestPSTH(Protocol):
                         click_interval=self.click_rate, nclicks=int((self.run_duration-0.01)/self.click_rate),
                         ramp_duration=2.5e-3)
         
-        n_sgc = data.get('convergence', species='mouse', post_type=self.cell, pre_type='sgc')[0]
+        n_sgc = data.get('convergence', species=species, post_type=self.cell, pre_type='sgc')[0]
         self.n_sgc = int(np.round(n_sgc))
-
+        # for simple synapses, need this value:
+        self.AMPA_gmax = data.get('sgc_synapse', species=species,
+                        post_type=self.cell, field='AMPA_gmax')[0]/1e3  # convert nS to uS for NEURON
         self.vms = [None for n in range(self.nrep)]
         self.synapses = [None for n in range(self.nrep)]
         self.xmtrs = [None for n in range(self.nrep)]
         self.pre_cells = [None for n in range(self.nrep)]
         self.time = [None for n in range(self.nrep)]
-        info = {'n_sgc': self.n_sgc, 'stim': self.stim,
+        info = {'n_sgc': self.n_sgc, 'gmax': self.AMPA_gmax, 'stim': self.stim,
                 'simulator': self.simulator, 'cf': self.cf, 'sr': self.sr,
                 'seed': seed, 'run_duration': self.run_duration,
                 'temp': temp, 'dt': dt, 'init': custom_init}
@@ -170,14 +180,15 @@ class SGCInputTestPSTH(Protocol):
 
         p5 = self.win.addPlot(title='xmtr', row=0, col=1,
             labels={'bottom': 'T (ms)', 'left': 'gSyn'})
-        for nr in [0]:
-            syn = self.synapses[nr]
-            j = 0
-            for k in range(self.n_sgc):
-                synapse = syn[k]
-                for i in range(synapse.terminal.n_rzones):
-                    p5.plot(self.time[nr], self.xmtrs[nr]['xmtr%04d'%j], pen=pg.mkPen(pg.intColor(nr, self.nrep), hues=self.nrep, width=1.0))
-                    j = j + 1
+        if synapseType == 'multisite':
+            for nr in [0]:
+                syn = self.synapses[nr]
+                j = 0
+                for k in range(self.n_sgc):
+                    synapse = syn[k]
+                    for i in range(synapse.terminal.n_rzones):
+                        p5.plot(self.time[nr], self.xmtrs[nr]['xmtr%04d'%j], pen=pg.mkPen(pg.intColor(nr, self.nrep), hues=self.nrep, width=1.0))
+                        j = j + 1
         p5.setXLink(p1)
         
         p6 = self.win.addPlot(title='AN PSTH', row=1, col=1,
@@ -246,7 +257,7 @@ if __name__ == '__main__':
     print 'cell type: ', cell
     prot = SGCInputTestPSTH()
     prot.set_cell(cell)
-    prot.run(stimulus=stimulus)
+    prot.run(stimulus=stimulus, reps=50)
     prot.show()
 
     import sys
