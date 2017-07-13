@@ -20,6 +20,7 @@ from neuron import h
 from cnmodel.protocols import Protocol
 from cnmodel import cells
 from cnmodel.util import sound
+from cnmodel.util import custom_init
 
 
 class SGCInputTest(Protocol):
@@ -48,7 +49,7 @@ class SGCInputTest(Protocol):
         h.celsius = temp
         h.dt = dt
         
-        self.custom_init()
+        custom_init()
         h.run()
 
     def show(self):
