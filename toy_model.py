@@ -169,32 +169,15 @@ class Toy(Protocol):
         vec = OrderedDict([])
         istim = OrderedDict([])
         ncells = len(self.celltypes.keys())
-        print('ncells: ', ncells)
         #
         # build plotting area
         #
         app = pg.mkQApp()
-        win = pg.GraphicsWindow()
-        self.win = win
+        self.win = pg.GraphicsWindow()
         self.win.setBackground('w')
-        win.resize(800, 600)
+        self.win.resize(800, 600)
         cols, rows = autorowcol(ncells)
-        # (plx, widget, gridlayout) = makeLayout(cols=cols, rows=rows, nmax=ncells)
-        # win.setLayout(gridlayout)
-        # win.show()
-        #
-        # row = 0
-        # col = 0
-        # plrc = plx[row][col]
-        # for n, name in enumerate(self.celltypes.keys()):
-        #     while plx[row][col] == 0:
-        #         plrc, row, col = getnextrowcol(plx, row, col, cols)
-        #     pl[name] = plrc
-        #     pl[name].setLabels(left='Vm (mV)', bottom='Time (ms)')
-        #     pl[name].setTitle(name)
-        #     plrc, row, col = getnextrowcol(plx, row, col, cols)
-        # initialize some recording vectors
-        print (pl.keys())
+
         row = 0
         col = 0
         labelStyle = {'color': '#000', 'font-size': '9pt', 'weight': 'normal'}
@@ -210,7 +193,7 @@ class Toy(Protocol):
                 ninjs = len(injcmds)
             print( 'cell: ', name)
             print( 'injs: ', injcmds)
-            pl[name] = win.addPlot(labels={'left': 'V (mV)', 'bottom': 'Time (ms)'})
+            pl[name] = self.win.addPlot(labels={'left': 'V (mV)', 'bottom': 'Time (ms)'})
             # pl[name].axes['left']['item'].setLabel(**labelStyle)
             # pl[name].axes['left']['item'].setStyle(tickFont = tickStyle)
             # pl[name].axes['bottom']['item'].setLabel(**labelStyle)
@@ -220,7 +203,7 @@ class Toy(Protocol):
             col += 1
             if col >= cols:
                 col = 0
-                win.nextRow()
+                self.win.nextRow()
                 row += 1
             for ninj in range(ninjs):  # for each current level
                 iname = self.current_name(name, ninj)
