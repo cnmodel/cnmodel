@@ -529,9 +529,9 @@ class BushyRothman(Bushy):
             if debug:
                 print 'jsrna gbar: ', soma().jsrna.gbar
         elif nach == 'nav11':
-            soma().nav11.gbar = gnabar
+            soma().nav11.gbar = gnabar*0.5
             soma.ena = 50 # self.e_na
-            print('gnabar: ', soma().nav11.gbar, ' vs: 0.0192307692308')
+#            print('gnabar: ', soma().nav11.gbar, ' vs: 0.0192307692308')
 #            soma().nav11.vsna = 4.3
             if debug:
                 print "bushy using inva11"
