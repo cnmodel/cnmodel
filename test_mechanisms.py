@@ -19,7 +19,7 @@ import cnmodel.util
 import pyqtgraph as pg
 import pyqtgraph.exporters
 from pyqtgraph.Qt import QtCore, QtGui
-import pylibrary.Utility as Util
+import cnmodel.util.pynrnutilities as Util
 faulthandler.enable()
 
 nottestablemechs = ['cadyn', 'ca_ion', 'cadiff', 'cadifpmp', 'Mechanism',
