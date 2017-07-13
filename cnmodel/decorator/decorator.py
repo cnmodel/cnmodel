@@ -223,6 +223,8 @@ class Decorator():
     def remapSectionType(self, sectype):
         if sectype in ['AXON_0']:
             sectype = 'axon'
+        if sectype in ['initseg', 'initialsegment']:
+            sectype = 'initseg'
         if sectype in ['dendscaled_0', 'dendscaled_1', 'dendscaled_2', 'dendrite']:
             sectype = 'dend'
         if sectype in ['apical_dendrite']:

@@ -412,6 +412,8 @@ class BushyRothman(Bushy):
             self.channelMap = {
                 'axon': {'nav11': self.gBar.nabar*1, 'klt': self.gBar.kltbar * 1.0, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
                          'leak': self.gBar.leakbar * 0.25},
+                'hillock': {'nav11': self.gBar.nabar*2, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar*2.0, 'ihvcn': 0.,
+                            'leak': self.gBar.leakbar, },
                 'initseg': {'nav11': self.gBar.nabar*3.0, 'klt': self.gBar.kltbar*1, 'kht': self.gBar.khtbar*2,
                             'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
                 'soma': {'nav11': self.gBar.nabar*0.5, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,

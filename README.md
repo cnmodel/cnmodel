@@ -77,11 +77,11 @@ release at a central synapse. Neuron. 1995 Oct;15(4):875-84. PubMed PMID:
 regulation by transient K+ currents in cochlear nucleus pyramidal cells. J
 Neurophysiol. 2001 Feb;85(2):523-38. PubMed PMID: 11160490.
 
-5.  Kanold PO, Manis PB. Transient potassium currents regulate the discharge
+5.   Kanold PO, Manis PB. Transient potassium currents regulate the discharge
 patterns of dorsal cochlear nucleus pyramidal cells. J Neurosci. 1999 Mar
 15;19(6):2195-208. PubMed PMID: 10066273.
 
-6.   Liu Q, Manis PB, Davis RL. I h and HCN channels in murine spiral ganglion
+6.   Liu Q, Manis PB, Davis RL. Ih and HCN channels in murine spiral ganglion
 neurons: tonotopic variation, local heterogeneity, and kinetic model. J Assoc Res
 Otolaryngol. 2014 Aug;15(4):585-99. doi: 10.1007/s10162-014-0446-z. Epub 2014 Feb
 21. Erratum in: J Assoc Res Otolaryngol. 2014 Aug;15(4):601. PubMed PMID:
@@ -102,7 +102,6 @@ Jun;89(6):3083-96. PubMed PMID: 12783952.
 10.   Rothman JS, Manis PB. Differential expression of three distinct potassium
 currents in the ventral cochlear nucleus. J Neurophysiol. 2003 Jun;89(6):3070-82.
 PubMed PMID: 12783951.
-
 
 11.   Rothman JS, Young ED, Manis PB. Convergence of auditory nerve fibers onto
 bushy cells in the ventral cochlear nucleus: implications of a computational
@@ -125,7 +124,6 @@ PMCID: PMC3985897.
 account for neural adaptation to sound-level statistics. J Neurosci. 2010 Aug
 4;30(31):10380-90. doi: 10.1523/JNEUROSCI.0647-10.2010. PubMed PMID: 20685981;
 PubMed Central PMCID: PMC2935089.
-
 
 16.   Zilany MS, Bruce IC, Nelson PC, Carney LH. A phenomenological model of the
 synapse between the inner hair cell and auditory nerve: long-term adaptation with
