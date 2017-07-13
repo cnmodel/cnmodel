@@ -164,7 +164,7 @@ class TonePip(Sound):
         o = self.opts
         return piptone(self.time, o['ramp_duration'], o['rate'], o['f0'], 
                        o['dbspl'], o['pip_duration'], o['pip_start'])
-    
+
 
 class FMSweep(Sound):
     """ Create an FM sweep with either linear or logarithmic rates, 
@@ -205,9 +205,8 @@ class FMSweep(Sound):
         return fmsweep(self.time, o['start'], o['duration'],
                          o['freqs'], o['ramp'], o['dbspl'])
 
-
 class NoisePip(Sound):
-    """ One or more gaussian noise pips with cosine-ramped edges.
+    """ One or more noise pips with cosine-ramped edges.
     
     Parameters
     ----------
@@ -218,7 +217,7 @@ class NoisePip(Sound):
     seed : int >= 0
         Random seed
     dbspl : float
-        Maximum amplitude of pip in dB SPL. 
+        Maximum amplitude of tone in dB SPL. 
     pip_duration : float
         Duration of each pip including ramp time. Must be at least 
         2 * ramp_duration.
@@ -227,9 +226,10 @@ class NoisePip(Sound):
     ramp_duration : float
         Duration of a single ramp period (from minimum to maximum). 
         This may not be more than half of pip_duration.
+        
     """
     def __init__(self, **kwds):
-        for k in ['rate', 'duration', 'seed', 'pip_duration', 'pip_start', 'ramp_duration']:
+        for k in ['rate', 'duration', 'dbspl', 'pip_duration', 'pip_start', 'ramp_duration', 'seed']:
             if k not in kwds:
                 raise TypeError("Missing required argument '%s'" % k)
         if kwds['pip_duration'] < kwds['ramp_duration'] * 2:
@@ -252,6 +252,35 @@ class NoisePip(Sound):
         o = self.opts
         return pipnoise(self.time, o['ramp_duration'], o['rate'],
                         o['dbspl'], o['pip_duration'], o['pip_start'], o['seed'])
+
+class ClickTrain(Sound):
+    """ One or more clicks (rectangular pulses).
+    
+    Parameters
+    ----------
+    rate : float
+        Sample rate in Hz
+    dbspl : float
+        Maximum amplitude of click in dB SPL. 
+    click_duration : float
+        Duration of each click including ramp time. Must be at least 
+        1/rate.
+    click_starts : array-like
+        Start times of each click
+    """
+    def __init__(self, **kwds):
+        for k in ['rate',  'duration', 'dbspl', 'click_duration', 'click_starts']:
+            if k not in kwds:
+                raise TypeError("Missing required argument '%s'" % k)
+        if kwds['click_duration'] < 1./kwds['rate']:
+            raise ValueError("click_duration must be greater than sample rate.")
+        
+        Sound.__init__(self, **kwds)
+        
+    def generate(self):
+        o = self.opts
+        return clicks(self.time, o['rate'], 
+                        o['dbspl'], o['click_duration'], o['click_starts'])
     
 
 class SAMNoise(Sound):
@@ -309,43 +338,43 @@ class SAMNoise(Sound):
                        o['pip_duration'], o['pip_start'], o['dbspl'],
                        o['fmod'], o['dmod'], 0., o['seed'])
                         
-class ClickTrain(Sound):
-    """
-    Parameters
-    ----------
-    rate : float
-        sample frequency (Hz)
-    click_start : float (seconds)
-        time for first click
-    click_duration : float (seconds)
-        duration of each click
-    click_interval : float (seconds)
-        Interval between clicks
-    nclicks : int
-        number of clicks in the train
-    dbspl : float
-        maximum sound pressure level of pip    
-    
-    """
-    def __init__(self, **kwds):
-        for k in ['click_start', 'click_duration', 'click_interval', 'nclicks', 'dbspl', 'rate']:
-            if k not in kwds:
-                raise TypeError("Missing rquired argument '%s'" % k)
-        Sound.__init__(self, **kwds)
-        
-    def generate(self):
-        """
-        Call to compute a click train
-        
-        Returns
-        -------
-        array : 
-            generated waveform
-        
-        """
-        o = self.opts
-        return clicks(self.time, o['rate'], o['click_start'], o['click_duration'], 
-            o['click_interval'], o['nclicks'], o['dbspl'])
+# class ClickTrain(Sound):
+#     """
+#     Parameters
+#     ----------
+#     rate : float
+#         sample frequency (Hz)
+#     click_start : float (seconds)
+#         time for first click
+#     click_duration : float (seconds)
+#         duration of each click
+#     click_interval : float (seconds)
+#         Interval between clicks
+#     nclicks : int
+#         number of clicks in the train
+#     dbspl : float
+#         maximum sound pressure level of pip
+#
+#     """
+#     def __init__(self, **kwds):
+#         for k in ['click_start', 'click_duration', 'click_interval', 'nclicks', 'dbspl', 'rate']:
+#             if k not in kwds:
+#                 raise TypeError("Missing required argument '%s'" % k)
+#         Sound.__init__(self, **kwds)
+#
+#     def generate(self):
+#         """
+#         Call to compute a click train
+#
+#         Returns
+#         -------
+#         array :
+#             generated waveform
+#
+#         """
+#         o = self.opts
+#         return clicks(self.time, o['rate'], o['click_start'], o['click_duration'],
+#             o['click_interval'], o['nclicks'], o['dbspl'])
 
 class SAMTone(Sound):
     """ SAM tones with cosine-ramped edges.
@@ -368,14 +397,16 @@ class SAMTone(Sound):
     ramp_duration : float
         Duration of a single ramp period (from minimum to maximum). 
         This may not be more than half of pip_duration.
-    fMod : float
+    fmod : float
         SAM modulation frequency, Hz
-    dMod : float
+    dmod : float
         Modulation depth, %
         
     """
     def __init__(self, **kwds):
-        for k in ['rate', 'duration', 'f0', 'dbspl', 'ramp_duration', 'fmod', 'dmod']:
+
+        for k in ['rate', 'duration', 'f0', 'dbspl', 'pip_duration', 'pip_start',
+                  'ramp_duration', 'fmod', 'dmod']:
             if k not in kwds:
                 raise TypeError("Missing required argument '%s'" % k)
         if kwds['pip_duration'] < kwds['ramp_duration'] * 2:
@@ -396,8 +427,9 @@ class SAMTone(Sound):
         
         """
         o = self.opts
-        return modtone(self.time, o['ramp_duration'], o['rate'], o['f0'], 
-                       o['dbspl'], o['fmod'], o['dmod'], 0.) # o['pip_duration'], o['pip_start'],)
+        basetone = piptone(self.time, o['ramp_duration'], o['rate'], o['f0'], 
+                       o['dbspl'], o['pip_duration'], o['pip_start'])
+        return sinusoidal_modulation(self.time, basetone, o['pip_start'], o['fmod'], o['dmod'], 0.)
 
 
 def pa_to_dbspl(pa, ref=20e-6):
@@ -414,26 +446,31 @@ def dbspl_to_pa(dbspl, ref=20e-6):
     return ref * 10**(dbspl / 20)
 
 
-def modtone(t, rt, Fs, F0, dBSPL, FMod, DMod, phaseshift):
-    """
-    Generate an amplitude-modulated tone with linear ramps.
+class SAMNoise(Sound):
+    """ One or more gaussian noise pips with cosine-ramped edges, sinusoidally modulated.
     
     Parameters
     ----------
-    t : array
-        array of waveform time values
-    rt : float
-        ramp duration
-    Fs : float
-        sample rate
-    F0 : float
-        tone frequency
-    FMod : float
-        modulation frequency
-    DMod : float
-        modulation depth percent
-    phaseshift : float
-        modulation phase
+    rate : float
+        Sample rate in Hz
+    duration : float
+        Total duration of the sound
+    seed : int >= 0
+        Random seed
+    dbspl : float
+        Maximum amplitude of pip in dB SPL. 
+    pip_duration : float
+        Duration of each pip including ramp time. Must be at least 
+        2 * ramp_duration.
+    pip_start : array-like
+        Start times of each pip
+    ramp_duration : float
+        Duration of a single ramp period (from minimum to maximum). 
+        This may not be more than half of pip_duration.
+    fmod : float
+        SAM modulation frequency
+    dmod : float
+        Modulation depth
     
     Returns
     -------
@@ -441,17 +478,54 @@ def modtone(t, rt, Fs, F0, dBSPL, FMod, DMod, phaseshift):
         waveform
     
     """
-    irpts = rt * Fs
-    mxpts = len(t)+1
+    def __init__(self, **kwds):
+        for k in ['rate', 'duration', 'seed', 'pip_duration', 'pip_start', 'ramp_duration', 
+                    'fmod', 'dmod']:
+            if k not in kwds:
+                raise TypeError("Missing required argument '%s'" % k)
+        if kwds['pip_duration'] < kwds['ramp_duration'] * 2:
+            raise ValueError("pip_duration must be greater than (2 * ramp_duration).")
+        if kwds['seed'] < 0:
+            raise ValueError("Random seed must be integer > 0")
+        
+        Sound.__init__(self, **kwds)
+        
+    def generate(self):
+        o = self.opts
+        basenoise = pipnoise(self.time, o['ramp_duration'], o['rate'],
+                        o['dbspl'], o['pip_duration'], o['pip_start'], o['seed'])
+        return sinusoidal_modulation(self.time, basenoise, o['pip_start'], o['fmod'], o['dmod'], 0.)
     
-    # TODO: is this envelope correct? For dmod=100, the envelope max is 2.
-    # I would have expected something like  (dmod/100) * 0.5 * (sin + 1)
-    env = (1 + (DMod/100.0) * np.sin((2*np.pi*FMod*t) - np.pi/2 + phaseshift)) # envelope...
+
+def sinusoidal_modulation(t, basestim, tstart, fmod, dmod, phaseshift):
+    """
+    Generate a sinusoidally amplitude-modulation of the input stimulus.
+    For dmod=100%, the envelope max is 2, the min is 0; for dmod = 0, the max and min are 1
+    maintains equal energy for all modulation depths.
+    Equation from Rhode and Greenberg, J. Neurophys, 1994 (adding missing parenthesis) and
+    Sayles et al. J. Physiol. 2013
+    The envelope can be phase shifted (useful for co-deviant stimuli).
     
-    pin = (np.sqrt(2) * dbspl_to_pa(dBSPL)) * np.sin((2*np.pi*F0*t) - np.pi/2) * env # unramped stimulus
-    pin = linearramp(pin, mxpts, irpts)
-    env = linearramp(env, mxpts, irpts)
-    return pin*env
+    Parameters
+    ----------
+    t : array
+        array of waveform time values (seconds)
+    basestim : array
+        array of waveform values that will be subject to sinulsoidal envelope modulation
+    tstart : float
+        time at which the base sound starts (modulation starts then, with 0 phase crossing)
+        (seconds)
+    fmod : float
+        modulation frequency (Hz)
+    dmod : float
+        modulation depth (percent)
+    phaseshift : float
+        modulation phase shift (starting phase, radians)
+    
+    """
+
+    env = (1.0 + (dmod/100.0) * np.sin((2.0*np.pi*fmod*(t-tstart)) + phaseshift - np.pi/2)) # envelope...
+    return basestim*env
 
 
 def modnoise(t, rt, Fs, F0, dur, start, dBSPL, FMod, DMod, phaseshift, seed):
@@ -638,12 +712,11 @@ def piptone(t, rt, Fs, F0, dBSPL, pip_dur, pip_start):
 
     return pin
 
-
-def clicks(t, Fs, click_start, click_duration, click_interval, nclicks, dbspl):
+def clicks(t, Fs, dBSPL, click_duration, click_starts):
     """
-    Create a waveform with clicks. Output is in 
+    Create a waveform with multiple retangular clicks. Output is in 
     Pascals.
-
+    
     Parameters
     ----------
     t : array
@@ -668,10 +741,11 @@ def clicks(t, Fs, click_start, click_duration, click_interval, nclicks, dbspl):
 
     """
     swave = np.zeros(t.size)
-    amp = dbspl_to_pa(dbspl)
+    amp = dbspl_to_pa(dBSPL)
     td = int(np.floor(click_duration * Fs))
+    nclicks = len(click_starts)
     for n in range(nclicks):
-        t0s = click_start + n*click_interval  # time for nth click
+        t0s = click_starts[n]  # time for nth click
         t0 = int(np.floor(t0s * Fs))  # index
         if t0+td > t.size:
             raise ValueError('Clicks: train duration exceeds waveform duration')
@@ -712,5 +786,3 @@ def fmsweep(t, start, duration, freqs, ramp, dBSPL):
     sw = np.sqrt(2) * dbspl_to_pa(dBSPL) * sw
     return sw
 
-
-    
