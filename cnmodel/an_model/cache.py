@@ -8,7 +8,11 @@ import numpy as np
 from .wrapper import get_matlab, model_ihc, model_synapse, seed_rng
 from ..util.filelock import FileLock
 
-import cochlea
+try:
+    import cochlea
+    HAVE_COCHLEA = True
+except ImportError:
+    HAVE_COCHLEA = False
 
 _cache_version = 1
 _cache_path = os.path.join(os.path.dirname(__file__), 'cache')
@@ -164,9 +168,7 @@ def generate_spiketrain(cf, sr, stim, seed, **kwds):
             ihc_kwds[kwd] = kwds.pop(kwd)
         if kwd in syn_kwds:
             syn_kwds[kwd] = kwds.pop(kwd)
-    if 'simulator' in kwds:
-        simulator = kwds['simulator']
-        kwds.pop('simulator')
+    simulator = kwds.pop('simulator', 'matlab')
 
     if len(kwds) > 0:
         raise TypeError("Invalid keyword arguments: %s" % list(kwds.keys()))
@@ -178,7 +180,7 @@ def generate_spiketrain(cf, sr, stim, seed, **kwds):
         psth = psth.get().ravel()
         times = np.argwhere(psth).ravel()
         return times * stim.dt
-    elif simulator == 'cochlea':
+    elif simulator == 'cochlea' and HAVE_COCHLEA:
         fs = int(0.5+1./stim.dt)  # need to avoid roundoff error
         srgrp = [0,0,0] # H, M, L (but input is 1=L, 2=M, H = 3)
         srgrp[3-sr] = 1
@@ -190,3 +192,5 @@ def generate_spiketrain(cf, sr, stim, seed, **kwds):
                 seed=seed,
                 species='cat')
         return np.array(sp.spikes.values[0])
+    else:  # it remains possible to have a typo.... 
+        raise ValueError("anmodel/cache.py: Simulator must be specified as either MATLAB or cochlea; found %s" % simulator)

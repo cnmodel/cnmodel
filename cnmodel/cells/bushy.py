@@ -6,7 +6,7 @@ from ..util import nstomho
 #from .. import data
 from ..util import Params
 import numpy as np
-from cnmodel import data
+from .. import data
 
 __all__ = ['Bushy', 'BushyRothman']
 

@@ -21,12 +21,11 @@ This package depends on the following:
    2. neuronvis (available at https://github.com/campagnola/neuronvis or https://github.com/pbmanis/neuronvis). This provides a library that can read and visualize hoc files.
    3. A Python-linked version of NEURON (www.neuron.yale.edu). The code has been tested with NEURON 7.3 and 7.4.
    4. A C compiler (gcc). Needed for compilation of C files for matlab, and compilation of the mechanisms for NEURON.
-   5. The Zilany et al (JASA 2014) cochlea model (available at https://www.urmc.rochester.edu/MediaLibraries/URMCMedia/labs/carney-lab/codes/Zilany-2014-Code-and-paper.zip).
+   5. The Zilany et al (JASA 2014) auditory periphery model. This can be provided one of two ways:
+      1. The original MATLAB-based Zilany model; requires MATLAB 2011 or later. A C compiler will also be needed to build this model.
+      2. The Python-based cochlea model (https://github.com/mrkrd/cochlea)   5. The Zilany et al (JASA 2014) cochlea model (available at https://www.urmc.rochester.edu/MediaLibraries/URMCMedia/labs/carney-lab/codes/Zilany-2014-Code-and-paper.zip).
 
-   6. You will need either Matlab or cochlea.
-      1. Matlab should be 2011 or later. Matlab is needed for the auditory nerve model to run. The C compiler is needed to compile the C files in the auditory nerve model.
-      2. Cochlea can be downloaded from https://github.com/mrkrd/cochlea. 
-   
+
 Testing
 -------
 Before testing, enter the CNModel directory, and compile the NEURON mod files:
