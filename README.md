@@ -50,13 +50,11 @@ Additional tests are included in the main directory. For example, test\_mechanis
 Building Models
 ---------------
 
-It is easiest to set up a model based on this package by using a separate directory, with links (ln -s) to CNModel and neuronvis (and possibly the mechanisms), rather than installing those as libraries in the Python environment. This helps to separate the detailed specifications from the hypotheses that are being examined in the modeling.
-=======
-
-This will test each of the models against reference data, the synapse mechanisms, a number of internal routines, and the auditory nerve model. The tests should pass for each component. Failures may indicate incorrect installation or functioning of individual components.
+It is easiest, and probably best practice, to set up a model based on this package by developing your code in a separate directory. Within that directory, you can place symlinks (ln -s) to the directories where CNModel and neuronvis (and possibly the mechanisms) reside. At present, CNMODel is not meant to be installed as a library in the Python environment. This approach helps to separate the detailed specifications in the modeling package from the hypotheses that are being examined in the modeling.
 
 
 References:
+-----------
 
 1.   Cao XJ, Oertel D. The magnitudes of hyperpolarization-activated and
 low-voltage-activated potassium currents co-vary in neurons of the ventral
@@ -78,7 +76,6 @@ release at a central synapse. Neuron. 1995 Oct;15(4):875-84. PubMed PMID:
 4.   Kanold PO, Manis PB. A physiologically based model of discharge pattern
 regulation by transient K+ currents in cochlear nucleus pyramidal cells. J
 Neurophysiol. 2001 Feb;85(2):523-38. PubMed PMID: 11160490.
-
 
 5.  Kanold PO, Manis PB. Transient potassium currents regulate the discharge
 patterns of dorsal cochlear nucleus pyramidal cells. J Neurosci. 1999 Mar
