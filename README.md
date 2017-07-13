@@ -67,13 +67,14 @@ vary in convergence, strength, and short-term plasticity. J Neurophysiol. 2010
 Nov;104(5):2308-20. doi: 10.1152/jn.00451.2010. Epub 2010 Aug 25. PubMed PMID:
 20739600; PubMed Central PMCID: PMC3350034.
 
-3.   Dittman JS, Kreitzer AC, Regehr WG. Interplay between facilitation, depression, and residual calcium at three presynaptic terminals. J Neurosci. 2000 Feb 15;20(4):1374-85. PubMed PMID: 10662828.
+3.   Dittman JS, Kreitzer AC, Regehr WG. Interplay between facilitation, depression,
+and residual calcium at three presynaptic terminals. J Neurosci. 2000 
+Feb 15;20(4):1374-85. PubMed PMID: 10662828.
 
 1. Isaacson JS, Walmsley B. Counting quanta: direct measurements of transmitter
-release at a central synapse. Neuron. 1995 Oct;15(4):875-84. PubMed PMID:
-7576636.
+release at a central synapse. Neuron. 1995 Oct;15(4):875-84.
 
-4.   Kanold PO, Manis PB. A physiologically based model of discharge pattern
+4. Kanold PO, Manis PB. A physiologically based model of discharge pattern
 regulation by transient K+ currents in cochlear nucleus pyramidal cells. J
 Neurophysiol. 2001 Feb;85(2):523-38. PubMed PMID: 11160490.
 
@@ -103,7 +104,6 @@ Jun;89(6):3083-96. PubMed PMID: 12783952.
 currents in the ventral cochlear nucleus. J Neurophysiol. 2003 Jun;89(6):3070-82.
 PubMed PMID: 12783951.
 
-
 11.   Rothman JS, Young ED, Manis PB. Convergence of auditory nerve fibers onto
 bushy cells in the ventral cochlear nucleus: implications of a computational
 model. J Neurophysiol. 1993 Dec;70(6):2562-83. PubMed PMID: 8120599.
@@ -125,7 +125,6 @@ PMCID: PMC3985897.
 account for neural adaptation to sound-level statistics. J Neurosci. 2010 Aug
 4;30(31):10380-90. doi: 10.1523/JNEUROSCI.0647-10.2010. PubMed PMID: 20685981;
 PubMed Central PMCID: PMC2935089.
-
 
 16.   Zilany MS, Bruce IC, Nelson PC, Carney LH. A phenomenological model of the
 synapse between the inner hair cell and auditory nerve: long-term adaptation with
