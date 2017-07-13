@@ -5,6 +5,7 @@ from neuron import h
 
 import cnmodel.util as util
 from .protocol import Protocol
+from ..util import custom_init
 
 class PopulationTest(Protocol):
     def reset(self):
@@ -89,7 +90,7 @@ class PopulationTest(Protocol):
         h.dt = dt
         self.temp = temp
         self.dt = dt
-        util.custom_init()
+        custom_init()
         
         h.run()
             
@@ -103,16 +104,16 @@ class PopulationTest(Protocol):
         self.win = pg.GraphicsWindow()
         self.win.resize(1000, 1000)
         
-        cmd_plot = self.win.addPlot()
+        cmd_plot = self.win.addPlot(title='Stim')
         cmd_plot.plot(self['t'], self['istim'])
         
         self.win.nextRow()
-        pre_plot = self.win.addPlot()
+        pre_plot = self.win.addPlot(title='SGC Vm')
         for i in range(len(self.pre_cells)):
-            pre_plot.plot(self['t'], self['v_pre%d'%i])
-
+            pre_plot.plot(self['t'], self['v_pre%d'%i], pen=pg.mkPen(pg.intColor(i, len(self.pre_cells)), hues=len(self.pre_cells), width=1.0))
+        
         self.win.nextRow()
-        post_plot = self.win.addPlot()
+        post_plot = self.win.addPlot(title='Post Cell: %s' % self.post_cell.type)
         post_plot.plot(self['t'], self['v_post'])
         
         
