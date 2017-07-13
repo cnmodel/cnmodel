@@ -60,7 +60,7 @@ def make_cell(typ):
     elif typ == 'dstellate_eager': # From Eager et al.
         cell = cells.DStellate.create(model='Eager', debug=True, ttx=False)
     elif typ == 'bushy':
-        cell = cells.Bushy.create(debug=True, ttx=True)
+        cell = cells.Bushy.create(debug=True, ttx=False)
     else:
         raise ValueError("Unknown cell type '%s'" % typ)
     return cell
@@ -73,7 +73,7 @@ class SynapseTester(UserTester):
     
     def run_test(self, pre, post):
         # Make sure no objects are left over from previous tests
-        reset()
+        reset(raiseError=False)
         
         # seed random generator using the name of this test
         seed = "%s_%s" % (pre, post)
@@ -87,7 +87,7 @@ class SynapseTester(UserTester):
         st = SynapseTest()
         st.run(pre_cell.soma, post_cell.soma, n_term, seed=seed)
         if self.audit:
-            st.show()
+            st.show_result()
         
         info = dict(
             rel_events=st.release_events(),
@@ -100,8 +100,6 @@ class SynapseTester(UserTester):
         #import weakref
         #global last_syn
         #last_syn = weakref.ref(st.synapses[0].terminal.relsi)
-        
-        
         
         return info
     

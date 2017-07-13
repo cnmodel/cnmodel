@@ -1,0 +1,32 @@
+objref soma
+soma = new SectionList()
+objref axon
+axon = new SectionList()
+objref dendrite
+dendrite = new SectionList()
+
+create sections[3]
+access sections[0]
+soma.append()
+sections[0] {
+    pt3dadd(0., 0., 0., 25.)
+    pt3dadd(0., 25., 0., 25.)
+}
+
+access sections[1]
+dendrite.append()
+connect sections[1](0), sections[0](1)
+sections[1] {
+    pt3dadd(0., 25., 0., 1.5)
+    pt3dadd(0., 220., 50., 1.5)
+}
+
+access sections[2]
+dendrite.append()
+connect sections[2](0), sections[0](1)
+sections[2] {
+    pt3dadd(0., 25., 0., 1.5)
+    pt3dadd(0., 220., -50., 1.5)
+}
+
+

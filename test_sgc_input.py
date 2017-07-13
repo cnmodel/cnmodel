@@ -1,3 +1,18 @@
+"""
+Test generating a series of EPSPs in a bushy cell in response to tone pip.
+
+This script:
+
+1. Creates one SGC and one bushy cell.
+2. Connects the two cells with a synapse.
+3. Specifies a tone pip input to the SGC cell.
+4. Records the bushy cell Vm.
+
+The auditory nerve spike train is generated automatically by the DummySGC class
+using the tone pip. For lower-level access to the auditory nerve model, see the
+test_an_model.py and test_sound_stim.py examples.
+
+"""
 import sys
 import numpy as np
 import pyqtgraph as pg
@@ -5,6 +20,7 @@ from neuron import h
 from cnmodel.protocols import Protocol
 from cnmodel import cells
 from cnmodel.util import sound
+from cnmodel.util import custom_init
 
 
 class SGCInputTest(Protocol):
@@ -33,7 +49,7 @@ class SGCInputTest(Protocol):
         h.celsius = temp
         h.dt = dt
         
-        self.custom_init()
+        custom_init()
         h.run()
 
     def show(self):
@@ -57,10 +73,11 @@ class SGCInputTest(Protocol):
         self.win.show()
 
 
-prot = SGCInputTest()
-prot.run()
-prot.show()
+if __name__ == '__main__':
+    prot = SGCInputTest()
+    prot.run()
+    prot.show()
 
-import sys
-if sys.flags.interactive == 0:
-    pg.QtGui.QApplication.exec_()
+    import sys
+    if sys.flags.interactive == 0:
+        pg.QtGui.QApplication.exec_()

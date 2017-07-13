@@ -29,6 +29,7 @@ class UserTester(object):
         """
         self.audit = AUDIT_TESTS
         self.key = key
+        self.rtol = 1e-3
         self.assert_test_info(*args, **kwds)
     
     def run_test(self, *args, **kwds):
@@ -62,19 +63,24 @@ class UserTester(object):
                 self.compare_results(info[i], expect[i])
         elif isinstance(info, np.ndarray):
             assert info.shape == expect.shape
-            assert info.dtype == expect.dtype
+            #assert info.dtype == expect.dtype
             if info.dtype.fields is None:
                 intnan = -9223372036854775808  # happens when np.nan is cast to int
                 inans = np.isnan(info) | (info == intnan)
                 enans = np.isnan(expect) | (expect == intnan)
                 assert np.all(inans == enans)
                 mask = ~inans
-                assert np.allclose(info[mask], expect[mask])
+                # print 'user_tester: info dtype fields is none'
+                # print 'info: '  , info[mask]
+                # print 'expect: ', expect[mask]
+                assert np.allclose(info[mask], expect[mask], rtol=self.rtol)
             else:
                 for k in info.dtype.fields.keys():
                     self.compare_results(info[k], expect[k])
         elif np.isscalar(info):
-            assert np.allclose(info, expect)
+#            print 'isscalar(info)'
+#            print 'info:   ', info, 'expected: ', expect
+            assert np.allclose(info, expect, rtol=self.rtol)
         else:
             try:
                 assert info == expect
@@ -92,7 +98,7 @@ class UserTester(object):
         app = pg.mkQApp()
         print "\n=== New test results for %s: ===\n" % self.key
         pprint.pprint(info)
-        win = pg.DiffTreeWidget()
+        win = pg.DataTreeWidget()
         win.resize(800, 800)
         win.setData(expect, info)
         win.show()

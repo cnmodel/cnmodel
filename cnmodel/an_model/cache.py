@@ -8,6 +8,12 @@ import numpy as np
 from .wrapper import get_matlab, model_ihc, model_synapse, seed_rng
 from ..util.filelock import FileLock
 
+try:
+    import cochlea
+    HAVE_COCHLEA = True
+except ImportError:
+    HAVE_COCHLEA = False
+
 _cache_version = 1
 _cache_path = os.path.join(os.path.dirname(__file__), 'cache')
 _index_file = os.path.join(_cache_path, 'index.pk')
@@ -146,6 +152,7 @@ def generate_spiketrain(cf, sr, stim, seed, **kwds):
     All other keyword arguments are given to model_ihc() and model_synapse()
     based on their names. These include 'species', 'nrep', 'reptime', 'cohc', 
     'cihc', and 'implnt'. 
+    'simulator' is used to set the simulator ('matlab' or 'cochlea')
     """
     for k in ['pin', 'CF', 'fiberType', 'noiseType']:
         if k in kwds:
@@ -154,20 +161,36 @@ def generate_spiketrain(cf, sr, stim, seed, **kwds):
     ihc_kwds = dict(pin=stim.sound, CF=cf, nrep=1, tdres=stim.dt, 
                     reptime=stim.duration*2, cohc=1, cihc=1, species=1)
     syn_kwds = dict(CF=cf, nrep=1, tdres=stim.dt, fiberType=sr, noiseType=1, implnt=0)
-    
+    simulator = 'matlab'
     # copy any given keyword args to the correct model function
     for kwd in kwds:
         if kwd in ihc_kwds:
             ihc_kwds[kwd] = kwds.pop(kwd)
         if kwd in syn_kwds:
             syn_kwds[kwd] = kwds.pop(kwd)
-    
+    simulator = kwds.pop('simulator', 'matlab')
+
     if len(kwds) > 0:
         raise TypeError("Invalid keyword arguments: %s" % list(kwds.keys()))
     
-    seed_rng(seed)
-    vihc = model_ihc(_transfer=False, **ihc_kwds) 
-    m, v, psth = model_synapse(vihc, _transfer=False, **syn_kwds)
-    psth = psth.get().ravel()
-    times = np.argwhere(psth).ravel()
-    return times * stim.dt
+    if simulator == 'matlab':
+        seed_rng(seed)
+        vihc = model_ihc(_transfer=False, **ihc_kwds) 
+        m, v, psth = model_synapse(vihc, _transfer=False, **syn_kwds)
+        psth = psth.get().ravel()
+        times = np.argwhere(psth).ravel()
+        return times * stim.dt
+    elif simulator == 'cochlea' and HAVE_COCHLEA:
+        fs = int(0.5+1./stim.dt)  # need to avoid roundoff error
+        srgrp = [0,0,0] # H, M, L (but input is 1=L, 2=M, H = 3)
+        srgrp[3-sr] = 1
+        sp = cochlea.run_zilany2014(
+                stim.sound,
+                fs=fs,
+                anf_num=srgrp,
+                cf=cf,
+                seed=seed,
+                species='cat')
+        return np.array(sp.spikes.values[0])
+    else:  # it remains possible to have a typo.... 
+        raise ValueError("anmodel/cache.py: Simulator must be specified as either MATLAB or cochlea; found %s" % simulator)

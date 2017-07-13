@@ -7,58 +7,58 @@ import cnmodel.cells as cells
 from cnmodel.util import UserTester, reset
 from cnmodel.protocols import IVCurve
 
-#
-# Cell-type tests
-#
+"""
+Cell-type tests
+"""
 
 def test_bushy():
-    reset()
-    cell = cells.Bushy.create(species='guineapig', type='II')
+    reset(raiseError=False)
+    cell = cells.Bushy.create(species='guineapig', modelType='II')
     CellTester('bushy_guineapig-typeII', cell)
 
 def test_bushy21():
-    reset()
-    cell = cells.Bushy.create(species='guineapig', type='II-I')
+    reset(raiseError=False)
+    cell = cells.Bushy.create(species='guineapig', modelType='II-I')
     CellTester('bushy_guineapig-typeII-I', cell)
 
 def test_tstellate():
-    reset()
-    cell = cells.TStellate.create(species='guineapig', type='I-c')
+    reset(raiseError=False)
+    cell = cells.TStellate.create(species='guineapig', modelType='I-c')
     CellTester('tstellate_guineapig-typeI-c', cell)
 
 def test_tstellatet():
-    reset()
-    cell = cells.TStellate.create(species='guineapig', type='I-t')
+    reset(raiseError=False)
+    cell = cells.TStellate.create(species='guineapig', modelType='I-t')
     CellTester('tstellate_guineapig-typeI-t', cell)
 
 def test_dstellate():
-    reset()
-    cell = cells.DStellate.create(species='guineapig', type='I-II')
+    reset(raiseError=False)
+    cell = cells.DStellate.create(species='guineapig', modelType='I-II')
     CellTester('dstellate_guineapig-typeI-II', cell)
 
 def test_octopus():
-    reset()
-    cell = cells.Octopus.create(species='guineapig', type='II-o')
+    reset(raiseError=False)
+    cell = cells.Octopus.create(species='guineapig', modelType='II-o')
     CellTester('octopus_guineapig-typeII-o', cell)
 
 def test_pyramidal():
-    reset()
-    cell = cells.Pyramidal.create(species='rat', type='I')
+    reset(raiseError=False)
+    cell = cells.Pyramidal.create(species='rat', modelType='I')
     CellTester('pyramidal_rat_I', cell)
 
 def test_cartwheel():
-    reset()
-    cell = cells.Cartwheel.create(species='rat', type='I')
+    reset(raiseError=False)
+    cell = cells.Cartwheel.create(species='mouse', modelType='I')
     CellTester('cartwheel_rat_I', cell)
 
 def test_sgc_basal_middle():
-    reset()
-    cell = cells.SGC.create(species='mouse', type='bm')
+    reset(raiseError=False)
+    cell = cells.SGC.create(species='mouse', modelType='bm')
     CellTester('SGC_rat_bm', cell)
 
 def test_sgc_apical():
-    reset()
-    cell = cells.SGC.create(species='mouse', type='a')
+    reset(raiseError=False)
+    cell = cells.SGC.create(species='mouse', modelType='a')
     CellTester('SGC_rat_a', cell)
 
 
@@ -125,7 +125,8 @@ class CellTester(UserTester):
         #os.mkdir(dirname)
     #pickle.dump(info, open(fn, 'wb'))
     
-    
+
+# The following is superseeded by the built in unit tests.
 #def CellTester(key):
     #"""
     #Test *cell* and raise exception if the results do not match prior

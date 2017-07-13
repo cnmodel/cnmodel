@@ -14,6 +14,9 @@ Original implementation by Paul B. Manis, April (JHU) and Sept, (UNC)1999.
 
 File split implementaiton, April 1, 2004.
 
+ Does not pass modlunit.
+Should work at 22C and scales by Rothman and Manis, 2003c for temperature
+
 Contact: pmanis@med.unc.edu
 
 ENDCOMMENT
@@ -25,6 +28,7 @@ UNITS {
 }
 
 NEURON {
+        THREADSAFE
         SUFFIX nacn
         USEION na READ ena WRITE ina
         RANGE gbar, gna, ina
@@ -39,7 +43,7 @@ PARAMETER {
         dt (ms)
         ena (mV)
         gbar =  0.07958 (mho/cm2) <0,1e9>
-        q10 = 3.0 : q10 for rates
+        q10tau = 3.0 : q10 for rates
 }
 
 STATE {
@@ -51,33 +55,31 @@ ASSIGNED {
     gna (mho/cm2)
     minf hinf
     mtau (ms) htau (ms)
+    q10 ()
+    
     }
 
 LOCAL mexp, hexp
 
 BREAKPOINT {
-	SOLVE states
-    
+	SOLVE states METHOD cnexp
     gna = gbar*(m^3)*h
     ina = gna*(v - ena)
-
 }
 
 UNITSOFF
 
 INITIAL {
-    trates(v)
+    rates(v)
     m = minf
     h = hinf
 }
 
-PROCEDURE states() {  :Computes state variables m, h, and n
-	trates(v)      :             at the current v and dt.
-	m = m + mexp*(minf-m)
-	h = h + hexp*(hinf-h)
-VERBATIM
-	return 0;
-ENDVERBATIM
+DERIVATIVE states {  :Computes state variables m, h, and n
+	rates(v)      :             at the current v and dt.
+	m' = (minf - m)/mtau : m = m + mexp*(minf-m)
+	h' = (hinf - h)/htau : h = h + hexp*(hinf-h)
+
 }
 
 LOCAL qt
@@ -85,39 +87,17 @@ LOCAL qt
 PROCEDURE rates(v) {  :Computes rate and other constants at current v.
                       :Call once from HOC to initialize inf at resting v.
 
-	qt = q10^((celsius - 22)/10) : if you don't like room temp, it can be changed!
+	q10 = q10tau^((celsius - 22)/10) : if you don't like room temp, it can be changed!
 
 : average sodium channel
     minf = 1 / (1+exp(-(v + 38) / 7))
     hinf = 1 / (1+exp((v + 65) / 6))
 
     mtau =  (10 / (5*exp((v+60) / 18) + 36*exp(-(v+60) / 25))) + 0.04
-    mtau = mtau/qt
+    mtau = mtau/q10
     htau =  (100 / (7*exp((v+60) / 11) + 10*exp(-(v+60) / 25))) + 0.6
-    htau = htau/qt
+    htau = htau/q10
 }
 
-PROCEDURE trates(v) {  :Computes rate and other constants at current v.
-                      :Call once from HOC to initialize inf at resting v.
-	LOCAL tinc
-	TABLE minf, mexp, hinf, hexp
-	DEPEND dt, celsius FROM -150 TO 150 WITH 300
-
-    rates(v)    : not consistently executed from here if usetable_hh == 1
-        : so don't expect the tau values to be tracking along with
-        : the inf values in hoc
-
-	tinc = -dt :  * qt (note q10 is handled in mtau/htau calculation above
-	mexp = 1 - exp(tinc/mtau)
-	hexp = 1 - exp(tinc/htau)
-	}
-
-FUNCTION vtrap(x,y) {  :Traps for 0 in denominator of rate eqns.
-        if (fabs(x/y) < 1e-6) {
-                vtrap = y*(1 - x/y/2)
-        }else{
-                vtrap = x/(exp(x/y) - 1)
-        }
-}
 
 UNITSON
