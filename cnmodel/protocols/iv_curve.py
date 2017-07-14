@@ -196,10 +196,8 @@ class IVCurve(Protocol):
         custom_init(v_init=self.cell.vm0)
         h.t = 0.
         h.tstop = self.tend
-        # while h.t < h.tstop:
-        #     h.fadvance()
-        h.batch_save() # save nothing
-        h.batch_run(h.tstop, h.dt, "v.dat")
+        while h.t < h.tstop:
+            h.fadvance()
 
         k1 = int(stim['delay']/h.dt - 1)
 #            print ('   V before step: {0:9.5f}'.format(self['v_soma'][k1]))
@@ -434,7 +432,7 @@ class IVCurve(Protocol):
             fits.append(fit)
             fit_inds.append(i)
         # convert fits to record array
-        print len(fits) # fits[0].params
+#        print len(fits) # fits[0].params
         if len(fits) > 0:
             dtype = [(k, float) for k in fits[0].params] + [('index', int)]
             fit_data = np.empty(len(fits), dtype=dtype)
