@@ -182,6 +182,7 @@ class BushyRothman(Bushy):
             self.soma.ek = self.e_k
             self.soma().ihvcn.eh = self.e_h
             self.soma().leak.erev = self.e_leak
+            self.c_m = 0.9
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
             self.decorate()
@@ -287,7 +288,25 @@ class BushyRothman(Bushy):
             soma().ihvcn.gbar = sf*nstomho(3.5, self.somaarea)
             soma().leak.gbar = sf*nstomho(2.0, self.somaarea)
             self.axonsf = 0.57
-
+        
+        elif species == 'guineapig' and modelType =='I-II':
+            # guinea pig data from Rothman and Manis, 2003, type II=I
+            print '  Setting conductances for guinea pig II-I bushy cell, Rothman and Manis, 2003'
+            self._valid_temperatures = (22., 38.)
+            if self.status['temperature'] is None:
+                self.status['temperature'] = 22. 
+            sf = 1.0
+            if self.status['temperature'] == 38.:  # adjust for 2003 model conductance levels at 38
+                sf = 3.03  # Q10 of 2, 22->38C. (p3106, R&M2003c)
+                # note that kinetics are scaled in the mod file.
+            self.i_test_range = {'pulse': (-0.4, 0.4, 0.02)}
+            self.set_soma_size_from_Cm(12.0)
+            self.adjust_na_chans(soma, sf=sf)
+            soma().kht.gbar = sf*nstomho(150.0, self.somaarea)
+            soma().klt.gbar = sf*nstomho(20.0, self.somaarea)
+            soma().ihvcn.gbar = sf*nstomho(2.0, self.somaarea)
+            soma().leak.gbar = sf*nstomho(2.0, self.somaarea)
+            self.axonsf = 0.57
         else:
             errmsg = 'Species "%s" or model type "%s" is not recognized for Bushy cells.' %  (species, modelType)
             errmsg += '\n  Valid species are: \n'
@@ -357,7 +376,6 @@ class BushyRothman(Bushy):
             sf = 1.0
             if self.status['temperature'] == None:
                 self.status['temperature'] = 22.
-            sf = 1.0
             if self.status['temperature'] == 38:
                 sf = 3.03
             self.gBar = Params(nabar=sf*1000.0E-9/refarea,

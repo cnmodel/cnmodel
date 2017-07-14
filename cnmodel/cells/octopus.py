@@ -221,6 +221,7 @@ class OctopusRothman(Octopus, Cell):
         soma = self.soma
 
         if species == 'guineapig' and modelType =='II-o':
+            self.c_m = 0.9
             self.set_soma_size_from_Cm(25.0)
             self._valid_temperatures = (22., 38.)
             if self.status['temperature'] is None:

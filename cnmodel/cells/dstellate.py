@@ -191,10 +191,10 @@ class DStellateRothman(DStellate):
             self.mechanisms = ['klt', 'kht', 'ihvcn', 'leak', nach]
             for mech in self.mechanisms:
                 self.soma.insert(mech)
-            # soma.ena = self.e_na
+            self.soma.ena = self.e_na
             self.soma.ek = self.e_k
-            # ().ihvcn.eh = self.e_h
             self.soma().leak.erev = self.e_leak
+            self.c_m = 0.9
             self.set_soma_size_from_Cm(12.0)
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
@@ -230,6 +230,7 @@ class DStellateRothman(DStellate):
             self._valid_temperatures = (34., )
             if self.status['temperature'] is None:
                 self.set_temperature(34.)
+            self.c_m = 0.9
             self.set_soma_size_from_Cm(25.0)
             self.adjust_na_chans(soma, gbar=1800.)
             soma().kht.gbar = nstomho(150.0, self.somaarea)
@@ -239,6 +240,7 @@ class DStellateRothman(DStellate):
             soma().leak.gbar = nstomho(2.0, self.somaarea)
             self.axonsf = 0.5
         elif species == 'guineapig' and modelType == 'I-II':  # values from R&M 2003, Type II-I
+            self.c_m = 0.9
             self._valid_temperatures = (22., 38.)
             if self.status['temperature'] is None:
                 self.set_temperature(22.)
