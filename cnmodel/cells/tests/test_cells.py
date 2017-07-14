@@ -72,6 +72,9 @@ class CellTester(UserTester):
     
     def run_test(self, cell):
         # run I/V test on cell
+        V0 = cell.find_i0(showinfo=True)
+        rmrintau = cell.compute_rmrintau(auto_initialize=False, vrange=None),
+        print rmrintau
         iv = IVCurve()
         self.iv = iv
         iv.run(cell.i_test_range, cell)
@@ -79,13 +82,14 @@ class CellTester(UserTester):
             iv.show(cell)
         
         info = dict(
+            temp=iv.temp,
             icmd=iv.current_cmd,
             spikes=iv.spike_times(),
             rmp=iv.rest_vm(),
             rm_taum=iv.input_resistance_tau(),
             vpeak=iv.peak_vm(),
             vss=iv.steady_vm(),
-            rmrintau=cell.compute_rmrintau(),
+            rmrintau=rmrintau
             )
         return info
     
