@@ -33,18 +33,25 @@ cellinfo = {'types': ['bushy', 'bushycoop', 'stellate', 'stellatenav11', 'dstell
             'pulse': ['step', 'pulse']}
 
 # Format for ivranges is list of tuples. This allows finer increments in selected ranges, such as close to rest
-ccivrange = {'bushy': {'pulse': [(-1, 1.2, 0.05)]},
-             'bushycoop': {'pulse': [(-0.5, 0.7, 0.02)]},
-            'stellate': {'pulse': [(-1., 1.01, 0.05), (-0.015, 0, 0.005)]},
-            'stellatenav11': {'pulse': [(-0.5, 1., 0.1)]}, # , (-0.015, 0, 0.005)]},
-            'steldend': {'pulse': [(-1.0, 1.0, 0.1)]},
-            'dstellate': {'pulse': [(-0.3, 0.301, 0.015)]},
+ccivrange = {'mouse':
+                {'bushy': {'pulse': [(-1, 1.2, 0.05)]},
+                 'bushycoop': {'pulse': [(-0.5, 0.7, 0.02)]},
+                 'stellate': {'pulse': [(-1., 1.01, 0.05), (-0.015, 0, 0.005)]},
+                 'stellatenav11': {'pulse': [(-1, 1., 0.1)]},
+                 'dstellate': {'pulse': [(-0.3, 0.301, 0.015)]},
+                 'sgc': {'pulse': [(-0.3, 0.6, 0.02)]},
+                 'cartwheel': {'pulse': [(-0.5, 0.5, 0.05)]},
+                 'pyramidal': {'pulse': [(-0.3, 0.3, 0.025), (-0.040, 0.025, 0.005)], 'prepulse': [(-0.25, -0.25, 0.25)]},
+                 'tuberculoventral': {'pulse': [(-0.35, 1.0, 0.05), (-0.040, 0.01, 0.005)]}
+             },
+
+            'guineapig':
+            {'bushy': {'pulse': [(-1, 1.2, 0.05)]},
+            'stellate': {'pulse': [(-0.15, 0.15, 0.01)]},
+            'dstellate': {'pulse': [(-0.25, 0.25, 0.025)]},
             'dstellateeager': {'pulse': [(-0.6, 1.0, 0.025)]},
-            'sgc': {'pulse': [(-0.3, 0.6, 0.02)]},
-            'cartwheel': {'pulse': [(-0.5, 0.5, 0.05)]},
-            'pyramidal': {'pulse': [(-0.3, 0.3, 0.025), (-0.040, 0.025, 0.005)], 'prepulse': [(-0.25, -0.25, 0.25)]},
-            'tuberculoventral': {'pulse': [(-0.35, 1.0, 0.05), (-0.040, 0.01, 0.005)]},
             'octopus': {'pulse': [(-2., 6., 0.2)]},
+            }
             }
 
 # scales holds some default scaling to use in the cciv plots
@@ -218,10 +225,12 @@ class Tests():
 #        self.cell.cell_initialize()
         print 'Currents at nominal Vrest= %.2f I = 0: I = %g ' % (V0, self.cell.i_currents(V=V0))
         self.cell.print_mechs(self.cell.soma)
+        instant = self.cell.compute_rmrintau(auto_initialize=False, vrange=None)
+        print('    From Inst: Rin = {:7.1f}  Tau = {:7.1f}  Vm = {:7.1f}'.format(instant['Rin'], instant['tau'], instant['v']))
         if args.cc is True:
             # define the current clamp electrode and default settings
             self.iv = IVCurve()
-            self.iv.run(ccivrange[args.celltype], self.cell, durs=default_durs,
+            self.iv.run(ccivrange[args.species][args.celltype], self.cell, durs=default_durs,
                    sites=sites, reppulse=ptype, temp=float(args.temp))
             ret = self.iv.input_resistance_tau()
             print('    From IV: Rin = {:7.1f}  Tau = {:7.1f}  Vm = {:7.1f}'.format(ret['slope'], ret['tau'], ret['intercept']))
