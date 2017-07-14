@@ -61,7 +61,7 @@ class SynapseTest(Protocol):
         
         istim = h.iStim(0.5, sec=pre_cell.soma)
         stim = {
-            'NP': 20,
+            'NP': 10,
             'Sfreq': 100.0,
             'delay': 10.0,
             'dur': 0.5,
