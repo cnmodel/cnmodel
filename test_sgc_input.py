@@ -24,7 +24,7 @@ from cnmodel.util import custom_init
 
 
 class SGCInputTest(Protocol):
-    def run(self, temp=34.0, dt=0.025, seed=575982035):
+    def run(self, temp=34.0, dt=0.025, seed=575982035, simulator='matlab'):
         preCell = cells.DummySGC(cf=4000, sr=2)
         postCell = cells.Bushy.create()
         synapse = preCell.connect(postCell)
@@ -36,7 +36,7 @@ class SGCInputTest(Protocol):
                                   ramp_duration=2.5e-3, pip_duration=0.04, 
                                   pip_start=[0.02])
         
-        preCell.set_sound_stim(self.stim, seed=seed)
+        preCell.set_sound_stim(self.stim, seed=seed, simulator=simulator)
         
         self['vm'] = postCell.soma(0.5)._ref_v
         #self['prevm'] = preCell.soma(0.5)._ref_v
@@ -74,10 +74,12 @@ class SGCInputTest(Protocol):
 
 
 if __name__ == '__main__':
+    simulator = 'matlab'
+    if len(sys.argv) > 1:
+        simulator=sys.argv[1]
     prot = SGCInputTest()
-    prot.run()
+    prot.run(simulator=simulator)
     prot.show()
 
-    import sys
     if sys.flags.interactive == 0:
         pg.QtGui.QApplication.exec_()
