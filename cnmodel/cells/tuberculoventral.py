@@ -3,17 +3,17 @@ import numpy as np
 #import neuron as nrn
 
 from .cell import Cell
-#from .. import synapses
+from .. import synapses
 from ..util import nstomho
 from ..util import Params
-#from .. import data
+from .. import data
 
 __all__ = ['Tuberculoventral'] 
 
 
 class Tuberculoventral(Cell):
     
-    type = 'Tuberculoventral'
+    type = 'tuberculoventral'
 
     @classmethod
     def create(cls, modelType='TVmouse', **kwds):
@@ -65,10 +65,10 @@ class Tuberculoventral(Cell):
                 self.AMPAR_gmax = self.AMPAR_gmax/self.Pr
                 self.NMDAR_gmax = self.NMDAR_gmax/self.Pr
                 if 'AMPAScale' in kwds:
-                    AMPA_gmax = AMPA_gmax * kwds['AMPAScale']  # allow scaling of AMPA conductances
+                    self.AMPA_gmax = self.AMPA_gmax * kwds['AMPAScale']  # allow scaling of AMPA conductances
                 if 'NMDAScale' in kwds:
-                    NMDA_gmax = NMDA_gmax*kwds['NMDAScale']
-                return self.make_glu_psd(post_sec, terminal, AMPAR_gmax, NMDAR_gmax, loc=loc)
+                    self.NMDA_gmax = self.NMDA_gmax*kwds['NMDAScale']
+                return self.make_glu_psd(post_sec, terminal, self.AMPAR_gmax, self.NMDAR_gmax, loc=loc)
             elif terminal.cell.type == 'dstellate':  # WBI input -Voigt, Nelken, Young
                 return self.make_gly_psd(post_sec, terminal, type='glyfast', loc=loc)
             elif terminal.cell.type == 'tuberculoventral':  # TV cells talk to each other-Kuo et al.
