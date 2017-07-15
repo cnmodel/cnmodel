@@ -1,7 +1,7 @@
 About CNModel
 =============
 
-CNModel is a Python-based interface to NEURON models of cochlear nucleus neurons, synapses, network connectivity. To drive the model with sound stimuli, a bridge to the MATLAB model of Zilaney et al (2010, 2014)  of auditory nerve fiber spike trains to acoustic stimuli is provided, or a Python-based version of the model from Rudnicki and Hemmert can be used. The overall goal is to provide a platform for modeling networks of cochlear nucleus neurons with different levels of biological realism in the context of an accurate simulation of auditory nerve input.
+CNModel is a Python-based interface to NEURON models of cochlear nucleus neurons, synapses, network connectivity. To drive the model with sound stimuli, the Zilaney et al (2010, 2014) auditory periphery model is used to generate auditory nerve spike trains (either via the "cochlea" Python package or by the original MATLAB model; see below). The overall goal is to provide a platform for modeling networks of cochlear nucleus neurons with different levels of biological realism in the context of an accurate simulation of auditory nerve input.
 
 At the lowest level are NEURON-based implementations of ion channels and synapses. Ion channel models for potassium channels are derived largely from the measurements and models of Rothman and Manis (2003abc), and Kanold and Manis (1999, 2001); other channels are derived or modified from the literature. Cell models are in turn based on the insertion of ion channels in densities based on measurements in guinea pig and mouse. The "point" somatic cell models, which form the base set of models in CNModel, replicate the data reported in the original papers. 
 
@@ -17,42 +17,44 @@ Installation requirements
 -------------------------
 This package depends on the following:
 
-   1. Python 2.7.10 with numpy (1.11), scipy (0.19.0), lmfit (0.9.6), Qt4.8.7, pyqt4 (4.11.4) and pyqtgraph (0.9.10). An Anaconda install with the appropriate scientific packages works well. lmfit is best obtained via pip to install the latest versions. This package is not yet compatible with Python 3.x.
-   2. neuronvis (available at https://github.com/campagnola/neuronvis or https://github.com/pbmanis/neuronvis). This provides a library that can read and visualize hoc files.
-   3. A Python-linked version of NEURON (www.neuron.yale.edu). The code has been tested with NEURON 7.3 and 7.4.
-   4. A C compiler (gcc). Needed for compilation of C files for matlab, and compilation of the mechanisms for NEURON.
-   5. The Zilany et al (JASA 2014) auditory periphery model. This can be provided one of two ways:
+   1. Python 2.7.10 with numpy (1.11), scipy (0.19.0), lmfit (0.9.6), pyqt4 (4.11.4), and pyqtgraph (0.9.10). 
+      An Anaconda install with the appropriate scientific packages works well. lmfit is best obtained via pip
+      to install the latest versions. This package is not yet compatible with Python 3.x.
+   2. A Python-linked version of NEURON (www.neuron.yale.edu). The code has been tested with NEURON 7.3 and 7.4.
+   3. A C compiler (gcc). Needed for compilation of mechanisms for NEURON.
+   4. The Zilany et al (JASA 2014) auditory periphery model. This can be provided one of two ways:
       1. The original MATLAB-based Zilany model; requires MATLAB 2011 or later. A C compiler will also be needed to build this model.
-      2. The Python-based cochlea model (https://github.com/mrkrd/cochlea)   5. The Zilany et al (JASA 2014) cochlea model (available at https://www.urmc.rochester.edu/MediaLibraries/URMCMedia/labs/carney-lab/codes/Zilany-2014-Code-and-paper.zip).
+      2. The Python-based cochlea model by Rudnicki and Hemmert (https://github.com/mrkrd/cochlea; can be installed via pip)
+   5. neuronvis (optional; available at https://github.com/campagnola/neuronvis or https://github.com/pbmanis/neuronvis).
+      This provides 3D visualization for morphology.
 
 
 Testing
 -------
-Before testing, enter the CNModel directory, and compile the NEURON mod files:
 
-    nrnivmodl CNModel/mechanisms
+Before testing, enter the cnmodel directory and compile the NEURON mod files:
 
-This will create a directory ("x86_64" or "special") in the top CNModel directory. At that point
+    $ nrnivmodl cnmodel/mechanisms
 
-    python toy_model.py
+This will create a directory ("x86_64" or "special") in the top cnmodel directory. At that point
+
+    $ python examples/toy_model.py
      
 should generate a plot with several sets of traces showing responses of individual neuron models to depolarizing and hyperpolarizing current steps.
 
-
 The test suite can be run as:
 
-    python test.py
+    $ python test.py
 
 This will test each of the models against reference data, the synapse mechanisms, a number of internal routines, and the auditory nerve model. The tests should pass for each component. Failures may indicate incorrect installation or incorrect function within individual components.
 
-Additional tests are included in the main directory. For example, test\_mechanisms.py runs a voltage clamp protocol on a selected mechanism and displays the result. test\_cells.py can run protocols on selected cell models.
-
-Building Models
----------------
-
-It is easiest, and probably best practice, to set up a model based on this package by developing your code in a separate directory. Within that directory, you can place symlinks (ln -s) to the directories where CNModel and neuronvis (and possibly the mechanisms) reside. At present, CNMODel is not meant to be installed as a library in the Python environment. This approach helps to separate the detailed specifications in the modeling package from the hypotheses that are being examined in the modeling.
-
-
+Additional tests are included in the examples directory. For example:
+    
+    * `test_mechanisms.py` runs a voltage clamp I/V protocol on a selected mechanism and displays the result.
+    * `test_cells.py` can run protocols on selected cell models.
+    * `test_synapses.py` evokes spikes in a presynaptic cell while recording the postsynaptic potential.
+    
+    
 References:
 -----------
 
