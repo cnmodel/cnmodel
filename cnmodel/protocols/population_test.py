@@ -6,12 +6,13 @@ from neuron import h
 import cnmodel.util as util
 from .protocol import Protocol
 from ..util import custom_init
+from cnmodel.util import sound
 
 class PopulationTest(Protocol):
     def reset(self):
         super(PopulationTest, self).reset()
 
-    def run(self, pops, cf=16e3, temp=34.0, dt=0.025):
+    def run(self, pops, cf=16e3, temp=34.0, dt=0.025, simulator='cochlea'):
         """ 
         1. Connect pop1 => pop2
         2. Instantiate a single cell in pop2
@@ -25,7 +26,7 @@ class PopulationTest(Protocol):
         self.post_pop = post_pop
         
         # start with one cell, selected from the user-selected population, that has
-        # a cf close to 4kHz
+        # a cf close to the center CF
         post_cell_ind = post_pop.select(1, cf=cf, create=True)[0]
         post_cell = post_pop.get_cell(post_cell_ind)
         post_pop.resolve_inputs(depth=1)
@@ -38,6 +39,10 @@ class PopulationTest(Protocol):
         pre_secs = [cell.soma for cell in pre_cells]
         self.pre_cells = pre_cells
         self.pre_cell_inds = pre_cell_inds
+
+        self.stim = sound.TonePip(rate=100e3, duration=0.1, f0=cf, dbspl=60,
+                                  ramp_duration=2.5e-3, pip_duration=0.05, 
+                                  pip_start=[0.02])
         
         
         ##
@@ -58,13 +63,14 @@ class PopulationTest(Protocol):
         self.stim_params = []
         self.istim = []
         for i, pre_cell in enumerate(pre_cells):
+            pre_cell.set_sound_stim(self.stim, seed=i, simulator=simulator)
             istim = h.iStim(0.5, sec=pre_cell.soma)
             stim = {}
             stim['NP'] = 10
             stim['Sfreq'] = 100.0 # stimulus frequency
             stim['delay'] = 10.0
             stim['dur'] = 0.5
-            stim['amp'] = 10.0
+            stim['amp'] = 0.0
             stim['PT'] = 0.0
             stim['dt'] = dt
             (secmd, maxt, tstims) = util.make_pulse(stim)
@@ -72,7 +78,7 @@ class PopulationTest(Protocol):
         
             # istim current pulse train
             i_stim_vec = h.Vector(secmd)
-            i_stim_vec.play(istim._ref_i, dt, 0)
+            i_stim_vec.play(istim._ref_i, dt, 0, pre_cell.soma(0.5))
             self.istim.append((istim, i_stim_vec))
             self['istim'] = istim._ref_i
 
@@ -85,15 +91,17 @@ class PopulationTest(Protocol):
         #
         # Run simulation
         #
-        h.tstop = 200.0
-        h.celsius = temp
         h.dt = dt
-        self.temp = temp
         self.dt = dt
-        custom_init()
-        
-        h.run()
-            
+        h.celsius = post_cell.status['temperature']
+        self.temp = h.celsius
+        post_cell.cell_initialize()  # proper initialization.
+        h.dt = self.dt
+        custom_init(v_init=post_cell.vm0)
+        h.t = 0.
+        h.tstop = 200.0
+        while h.t < h.tstop:
+            h.fadvance()
 
 
     def show(self):

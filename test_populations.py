@@ -32,6 +32,8 @@ def testpopulation():
         'bushy': populations.Bushy,
         'tstellate': populations.TStellate,
         'dstellate': populations.DStellate,
+        'pyramidal': populations.Pyramidal,
+        'tuberculoventral': populations.Tuberculoventral,
         }
 
     pops = []
