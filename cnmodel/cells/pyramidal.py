@@ -3,10 +3,13 @@ from ..util import nstomho
 import numpy as np
 
 from .cell import Cell
+from .. import data
 
 __all__ = ['Pyramidal', 'PyramidalKanold']
 
 class Pyramidal(Cell):
+
+    type = 'pyramidal'
 
     @classmethod
     def create(cls, model='POK', **kwds):
@@ -15,6 +18,62 @@ class Pyramidal(Cell):
         else:
             raise ValueError ('Pyramidal model %s is unknown', model)
 
+    def make_psd(self, terminal, psd_type, **kwds):
+        """
+        Connect a presynaptic terminal to one post section at the specified location, with the fraction
+        of the "standard" conductance determined by gbar.
+        The default condition is to try to pass the default unit test (loc=0.5)
+        
+        Parameters
+        ----------
+        terminal : Presynaptic terminal (NEURON object)
+        
+        psd_type : either simple or multisite PSD for bushy cell
+        
+        kwds: dict of options. Two are currently handled:
+        postsize : expect a list consisting of [sectionno, location (float)]
+        AMPAScale : float to scale the ampa currents
+        
+        """
+        if 'postsite' in kwds:  # use a defined location instead of the default (soma(0.5)
+            postsite = kwds['postsite']
+            loc = postsite[1]  # where on the section?
+            uname = 'sections[%d]' % postsite[0]  # make a name to look up the neuron section object
+            post_sec = self.hr.get_section(uname)  # Tell us where to put the synapse.
+        else:
+            loc = 0.5
+            post_sec = self.soma
+        
+        if psd_type == 'simple':
+            return self.make_exp2_psd(post_sec, terminal, loc=loc)
+        elif psd_type == 'multisite':
+            if terminal.cell.type == 'sgc':
+                # Max conductances for the glu mechanisms are calibrated by 
+                # running `synapses/tests/test_psd.py`. The test should fail
+                # if these values are incorrect
+                self.AMPAR_gmax = data.get('sgc_synapse', species=self.species,
+                        post_type=self.type, field='AMPAR_gmax')*1e3
+                self.NMDAR_gmax = data.get('sgc_synapse', species=self.species,
+                        post_type=self.type, field='NMDAR_gmax')*1e3
+                self.Pr = data.get('sgc_synapse', species=self.species,
+                        post_type=self.type, field='Pr')
+                # adjust gmax to correct for initial Pr
+                self.AMPAR_gmax = self.AMPAR_gmax/self.Pr
+                self.NMDAR_gmax = self.NMDAR_gmax/self.Pr
+                if 'AMPAScale' in kwds:
+                    self.AMPA_gmax = self.AMPA_gmax * kwds['AMPAScale']  # allow scaling of AMPA conductances
+                if 'NMDAScale' in kwds:
+                    self.NMDA_gmax = self.NMDA_gmax*kwds['NMDAScale']
+                return self.make_glu_psd(post_sec, terminal, self.AMPAR_gmax, self.NMDAR_gmax, loc=loc)
+            elif terminal.cell.type == 'dstellate':  # WBI input -Voigt, Nelken, Young
+                return self.make_gly_psd(post_sec, terminal, type='glyfast', loc=loc)
+            elif terminal.cell.type == 'tuberculoventral':  # TV cells talk to each other-Kuo et al.
+                return self.make_gly_psd(post_sec, terminal, type='glyfast', loc=loc)
+            else:
+                raise TypeError("Cannot make PSD for %s => %s" % 
+                            (terminal.cell.type, self.type))
+        else:
+            raise ValueError("Unsupported psd type %s" % psd_type)
 
 class PyramidalKanold(Pyramidal, Cell):
     """

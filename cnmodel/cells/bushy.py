@@ -75,6 +75,8 @@ class Bushy(Cell):
                 return self.make_glu_psd(post_sec, terminal, self.AMPAR_gmax, self.NMDAR_gmax, loc=loc)
             elif terminal.cell.type == 'dstellate':
                 return self.make_gly_psd(post_sec, terminal, type='glyslow', loc=loc)
+            elif terminal.cell.type == 'tuberculoventral':
+                return self.make_gly_psd(post_sec, terminal, type='glyslow', loc=loc)
             else:
                 raise TypeError("Cannot make PSD for %s => %s" % 
                             (terminal.cell.type, self.type))
