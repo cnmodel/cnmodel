@@ -15,7 +15,8 @@ def runtest():
     convergence = {
         'sgc': {'bushy': 1, 'tstellate': 6, 'dstellate': 10, 'dstellate_eager': 10,
                 'tuberculoventral': 6, 'pyramidal': 5},
-        'dstellate': {'bushy': 10, 'tstellate': 15, 'dstellate': 5, 'tuberculoventral': 10,
+        'dstellate': {'bushy': 10, 'tstellate': 15, 'dstellate': 5, 'tuberculoventral': 10,                                                 'pyramidal': 10},
+        'tuberculoventral': {'bushy': 6, 'tstellate': 3, 'dstellate': 0, 'tuberculoventral': 2,
                     'pyramidal': 10},
         }
 
