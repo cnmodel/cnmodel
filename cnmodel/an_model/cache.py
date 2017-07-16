@@ -143,7 +143,7 @@ def generate_spiketrain(cf, sr, stim, seed, **kwds):
         Center frequency of the fiber to simulate
     sr : int
         Spontaneous rate group of the fiber: 
-        1=low, 2=mid, 3=high.
+        0=low, 1=mid, 2=high.
     stim : Sound instance
         Stimulus sound to be presented on each repetition
     seed : int >= 0
@@ -182,8 +182,8 @@ def generate_spiketrain(cf, sr, stim, seed, **kwds):
         return times * stim.dt
     elif simulator == 'cochlea' and HAVE_COCHLEA:
         fs = int(0.5+1./stim.dt)  # need to avoid roundoff error
-        srgrp = [0,0,0] # H, M, L (but input is 1=L, 2=M, H = 3)
-        srgrp[3-sr] = 1
+        srgrp = [0,0,0] # H, M, L (input is L = 0, M = 1, H = 2)
+        srgrp[2-sr] = 1
         sp = cochlea.run_zilany2014(
                 stim.sound,
                 fs=fs,

@@ -253,8 +253,10 @@ class Population(object):
             vals.sort()
             cumulative = np.cumsum(full_dist)
             for val in vals:
-                cell = np.argwhere(cumulative >= val)[0,0]
-                cells.append(cell)
+                u = np.argwhere(cumulative >= val)
+                if len(u) > 0:
+                    cell = u[0,0]
+                    cells.append(cell)
             
         if create:
             self.create_cells(cells)

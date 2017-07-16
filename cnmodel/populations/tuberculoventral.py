@@ -5,18 +5,18 @@ from .population import Population
 from .. import cells
 
 
-class DStellate(Population):
-    type = 'dstellate'
+class Tuberculoventral(Population):
+    type = 'tuberculoventral'
     
     def __init__(self, species='mouse', **kwds):
         # Completely fabricated cell distribution: uniform from 2kHz to 64kHz.
         # Note that `cf` is the mean value used when selecting SGCs to connect;
         # it is NOT the measured CF of the cell (although it should be close).
-        size = 500
+        size = 5000
         fields = [
             ('cf', float),
         ]
-        super(DStellate, self).__init__(species, size, fields=fields, **kwds)
+        super(Tuberculoventral, self).__init__(species, size, fields=fields, **kwds)
         self._cells['cf'] = 2000 * 2**np.linspace(0, 5.0, size)
     
     def create_cell(self, cell_rec):
@@ -24,7 +24,7 @@ class DStellate(Population):
         *cell_rec* argument is the row from self.cells that describes the cell 
         to be created.
         """
-        return cells.DStellate.create(species=self.species, **self._cell_args)
+        return cells.Tuberculoventral.create(species=self.species, **self._cell_args)
 
     def connection_stats(self, pop, cell_rec):
         """ The population *pop* is being connected to the cell described in 
@@ -39,11 +39,18 @@ class DStellate(Population):
         # cells to connect). 
         cf = cell_rec['cf']
         if isinstance(pop, populations.SGC):
+            size = np.random.randint(4, 10)
+            dist = {'cf': scipy.stats.norm(loc=cf, scale=cf / 50.)}
+            
+        elif isinstance(pop, populations.DStellate):
             size = np.random.randint(10, 20)
-            dist = {'cf': scipy.stats.norm(loc=cf, scale=cf / 10.)}
+            dist = {'cf': scipy.stats.norm(loc=cf, scale=cf / 5.)}
+
+        # elif isinstance(pop, populations.tuberculoventral):  # can be added once we know information
+        #     size = np.random.randint(10, 20)
+        #     dist = {'cf': scipy.stats.norm(loc=cf, scale=cf / 5.)}
             
         else:
             raise TypeError("Cannot connect population %s to %s" % (pop, self))
 
         return size, dist
-
