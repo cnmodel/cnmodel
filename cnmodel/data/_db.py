@@ -35,8 +35,8 @@ def _lookup(ind, *args, **kwds):
             data[k] = DATA[key][ind]
         return data
     else:
-            return DATA[key][ind]
-            
+        return DATA[key][ind]
+    
 def setval(val, *args, **kwds):
     key = mk_key(*args, **kwds)
     if key in DATA:
@@ -143,7 +143,6 @@ def add_table_data(name, row_key, col_key, data, **kwds):
             if len(line) < c:
                 continue
             if line[c-1] != " ":
-                print('line : ', line)
                 raise Exception("Table line %d column %s does not obey column boundaries." % (i, j))
             
     # Break table into cells

@@ -6,21 +6,19 @@ mouse_convergence = u"""
 Convergence defines the average number of presynaptic cells of a particular
 type (rows) that synapse onto a single postsynaptic cell of a particular
 type (columns).
-This connectivity matrix is only for principal cells.
-Note: Bushy and pyramidal cells are known to have no (or very few)
+Note: Bushy and pyramidal are known to have no (or very few)
 collaterals within the CN, and so they are not listed as presynaptic cells in
 this table. Octopus cells have collaterals (including in granule cell domains),
-and should be added to this table when more data are available (Golding et al.,
+and should be added to this table when data are available (Golding et al.,
 J. Neurosci. 15: 3138, 1995)
 
-----------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
                   bushy       tstellate   dstellate   octopus     pyramidal    tuberculoventral
 sgc               3.3±0.6 [2] 6.5±1.0 [2] 35±0 [3]    60±0 [2]    48±0 [5]     48±0 [5]
 dstellate         7 [1]       20 [1]      3 [1]       0 [4]       15 [5]       15 [5]
 tstellate         0 [6]       0 [6]       0 [6]       0 [6]       0 [6]        0 [6]
 tuberculoventral  6           6           0           0 [4]       21 [5]       0 [7]
-pyramidal         0 [6]       0 [6]       0 [6]       0 [6]       0 [6]        0 [6]
-----------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 [1] Guesses based on Campagnola & Manis 2013
 
@@ -32,9 +30,8 @@ pyramidal         0 [6]       0 [6]       0 [6]       0 [6]       0 [6]        0
     see that many clear steps in the responses, so use lower bound.
     
 [3] Lower bound based on estimates from unpublished data Xie and Manis (2017)
-    Assumptions: No discernable step sizes when increasing shock intensity 
-    at ANFs in radiate multipolars (dstellate)
-     Measured: 0.034 ± 15 nA sEPSC @ -70 mV
+    Assumptions: No discernable step sizes in radiate multipolars (dstellate)
+     Measured: 0.034 ± 15 pA sEPSC @ -70 mV ()
      Measured: Maximal current from AN stim = 1.2 ± 0.7 nA @ -70 mV
      Assuming that each AN provides 1 input, then N = ~35
      
@@ -51,7 +48,7 @@ pyramidal         0 [6]       0 [6]       0 [6]       0 [6]       0 [6]        0
 
 [7] In the models of Hancock and Voigt (1999) and Zheng and Voigt (2006), the TV cells
     have no connections with each other. However, Kuo et al. (J. Neurophysiol., 2015)
-    did see connections between pairs of TV cells in the mouse.
+    did see connections between pairs of TV cells in the mouse.  
 
 """
 

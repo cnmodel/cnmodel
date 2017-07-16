@@ -8,7 +8,7 @@ from .. import cells
 class SGC(Population):
     """A population of spiral ganglion cells.
     
-    The cell distribution is uniform from 2kHz to 64kHz, evenly divided between
+    The cell distribution is uniform from 4kHz to 90kHz, evenly divided between
     spontaneous rate groups.
     """
     type = 'sgc'
@@ -23,8 +23,8 @@ class SGC(Population):
             ('sr', int),  # 0=low sr, 1=mid sr, 2=high sr
         ]
         super(SGC, self).__init__(species, size, fields=fields, model=model, **kwds)
-        self._cells['cf'] = 2000. * 2**np.linspace(0, 5.0, size)
-        self._cells['sr'] = np.arange(size) % 3 + 1
+        self._cells['cf'] = 4000 * 2**np.linspace(0, 4.5, size)
+        self._cells['sr'] = np.arange(size) % 3
     
     def set_seed(self, seed):
         self.next_seed = seed

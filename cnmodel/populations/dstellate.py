@@ -9,7 +9,7 @@ class DStellate(Population):
     type = 'dstellate'
     
     def __init__(self, species='mouse', **kwds):
-        # Completely fabricated cell distribution: uniform from 2kHz to 64kHz.
+        # Completely fabricated cell distribution: uniform from 4kHz to 90kHz.
         # Note that `cf` is the mean value used when selecting SGCs to connect;
         # it is NOT the measured CF of the cell (although it should be close).
         size = 500
@@ -17,7 +17,7 @@ class DStellate(Population):
             ('cf', float),
         ]
         super(DStellate, self).__init__(species, size, fields=fields, **kwds)
-        self._cells['cf'] = 2000 * 2**np.linspace(0, 5.0, size)
+        self._cells['cf'] = 4000 * 2**np.linspace(0, 4.5, size)
     
     def create_cell(self, cell_rec):
         """ Return a single new cell to be used in this population. The 

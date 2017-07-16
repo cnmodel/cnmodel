@@ -8,7 +8,7 @@ from .. import cells
 class Bushy(Population):
     """Population of bushy cells.
     
-    Cells are distributed uniformly from 2kHz to 64kHz.
+    Cells are distributed uniformly from 4kHz to 90kHz.
     
     Note that `cf` is the mean value used when selecting SGCs to connect;
     it is NOT the measured CF of the cell (although it should be close).
@@ -22,7 +22,7 @@ class Bushy(Population):
             ('sgc_sr', int),   # preferred SR group for SGC inputs
         ]
         super(Bushy, self).__init__(species, size, fields=fields, **kwds)
-        self._cells['cf'] = 2000.0 * 2**np.linspace(0, 5.0, size)
+        self._cells['cf'] = 4000 * 2**np.linspace(0, 4.5, size)
         self._cells['sgc_sr'] = np.arange(size) % 3
     
     def create_cell(self, cell_rec):
@@ -57,11 +57,7 @@ class Bushy(Population):
         elif isinstance(pop, populations.DStellate):
             size = np.random.randint(4, 10)
             dist = {'cf': scipy.stats.norm(loc=cf, scale=cf / 10.)}
-
-        elif isinstance(pop, populations.Tuberculoventral):
-            size = np.random.randint(2, 5)
-            dist = {'cf': scipy.stats.norm(loc=cf, scale=cf / 50.)}  # narrow 
-
+            
         elif isinstance(pop, populations.TStellate):
             has_input = np.random.randint(10) == 0
             size = 0 if not has_input else np.random.randint(1, 4)
