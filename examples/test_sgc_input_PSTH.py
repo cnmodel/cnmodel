@@ -34,9 +34,7 @@ def runTrial(cell, info):
         pre_cells.append(cells.DummySGC(cf=info['cf'], sr=info['sr']))
         if synapseType == 'simple':
             synapses.append(pre_cells[-1].connect(post_cell, type=synapseType))
-            print np.array(synapses[-1].terminal.netcon.weight)
             synapses[-1].terminal.netcon.weight[0] =info['gmax']*2.0
-            print np.array(synapses[-1].terminal.netcon.weight)
         elif synapseType == 'multisite':
             synapses.append(pre_cells[-1].connect(post_cell, post_opts={'AMPAScale': 2.0, 'NMDAScale': 2.0}, type=synapseType))
             for i in range(synapses[-1].terminal.n_rzones):
@@ -77,7 +75,7 @@ class SGCInputTestPSTH(Protocol):
         self.dMod = 0.  # % mod depth, Hz
         self.dbspl = 50.
         self.simulator = simulator
-        self.sr = 3  # high SR
+        self.sr = 1  # set SR group
         if self.stimulus == 'SAM':
             self.stim = sound.SAMTone(rate=self.Fs, duration=self.run_duration, f0=self.f0, 
                           fmod=self.fMod, dmod=self.dMod, dbspl=self.dbspl,
@@ -257,7 +255,7 @@ if __name__ == '__main__':
     print 'cell type: ', cell
     prot = SGCInputTestPSTH()
     prot.set_cell(cell)
-    prot.run(stimulus=stimulus, reps=50)
+    prot.run(stimulus=stimulus, reps=10)
     prot.show()
 
     import sys
