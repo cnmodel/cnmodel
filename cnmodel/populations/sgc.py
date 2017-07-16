@@ -24,7 +24,7 @@ class SGC(Population):
         ]
         super(SGC, self).__init__(species, size, fields=fields, model=model, **kwds)
         self._cells['cf'] = 2000. * 2**np.linspace(0, 5.0, size)
-        self._cells['sr'] = np.arange(size) % 3 + 1
+        self._cells['sr'] = np.arange(size) % 3
     
     def set_seed(self, seed):
         self.next_seed = seed
