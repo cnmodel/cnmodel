@@ -27,18 +27,20 @@ class CNSoundStim(Protocol):
         self.bushy = populations.Bushy()
         self.dstellate = populations.DStellate()
         #self.tstellate = populations.TStellate()
+        #self.tbventral = populations.Tuberculoventral()
 
         # Connect populations. 
         # This only defines the connections between populations; no synapses are 
         # created at this stage.
-        self.sgc.connect(self.bushy, self.dstellate)#, self.tstellate)
+        self.sgc.connect(self.bushy)#, self.dstellate, self.tbventral, self.tstellate)
         #self.dstellate.connect(self.bushy)#, self.tstellate)
         #self.tstellate.connect(self.bushy)
 
         # Select cells to record from.
         # At this time, we actually instantiate the selected cells.
         # select 10 bushy cells closest to 16kHz
-        bushy_cell_ids = self.bushy.select(4, cf=16e3, create=True)  
+        for f in [6e3, 16e3, 32e3]:
+            bushy_cell_ids = self.bushy.select(6, cf=f, create=True)
         # select 10 stellate cells closest to 16kHz
         #tstel_cell_ids = self.tstellate.select(10, cf=16e3, create=True)  
 
@@ -116,8 +118,9 @@ class NetworkSimDisplay(pg.QtGui.QWidget):
         self.layout.addWidget(self.stim_combo, 0, 0)
         self.results = {}
         for stim, result in results:
-            self.results[str(stim.key())] = (stim, result)
-            self.stim_combo.addItem(str(stim.key()))
+            key = 'f0: %0.0f  dBspl: %0.0f' % (stim.key()['f0'], stim.key()['dbspl'])
+            self.results[key] = (stim, result)
+            self.stim_combo.addItem(key)
         self.stim_combo.currentIndexChanged.connect(self.load_stim)
         
         self.pw = pg.GraphicsLayoutWidget()
@@ -130,10 +133,10 @@ class NetworkSimDisplay(pg.QtGui.QWidget):
         self.freq_line = self.matrix_plot.addLine(x=2, movable=True)
         
         self.pw.nextRow()
-        self.cell_plot = self.pw.addPlot()
+        self.cell_plot = self.pw.addPlot(labels={'left': 'Vm'}, title='Bushy cell Vm')
 
         self.pw.nextRow()
-        self.input_plot = self.pw.addPlot()
+        self.input_plot = self.pw.addPlot(labels={'left': 'input #', 'bottom': 'time'}, title="Input spike times")
         self.input_plot.setXLink(self.cell_plot)
         
     def load_stim(self):
@@ -197,7 +200,7 @@ class NetworkSimDisplay(pg.QtGui.QWidget):
         # next count the number of spikes for the selected cell at each point in the matrix
         matrix = np.zeros((len(fvals), len(lvals)))
         for stim, vec in self.results.values():
-            spikes = vec[('bushy', ind)][1]            
+            spikes = vec[('bushy', ind)][1]
             i = fvals.index(stim.key()['f0'])
             j = lvals.index(stim.key()['dbspl'])
             matrix[i, j] = len(spikes)
@@ -215,15 +218,16 @@ class NetworkSimDisplay(pg.QtGui.QWidget):
 if __name__ == '__main__':
     import pickle, os, sys
     app = pg.mkQApp()
+    pg.dbg()
     
     # Create a sound stimulus and use it to generate spike trains for the SGC
     # population
     stims = []
     fmin = 4e3
     fmax = 40e3
-    fn = 10
+    fn = 21
     fvals = fmin * (fmax/fmin)**(np.arange(fn) / (fn-1.))
-    levels = np.linspace(0, 100, 11)
+    levels = np.linspace(0, 100, 15)
     #levels = map(int, sys.argv[1:])
     print("Frequencies:", fvals/1000.)
     print("Levels:", levels)
