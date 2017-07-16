@@ -434,7 +434,8 @@ class IVCurve(Protocol):
         # convert fits to record array
 #        print len(fits) # fits[0].params
         if len(fits) > 0:
-            dtype = [(k, float) for k in fits[0].params] + [('index', int)]
+            key_order = sorted(fits[0].params)  # to ensure that unit tests remain stable
+            dtype = [(k, float) for k in key_order] + [('index', int)]
             fit_data = np.empty(len(fits), dtype=dtype)
             for i, fit in enumerate(fits):
                 for k,v in fit.params.items():
