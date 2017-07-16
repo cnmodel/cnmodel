@@ -76,7 +76,7 @@ class DummySGC(SGC):
     """ SGC class with no cell body; this cell only replays a predetermined
     spike train.
     """
-    def __init__(self, cf=None, sr=None, simulator=None):
+    def __init__(self, cf=None, sr=None, simulator='matlab'):
         """
         Parameters
         ----------
@@ -87,19 +87,17 @@ class DummySGC(SGC):
             required : Selects the spontaneous rate group from the
             Zilany et al (2010) model. 1 = LSR, 2 = MSR, 3 = HSR
         
-        simulator : 'cochlea' | 'matlab' | None (default None)
+        simul(default: 'matlab')
             Sets the simulator interface that will be used. All models
             currently use the Zilany et al. model, but the simulator can
             be run though a Python-interface direcltly to the Matlab code
             as publicy available, (simulator='matlab'), or can be run through
-            Rudnicki's Python interface to the simulator's C code 
+            Rudieki's Python interface to the simulator's C code 
             (simulator='cochlea'). Requires installation of the modified
             versions of cochlea and thorns from github.com/pbmanis/cochlea and
-            github.com/pbmanis/thorns. By default, a simulator will be selected
-            based on availability.
+            github.com/pbmanis/thorns.
         
         """
-        self._simulator = simulator
         SGC.__init__(self, cf, sr)
         self.vecstim = h.VecStim()
         
@@ -108,7 +106,7 @@ class DummySGC(SGC):
         
         # just an empty section for holding the terminal
         self.add_section(h.Section(), 'soma')
-
+        
     def set_spiketrain(self, times):
         """ Set the times of spikes to be replayed by the cell.
         """
@@ -116,11 +114,9 @@ class DummySGC(SGC):
         self._stvec = h.Vector(times)
         self.vecstim.play(self._stvec)
 
-    def set_sound_stim(self, stim, seed, simulator=None):
+    def set_sound_stim(self, stim, seed, simulator='matlab'):
         """ Set the sound stimulus used to generate this cell's spike train.
         """
-        if simulator is None:
-            simulator = self._simulator
         self._sound_stim = stim
         spikes = an_model.get_spiketrain(cf=self.cf, sr=self.sr, seed=seed, 
             stim=stim, simulator=simulator)

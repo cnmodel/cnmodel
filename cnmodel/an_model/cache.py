@@ -133,7 +133,7 @@ def save_index():
         open(_index_file, 'wb').write(pkl_str)
 
 
-def generate_spiketrain(cf, sr, stim, seed, simulator=None, **kwds):
+def generate_spiketrain(cf, sr, stim, seed, **kwds):
     """ Generate a new spike train from the auditory nerve model. Returns an 
     array of spike times in seconds.
     
@@ -148,9 +148,6 @@ def generate_spiketrain(cf, sr, stim, seed, simulator=None, **kwds):
         Stimulus sound to be presented on each repetition
     seed : int >= 0
         Random seed
-    simulator : 'cochlea' | 'matlab' | None
-        Specifies the auditory periphery simulator to use. If None, then a
-        simulator will be automatically chosen based on availability.
         
     All other keyword arguments are given to model_ihc() and model_synapse()
     based on their names. These include 'species', 'nrep', 'reptime', 'cohc', 
@@ -164,15 +161,14 @@ def generate_spiketrain(cf, sr, stim, seed, simulator=None, **kwds):
     ihc_kwds = dict(pin=stim.sound, CF=cf, nrep=1, tdres=stim.dt, 
                     reptime=stim.duration*2, cohc=1, cihc=1, species=1)
     syn_kwds = dict(CF=cf, nrep=1, tdres=stim.dt, fiberType=sr, noiseType=1, implnt=0)
+    simulator = 'matlab'
     # copy any given keyword args to the correct model function
     for kwd in kwds:
         if kwd in ihc_kwds:
             ihc_kwds[kwd] = kwds.pop(kwd)
         if kwd in syn_kwds:
             syn_kwds[kwd] = kwds.pop(kwd)
-
-    if simulator is None:
-        simulator = detect_simulator()
+    simulator = kwds.pop('simulator', 'matlab')
 
     if len(kwds) > 0:
         raise TypeError("Invalid keyword arguments: %s" % list(kwds.keys()))
@@ -187,7 +183,7 @@ def generate_spiketrain(cf, sr, stim, seed, simulator=None, **kwds):
     elif simulator == 'cochlea' and HAVE_COCHLEA:
         fs = int(0.5+1./stim.dt)  # need to avoid roundoff error
         srgrp = [0,0,0] # H, M, L (but input is 1=L, 2=M, H = 3)
-        srgrp[2-sr] = 1
+        srgrp[3-sr] = 1
         sp = cochlea.run_zilany2014(
                 stim.sound,
                 fs=fs,
@@ -198,19 +194,3 @@ def generate_spiketrain(cf, sr, stim, seed, simulator=None, **kwds):
         return np.array(sp.spikes.values[0])
     else:  # it remains possible to have a typo.... 
         raise ValueError("anmodel/cache.py: Simulator must be specified as either MATLAB or cochlea; found %s" % simulator)
-
-
-def detect_simulator():
-    """Return the name of any available auditory periphery model.
-    
-    Return 'cochlea' if the Rudnicki cochlea model can be imported. 
-    If not, return 'matlab' if the Zilany model can be accessed via MATLAB.
-    If not, raise an exception.
-    """
-    try:
-        import cochlea
-        simulator = 'cochlea'
-    except ImportError:
-        get_matlab()
-        simulator = 'matlab'
-    return simulator
