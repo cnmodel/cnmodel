@@ -1,5 +1,6 @@
+#!/usr/bin/env python
 __author__ = "Paul B. Manis"
-__version__ = "0.3"
+__version__ = "0.2"
 
 try:
     import faulthandler
