@@ -86,14 +86,19 @@ class DStellate(Cell):
 
     def make_terminal(self, post_cell, term_type, **kwds):
         if term_type == 'simple':
+            pre_sec = self.soma
             return synapses.SimpleTerminal(pre_sec, post_cell, 
-                                           spike_source=self.spike_source, **kwds)
+                                           spike_source=pre_sec(0.5)._ref_v, **kwds)
         elif term_type == 'multisite':
             if post_cell.type == 'bushy':
                 nzones, delay = 10, 0
             elif post_cell.type == 'tstellate':
                 nzones, delay = 5, 0
             elif post_cell.type == 'dstellate':
+                nzones, delay = 5, 0
+            elif post_cell.type == 'tuberculoventral':
+                nzones, delay = 5, 0
+            elif post_cell.type == 'pyramidal':
                 nzones, delay = 5, 0
             else:
                 raise NotImplementedError("No knowledge as to how to connect DStellate to cell type %s" %

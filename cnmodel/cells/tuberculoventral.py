@@ -79,6 +79,30 @@ class Tuberculoventral(Cell):
         else:
             raise ValueError("Unsupported psd type %s" % psd_type)
 
+    def make_terminal(self, post_cell, term_type, **kwds):
+        pre_sec = self.soma
+        if term_type == 'simple':
+            return synapses.SimpleTerminal(pre_sec, post_cell, 
+                                           spike_source=self.spike_source, **kwds)
+        elif term_type == 'multisite':
+            if post_cell.type == 'bushy':
+                nzones, delay = 10, 0
+            elif post_cell.type == 'tstellate':
+                nzones, delay = 5, 0
+            elif post_cell.type == 'tuberculoventral':
+                nzones, delay = 2, 0
+            elif post_cell.type == 'pyramidal':
+                nzones, delay = 5, 0
+            else:
+                raise NotImplementedError("No knowledge as to how to connect DStellate to cell type %s" %
+                                        type(post_cell))
+            
+            pre_sec = self.soma
+            return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, 
+                                            delay=delay, **kwds)
+        else:
+            raise ValueError("Unsupported terminal type %s" % term_type)
+
 
 class Tuberculoventral(Tuberculoventral):
     """

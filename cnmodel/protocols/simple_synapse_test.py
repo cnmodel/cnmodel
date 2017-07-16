@@ -19,6 +19,7 @@ class SimpleSynapseTest(Protocol):
         pre_cell = cells.cell_from_section(pre_sec)
         post_cell = cells.cell_from_section(post_sec)
         synapse = pre_cell.connect(post_cell, type='multisite')
+#        synapse = pre_cell.connect(post_cell, type='simple')
         self.synapse = synapse
         self.pre_sec = synapse.terminal.section
         self.post_sec = synapse.psd.section
@@ -82,11 +83,10 @@ class SimpleSynapseTest(Protocol):
             self['i_soma'] = vccontrol._ref_i
             util.custom_init()
             h.run()
-        
+
     def show(self):
         self.win = pg.GraphicsWindow()
-        self.win.resize(1000, 1000)
-
+        self.win.resize(800, 800)
         t = self['t']
 
         p1 = self.win.addPlot(title=self.pre_cell.status['name'])
@@ -98,4 +98,3 @@ class SimpleSynapseTest(Protocol):
         p2.plot(t[1:], self['i_soma'][1:], pen=pg.mkPen('w', width=2))
         p2.setLabels(left='I post (nA)', bottom='Time (ms)')
         p2.setXLink(p1)
-        

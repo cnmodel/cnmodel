@@ -1,20 +1,22 @@
+import sys
 import pyqtgraph as pg
 from cnmodel.protocols.simple_synapse_test import SimpleSynapseTest
 from cnmodel import cells
 from cnmodel.synapses import Synapse
 
 
-import sys
 
 def runtest():
     if len(sys.argv) < 3:
         print "Usage:  python test_synapses.py <pre_celltype> <post_celltype>"
-        print "   Supported cell types: sgc, bushy, tstellate, dstellate"
+        print "   Supported cell types: sgc, bushy, tstellate, dstellate, tuberculoventral, pyramidal"
         sys.exit(1)
 
     convergence = {
-        'sgc': {'bushy': 1, 'tstellate': 6, 'dstellate': 10, 'dstellate_eager': 10},
-        'dstellate': {'bushy': 10, 'tstellate': 15, 'dstellate': 5},
+        'sgc': {'bushy': 1, 'tstellate': 6, 'dstellate': 10, 'dstellate_eager': 10,
+                'tuberculoventral': 6, 'pyramidal': 5},
+        'dstellate': {'bushy': 10, 'tstellate': 15, 'dstellate': 5, 'tuberculoventral': 10,
+                    'pyramidal': 10},
         }
 
     c = []
@@ -29,6 +31,10 @@ def runtest():
             cell = cells.DStellate.create(model='Eager', debug=True, ttx=False)
         elif cellType == 'bushy':
             cell = cells.Bushy.create(debug=True, ttx=True)
+        elif cellType == 'tuberculoventral':
+            cell = cells.Tuberculoventral.create(debug=True, ttx=False)
+        elif cellType == 'pyramidal':
+            cell = cells.Pyramidal.create(debug=True, ttx=False)
         else:
             raise ValueError("Unknown cell type '%s'" % cellType)
         c.append(cell)
@@ -48,9 +54,11 @@ def runtest():
     st = SimpleSynapseTest()
     st.run(preCell.soma, postCell.soma, iterations=niter)
     st.show()
+    return st  # keep in memory
 
 
 if __name__ == '__main__':
-    runtest()
+    r = runtest()
+    print 'runtest done'
     if sys.flags.interactive == 0:
         pg.QtGui.QApplication.exec_()
