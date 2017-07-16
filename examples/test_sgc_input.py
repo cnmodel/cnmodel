@@ -12,6 +12,11 @@ The auditory nerve spike train is generated automatically by the DummySGC class
 using the tone pip. For lower-level access to the auditory nerve model, see the
 test_an_model.py and test_sound_stim.py examples.
 
+The simulator that is run depends on what is available and how the script is called. 
+python examples/test_sgc_input.py [cochlea | matlab] will try to use the specified
+simulator. If no simulator is specified, it will try to use cochlea or matlab, in
+that order.
+
 """
 import sys
 import numpy as np
@@ -24,7 +29,7 @@ from cnmodel.util import custom_init
 
 
 class SGCInputTest(Protocol):
-    def run(self, temp=34.0, dt=0.025, seed=575982035, simulator='matlab'):
+    def run(self, temp=34.0, dt=0.025, seed=575982035, simulator=None):
         preCell = cells.DummySGC(cf=4000, sr=2)
         postCell = cells.Bushy.create()
         synapse = preCell.connect(postCell)
@@ -74,7 +79,7 @@ class SGCInputTest(Protocol):
 
 
 if __name__ == '__main__':
-    simulator = 'matlab'
+    simulator = None
     if len(sys.argv) > 1:
         simulator=sys.argv[1]
     prot = SGCInputTest()
