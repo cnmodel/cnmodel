@@ -98,7 +98,15 @@ class UserTester(object):
         app = pg.mkQApp()
         print "\n=== New test results for %s: ===\n" % self.key
         pprint.pprint(info)
-        win = pg.DataTreeWidget()
+        
+        # we use DiffTreeWidget to display differences between large data structures, but
+        # this is not present in mainline pyqtgraph yet
+        if hasattr(pg, 'DiffTreeWidget'):
+            win = pg.DiffTreeWidget()
+        else:
+            from cnmodel.util.difftreewidget import DiffTreeWidget
+            win = DiffTreeWidget()
+        
         win.resize(800, 800)
         win.setData(expect, info)
         win.show()
