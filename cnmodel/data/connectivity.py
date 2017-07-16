@@ -6,7 +6,7 @@ mouse_convergence = u"""
 Convergence defines the average number of presynaptic cells of a particular
 type (rows) that synapse onto a single postsynaptic cell of a particular
 type (columns).
-This connectivity matrix is only for principal cells.
+This connectivity matrix is currently incomplete.
 Note: Bushy and pyramidal cells are known to have no (or very few)
 collaterals within the CN, and so they are not listed as presynaptic cells in
 this table. Octopus cells have collaterals (including in granule cell domains),
