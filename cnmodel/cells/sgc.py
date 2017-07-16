@@ -93,7 +93,10 @@ class DummySGC(SGC):
             be run though a Python-interface direcltly to the Matlab code
             as publicy available, (simulator='matlab'), or can be run through
             Rudnicki's Python interface to the simulator's C code 
-            (simulator='cochlea').
+            (simulator='cochlea'). Requires installation of the modified
+            versions of cochlea and thorns from github.com/pbmanis/cochlea and
+            github.com/pbmanis/thorns. By default, a simulator will be selected
+            based on availability.
         
         """
         self._simulator = simulator
