@@ -131,7 +131,6 @@ class Population(object):
             # select cells from each population to connect to this cell
             for pop in self._pre_connections:
                 pre_cells = self.connect_pop_to_cell(pop, i)
-                print 'looking for %s' % pop
                 logging.info("  connected %d cells from %s", len(pre_cells), pop)
                 assert pre_cells is not None
                 self._cells[i]['connections'][pop] = pre_cells
