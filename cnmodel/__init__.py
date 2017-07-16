@@ -1,4 +1,4 @@
-__author__ = "Paul B. Manis and Luke Campagnola"
+__author__ = "Paul B. Manis"
 __version__ = "0.3"
 
 try:
