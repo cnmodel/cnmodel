@@ -14,7 +14,7 @@ try:
 except ImportError:
     HAVE_COCHLEA = False
 
-_cache_version = 1
+_cache_version = 2
 _cache_path = os.path.join(os.path.dirname(__file__), 'cache')
 _index_file = os.path.join(_cache_path, 'index.pk')
 _index = None
@@ -37,7 +37,7 @@ def get_spiketrain(cf, sr, stim, seed, **kwds):
     
     # Load data from cache if possible
     if key in index and "--ignore-an-cache" not in sys.argv:
-        data_file = index[key]['file']
+        data_file = index[key]
         if os.path.exists(data_file):
             try:
                 with FileLock(data_file+'.lock'):
@@ -59,13 +59,22 @@ def get_spiketrain(cf, sr, stim, seed, **kwds):
         filename = os.path.join(subdir, filename) + '.npz'
         
         if not os.path.exists(subdir):
-            os.mkdir(subdir)
+            try:
+                os.mkdir(subdir)
+            except OSError as err:
+                # probably another process already created this directory
+                # since we last checked
+                pass
+        
         with FileLock(filename+'.lock'):
             np.savez_compressed(filename, data=data)
         
         # update the index
-        keydata['file'] = filename
-        index[key] = keydata
+        # Used to store this data in the index, but it is not necessaary
+        # and it became too expensive to read/write the index
+        #keydata['file'] = filename
+        #index[key] = keydata
+        index[key] = filename
         save_index()
     
     return data
@@ -104,7 +113,8 @@ def cache_index(reload=False):
             
         if os.path.isfile(_index_file):
             with FileLock(_index_file+'.lock'):
-                _index = pickle.load(open(_index_file, 'rb'))
+                index_data = open(_index_file, 'rb').read()
+            _index = pickle.loads(index_data)
             if _index['_cache_version'] != _cache_version:
                 i = 0
                 while True:
@@ -124,7 +134,6 @@ def save_index():
     """ Write the index to file
     """
     global _index_file, _index
-    
     with FileLock(_index_file+'.lock'):
         old_index = _index
         new_index = cache_index(reload=True)

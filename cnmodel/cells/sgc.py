@@ -107,7 +107,7 @@ class DummySGC(SGC):
         self.add_section(h.Section(), 'soma')
 
     def set_spiketrain(self, times):
-        """ Set the times of spikes to be replayed by the cell.
+        """ Set the times of spikes (in seconds) to be replayed by the cell.
         """
         self._spiketrain = times
         self._stvec = h.Vector(times)
@@ -116,12 +116,16 @@ class DummySGC(SGC):
     def set_sound_stim(self, stim, seed, simulator=None):
         """ Set the sound stimulus used to generate this cell's spike train.
         """
+        self._sound_stim = stim
+        spikes = self.generate_spiketrain(stim, seed, simulator)
+        self.set_spiketrain(spikes)
+
+    def generate_spiketrain(self, stim, seed, simulator=None):
         if simulator is None:
             simulator = self._simulator
-        self._sound_stim = stim
         spikes = an_model.get_spiketrain(cf=self.cf, sr=self.sr, seed=seed, 
             stim=stim, simulator=simulator)
-        self.set_spiketrain(spikes * 1000)
+        return spikes * 1000
 
 
 class SGC_TypeI(SGC):
