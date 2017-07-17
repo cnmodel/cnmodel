@@ -25,36 +25,3 @@ class Pyramidal(Population):
         to be created.
         """
         return cells.Pyramidal.create(species=self.species, **self._cell_args)
-
-    def connection_stats(self, pop, cell_rec):
-        """ The population *pop* is being connected to the cell described in 
-        *cell_rec*. Return the number of presynaptic cells that should be
-        connected and a dictionary of distributions used to select cells 
-        from *pop*. 
-        """
-        from .. import populations
-        
-        # Fabricated convergence distributions (how many presynaptic 
-        # cells to connect) and input distributions (which presynaptic
-        # cells to connect). 
-        cf = cell_rec['cf']
-        if isinstance(pop, populations.SGC):
-            size = np.random.randint(4, 10)
-            dist = {'cf': scipy.stats.norm(loc=cf, scale=cf / 50.)}
-            
-        elif isinstance(pop, populations.DStellate):
-            size = np.random.randint(10, 20)
-            dist = {'cf': scipy.stats.norm(loc=cf, scale=cf / 5.)}
-
-        elif isinstance(pop, populations.Tuberculoventral):
-            size = np.random.randint(10, 20)
-            dist = {'cf': scipy.stats.norm(loc=cf, scale=cf / 50.)}  # narrow population
-
-        # elif isinstance(pop, populations.TStellate):  # can be added once we know TStellate projections to DCN
-        #     size = np.random.randint(10, 20)
-        #     dist = {'cf': scipy.stats.norm(loc=cf, scale=cf / 50.)}  # narrow population
-            
-        else:
-            raise TypeError("Cannot connect population %s to %s" % (pop, self))
-
-        return size, dist

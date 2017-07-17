@@ -19,10 +19,10 @@ sgc               3.3±0.6 [2] 6.5±1.0 [2] 35±0 [3]    60±0 [2]    48±0 [5] 
 dstellate         7 [1]       20 [1]      3 [1]       0 [4]       15 [5]       15 [5]
 tstellate         0 [6]       0 [6]       0 [6]       0 [6]       0 [6]        0 [6]
 tuberculoventral  6           6           0           0 [4]       21 [5]       0 [7]
-pyramidal         0 [6]       0 [6]       0 [6]       0 [6]       0 [6]        0 [6]
+pyramidal         0           0           0           0           0            0    
 ----------------------------------------------------------------------------------------------
 
-[1] Guesses based on Campagnola & Manis 2013
+[1] Guesses based on Campagnola & Manis 2014
 
 [2] Cao, X. & Oertel, D. (2010). Auditory nerve fibers excite targets through
     synapses that vary in convergence, strength, and short-term plasticity. 
@@ -57,4 +57,48 @@ pyramidal         0 [6]       0 [6]       0 [6]       0 [6]       0 [6]        0
 
 add_table_data('convergence', row_key='pre_type', col_key='post_type', 
                species='mouse', data=mouse_convergence)
+
+
+
+mouse_convergence_range = u"""
+
+The convergence range table describes, for each type of connection from 
+presynaptic (rows) to postsynaptic (columns), the variance in frequency of
+presynaptic cells relative to the postsynaptic cell.
+
+All values are expressed as the sigma for a lognormal distribution scaled to
+the CF of the postsynaptic cell. 
+
+----------------------------------------------------------------------------------------------
+                  bushy       tstellate   dstellate   octopus     pyramidal    tuberculoventral
+sgc               0.05 [1]    0.1 [1]     0.4 [1]     0.05 [1]    0.1 [1]      0.1 [1]
+dstellate         0.208 [2]   0.347 [2]   0.5 [1]     0           0.2 [1]      0.2 [1]      
+tstellate         0.1 [4]     0.1 [4]     0           0           0            0    
+tuberculoventral  0.069 [3]   0.111 [3]   0           0           0.15 [1]     0    
+pyramidal         0           0           0           0           0            0    
+----------------------------------------------------------------------------------------------
+
+[1] Guess based on axonal / dendritic morphology.
+
+[2] Calculated from Campagnola & Manis 2014 fig. 7C
+    Distribution widths are given in stdev(octaves), so we multiply by ln(2) to
+    get the sigma for a lognormal distribution.
+        DS->Bushy:     ln(2) * 0.3 = 0.208
+        DS->TStellate: ln(2) * 0.5 = 0.347
+
+[3] Calculated from Campagnola & Manis 2014 fig. 9C
+    Distribution widths are given in stdev(octaves), so we multiply by ln(2) to
+    get the sigma for a lognormal distribution.
+        TV->Bushy:     ln(2) * 0.10 = 0.069
+        TV->TStellate: ln(2) * 0.16 = 0.111
+
+[4] Guess based on very limited information in Campagnola & Manis 2014 fig. 12
+
+
+
+"""
+
+add_table_data('convergence_range', row_key='pre_type', col_key='post_type', 
+               species='mouse', data=mouse_convergence_range)
+
 
