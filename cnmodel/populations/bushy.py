@@ -38,36 +38,15 @@ class Bushy(Population):
         connected and a dictionary of distributions used to select cells 
         from *pop*. 
         """
-        from .. import populations
+        size, dist = Population.connection_stats(self, pop, cell_rec)
         
-        # Fabricated convergence distributions (how many presynaptic 
-        # cells to connect) and input distributions (which presynaptic
-        # cells to connect). 
-        cf = cell_rec['cf']
+        from .. import populations
+
         if isinstance(pop, populations.SGC):
-            size = np.random.randint(2, 6)
-            
-            # only select inputs from a single SR group
+            # only select SGC inputs from a single SR group
+            # (this relationship is hypothesized based on reconstructions of
+            # endbulbs)
             sr_vals = pop.cells['sr']
-            sr_dist = (sr_vals == cell_rec['sgc_sr']).astype(float)
-            
-            dist = {'cf': scipy.stats.norm(loc=cf, scale=cf / 100.),
-                    'sr': sr_dist}
-            
-        elif isinstance(pop, populations.DStellate):
-            size = np.random.randint(4, 10)
-            dist = {'cf': scipy.stats.norm(loc=cf, scale=cf / 10.)}
-
-        elif isinstance(pop, populations.Tuberculoventral):
-            size = np.random.randint(2, 5)
-            dist = {'cf': scipy.stats.norm(loc=cf, scale=cf / 50.)}  # narrow 
-
-        elif isinstance(pop, populations.TStellate):
-            has_input = np.random.randint(10) == 0
-            size = 0 if not has_input else np.random.randint(1, 4)
-            dist = {'cf': scipy.stats.norm(loc=cf, scale=cf / 50.)}
-            
-        else:
-            raise TypeError("Cannot connect population %s to %s" % (pop, self))
+            dist['sr'] = (sr_vals == cell_rec['sgc_sr']).astype(float)
 
         return size, dist

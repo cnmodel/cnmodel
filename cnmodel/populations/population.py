@@ -2,19 +2,8 @@ import logging
 import scipy.stats
 import numpy as np
 
-"""
-Todo: 
+from .. import data
 
-* Need to work out most of the API details here, probably by starting with a
-  specific use case and working backward
-
-* Distributions of cell properties
-
-* Mechanisms for automatically recording from neurons
-    - record all Vm for all real neurons
-    - record spike trains
-    - record per-synapse currents
-"""
 
 class Population(object):
     """
@@ -187,7 +176,41 @@ class Population(object):
           keyword arguments to `select()` for more information on the content
           of this dictionary.
         """
-        raise NotImplementedError()
+    def connection_stats(self, pop, cell_rec):
+        """ The population *pop* is being connected to the cell described in 
+        *cell_rec*. Return the number of presynaptic cells that should be
+        connected and a dictionary of distributions used to select cells 
+        from *pop*. 
+        """
+        from .. import populations
+        
+        cf = cell_rec['cf']
+        
+        # Convergence distributions (how many presynaptic 
+        # cells to connect)  
+        try:
+            n_connections = data.get(
+                'convergence', species=self.species, pre_type=pop.type, post_type=self.type)
+        except KeyError:
+            raise TypeError("Cannot connect population %s to %s; no convergence specified in data table." % (pop, self))
+            
+        if isinstance(n_connections, tuple):
+            size_dist = scipy.stats.norm(loc=n_connections[0], scale=n_connections[1])
+            size = max(0, size_dist.rvs())
+        else:
+            size = n_connections
+
+        # Convergence ranges -- over what range of CFs should we
+        # select presynaptic cells.
+        try:
+            input_range = data.get('convergence_range', 
+                species=self.species, pre_type=pop.type, post_type=self.type)
+        except KeyError:
+            raise TypeError("Cannot connect population %s to %s; no convergence range specified in data table." % (pop, self))
+            
+        dist = {'cf': scipy.stats.lognorm(input_range, scale=cf)}
+
+        return size, dist
     
     def select(self, size, create=False, **kwds):
         """ Return a list of indexes for cells matching the selection criteria.
