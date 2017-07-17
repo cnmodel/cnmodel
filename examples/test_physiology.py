@@ -7,6 +7,7 @@ import numpy as np
 from neuron import h
 import pyqtgraph as pg
 import pyqtgraph.multiprocess as mp
+from pyqtgraph.Qt import QtGui, QtCore
 from cnmodel import populations
 from cnmodel.util import sound, random
 from cnmodel.protocols import Protocol
@@ -26,23 +27,25 @@ class CNSoundStim(Protocol):
         self.sgc = populations.SGC(model='dummy')
         self.bushy = populations.Bushy()
         self.dstellate = populations.DStellate()
-        #self.tstellate = populations.TStellate()
-        #self.tbventral = populations.Tuberculoventral()
+        self.tstellate = populations.TStellate()
+        self.tuberculoventral = populations.Tuberculoventral()
 
         # Connect populations. 
         # This only defines the connections between populations; no synapses are 
         # created at this stage.
-        self.sgc.connect(self.bushy)#, self.dstellate, self.tbventral, self.tstellate)
-        #self.dstellate.connect(self.bushy)#, self.tstellate)
-        #self.tstellate.connect(self.bushy)
+        self.sgc.connect(self.bushy, self.dstellate, self.tuberculoventral, self.tstellate)
+        self.dstellate.connect(self.bushy, self.tstellate)  # should connect to dstellate as well?
+        self.tuberculoventral.connect(self.bushy, self.tstellate)
+        self.tstellate.connect(self.bushy)
 
         # Select cells to record from.
         # At this time, we actually instantiate the selected cells.
-        # select 10 bushy cells closest to 16kHz
-        for f in [6e3, 16e3, 32e3]:
-            bushy_cell_ids = self.bushy.select(6, cf=f, create=True)
-        # select 10 stellate cells closest to 16kHz
-        #tstel_cell_ids = self.tstellate.select(10, cf=16e3, create=True)  
+        # Select 4 cells centered around 16kHz
+        frequencies = [16e3]  #[6e3, 16e3, 32e3]
+        cells_per_band = 4
+        for f in frequencies:
+            bushy_cell_ids = self.bushy.select(cells_per_band, cf=f, create=True)
+            #tstel_cell_ids = self.tstellate.select(cells_per_band, cf=f, create=True)  
 
         # Now create the supporting circuitry needed to drive the cells we selected.
         # At this time, cells are created in all populations and automatically 
@@ -59,10 +62,10 @@ class CNSoundStim(Protocol):
 
     def run(self, stim):
         self.reset()
-        self.sgc.set_sound_stim(stim)
+        self.sgc.set_sound_stim(stim, parallel=True)
         
         # set up recording vectors
-        for pop in self.bushy, self.dstellate:
+        for pop in self.bushy, self.dstellate, self.tstellate, self.tuberculoventral:
             for ind in pop.real_cells():
                 cell = pop.get_cell(ind)
                 self[cell] = cell.soma(0.5)._ref_v
@@ -104,28 +107,34 @@ class CNSoundStim(Protocol):
         return vec
 
 
-class NetworkSimDisplay(pg.QtGui.QWidget):
+class NetworkSimDisplay(pg.QtGui.QSplitter):
     def __init__(self, prot, results):
-        pg.QtGui.QWidget.__init__(self)
+        pg.QtGui.QSplitter.__init__(self, QtCore.Qt.Horizontal)
         
         self.selected = None
         
         self.prot = prot
         
-        self.layout = pg.QtGui.QGridLayout()
-        self.setLayout(self.layout)
+        self.ctrl = QtGui.QWidget()
+        self.layout = pg.QtGui.QVBoxLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.ctrl.setLayout(self.layout)
+        self.addWidget(self.ctrl)
+        
         self.stim_combo = pg.QtGui.QComboBox()
-        self.layout.addWidget(self.stim_combo, 0, 0)
+        self.layout.addWidget(self.stim_combo)
         self.results = {}
         for stim, result in results:
             key = 'f0: %0.0f  dBspl: %0.0f' % (stim.key()['f0'], stim.key()['dbspl'])
             self.results[key] = (stim, result)
             self.stim_combo.addItem(key)
         self.stim_combo.currentIndexChanged.connect(self.load_stim)
+
+        self.network_tree = NetworkTree(self.prot)
+        self.layout.addWidget(self.network_tree)
         
         self.pw = pg.GraphicsLayoutWidget()
-        self.layout.addWidget(self.pw, 1, 0)
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.addWidget(self.pw)
         
         self.matrix_plot = self.pw.addPlot()
         self.matrix_plot.setLogMode(x=True, y=False)
@@ -213,6 +222,35 @@ class NetworkSimDisplay(pg.QtGui.QWidget):
         self.matrix_img.scale((np.log10(max(fvals)) - np.log10(min(fvals))) / (len(fvals) - 1), 
                               (max(lvals) - min(lvals)) / (len(lvals) - 1))
         
+
+
+class NetworkTree(QtGui.QTreeWidget):
+    def __init__(self, prot):
+        self.prot = prot
+        QtGui.QTreeWidget.__init__(self)
+        self.setColumnCount(2)
+        
+        self.update_tree()
+        
+    def update_tree(self):
+        for pop_name in ['bushy', 'tstellate', 'dstellate', 'tuberculoventral', 'sgc']:
+            if not hasattr(self.prot, pop_name):
+                continue
+            pop = getattr(self.prot, pop_name)
+            grp = QtGui.QTreeWidgetItem([pop_name])
+            self.addTopLevelItem(grp)
+            for cell in pop.real_cells():
+                self.add_cell(grp, pop, cell)
+                
+    def add_cell(self, grp_item, pop, cell):
+        item = QtGui.QTreeWidgetItem([str(cell)])
+        grp_item.addChild(item)
+        all_conns = pop.cell_connections(cell)
+        if all_conns == 0:
+            return
+        for cpop, conns in all_conns.items():
+            pop_grp = QtGui.QTreeWidgetItem([cpop.type, str(conns)])
+            item.addChild(pop_grp)
         
         
 if __name__ == '__main__':
@@ -225,10 +263,10 @@ if __name__ == '__main__':
     stims = []
     fmin = 4e3
     fmax = 40e3
-    fn = 21
-    fvals = fmin * (fmax/fmin)**(np.arange(fn) / (fn-1.))
-    levels = np.linspace(0, 100, 15)
-    #levels = map(int, sys.argv[1:])
+    n_frequencies = 3
+    n_levels = 3
+    fvals = fmin * (fmax/fmin)**(np.arange(n_frequencies) / (n_frequencies-1.))
+    levels = np.linspace(0, 100, n_levels)
     print("Frequencies:", fvals/1000.)
     print("Levels:", levels)
     
