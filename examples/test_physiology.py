@@ -1,5 +1,15 @@
 """
-Test physiological response properties.
+Test principal cell responses to tone pips of varying frequency and intensity.
+
+This is an example of model construction from a very high level--we specify
+only which populations of cells are present and which ones should be connected.
+The population and cell classes take care of all the details of generating the
+network needed to support a small number of output cells.
+
+Note: run time for this example can be very long. To speed things up, reduce
+n_frequencies or n_levels, or reduce the number of selected output cells (see
+cells_per_band).
+ 
 """
 
 import os, time
@@ -263,8 +273,8 @@ if __name__ == '__main__':
     stims = []
     fmin = 4e3
     fmax = 40e3
-    n_frequencies = 3
-    n_levels = 3
+    n_frequencies = 10
+    n_levels = 9
     fvals = fmin * (fmax/fmin)**(np.arange(n_frequencies) / (n_frequencies-1.))
     levels = np.linspace(0, 100, n_levels)
     print("Frequencies:", fvals/1000.)
