@@ -239,7 +239,7 @@ class PyramidalKanold(Pyramidal, Cell):
             if not self.status['dendrites']:
                 self.add_dendrites()
 
-        if species == 'mouse' and modelType in ['I', 'POK']:  # canonical K&M2001 model cell - faked for mouse
+        elif species == 'mouse' and modelType in ['I', 'POK']:  # canonical K&M2001 model cell - faked for mouse
             self.set_soma_size_from_Cm(12.0)
             self._valid_temperatures = (34.,)
             if self.status['temperature'] is None:
