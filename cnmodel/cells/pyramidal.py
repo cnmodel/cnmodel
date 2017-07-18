@@ -239,6 +239,23 @@ class PyramidalKanold(Pyramidal, Cell):
             if not self.status['dendrites']:
                 self.add_dendrites()
 
+        if species == 'mouse' and modelType in ['I', 'POK']:  # canonical K&M2001 model cell - faked for mouse
+            self.set_soma_size_from_Cm(12.0)
+            self._valid_temperatures = (34.,)
+            if self.status['temperature'] is None:
+                self.set_temperature(34.)
+            soma().napyr.gbar = nstomho(350, self.somaarea)
+            soma().nap.gbar = 0.0
+            soma().kdpyr.gbar = nstomho(80, self.somaarea) # used to be 20?
+            soma().kcnq.gbar = 0 # does not exist in canonical model.
+            soma().kif.gbar = nstomho(150, self.somaarea)
+            soma().kis.gbar = nstomho(40, self.somaarea)
+            soma().ihpyr.gbar = nstomho(2.8, self.somaarea)
+            soma().leak.gbar = nstomho(2.8, self.somaarea)
+            soma().leak.erev = -62  # override default values in cell.py
+            soma().ena = 50.0
+            soma().ek = -81.5
+            soma().ihpyr.eh = -43
         else:
             raise ValueError('Species %s or species-modelType %s is not implemented for Pyramidal cells' % (species, modelType))
 
