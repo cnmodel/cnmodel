@@ -30,53 +30,39 @@ def get_spiketrain(cf, sr, stim, seed, **kwds):
     times will be regenerated and cached, regardless of the current cache 
     state.
     """
-    index = cache_index()
-    keydata = dict(cf=cf, sr=sr, stim=stim.key(), seed=seed, **kwds)
-    key = make_key(**keydata)
-    data = None
+    subdir = os.path.join(_cache_path, make_key(**stim.key()))
+    filename = make_key(cf=cf, sr=sr, seed=seed, **kwds)
+    filename = os.path.join(subdir, filename) + '.npz'
+        
+    if not os.path.exists(subdir):
+        try:
+            os.mkdir(subdir)
+        except OSError as err:
+            # probably another process already created this directory
+            # since we last checked
+            pass
     
-    # Load data from cache if possible
-    if key in index and "--ignore-an-cache" not in sys.argv:
-        data_file = index[key]
-        if os.path.exists(data_file):
+    with FileLock(filename):
+        
+        if '--ignore-an-cache' in sys.argv or not os.path.exists(filename):
+            create = True
+        else:
+            create = False
+            # try loading cached data
             try:
-                with FileLock(data_file+'.lock'):
-                    data = np.load(open(data_file, 'rb'))['data']
-                    logging.info("Loaded AN spike train from cache: %s", key)
+                data = np.load(open(filename, 'rb'))['data']
+                logging.info("Loaded AN spike train from cache: %s", filename)
             except Exception:
+                create = True
                 sys.excepthook(*sys.exc_info())
                 logging.error("Error reading AN spike train cache file; will "
-                    "re-generate from MATLAB. File: %s  Key: %s", data_file, key)
-   
-    # Generate new data if needed
-    if data is None:
-        logging.info("AN spike train cache miss; generate for key: %s", key)
-        data = generate_spiketrain(cf, sr, stim, seed, **kwds)
-        
-        # store new data to cache
-        subdir = os.path.join(_cache_path, make_key(**stim.key()))
-        filename = make_key(cf=cf, sr=sr, seed=seed, **kwds)
-        filename = os.path.join(subdir, filename) + '.npz'
-        
-        if not os.path.exists(subdir):
-            try:
-                os.mkdir(subdir)
-            except OSError as err:
-                # probably another process already created this directory
-                # since we last checked
-                pass
-        
-        with FileLock(filename+'.lock'):
+                    "re-generate. File: %s", data_file)
+
+        if create:
+            logging.info("Generate new AN spike train: %s", filename)
+            data = generate_spiketrain(cf, sr, stim, seed, **kwds)
             np.savez_compressed(filename, data=data)
-        
-        # update the index
-        # Used to store this data in the index, but it is not necessaary
-        # and it became too expensive to read/write the index
-        #keydata['file'] = filename
-        #index[key] = keydata
-        index[key] = filename
-        save_index()
-    
+            
     return data
 
 
@@ -93,53 +79,6 @@ def make_key(**kwds):
     kwds = list(kwds.items())
     kwds.sort()
     return '_'.join(['%s=%s' % kv for kv in kwds])
-
-
-def cache_index(reload=False):
-    """ Return an index that gives the file name for each stored cache entry.
-    """
-    global _index, _cache_path, _cache_version, _index_file
-    if reload or _index is None:
-        if not os.path.isdir(_cache_path):
-            try:
-                os.mkdir(_cache_path)
-            except OSError:
-                if os.path.isdir(_cache_path):
-                    # In multiprocessing environment, the directory might have 
-                    # been created while we weren't looking
-                    pass
-                else:
-                    raise
-            
-        if os.path.isfile(_index_file):
-            with FileLock(_index_file+'.lock'):
-                index_data = open(_index_file, 'rb').read()
-            _index = pickle.loads(index_data)
-            if _index['_cache_version'] != _cache_version:
-                i = 0
-                while True:
-                    old_cache = _cache_path + '.old-%d' % i
-                    if not os.path.exists(old_cache):
-                        break
-                os.rename(_cache_path, old_cache)
-                print ("Cache version is too old; starting new cache. "
-                       "(old cache is stored at %s)" % old_cache)
-                return cache_index()
-        else:
-            _index = {'_cache_version': _cache_version}
-    return _index
-
-
-def save_index():
-    """ Write the index to file
-    """
-    global _index_file, _index
-    with FileLock(_index_file+'.lock'):
-        old_index = _index
-        new_index = cache_index(reload=True)
-        new_index.update(old_index)
-        pkl_str = pickle.dumps(new_index)
-        open(_index_file, 'wb').write(pkl_str)
 
 
 def generate_spiketrain(cf, sr, stim, seed, simulator=None, **kwds):
