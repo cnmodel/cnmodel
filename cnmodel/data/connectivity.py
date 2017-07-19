@@ -71,7 +71,7 @@ the CF of the postsynaptic cell.
 
 ----------------------------------------------------------------------------------------------
                   bushy       tstellate   dstellate   octopus     pyramidal    tuberculoventral
-sgc               0.05 [1]    0.1 [1]     0.4 [1]     0.05 [1]    0.1 [1]      0.1 [1]
+sgc               0.05 [1]    0.1 [1]     0.4 [1]     0.5 [5]     0.1 [1]      0.1 [1]
 dstellate         0.208 [2]   0.347 [2]   0.5 [1]     0           0.2 [1]      0.2 [1]      
 tstellate         0.1 [4]     0.1 [4]     0           0           0            0    
 tuberculoventral  0.069 [3]   0.111 [3]   0           0           0.15 [1]     0    
@@ -94,6 +94,8 @@ pyramidal         0           0           0           0           0            0
 
 [4] Guess based on very limited information in Campagnola & Manis 2014 fig. 12
 
+[5] Octopus cells get a wide range of ANF input (but weak on a per input basis)
+    For example, see McGinley et al., 2012 or Spencer et al., 2012.
 
 
 """

@@ -325,19 +325,23 @@ if __name__ == '__main__':
     # population
     stims = []
     fmin = 4e3
-    fmax = 40e3
-    n_frequencies = 10
-    n_levels = 9
-    fvals = fmin * (fmax/fmin)**(np.arange(n_frequencies) / (n_frequencies-1.))
-    levels = np.linspace(0, 100, n_levels)
+    fmax = 32e3
+    octavespacing = 0.3
+    n_frequencies = int((1./octavespacing)*np.log2(fmax/1000.)/np.log2(fmin/1000.) - 1)
+    #n_frequencies = 10
+    n_levels = 5
+    #fvals = fmin * (fmax/fmin)**(np.arange(n_frequencies) / (n_frequencies-1.))
+    fvals = np.logspace(np.log2(fmin/1000.), np.log2(fmax/1000.), num=n_frequencies, endpoint=True, base=2)*1000.
+    levels = np.linspace(20, 100, n_levels)
+    print 'n frequencies: ', n_frequencies
     print("Frequencies:", fvals/1000.)
     print("Levels:", levels)
-    
+
     path = os.path.dirname(__file__)
     cachepath = os.path.join(path, 'cache')
     if not os.path.isdir(cachepath):
         os.mkdir(cachepath)
-    
+    rerun = True
     seed = 34657845
     prot = CNSoundStim(seed=seed)
     
@@ -361,7 +365,8 @@ if __name__ == '__main__':
             else:
                 print("  (Loading cached results)")
                 result = pickle.load(open(cachefile, 'rb'))
-            
+                if rerun:
+                    result = prot.run(stim)  # update the result
             results.append((stim, result))
             i += 1
 
