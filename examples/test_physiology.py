@@ -13,6 +13,7 @@ cells_per_band).
 """
 
 import os, time
+from collections import OrderedDict
 import numpy as np
 from neuron import h
 import pyqtgraph as pg
@@ -39,6 +40,9 @@ class CNSoundStim(Protocol):
         self.dstellate = populations.DStellate()
         self.tstellate = populations.TStellate()
         self.tuberculoventral = populations.Tuberculoventral()
+        
+        pops = [self.sgc, self.dstellate, self.tuberculoventral, self.tstellate, self.bushy]
+        self.populations = OrderedDict([(pop.type,pop) for pop in pops])
 
         # Connect populations. 
         # This only defines the connections between populations; no synapses are 
@@ -261,8 +265,57 @@ class NetworkTree(QtGui.QTreeWidget):
         for cpop, conns in all_conns.items():
             pop_grp = QtGui.QTreeWidgetItem([cpop.type, str(conns)])
             item.addChild(pop_grp)
+
+
+class NetworkVisualizer(pg.PlotWidget):
+    def __init__(self, populations):
+        self.pops = populations
+        pg.PlotWidget.__init__(self)
+        self.setLogMode(x=True, y=False)
         
+        self.cells = pg.ScatterPlotItem()
+        self.cells.setZValue(10)
+        self.addItem(self.cells)
         
+        self.connections = pg.PlotCurveItem()
+        self.addItem(self.connections)
+        
+        # first assign positions of all cells
+        cells = []
+        colors = {'sgc': 'g', 'bushy': 'b', 'dstellate': 'y', 'tuberculoventral': 'r', 'tstellate': 'm'}
+        for y,pop in enumerate(self.pops.values()):
+            symbol = {'sgc': '+', 'bushy': 'o', 'tuberculoventral': 's', 'dstellate': 't', 'tstellate': 'x'}[pop.type]
+            pop.cell_positions = []
+            for cell in pop._cells:
+                pos = (np.log10(cell['cf']), y)
+                real = cell['cell'] != 0
+                brush = pg.mkBrush(colors[pop.type]) if real else pg.mkBrush(255, 255, 255, 30)
+                cells.append({'x': pos[0], 'y': pos[1], 'symbol': 'o' if real else 'x', 'brush': brush, 'pen': None})
+                pop.cell_positions.append(pos)
+        
+        self.cells.setData(cells)
+        
+        self.getAxis('left').setTicks([list(enumerate(self.pops.keys()))])
+        
+        # now assign connection lines
+        con_x = []
+        con_y = []
+        for pop in self.pops.values():
+            for i,cell in enumerate(pop._cells):
+                conns = cell['connections']
+                if conns == 0:
+                    continue
+                for prepop, precells in conns.items():
+                    p1 = pop.cell_positions[i]
+                    for j in precells:
+                        p2 = prepop.cell_positions[j]
+                        con_x.extend([p1[0], p2[0]])
+                        con_y.extend([p1[1], p2[1]])
+        self.connections.setData(x=con_x, y=con_y, connect='pairs', pen=(255, 255, 255, 100))
+        
+
+
+
 if __name__ == '__main__':
     import pickle, os, sys
     app = pg.mkQApp()
@@ -287,6 +340,11 @@ if __name__ == '__main__':
     
     seed = 34657845
     prot = CNSoundStim(seed=seed)
+    
+    nv = NetworkVisualizer(prot.populations)
+    nv.show()
+    raise Exception()
+
     i = 0
     results = []
     for f in fvals:
