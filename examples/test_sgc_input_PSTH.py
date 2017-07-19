@@ -77,6 +77,7 @@ class SGCInputTestPSTH(Protocol):
         self.simulator = simulator
         self.sr = 1  # set SR group
         if self.stimulus == 'SAM':
+            self.dMod = 100.
             self.stim = sound.SAMTone(rate=self.Fs, duration=self.run_duration, f0=self.f0, 
                           fmod=self.fMod, dmod=self.dMod, dbspl=self.dbspl,
                           ramp_duration=2.5e-3, pip_duration=self.pip_duration,
