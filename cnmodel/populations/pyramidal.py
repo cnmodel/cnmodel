@@ -8,7 +8,7 @@ from .. import cells
 class Pyramidal(Population):
     type = 'pyramidal'
     
-    def __init__(self, species='mouse', **kwds):  # ***** NOTE Species - no dicret data for mouse (uses RAT data)
+    def __init__(self, species='mouse', **kwds):  # ***** NOTE Species - no direct data for mouse (uses RAT data)
         # Completely fabricated cell distribution: uniform from 2kHz to 64kHz.
         # Note that `cf` is the mean value used when selecting SGCs to connect;
         # it is NOT the measured CF of the cell (although it should be close).
