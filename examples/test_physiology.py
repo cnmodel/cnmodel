@@ -273,31 +273,36 @@ class NetworkVisualizer(pg.PlotWidget):
         pg.PlotWidget.__init__(self)
         self.setLogMode(x=True, y=False)
         
-        self.cells = pg.ScatterPlotItem()
+        self.cells = pg.ScatterPlotItem(clickable=True)
         self.cells.setZValue(10)
         self.addItem(self.cells)
+        self.cells.sigClicked.connect(self.cells_clicked)
+        
+        self.selected = pg.ScatterPlotItem()
+        self.selected.setZValue(20)
+        self.addItem(self.selected)
         
         self.connections = pg.PlotCurveItem()
         self.addItem(self.connections)
         
         # first assign positions of all cells
         cells = []
-        colors = {'sgc': 'g', 'bushy': 'b', 'dstellate': 'y', 'tuberculoventral': 'r', 'tstellate': 'm'}
         for y,pop in enumerate(self.pops.values()):
-            symbol = {'sgc': '+', 'bushy': 'o', 'tuberculoventral': 's', 'dstellate': 't', 'tstellate': 'x'}[pop.type]
-            pop.cell_positions = []
-            for cell in pop._cells:
+            pop.cell_spots = []
+            pop.fwd_connections = {}
+            for i,cell in enumerate(pop._cells):
                 pos = (np.log10(cell['cf']), y)
                 real = cell['cell'] != 0
-                brush = pg.mkBrush(colors[pop.type]) if real else pg.mkBrush(255, 255, 255, 30)
-                cells.append({'x': pos[0], 'y': pos[1], 'symbol': 'o' if real else 'x', 'brush': brush, 'pen': None})
-                pop.cell_positions.append(pos)
+                brush = pg.mkBrush('b') if real else pg.mkBrush(255, 255, 255, 30)
+                spot = {'x': pos[0], 'y': pos[1], 'symbol': 'o' if real else 'x', 'brush': brush, 'pen': None, 'data': (pop, i)}
+                cells.append(spot)
+                pop.cell_spots.append(spot)
         
         self.cells.setData(cells)
         
         self.getAxis('left').setTicks([list(enumerate(self.pops.keys()))])
         
-        # now assign connection lines
+        # now assign connection lines and record forward connectivity
         con_x = []
         con_y = []
         for pop in self.pops.values():
@@ -306,14 +311,48 @@ class NetworkVisualizer(pg.PlotWidget):
                 if conns == 0:
                     continue
                 for prepop, precells in conns.items():
-                    p1 = pop.cell_positions[i]
+                    p1 = pop.cell_spots[i]['x'], pop.cell_spots[i]['y']
                     for j in precells:
-                        p2 = prepop.cell_positions[j]
+                        prepop.fwd_connections.setdefault(j, [])
+                        prepop.fwd_connections[j].append((pop, i))
+                        p2 = prepop.cell_spots[j]['x'], prepop.cell_spots[j]['y']
                         con_x.extend([p1[0], p2[0]])
                         con_y.extend([p1[1], p2[1]])
         self.connections.setData(x=con_x, y=con_y, connect='pairs', pen=(255, 255, 255, 100))
         
+    def cells_clicked(self, *args):
+        selected = None
+        for spot in args[1]:
+            # find the first real cell
+            pop, i = spot.data()
+            if pop._cells[i]['cell'] != 0:
+                selected = spot
+                break
+        if selected is None:
+            self.selected.hide()
+            return
+        
+        rec = pop._cells[i]
+        pos = selected.pos()
+        spots = [{'x': pos.x(), 'y': pos.y(), 'size': 15, 'symbol': 'o', 'pen': 'y', 'brush': 'b'}]
 
+        # display presynaptic cells
+        for prepop, preinds in rec['connections'].items():
+            for preind in preinds:
+                spot = prepop.cell_spots[preind].copy()
+                spot['size'] = 15
+                spot['brush'] = 'r'
+                spots.append(spot)
+                
+        # display postsynaptic cells
+        for postpop, postind in pop.fwd_connections.get(i, []):
+            spot = postpop.cell_spots[postind].copy()
+            spot['size'] = 15
+            spot['brush'] = 'g'
+            spots.append(spot)
+        
+        self.selected.setData(spots)
+        self.selected.show()
 
 
 if __name__ == '__main__':
