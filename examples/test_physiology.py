@@ -12,7 +12,7 @@ cells_per_band).
  
 """
 
-import os, time
+import os, sys, time
 from collections import OrderedDict
 import numpy as np
 from neuron import h
@@ -341,7 +341,7 @@ if __name__ == '__main__':
     cachepath = os.path.join(path, 'cache')
     if not os.path.isdir(cachepath):
         os.mkdir(cachepath)
-    rerun = True
+
     seed = 34657845
     prot = CNSoundStim(seed=seed)
     
@@ -359,14 +359,12 @@ if __name__ == '__main__':
         
             print("=== Start run %d/%d ===" % (i+1, len(fvals)*len(levels)))
             cachefile = os.path.join(cachepath, 'seed=%d_f0=%f_dbspl=%f.pk' % (seed, f, db))
-            if not os.path.isfile(cachefile):
+            if '--ignore-cache' in sys.argv or not os.path.isfile(cachefile):
                 result = prot.run(stim)
                 pickle.dump(result, open(cachefile, 'wb'))
             else:
                 print("  (Loading cached results)")
                 result = pickle.load(open(cachefile, 'rb'))
-                if rerun:
-                    result = prot.run(stim)  # update the result
             results.append((stim, result))
             i += 1
 
