@@ -148,7 +148,7 @@ class BushyRothman(Bushy):
         if nach == None and species == 'guineapig':
             nach = 'na'
         if nach == None and species == 'mouse':
-            nach = 'nav11'
+            nach = 'na'
             self.i_test_range={'pulse': (-1, 1.2, 0.05)}
         
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False, 'hillock': False, 
@@ -554,10 +554,9 @@ class BushyRothman(Bushy):
             soma().nav11.gbar = gnabar
             soma.ena = 50 # self.e_na
 #            print('gnabar: ', soma().nav11.gbar, ' vs: 0.0192307692308')
-#            soma().nav11.vsna = 4.3
+            soma().nav11.vsna = 4.3
             if debug:
                 print "bushy using inva11"
-#            print 'nav11 gbar: ', soma().nav11.gbar
         elif nach in ['na', 'nacn']:
             soma().na.gbar = gnabar
             soma.ena = self.e_na
