@@ -141,16 +141,37 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
                 
         self.stim_combo = pg.QtGui.QComboBox()
         self.layout.addWidget(self.stim_combo)
-        self.results = {}
+        self.results = OrderedDict()
+        self.stim_order = []
+        freqs = set()
+        levels = set()
         for stim, result in results:
-            key = 'f0: %0.0f  dBspl: %0.0f' % (stim.key()['f0'], stim.key()['dbspl'])
+            f0 = stim.key()['f0']
+            dbspl = stim.key()['dbspl']
+            key = 'f0: %0.0f  dBspl: %0.0f' % (f0, dbspl)
             self.results[key] = (stim, result)
+            self.stim_order.append((f0, dbspl))
+            freqs.add(f0)
+            levels.add(dbspl)
             self.stim_combo.addItem(key)
+        self.freqs = sorted(list(freqs))
+        self.levels = sorted(list(levels))
         self.stim_combo.currentIndexChanged.connect(self.stim_selected)
 
         self.tuning_plot = pg.PlotWidget()
         self.tuning_plot.setLogMode(x=True, y=False)
+        self.tuning_plot.scene().sigMouseClicked.connect(self.tuning_plot_clicked)
         self.layout.addWidget(self.tuning_plot)
+
+        self.tuning_img = pg.ImageItem()
+        self.tuning_plot.addItem(self.tuning_img)
+        
+        df = np.log10(self.freqs[1]) - np.log10(self.freqs[0])
+        dl = self.levels[1] - self.levels[0]
+        self.stim_rect = QtGui.QGraphicsRectItem(QtCore.QRectF(0, 0, df, dl))
+        self.stim_rect.setPen(pg.mkPen('c'))
+        self.stim_rect.setZValue(20)
+        self.tuning_plot.addItem(self.stim_rect)
 
         #self.network_tree = NetworkTree(self.prot)
         #self.layout.addWidget(self.network_tree)
@@ -158,25 +179,21 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         self.pw = pg.GraphicsLayoutWidget()
         self.addWidget(self.pw)
         
-        #self.matrix_plot = self.pw.addPlot()
-        #self.matrix_plot.setLogMode(x=True, y=False)
         self.stim_plot = self.pw.addPlot()
-        self.level_line = self.tuning_plot.addLine(y=50, movable=True)
-        self.freq_line = self.tuning_plot.addLine(x=2, movable=True)
         
         self.pw.nextRow()
-        self.cell_plot = self.pw.addPlot(labels={'left': 'Vm'}, title='Bushy cell Vm')
+        self.cell_plot = self.pw.addPlot(labels={'left': 'Vm'})
 
         self.pw.nextRow()
         self.input_plot = self.pw.addPlot(labels={'left': 'input #', 'bottom': 'time'}, title="Input spike times")
         self.input_plot.setXLink(self.cell_plot)
-        self.input_plot.setXLink(self.stim_plot)
+        self.stim_plot.setXLink(self.cell_plot)
         
         self.stim_selected()
         
     def update_stim_plot(self):
         stim = self.selected_stim
-        self.stim_plot.plot(stim.time*1000, stim.sound, clear=True)
+        self.stim_plot.plot(stim.time*1000, stim.sound, clear=True, antialias=True)
         
     def update_raster_plot(self):
         self.input_plot.clear()
@@ -191,11 +208,13 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         labels = []
         if rec['connections'] == 0:
             return
+        
+        pop_colors = {'dstellate': 'y', 'tuberculoventral': 'r', 'sgc': 'g', 'tstellate': 'b'}
         for pop, pre_inds in rec['connections'].items():
             for preind in pre_inds:
                 spikes = self.selected_results[(pop.type, preind)][1]
                 y = np.ones(len(spikes)) * i
-                self.input_plot.plot(spikes, y, pen=None, symbol='o', symbolBrush=(i, 30))
+                self.input_plot.plot(spikes, y, pen=0.2, symbolPen=pop_colors[pop.type], symbol='+', symbolBrush=None)
                 i += 1
                 labels.append(pop.type + " " + str(preind))
         self.input_plot.getAxis('left').setTicks([list(enumerate(labels))])
@@ -210,10 +229,33 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         y = self.selected_results[(pop.type, cell_ind)][0]
         if y is not None:
             p = self.cell_plot.plot(self.selected_results['t'], y, 
-                                    name='%s-%d' % self.selected_cell)
+                                    name='%s-%d' % self.selected_cell, antialias=True)
         #p.curve.setClickable(True)
         #p.sigClicked.connect(self.cell_curve_clicked)
         #p.cell_ind = ind
+
+    def tuning_plot_clicked(self, event):
+        spos = event.scenePos()
+        stimpos = self.tuning_plot.plotItem.vb.mapSceneToView(spos)
+        x = 10**stimpos.x()
+        y = stimpos.y()
+        
+        best = None
+        for stim, result in results:
+            f0 = stim.opts['f0']
+            dbspl = stim.opts['dbspl']
+            if x < f0 or y < dbspl:
+                continue
+            if best is None:
+                best = stim
+                continue
+            if f0 > best.opts['f0'] or dbspl > best.opts['dbspl']:
+                best = stim
+                continue
+        
+        if best is None:
+            return
+        self.select_stim(best.opts['f0'], best.opts['dbspl'])
 
     def nv_cell_selected(self, nv, cell):
         self.select_cell(*cell)
@@ -227,8 +269,11 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         self.update_raster_plot()
         self.update_cell_plot()
         
-        self.level_line.setValue(results[0].opts['dbspl'])
-        self.freq_line.setValue(np.log10(results[0].opts['f0']))
+        self.stim_rect.setPos(np.log10(results[0].opts['f0']), results[0].opts['dbspl'])
+
+    def select_stim(self, f0, dbspl):
+        i = self.stim_order.index((f0, dbspl))
+        self.stim_combo.setCurrentIndex(i)
         
     def select_cell(self, pop, cell_id):
         self.selected_cell = pop, cell_id
@@ -251,7 +296,6 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
 
     def update_tuning(self):
         # update matrix image
-        self.tuning_plot.clear()
         if self.selected_cell is None:
             return
         
@@ -276,10 +320,10 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
             
         # plot and scale the matrix image 
         # note that the origin (lower left) of each image pixel indicates its actual test freq/level. 
-        self.matrix_img = pg.ImageItem(matrix)
-        self.tuning_plot.addItem(self.matrix_img)
-        self.matrix_img.setPos(np.log10(min(fvals)), min(lvals))
-        self.matrix_img.scale((np.log10(max(fvals)) - np.log10(min(fvals))) / (len(fvals) - 1), 
+        self.tuning_img.setImage(matrix)
+        self.tuning_img.resetTransform()
+        self.tuning_img.setPos(np.log10(min(fvals)), min(lvals))
+        self.tuning_img.scale((np.log10(max(fvals)) - np.log10(min(fvals))) / (len(fvals) - 1), 
                               (max(lvals) - min(lvals)) / (len(lvals) - 1))
         
 
