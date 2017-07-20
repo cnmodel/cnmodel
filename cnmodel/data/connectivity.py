@@ -15,7 +15,7 @@ J. Neurosci. 15: 3138, 1995)
 
 ----------------------------------------------------------------------------------------------
                   bushy       tstellate   dstellate   octopus     pyramidal    tuberculoventral
-sgc               3.3±0.6 [2] 6.5±1.0 [2] 35±0 [3]    60±0 [2]    48±0 [5]     48±0 [5]
+sgc               3.3±0.6 [2] 6.5±1.0 [2] 35±0 [3]    60±0 [2]    48±0 [5]     24±0 [5]
 dstellate         7 [1]       20 [1]      3 [1]       0 [4]       15 [5]       15 [5]
 tstellate         0 [6]       0 [6]       0 [6]       0 [6]       0 [6]        0 [6]
 tuberculoventral  6           6           0           0 [4]       21 [5]       0 [7]
@@ -42,7 +42,7 @@ pyramidal         0           0           0           0           0            0
 
 [5] Convergence from Hancock and Voigt, Ann. Biomed. Eng. 27, 1999 and Zheng and Voigt,
     Ann. Biomed. Eng., 34, 2006.  Numbers are based on models for cat and gerbil,
-    respectively.
+    respectively. Adjusted to 1/2 to avoid overexciting TV cells in network model.
 
 [6] tstellate cells have collaterals within the CN. It has been proposed that they
     provide auditory-driven input to the DCN (Oertel and Young, ), and also synapse

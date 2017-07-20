@@ -149,7 +149,7 @@ class TStellateRothman(TStellate):
         if nach == None and species == 'guineapig':
             nach = 'nacn'
         if nach == None and species == 'mouse':
-            nach = 'nav11'
+            nach = 'nacn'
             self.i_test_range={'pulse': (-1.0, 1.0, 0.05)}
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'TStellate',
@@ -225,14 +225,14 @@ class TStellateRothman(TStellate):
             self._valid_temperatures = (34.,)
             if self.status['temperature'] is None:
                 self.set_temperature(34.)
-            #self.adjust_na_chans(soma, gbar=800.)
+            self.adjust_na_chans(soma, gbar=3000.)
             self.e_k = -84.
             self.e_na = 50.
-            soma().nav11.gbar = nstomho(1800., self.somaarea)
-            soma().nav11.vsna = 4.3
+            # soma().nav11.gbar = nstomho(1800., self.somaarea)
+            # soma().nav11.vsna = 4.3
             soma.ena = self.e_na
             soma.ek = self.e_k
-            soma().kht.gbar = nstomho(250.0, self.somaarea)
+            soma().kht.gbar = nstomho(500.0, self.somaarea)
             soma().ka.gbar = nstomho(0.0, self.somaarea)
             soma().ihvcn.gbar = nstomho(18.0, self.somaarea)
             soma().ihvcn.eh = -43 # Rodrigues and Oertel, 2006
