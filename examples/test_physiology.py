@@ -125,16 +125,20 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
     def __init__(self, prot, results):
         pg.QtGui.QSplitter.__init__(self, QtCore.Qt.Horizontal)
         
-        self.selected = None
+        self.selected_cell = None
         
         self.prot = prot
-        
+
         self.ctrl = QtGui.QWidget()
         self.layout = pg.QtGui.QVBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.ctrl.setLayout(self.layout)
         self.addWidget(self.ctrl)
-        
+
+        self.nv = NetworkVisualizer(prot.populations)
+        self.layout.addWidget(self.nv)
+        self.nv.cell_selected.connect(self.nv_cell_selected)
+                
         self.stim_combo = pg.QtGui.QComboBox()
         self.layout.addWidget(self.stim_combo)
         self.results = {}
@@ -142,18 +146,23 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
             key = 'f0: %0.0f  dBspl: %0.0f' % (stim.key()['f0'], stim.key()['dbspl'])
             self.results[key] = (stim, result)
             self.stim_combo.addItem(key)
-        self.stim_combo.currentIndexChanged.connect(self.load_stim)
+        self.stim_combo.currentIndexChanged.connect(self.stim_selected)
 
-        self.network_tree = NetworkTree(self.prot)
-        self.layout.addWidget(self.network_tree)
+        self.tuning_plot = pg.PlotWidget()
+        self.tuning_plot.setLogMode(x=True, y=False)
+        self.layout.addWidget(self.tuning_plot)
+
+        #self.network_tree = NetworkTree(self.prot)
+        #self.layout.addWidget(self.network_tree)
         
         self.pw = pg.GraphicsLayoutWidget()
         self.addWidget(self.pw)
         
-        self.matrix_plot = self.pw.addPlot()
-        self.matrix_plot.setLogMode(x=True, y=False)
-        self.level_line = self.matrix_plot.addLine(y=50, movable=True)
-        self.freq_line = self.matrix_plot.addLine(x=2, movable=True)
+        #self.matrix_plot = self.pw.addPlot()
+        #self.matrix_plot.setLogMode(x=True, y=False)
+        self.stim_plot = self.pw.addPlot()
+        self.level_line = self.tuning_plot.addLine(y=50, movable=True)
+        self.freq_line = self.tuning_plot.addLine(x=2, movable=True)
         
         self.pw.nextRow()
         self.cell_plot = self.pw.addPlot(labels={'left': 'Vm'}, title='Bushy cell Vm')
@@ -161,55 +170,92 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         self.pw.nextRow()
         self.input_plot = self.pw.addPlot(labels={'left': 'input #', 'bottom': 'time'}, title="Input spike times")
         self.input_plot.setXLink(self.cell_plot)
+        self.input_plot.setXLink(self.stim_plot)
         
-    def load_stim(self):
+        self.stim_selected()
+        
+    def update_stim_plot(self):
+        stim = self.selected_stim
+        self.stim_plot.plot(stim.time*1000, stim.sound, clear=True)
+        
+    def update_raster_plot(self):
+        self.input_plot.clear()
+        if self.selected_cell is None:
+            return
+        pop, ind = self.selected_cell
+        
+        rec = pop._cells[ind]
+        i = 0
+        plots = []
+        # plot spike times for all presynaptic cells
+        labels = []
+        if rec['connections'] == 0:
+            return
+        for pop, pre_inds in rec['connections'].items():
+            for preind in pre_inds:
+                spikes = self.selected_results[(pop.type, preind)][1]
+                y = np.ones(len(spikes)) * i
+                self.input_plot.plot(spikes, y, pen=None, symbol='o', symbolBrush=(i, 30))
+                i += 1
+                labels.append(pop.type + " " + str(preind))
+        self.input_plot.getAxis('left').setTicks([list(enumerate(labels))])
+
+    def update_cell_plot(self):
+        self.cell_plot.clear()
+        if self.selected_cell is None:
+            return
+        pop, cell_ind = self.selected_cell
+        
+        self.cell_plot.setTitle("%s %d   %s" % (pop.type, cell_ind, str(self.stim_combo.currentText())))
+        y = self.selected_results[(pop.type, cell_ind)][0]
+        if y is not None:
+            p = self.cell_plot.plot(self.selected_results['t'], y, 
+                                    name='%s-%d' % self.selected_cell)
+        #p.curve.setClickable(True)
+        #p.sigClicked.connect(self.cell_curve_clicked)
+        #p.cell_ind = ind
+
+    def nv_cell_selected(self, nv, cell):
+        self.select_cell(*cell)
+
+    def stim_selected(self):
         key = str(self.stim_combo.currentText())
         results = self.results[key]
         self.selected_results = results[1]
         self.selected_stim = results[0]
-        self.cell_plot.clear()
-        real = self.prot.bushy.real_cells()
-        for i, ind in enumerate(real):
-            p = self.cell_plot.plot(self.selected_results['t'], 
-                                    self.selected_results[('bushy', ind)][0], 
-                                    pen=(i, len(real)*1.5), name='bushy-%d' % ind)
-            p.curve.setClickable(True)
-            p.sigClicked.connect(self.cell_curve_clicked)
-            p.cell_ind = ind
+        self.update_stim_plot()
+        self.update_raster_plot()
+        self.update_cell_plot()
         
-    def cell_curve_clicked(self, c):
-        if self.selected is not None:
-            pen = self.selected.curve.opts['pen']
-            pen.setWidth(1)
-            self.selected.setPen(pen)
+        self.level_line.setValue(results[0].opts['dbspl'])
+        self.freq_line.setValue(np.log10(results[0].opts['f0']))
+        
+    def select_cell(self, pop, cell_id):
+        self.selected_cell = pop, cell_id
+        self.update_tuning()
+        self.update_cell_plot()
+        self.update_raster_plot()
+        
+    #def cell_curve_clicked(self, c):
+        #if self.selected is not None:
+            #pen = self.selected.curve.opts['pen']
+            #pen.setWidth(1)
+            #self.selected.setPen(pen)
             
-        pen = c.curve.opts['pen']
-        pen.setWidth(3)
-        c.setPen(pen)
-        self.selected = c
+        #pen = c.curve.opts['pen']
+        #pen.setWidth(3)
+        #c.setPen(pen)
+        #self.selected = c
 
-        self.show_cell(c.cell_ind)
-        
-    def show_cell(self, ind):
-        """Show spike trains of inputs to selected cell.
-        """
-        self.input_plot.clear()
-        rec = self.prot.bushy._cells[ind]
-        i = 0
-        plots = []
-        # plot spike times for all presynaptic cells
-        for j, pop in enumerate((self.prot.dstellate, self.prot.sgc)):
-            if pop not in rec['connections']:
-                continue
-            pre_inds = rec['connections'][pop]
-            for preind in pre_inds:
-                spikes = self.selected_results[(pop.type, preind)][1]
-                y = np.ones(len(spikes)) * i
-                self.input_plot.plot(spikes, y, pen=None, symbol=['o', 't'][j], symbolBrush=(i, 30))
-                i += 1
-                    
+        #self.show_cell(c.cell_ind)
+
+    def update_tuning(self):
         # update matrix image
-        self.matrix_plot.clear()
+        self.tuning_plot.clear()
+        if self.selected_cell is None:
+            return
+        
+        pop, ind = self.selected_cell
         fvals = set()
         lvals = set()
         
@@ -223,7 +269,7 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         # next count the number of spikes for the selected cell at each point in the matrix
         matrix = np.zeros((len(fvals), len(lvals)))
         for stim, vec in self.results.values():
-            spikes = vec[('bushy', ind)][1]
+            spikes = vec[(pop.type, ind)][1]
             i = fvals.index(stim.key()['f0'])
             j = lvals.index(stim.key()['dbspl'])
             matrix[i, j] = len(spikes)
@@ -231,7 +277,7 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         # plot and scale the matrix image 
         # note that the origin (lower left) of each image pixel indicates its actual test freq/level. 
         self.matrix_img = pg.ImageItem(matrix)
-        self.matrix_plot.addItem(self.matrix_img)
+        self.tuning_plot.addItem(self.matrix_img)
         self.matrix_img.setPos(np.log10(min(fvals)), min(lvals))
         self.matrix_img.scale((np.log10(max(fvals)) - np.log10(min(fvals))) / (len(fvals) - 1), 
                               (max(lvals) - min(lvals)) / (len(lvals) - 1))
@@ -268,6 +314,9 @@ class NetworkTree(QtGui.QTreeWidget):
 
 
 class NetworkVisualizer(pg.PlotWidget):
+    
+    cell_selected = pg.QtCore.Signal(object, object)
+    
     def __init__(self, populations):
         self.pops = populations
         pg.PlotWidget.__init__(self)
@@ -337,12 +386,13 @@ class NetworkVisualizer(pg.PlotWidget):
         spots = [{'x': pos.x(), 'y': pos.y(), 'size': 15, 'symbol': 'o', 'pen': 'y', 'brush': 'b'}]
 
         # display presynaptic cells
-        for prepop, preinds in rec['connections'].items():
-            for preind in preinds:
-                spot = prepop.cell_spots[preind].copy()
-                spot['size'] = 15
-                spot['brush'] = 'r'
-                spots.append(spot)
+        if rec['connections'] != 0:
+            for prepop, preinds in rec['connections'].items():
+                for preind in preinds:
+                    spot = prepop.cell_spots[preind].copy()
+                    spot['size'] = 15
+                    spot['brush'] = 'r'
+                    spots.append(spot)
                 
         # display postsynaptic cells
         for postpop, postind in pop.fwd_connections.get(i, []):
@@ -353,6 +403,8 @@ class NetworkVisualizer(pg.PlotWidget):
         
         self.selected.setData(spots)
         self.selected.show()
+        
+        self.cell_selected.emit(self, selected.data())
 
 
 if __name__ == '__main__':
@@ -363,16 +415,16 @@ if __name__ == '__main__':
     # Create a sound stimulus and use it to generate spike trains for the SGC
     # population
     stims = []
+    
     fmin = 4e3
     fmax = 32e3
-    octavespacing = 0.3
-    n_frequencies = int((1./octavespacing)*np.log2(fmax/1000.)/np.log2(fmin/1000.) - 1)
-    #n_frequencies = 10
-    n_levels = 5
-    #fvals = fmin * (fmax/fmin)**(np.arange(n_frequencies) / (n_frequencies-1.))
+    octavespacing = 1/3.
+    n_frequencies = int(np.log2(fmax/fmin) / octavespacing) + 1
     fvals = np.logspace(np.log2(fmin/1000.), np.log2(fmax/1000.), num=n_frequencies, endpoint=True, base=2)*1000.
+    
+    n_levels = 5
     levels = np.linspace(20, 100, n_levels)
-    print 'n frequencies: ', n_frequencies
+    
     print("Frequencies:", fvals/1000.)
     print("Levels:", levels)
 
@@ -384,10 +436,6 @@ if __name__ == '__main__':
     seed = 34657845
     prot = CNSoundStim(seed=seed)
     
-    nv = NetworkVisualizer(prot.populations)
-    nv.show()
-    raise Exception()
-
     i = 0
     results = []
     for f in fvals:
@@ -409,5 +457,6 @@ if __name__ == '__main__':
 
     nd = NetworkSimDisplay(prot, results)
     nd.show()
+    
     if sys.flags.interactive == 0:
         pg.QtGui.QApplication.exec_()
