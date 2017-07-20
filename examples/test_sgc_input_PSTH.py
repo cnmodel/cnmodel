@@ -24,6 +24,10 @@ def runTrial(cell, info):
         post_cell = cells.Octopus.create(species=species)
     elif cell == 'dstellate':
         post_cell = cells.DStellate.create(species=species)
+    elif cell == 'tuberculoventral':
+        post_cell = cells.DStellate.create(species=species)
+    elif cell == 'pyramidal':
+        post_cell = cells.DStellate.create(species=species)
     else:
         raise ValueError('cell %s is not yet implemented for PSTH testing' % self.cell)
     pre_cells = []
@@ -34,9 +38,9 @@ def runTrial(cell, info):
         pre_cells.append(cells.DummySGC(cf=info['cf'], sr=info['sr']))
         if synapseType == 'simple':
             synapses.append(pre_cells[-1].connect(post_cell, type=synapseType))
-            synapses[-1].terminal.netcon.weight[0] =info['gmax']*2.0
+            synapses[-1].terminal.netcon.weight[0] =info['gmax']
         elif synapseType == 'multisite':
-            synapses.append(pre_cells[-1].connect(post_cell, post_opts={'AMPAScale': 2.0, 'NMDAScale': 2.0}, type=synapseType))
+            synapses.append(pre_cells[-1].connect(post_cell, post_opts={'AMPAScale': 1.0, 'NMDAScale': 1.0}, type=synapseType))
             for i in range(synapses[-1].terminal.n_rzones):
                 xmtr['xmtr%04d'%j] = h.Vector()
                 xmtr['xmtr%04d'%j].record(synapses[-1].terminal.relsite._ref_XMTR[i])
@@ -62,7 +66,7 @@ class SGCInputTestPSTH(Protocol):
     
     def run(self, temp=34.0, dt=0.025, seed=575982035, reps=10, stimulus='tone', simulator='cochlea', parallelize=False):
         assert stimulus in ['tone', 'SAM', 'clicks']  # cases available
-        assert self.cell in ['bushy', 'tstellate', 'octopus', 'dstellate']
+        assert self.cell in ['bushy', 'tstellate', 'octopus', 'dstellate', 'tuberculoventral', 'pyramidal']
         self.nrep = reps
         self.stimulus = stimulus
         self.run_duration = 0.20  # in seconds
@@ -75,7 +79,7 @@ class SGCInputTestPSTH(Protocol):
         self.dMod = 0.  # % mod depth, Hz
         self.dbspl = 50.
         self.simulator = simulator
-        self.sr = 1  # set SR group
+        self.sr = 2  # set SR group
         if self.stimulus == 'SAM':
             self.dMod = 100.
             self.stim = sound.SAMTone(rate=self.Fs, duration=self.run_duration, f0=self.f0, 
@@ -253,10 +257,14 @@ if __name__ == '__main__':
         stimulus = sys.argv[2]
     else:
         stimulus = 'tone'
+    nrep = 10
+    if len(sys.argv) > 3:
+        nrep = int(sys.argv[3])
+    
     print 'cell type: ', cell
     prot = SGCInputTestPSTH()
     prot.set_cell(cell)
-    prot.run(stimulus=stimulus, reps=10)
+    prot.run(stimulus=stimulus, reps=nrep)
     prot.show()
 
     import sys
