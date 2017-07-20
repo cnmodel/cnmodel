@@ -12,7 +12,8 @@ cells_per_band).
  
 """
 
-import os, time
+import os, sys, time
+from collections import OrderedDict
 import numpy as np
 from neuron import h
 import pyqtgraph as pg
@@ -39,6 +40,9 @@ class CNSoundStim(Protocol):
         self.dstellate = populations.DStellate()
         self.tstellate = populations.TStellate()
         self.tuberculoventral = populations.Tuberculoventral()
+        
+        pops = [self.sgc, self.dstellate, self.tuberculoventral, self.tstellate, self.bushy]
+        self.populations = OrderedDict([(pop.type,pop) for pop in pops])
 
         # Connect populations. 
         # This only defines the connections between populations; no synapses are 
@@ -121,91 +125,181 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
     def __init__(self, prot, results):
         pg.QtGui.QSplitter.__init__(self, QtCore.Qt.Horizontal)
         
-        self.selected = None
+        self.selected_cell = None
         
         self.prot = prot
-        
+
         self.ctrl = QtGui.QWidget()
         self.layout = pg.QtGui.QVBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.ctrl.setLayout(self.layout)
         self.addWidget(self.ctrl)
-        
+
+        self.nv = NetworkVisualizer(prot.populations)
+        self.layout.addWidget(self.nv)
+        self.nv.cell_selected.connect(self.nv_cell_selected)
+                
         self.stim_combo = pg.QtGui.QComboBox()
         self.layout.addWidget(self.stim_combo)
-        self.results = {}
+        self.results = OrderedDict()
+        self.stim_order = []
+        freqs = set()
+        levels = set()
         for stim, result in results:
-            key = 'f0: %0.0f  dBspl: %0.0f' % (stim.key()['f0'], stim.key()['dbspl'])
+            f0 = stim.key()['f0']
+            dbspl = stim.key()['dbspl']
+            key = 'f0: %0.0f  dBspl: %0.0f' % (f0, dbspl)
             self.results[key] = (stim, result)
+            self.stim_order.append((f0, dbspl))
+            freqs.add(f0)
+            levels.add(dbspl)
             self.stim_combo.addItem(key)
-        self.stim_combo.currentIndexChanged.connect(self.load_stim)
+        self.freqs = sorted(list(freqs))
+        self.levels = sorted(list(levels))
+        self.stim_combo.currentIndexChanged.connect(self.stim_selected)
 
-        self.network_tree = NetworkTree(self.prot)
-        self.layout.addWidget(self.network_tree)
+        self.tuning_plot = pg.PlotWidget()
+        self.tuning_plot.setLogMode(x=True, y=False)
+        self.tuning_plot.scene().sigMouseClicked.connect(self.tuning_plot_clicked)
+        self.layout.addWidget(self.tuning_plot)
+
+        self.tuning_img = pg.ImageItem()
+        self.tuning_plot.addItem(self.tuning_img)
+        
+        df = np.log10(self.freqs[1]) - np.log10(self.freqs[0])
+        dl = self.levels[1] - self.levels[0]
+        self.stim_rect = QtGui.QGraphicsRectItem(QtCore.QRectF(0, 0, df, dl))
+        self.stim_rect.setPen(pg.mkPen('c'))
+        self.stim_rect.setZValue(20)
+        self.tuning_plot.addItem(self.stim_rect)
+
+        #self.network_tree = NetworkTree(self.prot)
+        #self.layout.addWidget(self.network_tree)
         
         self.pw = pg.GraphicsLayoutWidget()
         self.addWidget(self.pw)
         
-        self.matrix_plot = self.pw.addPlot()
-        self.matrix_plot.setLogMode(x=True, y=False)
-        self.level_line = self.matrix_plot.addLine(y=50, movable=True)
-        self.freq_line = self.matrix_plot.addLine(x=2, movable=True)
+        self.stim_plot = self.pw.addPlot()
         
         self.pw.nextRow()
-        self.cell_plot = self.pw.addPlot(labels={'left': 'Vm'}, title='Bushy cell Vm')
+        self.cell_plot = self.pw.addPlot(labels={'left': 'Vm'})
 
         self.pw.nextRow()
         self.input_plot = self.pw.addPlot(labels={'left': 'input #', 'bottom': 'time'}, title="Input spike times")
         self.input_plot.setXLink(self.cell_plot)
+        self.stim_plot.setXLink(self.cell_plot)
         
-    def load_stim(self):
+        self.stim_selected()
+        
+    def update_stim_plot(self):
+        stim = self.selected_stim
+        self.stim_plot.plot(stim.time*1000, stim.sound, clear=True, antialias=True)
+        
+    def update_raster_plot(self):
+        self.input_plot.clear()
+        if self.selected_cell is None:
+            return
+        pop, ind = self.selected_cell
+        
+        rec = pop._cells[ind]
+        i = 0
+        plots = []
+        # plot spike times for all presynaptic cells
+        labels = []
+        if rec['connections'] == 0:
+            return
+        
+        pop_colors = {'dstellate': 'y', 'tuberculoventral': 'r', 'sgc': 'g', 'tstellate': 'b'}
+        for pop, pre_inds in rec['connections'].items():
+            for preind in pre_inds:
+                spikes = self.selected_results[(pop.type, preind)][1]
+                y = np.ones(len(spikes)) * i
+                self.input_plot.plot(spikes, y, pen=0.2, symbolPen=pop_colors[pop.type], symbol='+', symbolBrush=None)
+                i += 1
+                labels.append(pop.type + " " + str(preind))
+        self.input_plot.getAxis('left').setTicks([list(enumerate(labels))])
+
+    def update_cell_plot(self):
+        self.cell_plot.clear()
+        if self.selected_cell is None:
+            return
+        pop, cell_ind = self.selected_cell
+        
+        self.cell_plot.setTitle("%s %d   %s" % (pop.type, cell_ind, str(self.stim_combo.currentText())))
+        y = self.selected_results[(pop.type, cell_ind)][0]
+        if y is not None:
+            p = self.cell_plot.plot(self.selected_results['t'], y, 
+                                    name='%s-%d' % self.selected_cell, antialias=True)
+        #p.curve.setClickable(True)
+        #p.sigClicked.connect(self.cell_curve_clicked)
+        #p.cell_ind = ind
+
+    def tuning_plot_clicked(self, event):
+        spos = event.scenePos()
+        stimpos = self.tuning_plot.plotItem.vb.mapSceneToView(spos)
+        x = 10**stimpos.x()
+        y = stimpos.y()
+        
+        best = None
+        for stim, result in results:
+            f0 = stim.opts['f0']
+            dbspl = stim.opts['dbspl']
+            if x < f0 or y < dbspl:
+                continue
+            if best is None:
+                best = stim
+                continue
+            if f0 > best.opts['f0'] or dbspl > best.opts['dbspl']:
+                best = stim
+                continue
+        
+        if best is None:
+            return
+        self.select_stim(best.opts['f0'], best.opts['dbspl'])
+
+    def nv_cell_selected(self, nv, cell):
+        self.select_cell(*cell)
+
+    def stim_selected(self):
         key = str(self.stim_combo.currentText())
         results = self.results[key]
         self.selected_results = results[1]
         self.selected_stim = results[0]
-        self.cell_plot.clear()
-        real = self.prot.bushy.real_cells()
-        for i, ind in enumerate(real):
-            p = self.cell_plot.plot(self.selected_results['t'], 
-                                    self.selected_results[('bushy', ind)][0], 
-                                    pen=(i, len(real)*1.5), name='bushy-%d' % ind)
-            p.curve.setClickable(True)
-            p.sigClicked.connect(self.cell_curve_clicked)
-            p.cell_ind = ind
+        self.update_stim_plot()
+        self.update_raster_plot()
+        self.update_cell_plot()
         
-    def cell_curve_clicked(self, c):
-        if self.selected is not None:
-            pen = self.selected.curve.opts['pen']
-            pen.setWidth(1)
-            self.selected.setPen(pen)
-            
-        pen = c.curve.opts['pen']
-        pen.setWidth(3)
-        c.setPen(pen)
-        self.selected = c
+        self.stim_rect.setPos(np.log10(results[0].opts['f0']), results[0].opts['dbspl'])
 
-        self.show_cell(c.cell_ind)
+    def select_stim(self, f0, dbspl):
+        i = self.stim_order.index((f0, dbspl))
+        self.stim_combo.setCurrentIndex(i)
         
-    def show_cell(self, ind):
-        """Show spike trains of inputs to selected cell.
-        """
-        self.input_plot.clear()
-        rec = self.prot.bushy._cells[ind]
-        i = 0
-        plots = []
-        # plot spike times for all presynaptic cells
-        for j, pop in enumerate((self.prot.dstellate, self.prot.sgc)):
-            if pop not in rec['connections']:
-                continue
-            pre_inds = rec['connections'][pop]
-            for preind in pre_inds:
-                spikes = self.selected_results[(pop.type, preind)][1]
-                y = np.ones(len(spikes)) * i
-                self.input_plot.plot(spikes, y, pen=None, symbol=['o', 't'][j], symbolBrush=(i, 30))
-                i += 1
-                    
+    def select_cell(self, pop, cell_id):
+        self.selected_cell = pop, cell_id
+        self.update_tuning()
+        self.update_cell_plot()
+        self.update_raster_plot()
+        
+    #def cell_curve_clicked(self, c):
+        #if self.selected is not None:
+            #pen = self.selected.curve.opts['pen']
+            #pen.setWidth(1)
+            #self.selected.setPen(pen)
+            
+        #pen = c.curve.opts['pen']
+        #pen.setWidth(3)
+        #c.setPen(pen)
+        #self.selected = c
+
+        #self.show_cell(c.cell_ind)
+
+    def update_tuning(self):
         # update matrix image
-        self.matrix_plot.clear()
+        if self.selected_cell is None:
+            return
+        
+        pop, ind = self.selected_cell
         fvals = set()
         lvals = set()
         
@@ -219,17 +313,17 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         # next count the number of spikes for the selected cell at each point in the matrix
         matrix = np.zeros((len(fvals), len(lvals)))
         for stim, vec in self.results.values():
-            spikes = vec[('bushy', ind)][1]
+            spikes = vec[(pop.type, ind)][1]
             i = fvals.index(stim.key()['f0'])
             j = lvals.index(stim.key()['dbspl'])
             matrix[i, j] = len(spikes)
             
         # plot and scale the matrix image 
         # note that the origin (lower left) of each image pixel indicates its actual test freq/level. 
-        self.matrix_img = pg.ImageItem(matrix)
-        self.matrix_plot.addItem(self.matrix_img)
-        self.matrix_img.setPos(np.log10(min(fvals)), min(lvals))
-        self.matrix_img.scale((np.log10(max(fvals)) - np.log10(min(fvals))) / (len(fvals) - 1), 
+        self.tuning_img.setImage(matrix)
+        self.tuning_img.resetTransform()
+        self.tuning_img.setPos(np.log10(min(fvals)), min(lvals))
+        self.tuning_img.scale((np.log10(max(fvals)) - np.log10(min(fvals))) / (len(fvals) - 1), 
                               (max(lvals) - min(lvals)) / (len(lvals) - 1))
         
 
@@ -261,8 +355,102 @@ class NetworkTree(QtGui.QTreeWidget):
         for cpop, conns in all_conns.items():
             pop_grp = QtGui.QTreeWidgetItem([cpop.type, str(conns)])
             item.addChild(pop_grp)
+
+
+class NetworkVisualizer(pg.PlotWidget):
+    
+    cell_selected = pg.QtCore.Signal(object, object)
+    
+    def __init__(self, populations):
+        self.pops = populations
+        pg.PlotWidget.__init__(self)
+        self.setLogMode(x=True, y=False)
         
+        self.cells = pg.ScatterPlotItem(clickable=True)
+        self.cells.setZValue(10)
+        self.addItem(self.cells)
+        self.cells.sigClicked.connect(self.cells_clicked)
         
+        self.selected = pg.ScatterPlotItem()
+        self.selected.setZValue(20)
+        self.addItem(self.selected)
+        
+        self.connections = pg.PlotCurveItem()
+        self.addItem(self.connections)
+        
+        # first assign positions of all cells
+        cells = []
+        for y,pop in enumerate(self.pops.values()):
+            pop.cell_spots = []
+            pop.fwd_connections = {}
+            for i,cell in enumerate(pop._cells):
+                pos = (np.log10(cell['cf']), y)
+                real = cell['cell'] != 0
+                brush = pg.mkBrush('b') if real else pg.mkBrush(255, 255, 255, 30)
+                spot = {'x': pos[0], 'y': pos[1], 'symbol': 'o' if real else 'x', 'brush': brush, 'pen': None, 'data': (pop, i)}
+                cells.append(spot)
+                pop.cell_spots.append(spot)
+        
+        self.cells.setData(cells)
+        
+        self.getAxis('left').setTicks([list(enumerate(self.pops.keys()))])
+        
+        # now assign connection lines and record forward connectivity
+        con_x = []
+        con_y = []
+        for pop in self.pops.values():
+            for i,cell in enumerate(pop._cells):
+                conns = cell['connections']
+                if conns == 0:
+                    continue
+                for prepop, precells in conns.items():
+                    p1 = pop.cell_spots[i]['x'], pop.cell_spots[i]['y']
+                    for j in precells:
+                        prepop.fwd_connections.setdefault(j, [])
+                        prepop.fwd_connections[j].append((pop, i))
+                        p2 = prepop.cell_spots[j]['x'], prepop.cell_spots[j]['y']
+                        con_x.extend([p1[0], p2[0]])
+                        con_y.extend([p1[1], p2[1]])
+        self.connections.setData(x=con_x, y=con_y, connect='pairs', pen=(255, 255, 255, 100))
+        
+    def cells_clicked(self, *args):
+        selected = None
+        for spot in args[1]:
+            # find the first real cell
+            pop, i = spot.data()
+            if pop._cells[i]['cell'] != 0:
+                selected = spot
+                break
+        if selected is None:
+            self.selected.hide()
+            return
+        
+        rec = pop._cells[i]
+        pos = selected.pos()
+        spots = [{'x': pos.x(), 'y': pos.y(), 'size': 15, 'symbol': 'o', 'pen': 'y', 'brush': 'b'}]
+
+        # display presynaptic cells
+        if rec['connections'] != 0:
+            for prepop, preinds in rec['connections'].items():
+                for preind in preinds:
+                    spot = prepop.cell_spots[preind].copy()
+                    spot['size'] = 15
+                    spot['brush'] = 'r'
+                    spots.append(spot)
+                
+        # display postsynaptic cells
+        for postpop, postind in pop.fwd_connections.get(i, []):
+            spot = postpop.cell_spots[postind].copy()
+            spot['size'] = 15
+            spot['brush'] = 'g'
+            spots.append(spot)
+        
+        self.selected.setData(spots)
+        self.selected.show()
+        
+        self.cell_selected.emit(self, selected.data())
+
+
 if __name__ == '__main__':
     import pickle, os, sys
     app = pg.mkQApp()
@@ -271,16 +459,16 @@ if __name__ == '__main__':
     # Create a sound stimulus and use it to generate spike trains for the SGC
     # population
     stims = []
+    
     fmin = 4e3
     fmax = 32e3
-    octavespacing = 0.3
-    n_frequencies = int((1./octavespacing)*np.log2(fmax/1000.)/np.log2(fmin/1000.) - 1)
-    #n_frequencies = 10
-    n_levels = 5
-    #fvals = fmin * (fmax/fmin)**(np.arange(n_frequencies) / (n_frequencies-1.))
+    octavespacing = 1/3.
+    n_frequencies = int(np.log2(fmax/fmin) / octavespacing) + 1
     fvals = np.logspace(np.log2(fmin/1000.), np.log2(fmax/1000.), num=n_frequencies, endpoint=True, base=2)*1000.
+    
+    n_levels = 5
     levels = np.linspace(20, 100, n_levels)
-    print 'n frequencies: ', n_frequencies
+    
     print("Frequencies:", fvals/1000.)
     print("Levels:", levels)
 
@@ -288,9 +476,10 @@ if __name__ == '__main__':
     cachepath = os.path.join(path, 'cache')
     if not os.path.isdir(cachepath):
         os.mkdir(cachepath)
-    rerun = True
+
     seed = 34657845
     prot = CNSoundStim(seed=seed)
+    
     i = 0
     results = []
     for f in fvals:
@@ -301,18 +490,17 @@ if __name__ == '__main__':
         
             print("=== Start run %d/%d ===" % (i+1, len(fvals)*len(levels)))
             cachefile = os.path.join(cachepath, 'seed=%d_f0=%f_dbspl=%f.pk' % (seed, f, db))
-            if not os.path.isfile(cachefile):
+            if '--ignore-cache' in sys.argv or not os.path.isfile(cachefile):
                 result = prot.run(stim)
                 pickle.dump(result, open(cachefile, 'wb'))
             else:
                 print("  (Loading cached results)")
                 result = pickle.load(open(cachefile, 'rb'))
-                if rerun:
-                    result = prot.run(stim)  # update the result
             results.append((stim, result))
             i += 1
 
     nd = NetworkSimDisplay(prot, results)
     nd.show()
+    
     if sys.flags.interactive == 0:
         pg.QtGui.QApplication.exec_()
