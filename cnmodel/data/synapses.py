@@ -76,8 +76,8 @@ n_rsites     100 [5]           4 [6]              1 [4]             1 [4]       
     Age > P35, Temperature=34C, [Mg2+]=1.5mM, [Ca2+]=2.5mM
 
 [8] Thin air.  These are for testing the software, not necessarily for performing
-    real simulations.  Note: Pyramidal cell strength 1/2 because of large convergence
-    and high input resistance.
+    real simulations.  Note: Pyramidal cell strength has been reduced 
+    because of large convergence and high input resistance of the reference cell model.
     
 
 [9] Reanalysis of evoked EPSCs in stellate cells (Manis/Xie, 2014)

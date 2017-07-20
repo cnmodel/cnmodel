@@ -148,8 +148,10 @@ class OctopusRothman(Octopus, Cell):
         super(OctopusRothman, self).__init__()
         if modelType == None:
             modelType = 'II-o'
-        if nach == None:
+        if nach == None and species == 'guineapig':
             nach = 'jsrna'
+        if nach == None and species == 'mouse':
+            nach = 'nacn'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Octopus',
                         'morphology': morphology, 'decorator': decorator, 'temperature': None}
@@ -243,7 +245,7 @@ class OctopusRothman(Octopus, Cell):
             if self.status['temperature'] is None:
                 self.set_temperature(34.)
 #            self.print_soma_info()
-            self.adjust_na_chans(soma)
+            self.adjust_na_chans(soma, gbar=3000.)
             soma().kht.gbar = nstomho(150.0, self.somaarea)  # 6.1 mmho/cm2
             soma().klt.gbar = nstomho(3196.0, self.somaarea)  #  40.7 mmho/cm2
             soma().hcnobo.gbar = nstomho(40.0, self.somaarea)  # 7.6 mmho/cm2, cf. Bal and Oertel, Spencer et al. 25 u dia cell
@@ -295,7 +297,7 @@ class OctopusRothman(Octopus, Cell):
             if debug:
                 print "octopus using inva11, gbar:", soma().nav11.gbar
         elif nach in ['na', 'nacn']:
-            soma().na.gbar = gnabar
+            soma().nacn.gbar = gnabar
             soma.ena = self.e_na
             if debug:
                 print 'octopus cell using na/nacn, gbar: ', soma().na.gbar
