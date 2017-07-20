@@ -42,7 +42,7 @@ pyramidal         0           0           0           0           0            0
 
 [5] Convergence from Hancock and Voigt, Ann. Biomed. Eng. 27, 1999 and Zheng and Voigt,
     Ann. Biomed. Eng., 34, 2006.  Numbers are based on models for cat and gerbil,
-    respectively.
+    respectively. Adjusted to 1/2 to avoid overexciting TV cells in network model.
 
 [6] tstellate cells have collaterals within the CN. It has been proposed that they
     provide auditory-driven input to the DCN (Oertel and Young, ), and also synapse
