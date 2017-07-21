@@ -18,17 +18,15 @@ class SGC(Population):
         # Completely fabricated cell distribution: uniform from 2kHz to 40kHz,
         # evenly divided between SR groups. We only go up to 40kHz because the
         # auditory periphery model does not support >40kHz.
-        min_f = 2000.
-        max_f = 39900.
-        size = 10000
-        next_seed = 0
+        freqs = self._get_cf_array(species)
         fields = [
             ('cf', float),
             ('sr', int),  # 0=low sr, 1=mid sr, 2=high sr
         ]
-        super(SGC, self).__init__(species, size, fields=fields, model=model, **kwds)
-        self._cells['cf'] = min_f * 2**np.linspace(0, np.log2(max_f/min_f), size)
-        self._cells['sr'] = np.arange(size) % 3
+        super(SGC, self).__init__(species, len(freqs), fields=fields, model=model, **kwds)
+        self._cells['cf'] = freqs
+        # evenly distribute SR groups
+        self._cells['sr'] = np.arange(len(freqs)) % 3
     
     def set_seed(self, seed):
         self.next_seed = seed
