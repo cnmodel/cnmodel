@@ -55,7 +55,7 @@ class CNSoundStim(Protocol):
         # Select cells to record from.
         # At this time, we actually instantiate the selected cells.
         # Select 4 cells centered around 16kHz
-        frequencies = [16e3]  #[6e3, 16e3, 32e3]
+        frequencies = [6e3, 16e3, 26e3]
         cells_per_band = 4
         for f in frequencies:
             bushy_cell_ids = self.bushy.select(cells_per_band, cf=f, create=True)
@@ -462,11 +462,11 @@ if __name__ == '__main__':
     
     fmin = 4e3
     fmax = 32e3
-    octavespacing = 1/3.
+    octavespacing = 1/4.
     n_frequencies = int(np.log2(fmax/fmin) / octavespacing) + 1
     fvals = np.logspace(np.log2(fmin/1000.), np.log2(fmax/1000.), num=n_frequencies, endpoint=True, base=2)*1000.
     
-    n_levels = 5
+    n_levels = 11
     levels = np.linspace(20, 100, n_levels)
     
     print("Frequencies:", fvals/1000.)
