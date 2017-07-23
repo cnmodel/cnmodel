@@ -29,6 +29,11 @@ def get_spiketrain(cf, sr, stim, seed, **kwds):
     If the flag --ignore-an-cache was given on the command line, then spike 
     times will be regenerated and cached, regardless of the current cache 
     state.
+    
+    If the flag --no-an-cache was given on the command line, then the cache
+    will not be read or written. This can improve overall performance if there
+    is little chance the cache would be re-used.
+    
     """
     subdir = os.path.join(_cache_path, make_key(**stim.key()))
     filename = make_key(cf=cf, sr=sr, seed=seed, **kwds)
@@ -44,7 +49,7 @@ def get_spiketrain(cf, sr, stim, seed, **kwds):
     
     with FileLock(filename):
         
-        if '--ignore-an-cache' in sys.argv or not os.path.exists(filename):
+        if '--ignore-an-cache' in sys.argv or '--no-an-cache' not os.path.exists(filename):
             create = True
         else:
             create = False
@@ -61,7 +66,8 @@ def get_spiketrain(cf, sr, stim, seed, **kwds):
         if create:
             logging.info("Generate new AN spike train: %s", filename)
             data = generate_spiketrain(cf, sr, stim, seed, **kwds)
-            np.savez_compressed(filename, data=data)
+            if '--no-an-cache' not in sys.argv:
+                np.savez_compressed(filename, data=data)
             
     return data
 
