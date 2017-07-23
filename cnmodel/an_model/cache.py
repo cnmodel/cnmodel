@@ -49,7 +49,7 @@ def get_spiketrain(cf, sr, stim, seed, **kwds):
     
     with FileLock(filename):
         
-        if '--ignore-an-cache' in sys.argv or '--no-an-cache' not os.path.exists(filename):
+        if '--ignore-an-cache' in sys.argv or '--no-an-cache' in sys.argv or not os.path.exists(filename):
             create = True
         else:
             create = False
