@@ -15,6 +15,7 @@ cells_per_band).
 import os, sys, time
 from collections import OrderedDict
 import numpy as np
+import scipy.stats
 from neuron import h
 import pyqtgraph as pg
 import pyqtgraph.multiprocess as mp
@@ -55,11 +56,12 @@ class CNSoundStim(Protocol):
         # Select cells to record from.
         # At this time, we actually instantiate the selected cells.
         # Select 4 cells centered around 16kHz
-        frequencies = [6e3, 16e3, 26e3]
-        cells_per_band = 4
+        frequencies = [16e3]
+        cells_per_band = 3
         for f in frequencies:
             bushy_cell_ids = self.bushy.select(cells_per_band, cf=f, create=True)
-            #tstel_cell_ids = self.tstellate.select(cells_per_band, cf=f, create=True)  
+            #tstel_cell_ids = self.tstellate.select(cells_per_band, cf=f, create=True)
+        #self.bushy.select(3, cf=scipy.stats.norm(loc=16e3, scale=100), sgc_sr=1, create=True)
 
         # Now create the supporting circuitry needed to drive the cells we selected.
         # At this time, cells are created in all populations and automatically 
@@ -76,7 +78,7 @@ class CNSoundStim(Protocol):
 
     def run(self, stim):
         self.reset()
-        self.sgc.set_sound_stim(stim, parallel=True)
+        self.sgc.set_sound_stim(stim, parallel=False)
         
         # set up recording vectors
         for pop in self.bushy, self.dstellate, self.tstellate, self.tuberculoventral:
@@ -122,12 +124,13 @@ class CNSoundStim(Protocol):
 
 
 class NetworkSimDisplay(pg.QtGui.QSplitter):
-    def __init__(self, prot, results):
+    def __init__(self, prot, results, baseline, response):
         pg.QtGui.QSplitter.__init__(self, QtCore.Qt.Horizontal)
-        
         self.selected_cell = None
         
         self.prot = prot
+        self.baseline = baseline  # (start, stop)
+        self.response = response  # (start, stop)
 
         self.ctrl = QtGui.QWidget()
         self.layout = pg.QtGui.QVBoxLayout()
@@ -180,6 +183,7 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         self.addWidget(self.pw)
         
         self.stim_plot = self.pw.addPlot()
+        self.pw.ci.layout.setRowFixedHeight(0, 100)
         
         self.pw.nextRow()
         self.cell_plot = self.pw.addPlot(labels={'left': 'Vm'})
@@ -309,14 +313,24 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
             lvals.add(stim.key()['dbspl'])
         fvals = sorted(list(fvals))
         lvals = sorted(list(lvals))
+
+        # Get spontaneous rate statistics
+        spont_spikes = 0
+        spont_time = 0
+        for stim, vec in self.results.values():
+            spikes = vec[(pop.type, ind)][1]
+            spont_spikes += ((spikes >= self.baseline[0]) & (spikes < self.baseline[1])).sum()
+            spont_time += self.baseline[1] - self.baseline[0]
+        spont_rate = spont_spikes / spont_time
         
         # next count the number of spikes for the selected cell at each point in the matrix
         matrix = np.zeros((len(fvals), len(lvals)))
         for stim, vec in self.results.values():
             spikes = vec[(pop.type, ind)][1]
+            n_spikes = ((spikes >= self.response[0]) & (spikes < self.response[1])).sum()
             i = fvals.index(stim.key()['f0'])
             j = lvals.index(stim.key()['dbspl'])
-            matrix[i, j] = len(spikes)
+            matrix[i, j] = n_spikes - spont_rate * (self.response[1]-self.response[0])
             
         # plot and scale the matrix image 
         # note that the origin (lower left) of each image pixel indicates its actual test freq/level. 
@@ -462,7 +476,7 @@ if __name__ == '__main__':
     
     fmin = 4e3
     fmax = 32e3
-    octavespacing = 1/4.
+    octavespacing = 1/8.
     n_frequencies = int(np.log2(fmax/fmin) / octavespacing) + 1
     fvals = np.logspace(np.log2(fmin/1000.), np.log2(fmax/1000.), num=n_frequencies, endpoint=True, base=2)*1000.
     
@@ -481,12 +495,19 @@ if __name__ == '__main__':
     prot = CNSoundStim(seed=seed)
     
     i = 0
-    results = []
+    
+    tasks = []
     for f in fvals:
         for db in levels:
-            stim = sound.TonePip(rate=100e3, duration=0.1, f0=f, dbspl=db,
+            tasks.append((f, db))
+            
+    results = [None] * len(tasks)    
+    with mp.Parallelize(enumerate(tasks), workers=4, results=results, progressDialog='Running parallel simulation..') as tasker:
+        for i, task in tasker:
+            f, db = task    
+            stim = sound.TonePip(rate=100e3, duration=0.2, f0=f, dbspl=db,
                                  ramp_duration=2.5e-3, pip_duration=0.04, 
-                                 pip_start=[0.02])
+                                 pip_start=[0.1])
         
             print("=== Start run %d/%d ===" % (i+1, len(fvals)*len(levels)))
             cachefile = os.path.join(cachepath, 'seed=%d_f0=%f_dbspl=%f.pk' % (seed, f, db))
@@ -496,10 +517,9 @@ if __name__ == '__main__':
             else:
                 print("  (Loading cached results)")
                 result = pickle.load(open(cachefile, 'rb'))
-            results.append((stim, result))
-            i += 1
+            tasker.results[i] = (stim, result)
 
-    nd = NetworkSimDisplay(prot, results)
+    nd = NetworkSimDisplay(prot, results, baseline=[50, 100], response=[100, 140])
     nd.show()
     
     if sys.flags.interactive == 0:
