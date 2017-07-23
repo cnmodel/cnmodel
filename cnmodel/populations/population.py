@@ -259,7 +259,10 @@ class Population(object):
                 nearest_field = field
             elif isinstance(dist, scipy.stats.distributions.rv_frozen):
                 vals = self._cells[field]
-                full_dist *= dist.pdf(vals)
+                dens = np.diff(vals)
+                dens = np.concatenate([dens[:1], dens])
+                pdf = dist.pdf(vals) * dens
+                full_dist *= pdf / pdf.sum()
             elif isinstance(dist, np.ndarray):
                 full_dist *= dist
             else:
@@ -270,7 +273,7 @@ class Population(object):
         if nearest is not None:
             cells = []
             mask = full_dist == 0
-            err = np.abs(self._cells[nearest_field] - nearest)
+            err = np.abs(self._cells[nearest_field] - nearest).astype(float)
             for i in range(size):
                 err[mask] = np.inf
                 cell = np.argmin(err)
