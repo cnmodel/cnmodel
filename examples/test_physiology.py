@@ -29,10 +29,13 @@ class CNSoundStim(Protocol):
     def __init__(self, seed, temp=34.0, dt=0.025):
         Protocol.__init__(self)
         
-        random.set_seed(seed)
+        self.seed = seed
         self.temp = temp
         self.dt = dt
-
+        
+        # Seed now to ensure network generation is stable
+        random.set_seed(seed)
+        
         # Create cell populations.
         # This creates a complete set of _virtual_ cells for each population. No 
         # cells are instantiated at this point.
@@ -74,10 +77,19 @@ class CNSoundStim(Protocol):
         # inputs for the dstellate population (level 2) creates presynaptic cells in the
         # sgc population.
 
-        self.sgc.set_seed(seed)
-
-    def run(self, stim):
+    def run(self, stim, seed):
+        """Run the network simulation with *stim* as the sound source and a unique
+        *seed* used to configure the random number generators.
+        """
         self.reset()
+        
+        # Generate 2 new seeds for the SGC spike generator and for the NEURON simulation
+        rs = np.random.RandomState()
+        rs.seed(self.seed ^ seed)
+        seed1, seed2 = rs.randint(0, 2**32, 2)
+        random.set_seed(seed1)
+        self.sgc.set_seed(seed2)
+        
         self.sgc.set_sound_stim(stim, parallel=False)
         
         # set up recording vectors
@@ -214,11 +226,14 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
             return
         
         pop_colors = {'dstellate': 'y', 'tuberculoventral': 'r', 'sgc': 'g', 'tstellate': 'b'}
-        for pop, pre_inds in rec['connections'].items():
+        pop_symbols = {'dstellate': 'x', 'tuberculoventral': '+', 'sgc': 't', 'tstellate': 'o'}
+        pop_order = [self.prot.sgc, self.prot.dstellate, self.prot.tuberculoventral]
+        for pop in pop_order:
+            pre_inds = rec['connections'].get(pop, [])
             for preind in pre_inds:
                 spikes = self.selected_results[(pop.type, preind)][1]
                 y = np.ones(len(spikes)) * i
-                self.input_plot.plot(spikes, y, pen=0.2, symbolPen=pop_colors[pop.type], symbol='+', symbolBrush=None)
+                self.input_plot.plot(spikes, y, pen=None, symbolBrush=pop_colors[pop.type], symbol='+', symbolPen=None)
                 i += 1
                 labels.append(pop.type + " " + str(preind))
         self.input_plot.getAxis('left').setTicks([list(enumerate(labels))])
@@ -400,6 +415,9 @@ class NetworkVisualizer(pg.PlotWidget):
             for i,cell in enumerate(pop._cells):
                 pos = (np.log10(cell['cf']), y)
                 real = cell['cell'] != 0
+                if not real:
+                    pop.cell_spots.append(None)
+                    continue
                 brush = pg.mkBrush('b') if real else pg.mkBrush(255, 255, 255, 30)
                 spot = {'x': pos[0], 'y': pos[1], 'symbol': 'o' if real else 'x', 'brush': brush, 'pen': None, 'data': (pop, i)}
                 cells.append(spot)
@@ -418,14 +436,20 @@ class NetworkVisualizer(pg.PlotWidget):
                 if conns == 0:
                     continue
                 for prepop, precells in conns.items():
-                    p1 = pop.cell_spots[i]['x'], pop.cell_spots[i]['y']
+                    spot = pop.cell_spots[i]
+                    if spot is None:
+                        continue
+                    p1 = spot['x'], spot['y']
                     for j in precells:
                         prepop.fwd_connections.setdefault(j, [])
                         prepop.fwd_connections[j].append((pop, i))
-                        p2 = prepop.cell_spots[j]['x'], prepop.cell_spots[j]['y']
+                        spot2 = prepop.cell_spots[j]
+                        if spot2 is None:
+                            return
+                        p2 = spot2['x'], spot2['y']
                         con_x.extend([p1[0], p2[0]])
                         con_y.extend([p1[1], p2[1]])
-        self.connections.setData(x=con_x, y=con_y, connect='pairs', pen=(255, 255, 255, 100))
+        self.connections.setData(x=con_x, y=con_y, connect='pairs', pen=(255, 255, 255, 60))
         
     def cells_clicked(self, *args):
         selected = None
@@ -502,7 +526,7 @@ if __name__ == '__main__':
             tasks.append((f, db))
             
     results = [None] * len(tasks)    
-    with mp.Parallelize(enumerate(tasks), workers=4, results=results, progressDialog='Running parallel simulation..') as tasker:
+    with mp.Parallelize(enumerate(tasks), results=results, progressDialog='Running parallel simulation..') as tasker:
         for i, task in tasker:
             f, db = task    
             stim = sound.TonePip(rate=100e3, duration=0.2, f0=f, dbspl=db,
@@ -512,7 +536,7 @@ if __name__ == '__main__':
             print("=== Start run %d/%d ===" % (i+1, len(fvals)*len(levels)))
             cachefile = os.path.join(cachepath, 'seed=%d_f0=%f_dbspl=%f.pk' % (seed, f, db))
             if '--ignore-cache' in sys.argv or not os.path.isfile(cachefile):
-                result = prot.run(stim)
+                result = prot.run(stim, seed=i)
                 pickle.dump(result, open(cachefile, 'wb'))
             else:
                 print("  (Loading cached results)")
