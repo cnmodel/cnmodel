@@ -16,14 +16,14 @@ class Bushy(Population):
     type = 'bushy'
     
     def __init__(self, species='mouse', **kwds):
-        size = 5000
+        freqs = self._get_cf_array(species)
         fields = [
             ('cf', float),
             ('sgc_sr', int),   # preferred SR group for SGC inputs
         ]
-        super(Bushy, self).__init__(species, size, fields=fields, **kwds)
-        self._cells['cf'] = 2000.0 * 2**np.linspace(0, 5.0, size)
-        self._cells['sgc_sr'] = np.arange(size) % 3
+        super(Bushy, self).__init__(species, len(freqs), fields=fields, **kwds)
+        self._cells['cf'] = freqs
+        self._cells['sgc_sr'] = np.arange(len(freqs)) % 3
     
     def create_cell(self, cell_rec):
         """ Return a single new cell to be used in this population. The 

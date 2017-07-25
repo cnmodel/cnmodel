@@ -164,10 +164,11 @@ class Population(object):
         with cf=10kHz might receive SGC input from 10 cells selected from a 
         normal distribution centered at 10kHz). 
         
-        Most subclasses of Population should reimplement this method with the
-        appropriate connectivity statistics for that cell type.
+        The default implementation of this method uses the 'convergence' and
+        'convergence_range' values from the data tables to specify a lognormal
+        distribution of presynaptic cells around the postsynaptic cell's CF. 
         
-        Return a tuple (size, dist) with the following values:
+        This method must return a tuple (size, dist) with the following values:
         
         * size: integer giving the number of cells that should be selected from
           the presynaptic population and connected to the postsynaptic cell.
@@ -176,14 +177,6 @@ class Population(object):
           keyword arguments to `select()` for more information on the content
           of this dictionary.
         """
-    def connection_stats(self, pop, cell_rec):
-        """ The population *pop* is being connected to the cell described in 
-        *cell_rec*. Return the number of presynaptic cells that should be
-        connected and a dictionary of distributions used to select cells 
-        from *pop*. 
-        """
-        from .. import populations
-        
         cf = cell_rec['cf']
         
         # Convergence distributions (how many presynaptic 
@@ -211,6 +204,23 @@ class Population(object):
         dist = {'cf': scipy.stats.lognorm(input_range, scale=cf)}
 
         return size, dist
+    
+    def _get_cf_array(self, species):
+        """Return the array of CF values that should be used when instantiating
+        this population. 
+        
+        Commonly used by subclasses durin initialization.
+        """
+        size = data.get('populations', species=species, cell_type=self.type, field='n_cells')
+        fmin = data.get('populations', species=species, cell_type=self.type, field='cf_min')
+        fmax = data.get('populations', species=species, cell_type=self.type, field='cf_max')
+        s = (fmax / fmin) ** (1./size)
+        freqs = fmin * s**np.arange(size)
+        
+        # Cut off at 40kHz because the auditory nerve model only goes that far :(
+        freqs = freqs[freqs<=40e3]
+        
+        return freqs        
     
     def select(self, size, create=False, **kwds):
         """ Return a list of indexes for cells matching the selection criteria.
