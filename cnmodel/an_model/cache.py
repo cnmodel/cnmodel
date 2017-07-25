@@ -35,10 +35,9 @@ def get_spiketrain(cf, sr, stim, seed, **kwds):
     is little chance the cache would be re-used.
     
     """
-    subdir = os.path.join(_cache_path, make_key(**stim.key()))
-    filename = make_key(cf=cf, sr=sr, seed=seed, **kwds)
-    filename = os.path.join(subdir, filename) + '.npz'
-        
+    filename = get_cache_filename(cf=cf, sr=sr, seed=seed, stim=stim, **kwds)
+    subdir = os.path.dirname(filename)
+    
     if not os.path.exists(subdir):
         try:
             os.mkdir(subdir)
@@ -85,6 +84,14 @@ def make_key(**kwds):
     kwds = list(kwds.items())
     kwds.sort()
     return '_'.join(['%s=%s' % kv for kv in kwds])
+
+
+def get_cache_filename(cf, sr, seed, stim, **kwds):
+    global _cache_path
+    subdir = os.path.join(_cache_path, make_key(**stim.key()))
+    filename = make_key(cf=cf, sr=sr, seed=seed, **kwds)
+    filename = os.path.join(subdir, filename) + '.npz'
+    return filename
 
 
 def generate_spiketrain(cf, sr, stim, seed, simulator=None, **kwds):
