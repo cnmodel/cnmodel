@@ -15,6 +15,7 @@ cells_per_band).
 import os, sys, time
 from collections import OrderedDict
 import numpy as np
+import scipy.stats
 from neuron import h
 import pyqtgraph as pg
 import pyqtgraph.multiprocess as mp
@@ -28,10 +29,13 @@ class CNSoundStim(Protocol):
     def __init__(self, seed, temp=34.0, dt=0.025):
         Protocol.__init__(self)
         
-        random.set_seed(seed)
+        self.seed = seed
         self.temp = temp
         self.dt = dt
-
+        
+        # Seed now to ensure network generation is stable
+        random.set_seed(seed)
+        
         # Create cell populations.
         # This creates a complete set of _virtual_ cells for each population. No 
         # cells are instantiated at this point.
@@ -55,11 +59,12 @@ class CNSoundStim(Protocol):
         # Select cells to record from.
         # At this time, we actually instantiate the selected cells.
         # Select 4 cells centered around 16kHz
-        frequencies = [16e3]  #[6e3, 16e3, 32e3]
-        cells_per_band = 4
+        frequencies = [16e3]
+        cells_per_band = 3
         for f in frequencies:
             bushy_cell_ids = self.bushy.select(cells_per_band, cf=f, create=True)
-            #tstel_cell_ids = self.tstellate.select(cells_per_band, cf=f, create=True)  
+            #tstel_cell_ids = self.tstellate.select(cells_per_band, cf=f, create=True)
+        #self.bushy.select(3, cf=scipy.stats.norm(loc=16e3, scale=100), sgc_sr=1, create=True)
 
         # Now create the supporting circuitry needed to drive the cells we selected.
         # At this time, cells are created in all populations and automatically 
@@ -72,11 +77,20 @@ class CNSoundStim(Protocol):
         # inputs for the dstellate population (level 2) creates presynaptic cells in the
         # sgc population.
 
-        self.sgc.set_seed(seed)
-
-    def run(self, stim):
+    def run(self, stim, seed):
+        """Run the network simulation with *stim* as the sound source and a unique
+        *seed* used to configure the random number generators.
+        """
         self.reset()
-        self.sgc.set_sound_stim(stim, parallel=True)
+        
+        # Generate 2 new seeds for the SGC spike generator and for the NEURON simulation
+        rs = np.random.RandomState()
+        rs.seed(self.seed ^ seed)
+        seed1, seed2 = rs.randint(0, 2**32, 2)
+        random.set_seed(seed1)
+        self.sgc.set_seed(seed2)
+        
+        self.sgc.set_sound_stim(stim, parallel=False)
         
         # set up recording vectors
         for pop in self.bushy, self.dstellate, self.tstellate, self.tuberculoventral:
@@ -122,12 +136,13 @@ class CNSoundStim(Protocol):
 
 
 class NetworkSimDisplay(pg.QtGui.QSplitter):
-    def __init__(self, prot, results):
+    def __init__(self, prot, results, baseline, response):
         pg.QtGui.QSplitter.__init__(self, QtCore.Qt.Horizontal)
-        
         self.selected_cell = None
         
         self.prot = prot
+        self.baseline = baseline  # (start, stop)
+        self.response = response  # (start, stop)
 
         self.ctrl = QtGui.QWidget()
         self.layout = pg.QtGui.QVBoxLayout()
@@ -180,6 +195,7 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         self.addWidget(self.pw)
         
         self.stim_plot = self.pw.addPlot()
+        self.pw.ci.layout.setRowFixedHeight(0, 100)
         
         self.pw.nextRow()
         self.cell_plot = self.pw.addPlot(labels={'left': 'Vm'})
@@ -210,11 +226,14 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
             return
         
         pop_colors = {'dstellate': 'y', 'tuberculoventral': 'r', 'sgc': 'g', 'tstellate': 'b'}
-        for pop, pre_inds in rec['connections'].items():
+        pop_symbols = {'dstellate': 'x', 'tuberculoventral': '+', 'sgc': 't', 'tstellate': 'o'}
+        pop_order = [self.prot.sgc, self.prot.dstellate, self.prot.tuberculoventral]
+        for pop in pop_order:
+            pre_inds = rec['connections'].get(pop, [])
             for preind in pre_inds:
                 spikes = self.selected_results[(pop.type, preind)][1]
                 y = np.ones(len(spikes)) * i
-                self.input_plot.plot(spikes, y, pen=0.2, symbolPen=pop_colors[pop.type], symbol='+', symbolBrush=None)
+                self.input_plot.plot(spikes, y, pen=None, symbolBrush=pop_colors[pop.type], symbol='+', symbolPen=None)
                 i += 1
                 labels.append(pop.type + " " + str(preind))
         self.input_plot.getAxis('left').setTicks([list(enumerate(labels))])
@@ -309,14 +328,24 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
             lvals.add(stim.key()['dbspl'])
         fvals = sorted(list(fvals))
         lvals = sorted(list(lvals))
+
+        # Get spontaneous rate statistics
+        spont_spikes = 0
+        spont_time = 0
+        for stim, vec in self.results.values():
+            spikes = vec[(pop.type, ind)][1]
+            spont_spikes += ((spikes >= self.baseline[0]) & (spikes < self.baseline[1])).sum()
+            spont_time += self.baseline[1] - self.baseline[0]
+        spont_rate = spont_spikes / spont_time
         
         # next count the number of spikes for the selected cell at each point in the matrix
         matrix = np.zeros((len(fvals), len(lvals)))
         for stim, vec in self.results.values():
             spikes = vec[(pop.type, ind)][1]
+            n_spikes = ((spikes >= self.response[0]) & (spikes < self.response[1])).sum()
             i = fvals.index(stim.key()['f0'])
             j = lvals.index(stim.key()['dbspl'])
-            matrix[i, j] = len(spikes)
+            matrix[i, j] = n_spikes - spont_rate * (self.response[1]-self.response[0])
             
         # plot and scale the matrix image 
         # note that the origin (lower left) of each image pixel indicates its actual test freq/level. 
@@ -386,6 +415,9 @@ class NetworkVisualizer(pg.PlotWidget):
             for i,cell in enumerate(pop._cells):
                 pos = (np.log10(cell['cf']), y)
                 real = cell['cell'] != 0
+                if not real:
+                    pop.cell_spots.append(None)
+                    continue
                 brush = pg.mkBrush('b') if real else pg.mkBrush(255, 255, 255, 30)
                 spot = {'x': pos[0], 'y': pos[1], 'symbol': 'o' if real else 'x', 'brush': brush, 'pen': None, 'data': (pop, i)}
                 cells.append(spot)
@@ -404,14 +436,20 @@ class NetworkVisualizer(pg.PlotWidget):
                 if conns == 0:
                     continue
                 for prepop, precells in conns.items():
-                    p1 = pop.cell_spots[i]['x'], pop.cell_spots[i]['y']
+                    spot = pop.cell_spots[i]
+                    if spot is None:
+                        continue
+                    p1 = spot['x'], spot['y']
                     for j in precells:
                         prepop.fwd_connections.setdefault(j, [])
                         prepop.fwd_connections[j].append((pop, i))
-                        p2 = prepop.cell_spots[j]['x'], prepop.cell_spots[j]['y']
+                        spot2 = prepop.cell_spots[j]
+                        if spot2 is None:
+                            return
+                        p2 = spot2['x'], spot2['y']
                         con_x.extend([p1[0], p2[0]])
                         con_y.extend([p1[1], p2[1]])
-        self.connections.setData(x=con_x, y=con_y, connect='pairs', pen=(255, 255, 255, 100))
+        self.connections.setData(x=con_x, y=con_y, connect='pairs', pen=(255, 255, 255, 60))
         
     def cells_clicked(self, *args):
         selected = None
@@ -462,11 +500,11 @@ if __name__ == '__main__':
     
     fmin = 4e3
     fmax = 32e3
-    octavespacing = 1/3.
+    octavespacing = 1/8.
     n_frequencies = int(np.log2(fmax/fmin) / octavespacing) + 1
     fvals = np.logspace(np.log2(fmin/1000.), np.log2(fmax/1000.), num=n_frequencies, endpoint=True, base=2)*1000.
     
-    n_levels = 5
+    n_levels = 11
     levels = np.linspace(20, 100, n_levels)
     
     print("Frequencies:", fvals/1000.)
@@ -481,25 +519,31 @@ if __name__ == '__main__':
     prot = CNSoundStim(seed=seed)
     
     i = 0
-    results = []
+    
+    tasks = []
     for f in fvals:
         for db in levels:
-            stim = sound.TonePip(rate=100e3, duration=0.1, f0=f, dbspl=db,
+            tasks.append((f, db))
+            
+    results = [None] * len(tasks)    
+    with mp.Parallelize(enumerate(tasks), results=results, progressDialog='Running parallel simulation..') as tasker:
+        for i, task in tasker:
+            f, db = task    
+            stim = sound.TonePip(rate=100e3, duration=0.2, f0=f, dbspl=db,
                                  ramp_duration=2.5e-3, pip_duration=0.04, 
-                                 pip_start=[0.02])
+                                 pip_start=[0.1])
         
             print("=== Start run %d/%d ===" % (i+1, len(fvals)*len(levels)))
             cachefile = os.path.join(cachepath, 'seed=%d_f0=%f_dbspl=%f.pk' % (seed, f, db))
             if '--ignore-cache' in sys.argv or not os.path.isfile(cachefile):
-                result = prot.run(stim)
+                result = prot.run(stim, seed=i)
                 pickle.dump(result, open(cachefile, 'wb'))
             else:
                 print("  (Loading cached results)")
                 result = pickle.load(open(cachefile, 'rb'))
-            results.append((stim, result))
-            i += 1
+            tasker.results[i] = (stim, result)
 
-    nd = NetworkSimDisplay(prot, results)
+    nd = NetworkSimDisplay(prot, results, baseline=[50, 100], response=[100, 140])
     nd.show()
     
     if sys.flags.interactive == 0:

@@ -29,11 +29,15 @@ def get_spiketrain(cf, sr, stim, seed, **kwds):
     If the flag --ignore-an-cache was given on the command line, then spike 
     times will be regenerated and cached, regardless of the current cache 
     state.
+    
+    If the flag --no-an-cache was given on the command line, then the cache
+    will not be read or written. This can improve overall performance if there
+    is little chance the cache would be re-used.
+    
     """
-    subdir = os.path.join(_cache_path, make_key(**stim.key()))
-    filename = make_key(cf=cf, sr=sr, seed=seed, **kwds)
-    filename = os.path.join(subdir, filename) + '.npz'
-        
+    filename = get_cache_filename(cf=cf, sr=sr, seed=seed, stim=stim, **kwds)
+    subdir = os.path.dirname(filename)
+    
     if not os.path.exists(subdir):
         try:
             os.mkdir(subdir)
@@ -44,7 +48,7 @@ def get_spiketrain(cf, sr, stim, seed, **kwds):
     
     with FileLock(filename):
         
-        if '--ignore-an-cache' in sys.argv or not os.path.exists(filename):
+        if '--ignore-an-cache' in sys.argv or '--no-an-cache' in sys.argv or not os.path.exists(filename):
             create = True
         else:
             create = False
@@ -61,7 +65,8 @@ def get_spiketrain(cf, sr, stim, seed, **kwds):
         if create:
             logging.info("Generate new AN spike train: %s", filename)
             data = generate_spiketrain(cf, sr, stim, seed, **kwds)
-            np.savez_compressed(filename, data=data)
+            if '--no-an-cache' not in sys.argv:
+                np.savez_compressed(filename, data=data)
             
     return data
 
@@ -79,6 +84,14 @@ def make_key(**kwds):
     kwds = list(kwds.items())
     kwds.sort()
     return '_'.join(['%s=%s' % kv for kv in kwds])
+
+
+def get_cache_filename(cf, sr, seed, stim, **kwds):
+    global _cache_path
+    subdir = os.path.join(_cache_path, make_key(**stim.key()))
+    filename = make_key(cf=cf, sr=sr, seed=seed, **kwds)
+    filename = os.path.join(subdir, filename) + '.npz'
+    return filename
 
 
 def generate_spiketrain(cf, sr, stim, seed, simulator=None, **kwds):
