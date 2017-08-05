@@ -1,11 +1,8 @@
-#!/usr/bin/env python
 # encoding: utf-8
 """
 Params.py
 
 Created by Paul Manis on 2014-01-31.
-Copyright 2014  Paul Manis
-Distributed under MIT/X11 license. See license.txt for more infofmation.
 """
 
 import sys

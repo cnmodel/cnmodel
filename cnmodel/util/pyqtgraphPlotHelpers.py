@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # encoding: utf-8
 """
 pyqtgraphPlotHelpers.py
@@ -13,9 +12,6 @@ Therefore, the first argument to these calls can either be a pyqtgraph axis obje
 or a list of axes objects.  2/10/2012 pbm.
 
 Created by Paul Manis on 2010-03-09.
-Copyright 2010-2015  Paul Manis
-Distributed under MIT/X11 license. See license.txt for more infofmation.
-
 """
 
 
