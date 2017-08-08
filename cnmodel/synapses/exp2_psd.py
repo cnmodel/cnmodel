@@ -54,7 +54,7 @@ class Exp2PSD(PSD):
                     vec[var].record(getattr(mech, '_ref_'+var))
                 self.vectors[receptor].append(vec)
         
-    def get_vector(self, receptor, var, i=0):
+    def get_vector(self, var):
         """Return an array from a previously recorded vector. 
         
         Parameters

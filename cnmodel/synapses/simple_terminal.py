@@ -27,6 +27,7 @@ class SimpleTerminal(Terminal):
         if spike_source is None:
             spike_source = pre_sec(loc)._ref_v
         self.spike_source = spike_source
+        self.pre_sec = pre_sec
 
     def connect(self, post, weight):
         """
@@ -44,6 +45,6 @@ class SimpleTerminal(Terminal):
         """
         thresh = -20
         delay = 0.5
-        self.netcon = h.NetCon(self.spike_source, post, thresh, delay, weight)
+        self.netcon = h.NetCon(self.spike_source, post, thresh, delay, weight, sec=self.pre_sec)
         self.netcon.weight[0] = weight
         

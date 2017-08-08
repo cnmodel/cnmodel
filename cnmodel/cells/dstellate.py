@@ -86,9 +86,8 @@ class DStellate(Cell):
 
     def make_terminal(self, post_cell, term_type, **kwds):
         if term_type == 'simple':
-            pre_sec = self.soma
-            return synapses.SimpleTerminal(pre_sec, post_cell, 
-                                           spike_source=pre_sec(0.5)._ref_v, **kwds)
+            return synapses.SimpleTerminal(self.soma, post_cell, **kwds)
+
         elif term_type == 'multisite':
             if post_cell.type == 'bushy':
                 nzones, delay = 10, 0
