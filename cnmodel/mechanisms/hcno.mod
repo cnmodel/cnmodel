@@ -31,7 +31,7 @@ PARAMETER {
     zeta2   = 3 :   (/ms)       
     a01 = 0.008  (/ms)
     a02 = 0.0029 (/ms)
-    frac=0.0
+    frac = 0.0
     c0 = 273.16  (degC)
     thinf  = -66    (mV)        : inact inf slope   
     qinf  = 7   (mV)        : inact inf slope 
@@ -59,13 +59,13 @@ STATE { h1 h2 }
 
 BREAKPOINT {
     SOLVE states METHOD derivimplicit
-    gh = qg*gbar*(h1*frac + h2*(1-frac))
+    gh = qg*gbar*(h1*frac + h2*(1.0-frac))
     i = gh * (v - eh)
 } 
 
 INITIAL {
-    qg = q10g^((celsius-33)/10 (degC))  :note original measurements made at 33 C
-    q10 = q10tau^((celsius - 22)/10 (degC)) : if you don't like room temp, it can be changed!
+    qg = q10g^((celsius-33.0)/10.0 (degC))  :note original measurements made at 33 C
+    q10 = q10tau^((celsius - 22.0)/10.0 (degC)) : if you don't like room temp, it can be changed!
     rates(v)
     h1=hinf
     h2=hinf
@@ -79,9 +79,9 @@ DERIVATIVE states {
 }
 
 PROCEDURE rates(v (mV)) {  
-    tau1 = bet1(v)/(q10*a01*(1+alp1(v)))
-    tau2 = bet2(v)/(q10*a02*(1+alp2(v)))
-    hinf = 1/(1+exp((v-thinf)/qinf))
+    tau1 = bet1(v)/(q10*a01*(1.0+alp1(v)))
+    tau2 = bet2(v)/(q10*a02*(1.0+alp2(v)))
+    hinf = 1.0/(1.0+exp((v-thinf)/qinf))
 }
 
 FUNCTION alp1(v(mV)) {

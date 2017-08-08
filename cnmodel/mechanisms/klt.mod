@@ -41,7 +41,7 @@ NEURON {
     THREADSAFE
     SUFFIX klt
     USEION k READ ek WRITE ik
-    RANGE gbar, gklt, ik
+    RANGE gbar, gklt, ik, q10g
     GLOBAL winf, zinf, wtau, ztau
 }
 

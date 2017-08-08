@@ -9,7 +9,7 @@ NEURON {
 	THREADSAFE
 	SUFFIX leak
 	NONSPECIFIC_CURRENT i
-	RANGE gbar, erev
+	RANGE gbar, erev, i
 }
 
 PARAMETER {
@@ -18,8 +18,13 @@ PARAMETER {
 	erev = -65	(mV)
 }
 
-ASSIGNED { i	(mA/cm2)}
+ASSIGNED { 
+    i	(mA/cm2)
+}
 
+INITIAL {
+    
+}
 BREAKPOINT {
 	i = gbar*(v - erev)
 }

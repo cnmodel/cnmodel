@@ -8,6 +8,16 @@ class PSD(object):
     postsynaptic cell.    
     """
     def __init__(self, section, terminal):
+        """
+        Parameters
+        ----------
+        section : :obj:`NEURON section`
+            Set the section in the postsynaptic cell that the terminal is attached to.
+        
+        terminal : :obj:`Synapse`
+            
+        
+        """
         self._section = section
         self._terminal = terminal
         

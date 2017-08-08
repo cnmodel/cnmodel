@@ -2,23 +2,8 @@ import logging
 import scipy.stats
 import numpy as np
 
-"""
-Todo: 
+from .. import data
 
-* Need to work out most of the API details here, probably by starting with a
-  specific use case and working backward
-
-* Distributions of cell properties
-
-* Mechanisms for automatically recording from neurons
-    - record all Vm for all real neurons
-    - record spike trains
-    - record per-synapse currents
-    
-
-
-
-"""
 
 class Population(object):
     """
@@ -38,6 +23,8 @@ class Population(object):
     synaptic input to another non-virtual neuron, or if the user explicitly 
     requests a recording of the neuron.
     
+    Subclasses represent populations for a specific cell type, and at least
+    need to reimplement the `create_cell` and `connection_stats` methods.
     """
     def __init__(self, species, size, fields, **kwds):
         self._species = species
@@ -125,6 +112,7 @@ class Population(object):
         populations before making any calls to ``resolve_inputs``.
         """
         for i in self.unresolved_cells():
+            # loop over all cells whose presynaptic inputs have not been resolved
             cell = self._cells[i]['cell']
             logging.info("Resolving inputs for %s %d", self, i)
             self._cells[i]['connections'] = {}
@@ -147,9 +135,10 @@ class Population(object):
         population at *cell_index*, and return the presynaptic indexes of cells
         that were connected.
         
-        This method may be overridden in subclasses.
+        This method is responsible for choosing pairs of cells to be connected
+        by synapses, and may be overridden in subclasses.
         
-        The default implementation calls self.connection_stats to determine
+        The default implementation calls `self.connection_stats()` to determine
         the number and selection criteria of presynaptic cells.
         """
         cell_rec = self._cells[cell_index]
@@ -165,6 +154,73 @@ class Population(object):
             # use default settings for connecting these. 
             pre_cell.connect(cell)
         return pre_cells
+
+    def connection_stats(self, pop, cell_rec):
+        """ The population *pop* is being connected to the cell described in 
+        *cell_rec*.
+        
+        This method is responsible for deciding the distributions of presynaptic
+        cell properties for any given postsynaptic cell (for example, a cell 
+        with cf=10kHz might receive SGC input from 10 cells selected from a 
+        normal distribution centered at 10kHz). 
+        
+        The default implementation of this method uses the 'convergence' and
+        'convergence_range' values from the data tables to specify a lognormal
+        distribution of presynaptic cells around the postsynaptic cell's CF. 
+        
+        This method must return a tuple (size, dist) with the following values:
+        
+        * size: integer giving the number of cells that should be selected from
+          the presynaptic population and connected to the postsynaptic cell.
+        * dist: dictionary of {property_name: distribution} pairs that describe
+          how cells should be selected from the presynaptic population. See
+          keyword arguments to `select()` for more information on the content
+          of this dictionary.
+        """
+        cf = cell_rec['cf']
+        
+        # Convergence distributions (how many presynaptic 
+        # cells to connect)  
+        try:
+            n_connections = data.get(
+                'convergence', species=self.species, pre_type=pop.type, post_type=self.type)
+        except KeyError:
+            raise TypeError("Cannot connect population %s to %s; no convergence specified in data table." % (pop, self))
+            
+        if isinstance(n_connections, tuple):
+            size_dist = scipy.stats.norm(loc=n_connections[0], scale=n_connections[1])
+            size = max(0, size_dist.rvs())
+        else:
+            size = n_connections
+
+        # Convergence ranges -- over what range of CFs should we
+        # select presynaptic cells.
+        try:
+            input_range = data.get('convergence_range', 
+                species=self.species, pre_type=pop.type, post_type=self.type)
+        except KeyError:
+            raise TypeError("Cannot connect population %s to %s; no convergence range specified in data table." % (pop, self))
+            
+        dist = {'cf': scipy.stats.lognorm(input_range, scale=cf)}
+
+        return size, dist
+    
+    def _get_cf_array(self, species):
+        """Return the array of CF values that should be used when instantiating
+        this population. 
+        
+        Commonly used by subclasses durin initialization.
+        """
+        size = data.get('populations', species=species, cell_type=self.type, field='n_cells')
+        fmin = data.get('populations', species=species, cell_type=self.type, field='cf_min')
+        fmax = data.get('populations', species=species, cell_type=self.type, field='cf_max')
+        s = (fmax / fmin) ** (1./size)
+        freqs = fmin * s**np.arange(size)
+        
+        # Cut off at 40kHz because the auditory nerve model only goes that far :(
+        freqs = freqs[freqs<=40e3]
+        
+        return freqs        
     
     def select(self, size, create=False, **kwds):
         """ Return a list of indexes for cells matching the selection criteria.
@@ -176,6 +232,7 @@ class Population(object):
         
         Each keyword argument must be the name of a field in self.cells. Values
         may be:
+        
         * A distribution (see scipy.stats), in which case the distribution 
           influences the selection of cells
         * An array giving the probability to assign to each cell in the
@@ -202,7 +259,10 @@ class Population(object):
                 nearest_field = field
             elif isinstance(dist, scipy.stats.distributions.rv_frozen):
                 vals = self._cells[field]
-                full_dist *= dist.pdf(vals)
+                dens = np.diff(vals)
+                dens = np.concatenate([dens[:1], dens])
+                pdf = dist.pdf(vals) * dens
+                full_dist *= pdf / pdf.sum()
             elif isinstance(dist, np.ndarray):
                 full_dist *= dist
             else:
@@ -213,7 +273,7 @@ class Population(object):
         if nearest is not None:
             cells = []
             mask = full_dist == 0
-            err = np.abs(self._cells[nearest_field] - nearest)
+            err = np.abs(self._cells[nearest_field] - nearest).astype(float)
             for i in range(size):
                 err[mask] = np.inf
                 cell = np.argmin(err)
@@ -229,8 +289,10 @@ class Population(object):
             vals.sort()
             cumulative = np.cumsum(full_dist)
             for val in vals:
-                cell = np.argwhere(cumulative >= val)[0,0]
-                cells.append(cell)
+                u = np.argwhere(cumulative >= val)
+                if len(u) > 0:
+                    cell = u[0,0]
+                    cells.append(cell)
             
         if create:
             self.create_cells(cells)

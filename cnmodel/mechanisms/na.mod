@@ -1,4 +1,4 @@
-TITLE klt.mod  The low threshold conductance of cochlear nucleus neurons
+TITLE na.mod  A sodium channel for cochlear nucleus neurons
 
 COMMENT
 

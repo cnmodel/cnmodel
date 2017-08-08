@@ -42,7 +42,7 @@ NEURON {
         THREADSAFE
         SUFFIX kht
         USEION k READ ek WRITE ik
-        RANGE gbar, gkht, ik
+        RANGE gbar, gkht, ik, q10g
         GLOBAL ninf, pinf, ntau, ptau
 }
 
@@ -83,7 +83,7 @@ BREAKPOINT {
 
 INITIAL {
     qg = q10g^((celsius-22)/10 (degC))
-    q10 = q10tau^((celsius - 22)/10 (degC)) : if you don't like room temp, it can be changed!
+    q10 = q10tau^((celsius - 22)/10 (degC))
     rates(v)
     p = pinf
     n = ninf

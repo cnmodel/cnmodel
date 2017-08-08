@@ -6,11 +6,22 @@ from .psd import PSD
 
 class Exp2PSD(PSD):
     """
-    Simple double-exponential PSD.
+    Simple double-exponential PSD from Neuron (fast).
     """
-    def __init__(self, section, terminal):
+    def __init__(self, section, terminal, loc=0.5):
+        """
+        Parameters
+        ----------
+        section : Section
+            The postsynaptic section in which to insert the receptor mechanism.
+        terminal : Terminal
+            The presynaptic Terminal instance
+        loc : float, default=0.5
+            Position on the postsynaptic section to insert the mechanism, from [0..1]. 
+        
+        """
         PSD.__init__(self, section, terminal)
-        self.syn = h.Exp2Syn(0.5, sec=section)
+        self.syn = h.Exp2Syn(loc, sec=section)
         self.syn.tau1 = 0.1
         self.syn.tau2 = 0.3
         self.syn.e = 0
@@ -25,7 +36,14 @@ class Exp2PSD(PSD):
 
     def record(self, *args):
         """Create a new set of vectors to record parameters for each release
-        site. Allowed parameters are 'i', 'g', and 'Open'.
+        site.
+        
+        
+        Parameters
+        ----------
+        \*args : 
+            Allowed parameters are 'i' (current), 'g' (conductnace), and 'Open' (open probability).
+
         """
         self.vectors = {'ampa': [], 'nmda': []}
         for receptor in self.vectors:
@@ -39,9 +57,15 @@ class Exp2PSD(PSD):
     def get_vector(self, var):
         """Return an array from a previously recorded vector. 
         
-        *receptor* may be 'ampa' or 'nmda'
-        *var* may be 'i', 'g', or 'Open'
-        *i* is the integer index of the psd (if this is a multi-site synapse)
+        Parameters
+        ----------
+        receptor : str
+             May be 'ampa' or 'nmda'
+        var : str
+            Allowed parameters are 'i' (current), 'g' (conductance), and 'Open' (open probability).
+        i : int, default=0
+             The integer index of the psd (if this is a multi-site synapse)
+        
         """
         v = self.vectors[receptor][i][var]
         return np.array(v)

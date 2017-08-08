@@ -1,0 +1,2 @@
+Copied from github.com/campagnola/pyqtgraph datatree-arrays branch; this gives us DiffTreeWidget.
+This file can be removed if DiffTreeWidget has been merged into pyqtgraph.

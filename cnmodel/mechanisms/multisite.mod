@@ -26,13 +26,13 @@ kd (0.7) : affinity of fast recovery process for calcium sensor
 kf (0.5) : affinity of facilitation process
 tf (0.01) : rate of facilitation process (slow) seconds
 dD (0.02): calcium that drives recovery (ca influx per AP)
-dF (0.02): calcium that drives facilitiation
+dF (0.02): calcium that drives facilitation
 
 Added latency and variable delay (latstd, latency standard deviation in msec)
 around the mean spike time. 4/5/2011 pbm.
 
 Version 4 uses a log-normal distribution to determine release latencies. 
-The calcuation is built-in instead of being passed through an array. 
+The calculation is built-in instead of being passed through an array. 
 The lognormal distribution describes the individual vesicle release time
 course at this synapse as measured by Isaacson and Walmsley, 1996. Note that
 they used a gamma distribution in some plots, but the lognormal distribution 
@@ -90,12 +90,12 @@ PARAMETER {
     tau_g = 0.5    (ms)    : duration of transmitter pulse
     dD = 0.02 (1)       : calcium influx driving recovery per AP
     dF = 0.02 (1)       : calcium influx driving facilitation per AP
-    F  = 0.5 (1)        : basal facilitaiton
+    F  = 0.5 (1)        : basal facilitation
     k0 = 0.0005714(/ms)       : slow recovery from depletion (1.0/1.75)
     kmax = 0.040 (/ms)      : fast recovery from depletion (1/0.025)
     taud = 50.0 (ms)        : time constant for fast calcium dependent recovery
     kd = 0.7 (1)       : affinity of fast recovery process for calcium sensor
-    tauf = 10.0 (ms)        : rate of slow facilitiation process
+    tauf = 10.0 (ms)        : rate of slow facilitation process
     kf = 0.5 (1)       : affinity of slow facilitation process
     : taus = 1 (ms)    : defined by DKR but not used here 
     : ks = 0.5 (1)     
@@ -109,7 +109,7 @@ PARAMETER {
     Lat_t0 = 0.0 (ms) : minimum time since simulation start before changes in latency are calculated
     Lat_A0 = 0.0 (ms) : size of latency shift from t0 to infinity
     Lat_tau = 100.0 (ms) : rate of change of latency shift (from fit of a+b(1-exp(-t/tau)))
-    : Statistical control of log-normal release shape over time during repetive stimulation
+    : Statistical control of log-normal release shape over time during repetitive stimulation
     LN_Flag = 0 (1) : 0 means fixed values for all time
     LN_t0 = 0.0 (ms) : : minimum time since simulation start before changes in distribution are calculated
     LN_A0 = 0.0 (ms) : size of change in sigma from t0 to infinity
@@ -124,7 +124,7 @@ PARAMETER {
 ASSIGNED {
     : Externally set assignments
     nZones (1)    : number of zones in the model
-    multisite (1)  : whether zones are modeled individualy (1) or as a single, variable-amplitude zone (0)
+    multisite (1)  : whether zones are modeled individually (1) or as a single, variable-amplitude zone (0)
     nRequests (1) 
     nReleases (1)
     EventLatencies[EVENT_N] (0)
@@ -167,7 +167,7 @@ VERBATIM
 ENDVERBATIM
 }
 
-: Function to allow RNG to be externaly set
+: Function to allow RNG to be externally set
 PROCEDURE setUniformRNG() {
 VERBATIM
  {
@@ -304,7 +304,7 @@ PROCEDURE release_multisite() {
     : Loops over multiple zones using release probability Fn*Dn to decide whether
     : each site will release, and selecting an appropriate release latency. 
     
-    : The syanpse can release one vesicle per AP per zone, with a probabiliyt 0<p<1.
+    : The synapse can release one vesicle per AP per zone, with a probability 0<p<1.
     : The probability, p, is defined by the time evolution of a Dittman-Regher model
     : of release, whose parameters are set during initialization.
     : The vesicle can be released over a variable time interval defined by a lognormal

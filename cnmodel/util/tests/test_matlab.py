@@ -1,10 +1,15 @@
+import pytest
 import numpy as np
 from cnmodel.util.matlab_proc import MatlabProcess
 
 
 def test_matlab():
     global proc
-    proc = MatlabProcess()
+    try:
+        proc = MatlabProcess()
+    except RuntimeError:
+        # no matlab available; skip this test
+        pytest.skip("MATLAB unavailable")
 
     base_vcount = proc.who().shape[0]
     

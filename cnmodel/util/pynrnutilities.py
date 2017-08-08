@@ -97,7 +97,7 @@ def all_mechanism_types():
     return _mechtype_cache
 
 
-def reset():
+def reset(raiseError=True):
     """Introspect the NEURON kernel to verify that no objects are left over
     from previous simulation runs.
     """
@@ -107,13 +107,15 @@ def reset():
     
     # Make sure nothing is hanging around in an old exception or because of
     # reference cycles 
+
     sys.exc_clear()
-    gc.collect()
-    
+    gc.collect(2)
+    neuron.h.Vector().size()
+    numsec = 0
+
     remaining = []
-    
-    # No sections left
     n = len(list(neuron.h.allsec()))
+
     if n > 0:
         remaining.append((n, 'Section'))
         
@@ -127,13 +129,59 @@ def reset():
             n = len(neuron.h.List(name))
             if n > 0:
                 remaining.append((n, name))
-        
-    if len(remaining) > 0:
-        msg = ("Cannot reset--old objects have not been cleared: %s" % 
+    
+    if len(remaining) > 0 and raiseError:  # note that not raising the error leads to memory leak
+        msg = ("Cannot reset--old objects have not been cleared: %s" %
                ', '.join(['%d %s' % rem for rem in remaining]))
         raise RuntimeError(msg)
 
+def custom_init(v_init=-60.):
+    """
+    Perform a custom initialization of the current model/section. 
+    
+    This initialization follows the scheme outlined in the
+    NEURON book, 8.4.2, p 197 for initializing to steady state.
+    
+    N.B.: For a complex model with dendrites/axons and different channels,
+    this initialization will not find the steady-state the whole cell,
+    leading to initial transient currents. In that case, this initialization
+    should be followed with a 0.1-5 second run (depends on the rates in the
+    various channel mechanisms) with no current injection or active point
+    processes to allow the system to settle to a steady- state. Use either
+    h.svstate or h.batch_save to save states and restore them. Batch is
+    preferred
 
+    Parameters
+    ----------
+    v_init : float (default: -60 mV)
+        Voltage to start the initialization process. This should
+        be close to the expected resting state.
+    """
+    inittime = -1e10
+    tdt = neuron.h.dt  # save current step size
+    dtstep = 1e9
+    neuron.h.finitialize(v_init) 
+    neuron.h.t = inittime  # set time to large negative value (avoid activating
+                    # point processes, we hope)
+    tmp = neuron.h.cvode.active()  # check state of variable step integrator
+    if tmp != 0:   # turn off CVode variable step integrator if it was active
+        neuron.h.cvode.active(0)  # now just use backward Euler with large step
+    neuron.h.dt = dtstep
+    n = 0
+    while neuron.h.t < -1e9:  # Step forward
+        neuron.h.fadvance()
+        n += 1
+    #print('advances: ', n)
+    if tmp != 0:
+        neuron.h.cvode.active(1)  # restore integrator
+    neuron.h.t = 0
+    if neuron.h.cvode.active():
+        neuron.h.cvode.re_init()  # update d(state)/dt and currents
+    else:
+        neuron.h.fcurrent()  # recalculate currents
+    neuron.h.frecord_init()  # save new state variables
+    neuron.h.dt = tdt  # restore original time step
+        
 
 # routine to convert conductances from nS as given elsewhere
 #   to mho/cm2 as required by NEURON 1/28/99 P. Manis
@@ -359,10 +407,15 @@ def an_syn(alpha=0.1, spont=10, driven=100, delay=50, dur=100, post = 20,
 def findspikes(t, v, thresh):
     """ findspikes identifies the times of action potential in the trace v, with the
     times in t. An action potential is simply timed at the first point that exceeds
-    the threshold. """
+    the threshold.
+    """
     tm = np.array(t)
-    s0 = np.array(v) > thresh # find points above threshold
+    s0 = np.array(v) > thresh # np.where(v > thresh) # np.array(v) > thresh # find points above threshold
+
+#    print ('v: ', v)
     dsp = tm[s0]
+    if dsp.shape[0] == 1:
+        dsp = np.array(dsp)
     sd = np.append(True, np.diff(dsp) > 1.0) # find first points of spikes
     if len(dsp) > 0:
         sp = dsp[sd]
