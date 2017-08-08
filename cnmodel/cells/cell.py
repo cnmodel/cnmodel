@@ -178,6 +178,32 @@ class Cell(object):
                 return s
         return None
 
+    def get_post_sec(self, kwds):
+        """
+        Get the postsynaptic section from the value of postsite 
+        in kwds. This is typically called from the cell-specific make_psd method.
+        If the key 'postsite' is in the kwds dict, we look it up. 
+        If not, then we use the soma section as a default instead.
+        
+        Parameters
+        ----------
+        kwds : dict
+             dictionary of keywords, may have a key 'postsite'
+        
+        Returns:
+            loc, post_sec
+                the location (0-1) of the desired point process insertion, and
+                post_sec, the neuron section where that insertion will take place
+        """
+        if 'postsite' in kwds:  # use a defined location instead of the default (soma(0.5)
+            postsite = kwds['postsite']
+            loc = postsite[1]  # where on the section?
+            uname = 'sections[%d]' % postsite[0]  # make a name to look up the neuron section object
+            post_sec = self.hr.get_section(uname)  # Tell us where to put the synapse.
+        else:
+            loc = 0.5
+            post_sec = self.soma
+        return loc, post_sec
 
     def set_d_lambda(self, freq=100, d_lambda=0.1):
         """
@@ -322,7 +348,7 @@ class Cell(object):
         """
         Create a synaptic terminal release mechanism suitable for output
         from this cell to post_sec
-        This routine is a placeholder and should be replace in the specific
+        This routine is a placeholder and should be replaced in the specific
         cell class with code that performs the required actions for that class.
         
         Parameters
