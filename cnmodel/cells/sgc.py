@@ -90,9 +90,9 @@ class DummySGC(SGC):
         simulator : 'cochlea' | 'matlab' | None (default None)
             Sets the simulator interface that will be used. All models
             currently use the Zilany et al. model, but the simulator can
-            be run though a Python-interface direcltly to the Matlab code
+            be run though a Python-interface directly to the Matlab code
             as publicy available, (simulator='matlab'), or can be run through
-            Rudnicki's Python interface to the simulator's C code 
+            Rudnicki & Hemmert's Python interface to the simulator's C code 
             (simulator='cochlea').
         
         """
@@ -137,9 +137,10 @@ class SGC_TypeI(SGC):
                  species='guineapig', 
                  modelType='bm', cf=None, sr=None, debug=False):
         """
-        Initialize a spiral ganglion Type I cell, based on the based on a bushy cell model.
-        Modifications to the cell can be made by calling methods below. These include:
+        Initialize a spiral ganglion Type I cell, based on a bushy cell model.
+        Modifications to the cell can be made by calling the methods below. These include:
             Converting to a model with modified size and conductances (experimental).
+            Changing the sodium channel conductances.
         
         Parameters
         ----------
