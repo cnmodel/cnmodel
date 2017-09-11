@@ -22,6 +22,7 @@ AMPA_gmax    21.05±15.4 [1]    4.6±3.1 [2]        0.49±0.29 [7]     0.87±0.2
 AMPAR_gmax   4.6516398 [10]    4.632848  [10]     1.7587450 [10]    16.975147 [10]  1.8 [8]        2.2  [8]
 NMDA_gmax    10.8±4.6 [1]      2.4±1.6 [2]        0.552±0.322 [7]   0.17±0.046 [3]  0.8±0.66 [8]   2.4±1.6 [8]
 NMDAR_gmax   0.4531933 [10]    1.2127097 [10]     0.9960820 [10]    0.6562702 [10]  0.4 [8]        1.2127097 [8]
+NMDAR_vshift -10.0 [12]        -15.0 [12]         -15.0 [12]        -15.0 [12]      -15.0 [12]     -15.0 [12]
 EPSC_cv      0.12 [8]          0.499759 [9]       0.886406 [9]      1.393382 [9]    0.499 [8]      0.499 [8]
 Pr           1.000 [11]        1.000 [11]         1.000 [11]        1.000 [11]      1.000 [8]      1.000 [8]
 n_rsites     100 [5]           4 [6]              1 [4]             1 [4]           2 [8]          2 [8]
@@ -35,6 +36,7 @@ n_rsites     100 [5]           4 [6]              1 [4]             1 [4]       
        NMDA_gmax = 21.5±15.4 nS * 0.3 = 10.8±4.6 nS
     Age>p17, Temperature=33C, [Mg2+]=1.3mM, [Ca2+]=2.4mM
     Units are nS.
+    See also Pliss et al., J. Neurophys., 2009 (and note [12])
 
 [2] Derived from Cao, X. & Oertel, D. (2010). Single-terminal conductance was
     estimated as 4.6±3.1 nS. The ratio of NMDA current to 
@@ -114,6 +116,22 @@ n_rsites     100 [5]           4 [6]              1 [4]             1 [4]       
       once all other parameters are set. The Pr is used to rescale
       the AMPAR_gmax so that the total current matches the data in 
       AMPA_gmax in the table (on average).
+
+[12]  NMDA_vshift is the voltage shift for the activation of the NMDAR's, relative
+      to 0 (standard in the NMDA_Kampa model). A negative value shifts the voltage
+      dependence to the right (depolarizing).
+      The value of the shift here (-15 mV) was chosen based on an exploration
+      of fitting functions against the NMDA-Kampa IV curve in an SGC-bushy cell
+      model, and comparing them against data. The functions were the modified
+      Woodhull function and a Boltzmann function, yielding values of 1.19 mM for 
+      k0 and 0.78 for delta (tau decay at +40 mV of 16.4 ms), and Vr -3 mV, Vh
+      16 mV for the Boltzmann fit. These are close to the values reported in 
+      for NMDA currents in p14-p26 CBA/CaJ mice in Pliss et al. (J. Neurophys. 
+      102, 2627, 2009). Note: Pliss et al. agree with Cao and Oertel regarding
+      an approximate 10-fold difference between AMPA and NMDA conductance in
+      mouse bushy cells. An exact fit was not obtained, but no other parameters
+      of the NMDA_Kampa model were changed. 
+   
 """)
 
 
