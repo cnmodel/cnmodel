@@ -105,6 +105,7 @@ class Cell(object):
         nothing
             
         """
+        print('morphology file: ', morphology_file)
         if isinstance(morphology_file, str):
             if morphology_file.endswith('.hoc'):
                 self.morphology = morphology.HocReader(morphology_file)
@@ -132,8 +133,7 @@ class Cell(object):
                # print '\nmechanisms for section: %s', section
                # self.print_mechs(section)
         self.set_soma_size_from_Section(self.soma)  # this is used for reporting and setting g values...
-        print ('self.morphology, get distances')
-        self.distances(self.soma[1])
+        self.distances(self.soma) # use last soma section
         self.hr.distanceMap = self.distanceMap
 
     def add_section(self, sec, sec_type):
@@ -274,8 +274,11 @@ class Cell(object):
         """
         First (or only) section in the "soma" section group.
         """
-        return self.all_sections['soma'][0]
-        
+        if isinstance(self.all_sections['soma'], list):
+            return self.all_sections['soma'][0]
+        else:
+            return self.all_sections['soma']
+
     def decorate(self):
         """
         decorate the cell with it's own class channel decorator
@@ -702,9 +705,8 @@ class Cell(object):
         
     def distances(self, section):
         self.distanceMap = {}
-        self.hr.h('access %s' % section.name()) # reference point
+        self.hr.h('access %s' % self.soma.name()) # reference point
         d = self.hr.h.distance()
-        print ('d: ', d)
         for sec in self.all_sections:
             s = self.all_sections[sec]
             if len(s) > 0:

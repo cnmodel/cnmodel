@@ -66,7 +66,7 @@ class Bushy(Cell):
                         post_type=self.type, field='NMDAR_vshift')
                 # adjust gmax to correct for initial Pr
                 self.AMPAR_gmax = self.AMPAR_gmax/self.Pr
-                self.NMDAR_gmax = self.NMDAR_gmax/self.Pr
+                self.NMDAR_gmax = 0. #self.NMDAR_gmax/self.Pr
 
 #               original values (now in synapses.py):
 #                self.AMPA_gmax = 3.314707700918133*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
@@ -436,9 +436,15 @@ class BushyRothman(Bushy):
             self.channelMap = {
                 'axon': {'nav11': self.gBar.nabar*1, 'klt': self.gBar.kltbar * 1.0, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
                          'leak': self.gBar.leakbar * 0.25},
+                'myelinatedaxon': {'nav11': self.gBar.nabar*0, 'klt': self.gBar.kltbar * 1e-2,
+                         'kht': self.gBar.khtbar*1e-2, 'ihvcn': 0.},
                 'hillock': {'nav11': self.gBar.nabar*2, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar*2.0, 'ihvcn': 0.,
                             'leak': self.gBar.leakbar, },
                 'initseg': {'nav11': self.gBar.nabar*3.0, 'klt': self.gBar.kltbar*1, 'kht': self.gBar.khtbar*2,
+                            'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
+                'initsegment': {'nav11': self.gBar.nabar*3.0, 'klt': self.gBar.kltbar*1, 'kht': self.gBar.khtbar*2,
+                            'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
+                'unmyelinatedaxon': {'nav11': self.gBar.nabar*3.0, 'klt': self.gBar.kltbar*1, 'kht': self.gBar.khtbar*2,
                             'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
                 'soma': {'nav11': self.gBar.nabar*0.5, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
                          'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
@@ -450,6 +456,7 @@ class BushyRothman(Bushy):
                          'ihvcn': self.gBar.ihbar *0.25, 'leak': self.gBar.leakbar * 0.25, },
             }
             self.irange = np.linspace(-2, 2, 7)
+            self.i_test_range={'pulse': (-2, 2, 0.2)}
             self.distMap = {'dend': {'klt': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
                                      'kht': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
                                      'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.}}, # linear with distance, gminf (factor) is multiplied by gbar
@@ -477,47 +484,36 @@ class BushyRothman(Bushy):
             self._valid_temperatures = (34.,)
             if self.status['temperature'] == None:
                 self.status['temperature'] = 34.
-            self.gBar = Params(nabar=1600.E-9/refarea,
+            self.gBar = Params(nabar=2100.E-9/refarea,
                                khtbar=58.0E-9/refarea,
-                               kltbar=40.0E-9/refarea,  # note doubled here... 
-                               ihbar=0.25*30.0E-9/refarea,
+                               kltbar=80.0E-9/refarea,
+                               ihbar=20.0E-9/refarea,
                                leakbar=0.02*2.0E-9/refarea,  # was 0.5
             )
             print 'mGBC gbar:\n', self.gBar.show()
             sodiumch = 'jsrna'
             self.channelMap = {
-                'axon': {sodiumch: self.gBar.nabar*1., 'klt': self.gBar.kltbar * 1.0, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
+                'soma': {sodiumch: self.gBar.nabar*0.65, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
+                         'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
+                'hillock': {sodiumch: self.gBar.nabar*3.0, 'klt': self.gBar.kltbar*1.0, 'kht': self.gBar.khtbar*2.0,
+                             'ihvcn': 0., 'leak': self.gBar.leakbar, },
+                'unmyelinatedaxon': {sodiumch: self.gBar.nabar*1.0, 'klt': self.gBar.kltbar * 2.0,
+                         'kht': self.gBar.khtbar*2.0, 'ihvcn': 0.,
                          'leak': self.gBar.leakbar * 0.25},
-                'unmyelinatedaxon': {sodiumch: self.gBar.nabar*3.0, 'klt': self.gBar.kltbar * 2.0,
-                         'kht': self.gBar.khtbar*3.0, 'ihvcn': 0.,
-                         'leak': self.gBar.leakbar * 0.25},
+                         # AKA "initialsegment"
                 'myelinatedaxon': {sodiumch: self.gBar.nabar*0, 'klt': self.gBar.kltbar * 1e-2,
                          'kht': self.gBar.khtbar*1e-2, 'ihvcn': 0.,
                          'leak': self.gBar.leakbar * 0.25*1e-3},
-                'hillock': {sodiumch: self.gBar.nabar*4.0, 'klt': self.gBar.kltbar*1.0, 'kht': self.gBar.khtbar*3.0,
-                             'ihvcn': 0., 'leak': self.gBar.leakbar, },
-                'initseg': {sodiumch: self.gBar.nabar*3.0, 'klt': self.gBar.kltbar*2, 'kht': self.gBar.khtbar*2,
-                            'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
-                'soma': {sodiumch: self.gBar.nabar*0.65, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar*1.5,
-                         'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
-                'dend': {sodiumch: self.gBar.nabar * 0.2, 'klt': self.gBar.kltbar *1, 'kht': self.gBar.khtbar *1,
+                'dendrite': {sodiumch: self.gBar.nabar * 0.65, 'klt': self.gBar.kltbar *1, 'kht': self.gBar.khtbar *1,
                          'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
-                'dendrite': {sodiumch: self.gBar.nabar * 0.2, 'klt': self.gBar.kltbar *1, 'kht': self.gBar.khtbar *1,
-                         'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
-                'apic': {sodiumch: self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar * 0.25,
-                         'ihvcn': self.gBar.ihbar *0.25, 'leak': self.gBar.leakbar * 0.25, },
             }
             self.irange = np.arange(-1.5, 2.1, 0.25 )
-            self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     sodiumch: {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
-                            'dendrite': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 20.},
-                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 20.},
-                                      sodiumch: {'gradient': 'linear', 'gminf': 0., 'lambda': 20.}}, # linear with distance, gminf (factor) is multiplied by gbar
-                            'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     sodiumch: {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
-                            }
+            self.i_test_range={'pulse': (-1.5, 2.1, 0.25)}
+            
+            self.distMap = {'dendrite': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                      sodiumch: {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
+                           }
         else:
             raise ValueError('model type %s is not implemented' % modelType)
         self.check_temperature()
