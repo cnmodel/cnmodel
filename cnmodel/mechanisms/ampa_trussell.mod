@@ -19,7 +19,7 @@ COMMENT
 -----------------------------------------------------------------------------
 
     This mod file does not include mechanisms for the release and time course
-    of transmitter; it is to be used in conjunction with a sepearate mechanism
+    of transmitter; it is to be used in conjunction with a separate mechanism
     to describe the release of transmitter and that provides the concentration
     of transmitter in the synaptic cleft (to be connected to pointer C here).
 
@@ -174,7 +174,7 @@ INITIAL {
     Open = 0
 	qfac = Q10^((celsius-22)/10)
 :	VERBATIM
-:	fprintf(stdout, "AMPA.MOD!!! gmax: %f    Q10 = %f  celsius = %f\n", gmax, Q10, celsius);
+:	fprintf(stdout, "AMPA.MOD gmax: %f    Q10 = %f  celsius = %f\n", gmax, Q10, celsius);
 :    ENDVERBATIM
     gvdepcalc(v)
 }

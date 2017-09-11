@@ -30,8 +30,8 @@ COMMENT
 -----------------------------------------------------------------------------
 
   This mod file does not include mechanisms for the release and time course
-  of transmitter; it should to be used in conjunction with a sepearate mechanism
-  to describe the release of transmitter and tiemcourse of the concentration
+  of transmitter; it should to be used in conjunction with a separate mechanism
+  to describe the release of transmitter and timecourse of the concentration
   of transmitter in the synaptic cleft (to be connected to pointer XMTR here).
 
 -----------------------------------------------------------------------------
