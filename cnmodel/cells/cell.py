@@ -114,7 +114,7 @@ class Cell(object):
                 raise ValueError('Unknown morphology file type [must be .hoc or .swc]')
         elif isinstance(morphology_file, morphology.Morphology):
             self.morphology = morphology_file
-        elif isinstance(morphology_file, neuron.h):  # passed a hoc object
+        elif isinstance(morphology_file, str):  # passed a hoc object
             self.morphology = morphology.HocReader(morphology_file)
         else:
             print(morphology_file)
@@ -132,7 +132,8 @@ class Cell(object):
                # print '\nmechanisms for section: %s', section
                # self.print_mechs(section)
         self.set_soma_size_from_Section(self.soma)  # this is used for reporting and setting g values...
-        self.distances(self.soma)
+        print ('self.morphology, get distances')
+        self.distances(self.soma[1])
         self.hr.distanceMap = self.distanceMap
 
     def add_section(self, sec, sec_type):
@@ -703,12 +704,13 @@ class Cell(object):
         self.distanceMap = {}
         self.hr.h('access %s' % section.name()) # reference point
         d = self.hr.h.distance()
+        print ('d: ', d)
         for sec in self.all_sections:
             s = self.all_sections[sec]
             if len(s) > 0:
                 for u in s:
                     self.hr.h('access %s' % u.name())
-                    self.distanceMap[u.name()] = self.hr.h.distance(0.5) # should be distance from first point
+                    self.distanceMap[u.name()] = self.hr.h.distance(0.5) - d # should be distance from first point
 
     def add_axon(self, c_m=1.0, R_a=150, axonsf=1.0, nodes=5, debug=False, dia=None, len=None, seg=None):
         """

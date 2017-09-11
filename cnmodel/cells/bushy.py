@@ -62,9 +62,12 @@ class Bushy(Cell):
                         post_type=self.type, field='NMDAR_gmax')*1e3
                 self.Pr = data.get('sgc_synapse', species=self.species,
                         post_type=self.type, field='Pr')
+                self.NMDAR_vshift = data.get('sgc_synapse', species=self.species,
+                        post_type=self.type, field='NMDAR_vshift')
                 # adjust gmax to correct for initial Pr
                 self.AMPAR_gmax = self.AMPAR_gmax/self.Pr
                 self.NMDAR_gmax = self.NMDAR_gmax/self.Pr
+
 #               original values (now in synapses.py):
 #                self.AMPA_gmax = 3.314707700918133*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
 #                self.NMDA_gmax = 0.4531929783503451*1e3
@@ -72,7 +75,8 @@ class Bushy(Cell):
                     self.AMPAR_gmax = self.AMPAR_gmax * kwds['AMPAScale']  # allow scaling of AMPA conductances
                 if 'NMDAScale' in kwds:
                     self.NMDAR_gmax = self.NMDAR_gmax * kwds['NMDAScale']  # and NMDA... 
-                return self.make_glu_psd(post_sec, terminal, self.AMPAR_gmax, self.NMDAR_gmax, loc=loc)
+                return self.make_glu_psd(post_sec, terminal, self.AMPAR_gmax, 
+                            self.NMDAR_gmax, loc=loc, nmda_vshift=self.NMDAR_vshift)
             elif terminal.cell.type == 'dstellate':
                 return self.make_gly_psd(post_sec, terminal, type='glyslow', loc=loc)
             elif terminal.cell.type == 'tuberculoventral':
