@@ -172,7 +172,7 @@ class Decorator():
             gbar = (gbar - gminf) * np.exp(-dist/rate) + gminf
         if gbar < 0.:
             gbar = 0.
-        print 'gbaradjust: orig/adj: ', gbar_orig, gbar, method, dist, sectype
+        #print 'gbaradjust: orig/adj: ', gbar_orig, gbar, method, dist, sectype
         return gbar
 
     def channelValidate(self, cell, verify=False):
