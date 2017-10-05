@@ -145,7 +145,6 @@ class Population(object):
         cell = cell_rec['cell']
         
         size, dist = self.connection_stats(pop, cell_rec) 
-
         # Select SGCs from distribution, create, and connect to this cell
         # todo: select sgcs with similar spont. rate?
         pre_cells = pop.select(size=size, create=False, **dist)
@@ -192,7 +191,8 @@ class Population(object):
             size = max(0, size_dist.rvs())
         else:
             size = n_connections
-
+        size = int(size) # must be an integer at this point
+        
         # Convergence ranges -- over what range of CFs should we
         # select presynaptic cells.
         try:
