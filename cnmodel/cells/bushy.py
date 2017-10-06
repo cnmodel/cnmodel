@@ -194,6 +194,17 @@ class BushyRothman(Bushy):
         if debug:
             print "   << Created cell >>"
 
+    def get_cellpars(self, dataset, species='guineapig', celltype='II'):
+        cellcap = data.get(dataset, species=species, cell_type=celltype,
+            field='soma_Cap')
+        chtype = data.get(dataset, species=species, cell_type=celltype,
+            field='soma_na_type')
+        pars = Params(cap=cellcap, natype=chtype)
+        for g in ['soma_kht_gbar', 'soma_klt_gbar', 'soma_ih_gbar', 'soma_leak_gbar']:
+            pars.additem(g,  data.get(dataset, species=species, cell_type=celltype,
+            field=g))
+        return pars
+
     def species_scaling(self, species='guineapig', modelType='II', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
@@ -222,112 +233,62 @@ class BushyRothman(Bushy):
         knownspecies = ['mouse', 'guineapig', 'cat']
         
         soma = self.soma
-        if species == 'mouse' and modelType == 'II':
-            # use conductance levels from Cao et al.,  J. Neurophys., 2007. as 
+        if modelType == 'II':
+            celltype = 'bushy-II'
+        elif modelType == 'II-I':
+            celltype = 'bushy-II-I'
+        elif modelType == 'I-II':
+            celltype = 'bushy-I-II'
+        else:
+            raise ValueError('model type not recognized')
+
+        if species == 'mouse':
+            # use conductance levels determined from Cao et al.,  J. Neurophys., 2007. as 
             # model description in Xie and Manis 2013. Note that
             # conductances were not scaled for temperature (rates were)
             # so here we reset the default Q10's for conductance (g) to 1.0
-            print '  Setting conductances for mouse II bushy cell, Xie and Manis, 2013'
+            if celltype not in ['bushy-II', 'bushy-II-I']:
+                raise ValueError('\nCell type %s is not implemented for mouse bushy cells' % celltype)
+            print '  Setting conductances for mouse bushy cell (%s), Xie and Manis, 2013' % celltype
+            dataset = 'XM13_channels'
             self.vrange = [-68., -55.]  # set a default vrange for searching for rmp
+            self.i_test_range = {'pulse': (-1., 1., 0.05)}
             self._valid_temperatures = (34., )
             if self.status['temperature'] is None:
                 self.status['temperature'] = 34. 
-            self.set_soma_size_from_Cm(26.0)
-            self.adjust_na_chans(soma)
-            soma().kht.gbar = nstomho(58.0, self.somaarea)
-            soma().klt.gbar = nstomho(80.0, self.somaarea)
-            soma().ihvcn.gbar = nstomho(30.0, self.somaarea)
-            soma().leak.gbar = nstomho(2.0, self.somaarea)
+
+            pars = self.get_cellpars(dataset, species=species, celltype=celltype)
+            self.set_soma_size_from_Cm(pars.cap)
+            self.status['na'] = pars.natype
+            self.adjust_na_chans(soma, sf=1.0)
+            soma().kht.gbar = nstomho(pars.soma_kht_gbar, self.somaarea)
+            soma().klt.gbar = nstomho(pars.soma_klt_gbar, self.somaarea)
+            soma().ihvcn.gbar = nstomho(pars.soma_ih_gbar, self.somaarea)
+            soma().leak.gbar = nstomho(pars.soma_leak_gbar, self.somaarea)
             self.axonsf = 0.57
             
-        elif species == 'mouse' and modelType == 'II-I':
-            # use typ0e II conductance levels from Cao et al.,  J. Neurophys., 2007. as 
-            # indicated in Xie and Manis, 2013
-            print '  Setting conductances for mouse II-I bushy cell, based on Xie and Manis, 2013'
-            self.set_soma_size_from_Cm(26.0)
-            self._valid_temperatures = (34.,)
-            if self.status['temperature'] is None:
-                self.status['temperature'] =34. 
-            self.adjust_na_chans(soma)
-            soma().kht.gbar = nstomho(58.0, self.somaarea)
-            soma().klt.gbar = nstomho(14.0, self.somaarea)  # same ratio as for guinea pig relative to type II
-            soma().ihvcn.gbar = nstomho(30.0, self.somaarea)
-            soma().leak.gbar = nstomho(2.0, self.somaarea)
-            self.vrange = [-70., -55.]  # need to specify non-default range for convergence
-            self.axonsf = 0.57
-            
-        elif species == 'guineapig' and modelType =='II':
-            print '  Setting conductances for guinea pig II bushy cell, Rothman and Manis, 2003'
+        elif species == 'guineapig':
+            print '  Setting conductances for guinea pig %s bushy cell, Rothman and Manis, 2003' % modelType
             self._valid_temperatures = (22., 38.)
             if self.status['temperature'] is None:
                 self.status['temperature'] = 22. 
+            self.i_test_range = {'pulse': (-0.4, 0.4, 0.02)}
             sf = 1.0
             if self.status['temperature'] == 38.:  # adjust for 2003 model conductance levels at 38
                 sf = 2  # Q10 of 2, 22->38C. (p3106, R&M2003c)
                 # note that kinetics are scaled in the mod file.
-            # self.set_soma_size_from_Cm(12.0)
-            # self.adjust_na_chans(soma, sf=sf)
-            # soma().kht.gbar = sf*nstomho(150.0, self.somaarea)
-            # soma().klt.gbar = sf*nstomho(200.0, self.somaarea)
-            # soma().ihvcn.gbar = sf*nstomho(20.0, self.somaarea)
-            # soma().leak.gbar = sf*nstomho(2.0, self.somaarea)
-            # self.axonsf = 0.57
-            self.set_soma_size_from_Cm(data.get('ionchannels', species='guineapig', cell_type='bushy-II',
-                field='soma_Cm', parameters='RM03'))
-            chdata = data.get('ionchannels', species='guineapig', cell_type='bushy-II',
-                field='soma_na_type', parameters='RM03')
-            self.adjust_na_chans(soma, sf=sf)
-            kht_gbar = data.get('ionchannels', species='guineapig', cell_type='bushy-II',
-                field='soma_kht_gbar', parameters='RM03')
-            klt_gbar = data.get('ionchannels', species='guineapig', cell_type='bushy-II',
-                field='soma_klt_gbar', parameters='RM03')
-            ihvcn_gbar = data.get('ionchannels', species='guineapig', cell_type='bushy-II',
-                field='soma_ih_gbar', parameters='RM03')
-            leak_gbar = data.get('ionchannels', species='guineapig', cell_type='bushy-II',
-                field='soma_leak_gbar', parameters='RM03')
-            soma().kht.gbar = sf*nstomho(kht_gbar, self.somaarea)
-            soma().klt.gbar = sf*nstomho(klt_gbar, self.somaarea)
-            soma().ihvcn.gbar = sf*nstomho(ihvcn_gbar, self.somaarea)
-            soma().leak.gbar = sf*nstomho(leak_gbar, self.somaarea)
+            dataset = 'RM03_channels'
+            pars = self.get_cellpars(dataset, species=species, celltype=celltype)
+            self.set_soma_size_from_Cm(pars.cap)
+            self.status['na'] = pars.natype
+            self.adjust_na_chans(soma, sf=1.0)
+            soma().kht.gbar = nstomho(pars.soma_kht_gbar, self.somaarea)
+            soma().klt.gbar = nstomho(pars.soma_klt_gbar, self.somaarea)
+            soma().ihvcn.gbar = nstomho(pars.soma_ih_gbar, self.somaarea)
+            soma().leak.gbar = nstomho(pars.soma_leak_gbar, self.somaarea)
+
             self.axonsf = 0.57
             
-        elif species == 'guineapig' and modelType =='II-I':
-            # guinea pig data from Rothman and Manis, 2003, type II=I
-            print '  Setting conductances for guinea pig II-I bushy cell, Rothman and Manis, 2003'
-            self._valid_temperatures = (22., 38.)
-            if self.status['temperature'] is None:
-                self.status['temperature'] = 22. 
-            sf = 1.0
-            if self.status['temperature'] == 38.:  # adjust for 2003 model conductance levels at 38
-                sf = 3.03  # Q10 of 2, 22->38C. (p3106, R&M2003c)
-                # note that kinetics are scaled in the mod file.
-            self.i_test_range = {'pulse': (-0.4, 0.4, 0.02)}
-            self.set_soma_size_from_Cm(12.0)
-            self.adjust_na_chans(soma, sf=sf)
-            soma().kht.gbar = sf*nstomho(150.0, self.somaarea)
-            soma().klt.gbar = sf*nstomho(35.0, self.somaarea)
-            soma().ihvcn.gbar = sf*nstomho(3.5, self.somaarea)
-            soma().leak.gbar = sf*nstomho(2.0, self.somaarea)
-            self.axonsf = 0.57
-        
-        elif species == 'guineapig' and modelType =='I-II':
-            # guinea pig data from Rothman and Manis, 2003, type II=I
-            print '  Setting conductances for guinea pig II-I bushy cell, Rothman and Manis, 2003'
-            self._valid_temperatures = (22., 38.)
-            if self.status['temperature'] is None:
-                self.status['temperature'] = 22. 
-            sf = 1.0
-            if self.status['temperature'] == 38.:  # adjust for 2003 model conductance levels at 38
-                sf = 3.03  # Q10 of 2, 22->38C. (p3106, R&M2003c)
-                # note that kinetics are scaled in the mod file.
-            self.i_test_range = {'pulse': (-0.4, 0.4, 0.02)}
-            self.set_soma_size_from_Cm(12.0)
-            self.adjust_na_chans(soma, sf=sf)
-            soma().kht.gbar = sf*nstomho(150.0, self.somaarea)
-            soma().klt.gbar = sf*nstomho(20.0, self.somaarea)
-            soma().ihvcn.gbar = sf*nstomho(2.0, self.somaarea)
-            soma().leak.gbar = sf*nstomho(2.0, self.somaarea)
-            self.axonsf = 0.57
         else:
             errmsg = 'Species "%s" or model type "%s" is not recognized for Bushy cells.' %  (species, modelType)
             errmsg += '\n  Valid species are: \n'
