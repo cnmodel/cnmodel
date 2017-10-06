@@ -220,6 +220,7 @@ class BushyRothman(Bushy):
         """
         #print '\nSpecies scaling: %s   %s' % (species, type)
         knownspecies = ['mouse', 'guineapig', 'cat']
+        
         soma = self.soma
         if species == 'mouse' and modelType == 'II':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007. as 
@@ -264,12 +265,30 @@ class BushyRothman(Bushy):
             if self.status['temperature'] == 38.:  # adjust for 2003 model conductance levels at 38
                 sf = 2  # Q10 of 2, 22->38C. (p3106, R&M2003c)
                 # note that kinetics are scaled in the mod file.
-            self.set_soma_size_from_Cm(12.0)
+            # self.set_soma_size_from_Cm(12.0)
+            # self.adjust_na_chans(soma, sf=sf)
+            # soma().kht.gbar = sf*nstomho(150.0, self.somaarea)
+            # soma().klt.gbar = sf*nstomho(200.0, self.somaarea)
+            # soma().ihvcn.gbar = sf*nstomho(20.0, self.somaarea)
+            # soma().leak.gbar = sf*nstomho(2.0, self.somaarea)
+            # self.axonsf = 0.57
+            self.set_soma_size_from_Cm(data.get('ionchannels', species='guineapig', cell_type='bushy-II',
+                field='soma_Cm', parameters='RM03'))
+            chdata = data.get('ionchannels', species='guineapig', cell_type='bushy-II',
+                field='soma_na_type', parameters='RM03')
             self.adjust_na_chans(soma, sf=sf)
-            soma().kht.gbar = sf*nstomho(150.0, self.somaarea)
-            soma().klt.gbar = sf*nstomho(200.0, self.somaarea)
-            soma().ihvcn.gbar = sf*nstomho(20.0, self.somaarea)
-            soma().leak.gbar = sf*nstomho(2.0, self.somaarea)
+            kht_gbar = data.get('ionchannels', species='guineapig', cell_type='bushy-II',
+                field='soma_kht_gbar', parameters='RM03')
+            klt_gbar = data.get('ionchannels', species='guineapig', cell_type='bushy-II',
+                field='soma_klt_gbar', parameters='RM03')
+            ihvcn_gbar = data.get('ionchannels', species='guineapig', cell_type='bushy-II',
+                field='soma_ih_gbar', parameters='RM03')
+            leak_gbar = data.get('ionchannels', species='guineapig', cell_type='bushy-II',
+                field='soma_leak_gbar', parameters='RM03')
+            soma().kht.gbar = sf*nstomho(kht_gbar, self.somaarea)
+            soma().klt.gbar = sf*nstomho(klt_gbar, self.somaarea)
+            soma().ihvcn.gbar = sf*nstomho(ihvcn_gbar, self.somaarea)
+            soma().leak.gbar = sf*nstomho(leak_gbar, self.somaarea)
             self.axonsf = 0.57
             
         elif species == 'guineapig' and modelType =='II-I':
