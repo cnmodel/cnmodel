@@ -3,7 +3,8 @@ from ._db import add_table_data
 """
 Ion channel density tables
 All of the ion channel densities for the models implemented in cnmodel
-are (or should be) stated here. 
+are (or should be) stated here, and should not be modified in the
+cnmodel code itself. 
 
 """
 
@@ -102,15 +103,26 @@ add_table_data('POK_channels', row_key='field', col_key='cell_type',
 This table describes the ion channel densities and voltage shifts for rat DCN pyramidal cells,
 from Kanold and Manis, 2001
 
+The table includes 2 additiona variants
+
 -----------------------------------------------------------------------------------------------------------------------------------
-               pyramidal   
+                  pyramidal   
                            
-soma_kd_gbar   1.8 [1]      
-soma_na_gbar   0.8±0.66 [2]
-soma_na_type   nacn  [1]   
-soma_ih_gbar   0.4 [2]     
-soma_kif_gbar
-soma_kis_gbar
+soma_napyr_gbar   350.0  [1]      
+soma_nap_gbar     0.
+soma_kdpyr_gbar   80.0   [1]
+soma_kcnq_gbar    0.
+soma_kif_gbar     150.0  [1]
+soma_kis_gbar     40.0   [1]
+soma_ihpyr_gbar   2.8    [1]     
+soma_leak_gbar    2.8    [1]
+soma_leak_erev    -62.0  [1]
+soma_e_na         50.    [1]
+soma_e_k          -81.5  [1]
+soma_e_h          -43.0  [1]
+soma_natype       napyr
+soma_Cap          12     [1]
+
 
 -----------------------------------------------------------------------------------------------------------------------------------
 
@@ -118,12 +130,141 @@ soma_kis_gbar
     Age P11-14, Temperature=22C
     Units are nS.
 
-[2] Derived from Rothman and manis, 2003, model I-II
-    Some low-voltage K current, for single spike near threshold (Xie and Manis, 2017)
-    
-[3] Derived from Rothman and manis, 2003, model II
-    Large amounts of low-voltage K current, and elevated HCN. Conductances
-    based on Rothman and Manis, 2003; concept from Cao and Oertel
-    
+""")
+
+add_table_data('CW_channels', row_key='field', col_key='cell_type', 
+               species='mouse', data=u"""
+
+This table describes the ion channel densities and voltage shifts
+for a mouse carthweel cell model.
+Ad-hoc model, based on a Purkinje cell model.
+
+
+-----------------------------------------------------------------------------------------------------------------------------------
+                   cartwheel   
+                           
+soma_narsg_gbar    500.0  [1]     
+soma_bkpkj_gbar    2.0
+soma_kpkj_gbar     100.   [1]
+soma_kpkj2_gbar    50.
+soma_kpkjslow_gbar 150    [1]
+soma_kpksk_gbar    25.0   [1]
+soma_lkpkj_gbar    5.0    [1]     
+soma_hpkj_gbar     5.0    [1]
+soma_e_na          50.    [1]
+soma_e_k           -80.0  [1]
+soma_hpkj_eh       -43.0  [1]
+soma_lkpkj_e       -65.0  [1]
+soma_e_ca          50.
+soma_na_type       narsg
+soma_pcabar        0.00015 [1]
+soma_Dia           18  
+
+-----------------------------------------------------------------------------------------------------------------------------------
+
+[1] Raman
 
 """)
+
+add_table_data('TV_channels', row_key='field', col_key='cell_type', 
+               species='mouse', data=u"""
+
+This table describes the ion channel densities and voltage shifts
+for a mouse tuberculoventral cell model.
+Ad-hoc model, based on the t-stellate cell model, but adjusted
+to match the data from Kuo and Trussell.
+
+-----------------------------------------------------------------------------------------------------------------------------------
+                  pyramidal   
+                           
+soma_napyr_gbar   350.0  [1]      
+soma_nap_gbar     0.
+soma_kdpyr_gbar   80.0   [1]
+soma_kcnq_gbar    0.
+soma_kif_gbar     150.0  [1]
+soma_kis_gbar     40.0   [1]
+soma_ihpyr_gbar   2.8    [1]     
+soma_leak_gbar    2.8    [1]
+soma_leak_erev    -62.0  [1]
+soma_e_na         50.    [1]
+soma_e_k          -81.5  [1]
+soma_e_h          -43.0  [1]
+soma_na_type      napyr
+soma_Cap          12     [1]
+
+
+-----------------------------------------------------------------------------------------------------------------------------------
+
+[1] Kuo-Trussell.
+
+
+""")
+
+add_table_data('sgc_channels', row_key='field', col_key='cell_type', 
+               species='mouse', data=u"""
+
+This table describes the ion channel densities (and voltage shifts if necessary)
+for different cell types in the original Rothman Manis 2003 model.
+Data from Table 1, except for "octopus" cells, which is modified (see note 3)
+
+-----------------------------------------------------------------------------------------------------------------------------------
+                    sgc-a         sgc-bm   
+                                        
+sgc_name            a             bm     
+soma_na_gbar        350.  [1]     350.  [1]
+soma_kht_gbar       58.0  [1]     58.0  [1]
+soma_klt_gbar       80.0  [1]     80.0  [1]
+soma_ihap_gbar      3.0   [1]     0.0   [1]
+soma_ihap_eh        -41.0 [1]     -41.0 [1]
+soma_ihbm_gbar      0.0   [1]     3.0   [1]
+soma_ihbm_eh        -41.0 [1]     -41.0 [1]
+soma_leak_gbar      2.0   [1]     2.0   [1]
+soma_leak_erev      -65   [1]     -65   [1]
+soma_na_type        jsrna [1]     jsrna [1]
+soma_Cap            12.0  [1]     12.0  [1]
+soma_e_k            -84   [1]     -84   [1]
+soma_e_na           50.   [1]     50.   [1]
+
+-----------------------------------------------------------------------------------------------------------------------------------
+
+[1] Liu, Manis, Davis, 2003
+    Age "P10" (cultured SGC cells), Temperature=22C; code translates to 34.
+    Units are nS.
+
+""")
+
+add_table_data('sgcgp_channels', row_key='field', col_key='cell_type', 
+               species='guineapig', data=u"""
+
+This table describes the ion channel densities (and voltage shifts if necessary)
+for different cell types in the original Rothman Manis 2003 model.
+Data from Table 1, except for "octopus" cells, which is modified (see note 3)
+
+-----------------------------------------------------------------------------------------------------------------------------------
+                    sgc-a         sgc-bm   
+                                        
+sgc_name            a             bm     
+soma_na_gbar        1000. [1]     1000. [1]
+soma_kht_gbar       150.0 [1]     150.0 [1]
+soma_klt_gbar       200.0 [1]     200.0 [1]
+soma_ihap_gbar      3.0   [1]     0.0   [1]
+soma_ihap_eh        -41.0 [1]     -41.0 [1]
+soma_ihbm_gbar      0.0   [1]     3.0   [1]
+soma_ihbm_eh        -41.0 [1]     -41.0 [1]
+soma_leak_gbar      2.0   [1]     2.0   [1]
+soma_leak_erev      -65   [1]     -65   [1]
+soma_na_type        jsrna [1]     jsrna [1]
+soma_Cap            12.0  [1]     12.0  [1]
+soma_e_k            -84   [1]     -84   [1]
+soma_e_na           50.   [1]     50.   [1]
+
+-----------------------------------------------------------------------------------------------------------------------------------
+
+[1] Liu, Manis, Davis, 2003
+    Age "P10" (cultured SGC cells), Temperature=22C; code translates to 34.
+    Units are nS.
+    Data are translated to guinea pig...
+
+""")
+
+

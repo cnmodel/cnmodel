@@ -1,9 +1,8 @@
 from neuron import h
 
 from .cell import Cell
-#from .. import synapses
+# from .. import synapses
 from ..util import nstomho
-#from .. import data
 from ..util import Params
 import numpy as np
 from .. import data
@@ -281,7 +280,7 @@ class BushyRothman(Bushy):
             pars = self.get_cellpars(dataset, species=species, celltype=celltype)
             self.set_soma_size_from_Cm(pars.cap)
             self.status['na'] = pars.natype
-            self.adjust_na_chans(soma, sf=1.0)
+            self.adjust_na_chans(soma, sf=sf)
             soma().kht.gbar = nstomho(pars.soma_kht_gbar, self.somaarea)
             soma().klt.gbar = nstomho(pars.soma_klt_gbar, self.somaarea)
             soma().ihvcn.gbar = nstomho(pars.soma_ih_gbar, self.somaarea)

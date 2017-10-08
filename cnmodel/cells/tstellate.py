@@ -1,6 +1,5 @@
 from neuron import h
 import numpy as np
-import neuron as nrn
 
 from .cell import Cell
 #from .. import synapses

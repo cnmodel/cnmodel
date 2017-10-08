@@ -52,6 +52,7 @@ ccivrange = {'mouse':
             'dstellate': {'pulse': [(-0.25, 0.25, 0.025)]},
             'dstellateeager': {'pulse': [(-0.6, 1.0, 0.025)]},
             'octopus': {'pulse': [(-2., 6., 0.2)]},
+            'sgc': {'pulse': [(-0.3, 0.6, 0.02)]},
             },
             'rat':
             {'pyramidal': {'pulse': [(-0.3, 0.3, 0.025), (-0.040, 0.025, 0.005)]}, # 'prepulse': [(-0.25, -0.25, 0.25)]},

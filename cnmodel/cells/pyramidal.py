@@ -1,8 +1,8 @@
 from neuron import h
 from ..util import nstomho
 import numpy as np
-
 from .cell import Cell
+from ..util import Params
 from .. import data
 
 __all__ = ['Pyramidal', 'PyramidalKanold']
@@ -167,6 +167,19 @@ class PyramidalKanold(Pyramidal, Cell):
         if debug:
             print "<< PYR: POK Pyramidal Cell created >>"
 
+    def get_cellpars(self, dataset, species='guineapig', celltype='II'):
+        cellcap = data.get(dataset, species=species, cell_type=celltype,
+            field='soma_Cap')
+        chtype = data.get(dataset, species=species, cell_type=celltype,
+            field='soma_natype')
+        pars = Params(cap=cellcap, natype=chtype)
+        for g in ['soma_napyr_gbar', 'soma_kdpyr_gbar', 'soma_kif_gbar', 'soma_kis_gbar',
+                  'soma_kcnq_gbar', 'soma_nap_gbar', 'soma_ihpyr_gbar', 'soma_leak_gbar',
+                  'soma_e_h','soma_leak_erev', 'soma_e_k', 'soma_e_na']:
+            pars.additem(g,  data.get(dataset, species=species, cell_type=celltype,
+            field=g))
+        return pars
+
     def species_scaling(self, species='rat', modelType='I', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
@@ -186,76 +199,69 @@ class PyramidalKanold(Pyramidal, Cell):
         silent : boolean (default: True)
             run silently (True) or verbosely (False)
         """
+        if modelType in ['I', 'POK']:
+            celltype = 'pyramidal'
+        elif modelType in ['II']:
+            celltype = 'pyramidal-II'
+        else:
+            celltype = modelType
+
+        dataset = 'POK_channels'
         
         soma = self.soma
-        if species == 'rat' and modelType in ['I', 'POK']:  # canonical K&M2001 model cell
-            self.set_soma_size_from_Cm(12.0)
+        if species in ['rat', 'mouse'] and modelType in ['I', 'POK', 'II']:  # canonical K&M2001 model cell
             self._valid_temperatures = (34.,)
             if self.status['temperature'] is None:
-                self.set_temperature(34.)
-            soma().napyr.gbar = nstomho(350, self.somaarea)
-            soma().nap.gbar = 0.0
-            soma().kdpyr.gbar = nstomho(80, self.somaarea) # used to be 20?
-            soma().kcnq.gbar = 0 # does not exist in canonical model.
-            soma().kif.gbar = nstomho(150, self.somaarea)
-            soma().kis.gbar = nstomho(40, self.somaarea)
-            soma().ihpyr.gbar = nstomho(2.8, self.somaarea)
-            soma().leak.gbar = nstomho(2.8, self.somaarea)
-            soma().leak.erev = -62  # override default values in cell.py
-            soma().ena = 50.0
-            soma().ek = -81.5
-            soma().ihpyr.eh = -43
+              self.set_temperature(34.)
+            pars = self.get_cellpars(dataset, species=species, celltype=celltype)
+            self.set_soma_size_from_Cm(pars.cap)
+            self.status['na'] = pars.natype
+            soma().napyr.gbar = nstomho(pars.soma_napyr_gbar, self.somaarea)
+            soma().nap.gbar = nstomho(pars.soma_nap_gbar, self.somaarea) # does not exist in canonical model
+            soma().kdpyr.gbar = nstomho(pars.soma_kdpyr_gbar, self.somaarea)
+            soma().kcnq.gbar = nstomho(pars.soma_kcnq_gbar, self.somaarea) # does not exist in canonical model.
+            soma().kif.gbar = nstomho(pars.soma_kif_gbar, self.somaarea)
+            soma().kis.gbar = nstomho(pars.soma_kis_gbar, self.somaarea)
+            soma().ihpyr.gbar = nstomho(pars.soma_ihpyr_gbar, self.somaarea)
+            soma().leak.gbar = nstomho(pars.soma_leak_gbar, self.somaarea)
+            soma().leak.erev = pars.soma_leak_erev
+            soma().ena = pars.soma_e_na
+            soma().ek = pars.soma_e_k
+            soma().ihpyr.eh = pars.soma_e_h
 
-        elif species == 'rat' and modelType == 'II':
-            """
-            Modified canonical K&M2001 model cell
-            In this model version, the specific membrane capacitance is modified
-            so that the overall membrane time constant is consistent with experimental
-            measures in slices. However, this is not a physiological value. Attempts
-            to use the normal 1 uF/cm2 value were unsuccessful in establishing the expected
-            ~12 msec time constant.
-            This model also adds a KCNQ channel, as described by Li et al., 2012.
-            """
-            self.c_m = 6.0
-            self.set_soma_size_from_Diam(30.0)
-            # self.set_soma_size_from_Cm(80.0)
-            # print 'diameter: %7.1f' % self.soma.diam
-            self._valid_temperatures = (34.,)
-            if self.status['temperature'] is None:
-                self.set_temperature(34.)
-            self.refarea = self.somaarea
-            soma().napyr.gbar = nstomho(550, self.refarea)
-            soma().nap.gbar = nstomho(60.0, self.refarea)
-            soma().kcnq.gbar = nstomho(2, self.refarea)  # pyramidal cells have kcnq: Li et al, 2011 (Thanos)
-            soma().kdpyr.gbar = nstomho(180, self.refarea) # Normally 80.
-            soma().kif.gbar = nstomho(150, self.refarea) # normally 150
-            soma().kis.gbar = nstomho(40, self.refarea) # 40
-            soma().ihpyr.gbar = nstomho(2.8, self.refarea)
-            soma().leak.gbar = nstomho(0.5, self.refarea)
-            soma().leak.erev = -62.  # override default values in cell.py
-            soma().ena = 50.0
-            soma().ek = -81.5
-            soma().ihpyr.eh = -43
-            if not self.status['dendrites']:
-                self.add_dendrites()
+        # elif species in 'rat' and modelType == 'II':
+        #     """
+        #     Modified canonical K&M2001 model cell
+        #     In this model version, the specific membrane capacitance is modified
+        #     so that the overall membrane time constant is consistent with experimental
+        #     measures in slices. However, this is not a physiological value. Attempts
+        #     to use the normal 1 uF/cm2 value were unsuccessful in establishing the expected
+        #     ~12 msec time constant.
+        #     This model also adds a KCNQ channel, as described by Li et al., 2012.
+        #     """
+        #     self.c_m = 6.0
+        #     self.set_soma_size_from_Diam(30.0)
+        #     # self.set_soma_size_from_Cm(80.0)
+        #     # print 'diameter: %7.1f' % self.soma.diam
+        #     self._valid_temperatures = (34.,)
+        #     if self.status['temperature'] is None:
+        #         self.set_temperature(34.)
+        #     self.refarea = self.somaarea
+        #     soma().napyr.gbar = nstomho(550, self.refarea)
+        #     soma().nap.gbar = nstomho(60.0, self.refarea)
+        #     soma().kcnq.gbar = nstomho(2, self.refarea)  # pyramidal cells have kcnq: Li et al, 2011 (Thanos)
+        #     soma().kdpyr.gbar = nstomho(180, self.refarea) # Normally 80.
+        #     soma().kif.gbar = nstomho(150, self.refarea) # normally 150
+        #     soma().kis.gbar = nstomho(40, self.refarea) # 40
+        #     soma().ihpyr.gbar = nstomho(2.8, self.refarea)
+        #     soma().leak.gbar = nstomho(0.5, self.refarea)
+        #     soma().leak.erev = -62.  # override default values in cell.py
+        #     soma().ena = 50.0
+        #     soma().ek = -81.5
+        #     soma().ihpyr.eh = -43
+        #     if not self.status['dendrites']:
+        #         self.add_dendrites()
 
-        elif species == 'mouse' and modelType in ['I', 'POK']:  # canonical K&M2001 model cell - faked for mouse
-            self.set_soma_size_from_Cm(12.0)
-            self._valid_temperatures = (34.,)
-            if self.status['temperature'] is None:
-                self.set_temperature(34.)
-            soma().napyr.gbar = nstomho(350, self.somaarea)
-            soma().nap.gbar = 0.0
-            soma().kdpyr.gbar = nstomho(80, self.somaarea) # used to be 20?
-            soma().kcnq.gbar = 0 # does not exist in canonical model.
-            soma().kif.gbar = nstomho(150, self.somaarea)
-            soma().kis.gbar = nstomho(40, self.somaarea)
-            soma().ihpyr.gbar = nstomho(2.8, self.somaarea)
-            soma().leak.gbar = nstomho(2.8, self.somaarea)
-            soma().leak.erev = -62  # override default values in cell.py
-            soma().ena = 50.0
-            soma().ek = -81.5
-            soma().ihpyr.eh = -43
         else:
             raise ValueError('Species %s or species-modelType %s is not implemented for Pyramidal cells' % (species, modelType))
 
