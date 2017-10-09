@@ -289,52 +289,31 @@ class SGC_TypeI(SGC):
             self._valid_temperatures = (34.,)
             if self.status['temperature'] is None:
                 self.set_temperature(34.)
-            
-            par = self.get_cellpars('sgc_channels', species='mouse', celltype=celltype)
-            self.set_soma_size_from_Cm(par.soma_Cap)
-            self.adjust_na_chans(soma, gbar=par.soma_na_gbar)
-            soma().kht.gbar = nstomho(par.soma_kht_gbar, self.somaarea)
-            soma().klt.gbar = nstomho(par.soma_klt_gbar, self.somaarea)
-            if celltype == 'sgc-a':
-                soma().ihsgcApical.gbar = nstomho(par.soma_ihap_gbar, self.somaarea)
-                soma().ihsgcApical.eh = par.soma_ihap_eh
-            elif celltype == 'sgc-bm':
-                soma().ihsgcBasalMiddle.gbar = nstomho(par.soma_ihbm_gbar,  self.somaarea)
-                soma().ihsgcBasalMiddle.eh = par.soma_ihbm_eh
-            else:
-                raise ValueError('Ihsgc modelType %s not recognized for species %s' % (celltype, species))
-            soma().leak.gbar = nstomho(par.soma_leak_gbar, self.somaarea)
-            soma().leak.erev = nstomho(par.soma_leak_erev, self.somaarea)
-
+            par = self.get_cellpars('sgc_mouse_channels', species=species, celltype=celltype)
         elif species == 'guineapig':
             # guinea pig data from Rothman and Manis, 2003, modelType II
             self._valid_temperatures = (22.,)
             if self.status['temperature'] is None:
                 self.set_temperature(22.)
-            
-            par = self.get_cellpars('sgcgp_channels', species=species, celltype=celltype)
-            self.set_soma_size_from_Cm(par.soma_Cap)
-            self.adjust_na_chans(soma, gbar=par.soma_na_gbar)
-            soma().kht.gbar = nstomho(par.soma_kht_gbar, self.somaarea)
-            soma().klt.gbar = nstomho(par.soma_klt_gbar, self.somaarea)
-            if celltype == 'sgc-a':
-                soma().ihsgcApical.gbar = nstomho(par.soma_ihap_gbar, self.somaarea)
-                soma().ihsgcApical.eh = par.soma_ihap_eh
-            elif celltype == 'sgc-bm':
-                soma().ihsgcBasalMiddle.gbar = nstomho(par.soma_ihbm_gbar,  self.somaarea)
-                soma().ihsgcBasalMiddle.eh = par.soma_ihbm_eh
-            else:
-                raise ValueError('Ihsgc modelType %s not recognized for species %s' % (celltype, species))
-            soma().leak.gbar = nstomho(par.soma_leak_gbar, self.somaarea)
-            soma().leak.erev = nstomho(par.soma_leak_erev, self.somaarea)
-
-
+            par = self.get_cellpars('sgc_guineapig_channels', species=species, celltype=celltype)
+                        
+        self.set_soma_size_from_Cm(par.soma_Cap)
+        self.adjust_na_chans(soma, gbar=par.soma_na_gbar)
+        soma().kht.gbar = nstomho(par.soma_kht_gbar, self.somaarea)
+        soma().klt.gbar = nstomho(par.soma_klt_gbar, self.somaarea)
+        if celltype == 'sgc-a':
+            soma().ihsgcApical.gbar = nstomho(par.soma_ihap_gbar, self.somaarea)
+            soma().ihsgcApical.eh = par.soma_ihap_eh
+        elif celltype == 'sgc-bm':
+            soma().ihsgcBasalMiddle.gbar = nstomho(par.soma_ihbm_gbar,  self.somaarea)
+            soma().ihsgcBasalMiddle.eh = par.soma_ihbm_eh
         else:
-            raise ValueError('Species %s or species-modelType %s is not recognized for SGC cells' % (species, modelType))
+            raise ValueError('Ihsgc modelType %s not recognized for species %s' % (celltype, species))
+        soma().leak.gbar = nstomho(par.soma_leak_gbar, self.somaarea)
+        soma().leak.erev = par.soma_leak_erev
 
         self.status['species'] = species
         self.status['modelType'] = modelType
-#        self.cell_initialize(showinfo=False)
         self.check_temperature()
         if not silent:
             print 'set cell as: ', species

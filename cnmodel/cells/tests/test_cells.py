@@ -67,6 +67,11 @@ def test_pyramidal():
     cell = cells.Pyramidal.create(species='rat', modelType='I')
     CellTester('pyramidal_rat_I', cell)
 
+def test_tuberculoventral():
+    reset(raiseError=False)
+    cell = cells.Tuberculoventral.create(species='mouse', modelType='TVmouse')
+    CellTester('tuberculoventral_mouse_I', cell)
+
 def test_cartwheel():
     reset(raiseError=False)
     cell = cells.Cartwheel.create(species='mouse', modelType='I')

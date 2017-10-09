@@ -80,10 +80,9 @@ class Cell(object):
         Set the temperature setting for this cell. 
         """
         if self.status['decorator'] is None:
-            self.status['temperature'] = temperature
-            species = self.status['species']
-            modelType = self.status['modelType']
-            self.species_scaling(species=species, modelType=modelType)
+            if self.status['temperature'] is None:  # only if not already set
+                self.status['temperature'] = temperature
+                self.species_scaling(species=self.status['species'], modelType=self.status['modelType'])
         else:
             self.status['temperature'] = temperature
             self.decorate()  # call the decorator
