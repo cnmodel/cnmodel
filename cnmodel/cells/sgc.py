@@ -228,9 +228,8 @@ class SGC_TypeI(SGC):
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
             self.decorate()
-#        print 'Mechanisms inserted: ', self.mechanisms
+        self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
         self.get_mechs(self.soma)
-#        self.cell_initialize(vrange=self.vrange)
         if debug:
             print "<< SGC: Spiral Ganglion Cell created >>"
 

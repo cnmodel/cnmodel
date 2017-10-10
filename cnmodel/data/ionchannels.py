@@ -79,20 +79,54 @@ soma_ih_eh          -43   [1]     -43   [1]     -43   [1]    -43   [2]
 
 -----------------------------------------------------------------------------------------------------------------------------------
 
-[1] Rothman and Manis, 2003
-    Age "adult", Temperature=22C
+[1] Uses channels from Rothman and Manis, 2003
+    Conductances are for Mouse bushy cells
+    Xie and Manis, 2013
+    Age "adult", Temperature=34C
     Units are nS.
 
 [2] Rothman and manis, 2003, model I-II
     Some low-voltage K current, based on observations of
     a single spike near threshold and regular firing for higher
     currents (Xie and Manis, 2017)
-    
-[3] Derived from Rothman and Manis, 2003, model II
-    Large amounts of low-voltage K current, and elevated HCN. Conductances
-    based on Rothman and Manis, 2003; concept from Cao and Oertel
 
-[4] Designation for elevated LTK and Ih for octopus cells
+
+""")
+
+add_table_data('mGBC_channels', row_key='field', col_key='cell_type', 
+               species='mouse', data=u"""
+
+This table describes the ion channel densities (and voltage shifts if necessary)
+for different cell types based on the Xie and Manis 2013 models for mouse.
+
+This table is EXPERIMENTAL and should not be used for production-level simulations.
+
+-----------------------------------------------------------------------------------------------------------------------------------
+                    bushy-II 
+                    
+mGBC_name           II       
+soma_na_gbar        1600. [1]
+soma_kht_gbar       58.0  [1]
+soma_klt_gbar       40.0  [1]
+soma_ka_gbar        0.0   [1]
+soma_ih_gbar        7.50  [1]
+soma_leak_gbar      0.04  [1]
+soma_leak_erev      -65   [1]
+soma_na_type        jsrna [1]
+soma_ih_type        ihvcn [1]
+soma_Cap            26.0  [1]
+soma_na_vshift      4.3   [1]
+soma_e_k            -84   [1]
+soma_e_na           50.   [1]
+soma_ih_eh          -43   [1]
+
+-----------------------------------------------------------------------------------------------------------------------------------
+
+[1] Uses channels from Rothman and Manis, 2003
+    Conductances are for Mouse bushy cells
+    Xie and Manis, 2013
+    Age "adult", Temperature=34C
+    Units are nS.
 
 """)
 

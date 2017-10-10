@@ -40,7 +40,7 @@ class Cell(object):
         # Record synaptic inputs and projections
         self.inputs = []  # inputs are recorded - synapse object, post_opts and kwds
         self.outputs = []
-        
+        self.initial_mechanisms = None
         # each cell has the following parameters:
         self.totcap = None  # total membrane capacitance (somatic)
         self.somaarea = None  # total soma area
@@ -405,6 +405,7 @@ class Cell(object):
         """
         return a list of the mechanisms that are present in a section
         a mechanism is required to have a gbar variable.
+        This routine should be called at the end of every cell creation routine.
         """
         u=dir(section())
         mechs = []
@@ -455,15 +456,74 @@ class Cell(object):
         print('-'*32)
         
     def print_all_mechs(self):
-        print('\nAll mechanisms in all sections: ')
+        print(self.get_all_mechs())
+
+    def get_all_mechs(self):
+        """
+        return a string with all the mechanisms
+        """
+        res = '\nAll mechanisms in all sections: \n'
         for part in self.all_sections.keys():
-            print('Cell part: %s' % part )
+            res += ('Cell part: %s\n' % part )
             for sec in self.all_sections[part]:
-                print('   Section: ', sec)
-                print('        ', self.get_mechs(sec))
+                res += ('   Section:\n', sec)
+                res += ('        ', self.get_mechs(sec)) + '\n'
                 for m in self.get_mechs(sec):
                     gx = eval('sec().'+m+'.gbar')
-                    print('            %s: %f' % (m, gx))
+                    res += ('            %s: %f\n' % (m, gx))
+        return res
+
+    def save_all_mechs(self):
+        """
+        get and save all of the initial mechanisms and their
+        maximal conductances when the cell is created.
+        We use this to get and check values later when the run
+        is actually done.
+        Note: some cell constructions may require that save_all_mechs
+        be done again after the initial "build". In this case,
+        setting the cell's initial_mechanisms property to None must
+        be done to allow a new configuration of mechanisms to be saved.
+        
+        """
+        if self.initial_mechanisms is not None:
+            raise ValueError('Cells: Attempting to save initial mechanisms more than once')
+        self.initial_mechanisms = {}
+        for part in self.all_sections.keys():
+            self.initial_mechanisms[part] = {}
+#            print('Cell part: %s' % part )
+            for sec in self.all_sections[part]:
+#                print('   Section: ', sec)
+#                print('        ', self.get_mechs(sec))
+                self.initial_mechanisms[part][sec] = {}
+                for m in self.get_mechs(sec):
+                    gx = eval('sec().'+m+'.gbar')
+#                    print('            %s: %f' % (m, gx))
+                    self.initial_mechanisms[part][sec][m] = gx
+
+    def check_all_mechs(self):
+        """
+        Check that all mechanisms are the same as when we initially created the cell
+        """
+        check = {}
+        for part in self.all_sections.keys():
+            if part not in self.initial_mechanisms.keys():
+                raise ValueError('Cell part %s was not in the original cell')
+            check[part] = {}
+            for sec in self.all_sections[part]:
+                #print('   Section: ', sec)
+                #print('        ', self.get_mechs(sec))
+                if sec not in self.initial_mechanisms[part].keys():
+                    raise ValueError('Cell section was not in the original cell: ', sec)
+                check[part][sec] = sec
+                for m in self.get_mechs(sec):
+                    gx = eval('sec().'+m+'.gbar')
+                    #print('            %s: %f' % (m, gx))
+                    if m not in self.initial_mechanisms[part][sec].keys():
+                        raise ValueError('Mechanism %s was not in cell part %s, section = ' % (m, part), sec)
+                    if self.initial_mechanisms[part][sec][m] != gx:
+                        raise ValueError('Conductance for mechanism %s in cell part %s has changed (%f, %f), section = ' %
+                            (m, part, self.initial_mechanisms[part][sec][m], gx), sec)
+        return True
 
 
     def i_currents(self, V):
