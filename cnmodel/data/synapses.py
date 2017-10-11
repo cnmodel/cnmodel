@@ -64,7 +64,7 @@ n_rsites     100 [5]           4 [6]              1 [4]             1 [4]       
     A value of 4 is included here to correspond to measures in Cao and Oertel (2010)
     (see note [2])
 
-[7] (Xie and Manis, unpublished, 2017):
+[7] (Xie and Manis, Frontiers in Neural Circuits, 2017):
     Measurements from CBA/CaJ mouse "radiate" multipolar cells in the AVCN.
     Single terminal conductance = (1.2 ± 0.70 nA/70 mV)/ 35 inputs = 0.490 ± 0.286 nS
     (see connections.py) 

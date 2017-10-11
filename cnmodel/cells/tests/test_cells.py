@@ -21,21 +21,42 @@ def test_bushy21():
     cell = cells.Bushy.create(species='guineapig', modelType='II-I')
     CellTester('bushy_guineapig-typeII-I', cell)
 
+def test_bushy_mouse():
+    reset(raiseError=False)
+    cell = cells.Bushy.create(species='mouse', modelType='II')
+    CellTester('bushy-mouse-typeII', cell)
+    
 def test_tstellate():
     reset(raiseError=False)
     cell = cells.TStellate.create(species='guineapig', modelType='I-c')
     CellTester('tstellate_guineapig-typeI-c', cell)
 
+def test_tstellate_mouse():
+    reset(raiseError=False)
+    cell = cells.TStellate.create(species='mouse', modelType='I-c')
+    CellTester('tstellate_mouse-typeI-c', cell)
+    
 def test_tstellatet():
     reset(raiseError=False)
     cell = cells.TStellate.create(species='guineapig', modelType='I-t')
     CellTester('tstellate_guineapig-typeI-t', cell)
+
+# not implemented yet
+# def test_tstellatet_mouse():
+#     reset(raiseError=False)
+#     cell = cells.TStellate.create(species='mouse', modelType='I-t')
+#     CellTester('tstellate_mouse-typeI-t', cell)
 
 def test_dstellate():
     reset(raiseError=False)
     cell = cells.DStellate.create(species='guineapig', modelType='I-II')
     CellTester('dstellate_guineapig-typeI-II', cell)
 
+def test_dstellate_mouse():
+    reset(raiseError=False)
+    cell = cells.DStellate.create(species='mouse', modelType='I-II')
+    CellTester('dstellate_mouse-typeI-II', cell)
+    
 def test_octopus():
     reset(raiseError=False)
     cell = cells.Octopus.create(species='guineapig', modelType='II-o')
@@ -45,6 +66,11 @@ def test_pyramidal():
     reset(raiseError=False)
     cell = cells.Pyramidal.create(species='rat', modelType='I')
     CellTester('pyramidal_rat_I', cell)
+
+def test_tuberculoventral():
+    reset(raiseError=False)
+    cell = cells.Tuberculoventral.create(species='mouse', modelType='TVmouse')
+    CellTester('tuberculoventral_mouse_I', cell)
 
 def test_cartwheel():
     reset(raiseError=False)

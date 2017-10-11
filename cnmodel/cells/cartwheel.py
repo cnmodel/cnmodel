@@ -1,8 +1,10 @@
 from neuron import h
-import neuron as nrn
 from ..util import nstomho
+from ..util import Params
 import numpy as np
 from .cell import Cell
+from .. import data
+from .. import synapses
 
 __all__ = ['Cartwheel', 'CartwheelDefault']
 
@@ -33,7 +35,7 @@ class Cartwheel(Cell):
             AMPAScale : float to scale the ampa currents
         
         """
-        pre_sec = terminal.section
+        self.pre_sec = terminal.section
         pre_cell = terminal.cell
         post_sec = self.soma
 
@@ -62,7 +64,7 @@ class Cartwheel(Cell):
 
     def make_terminal(self, post_cell, term_type, **kwds):
         if term_type == 'simple':
-            return synapses.SimpleTerminal(pre_sec, post_cell, 
+            return synapses.SimpleTerminal(self.pre_sec, post_cell, 
                                            spike_source=self.spike_source, **kwds)
         elif term_type == 'multisite':
             if post_cell.type == 'pyramidal':
@@ -75,8 +77,8 @@ class Cartwheel(Cell):
                 raise NotImplementedError("No knowledge as to how to connect Cartwheel cell to cell type %s" %
                                         type(post_cell))
             
-            pre_sec = self.soma
-            return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, 
+            self.pre_sec = self.soma
+            return synapses.StochasticTerminal(self.pre_sec, post_cell, nzones=nzones, 
                                             delay=delay, **kwds)
         else:
             raise ValueError("Unsupported terminal type %s" % term_type)
@@ -149,7 +151,7 @@ class CartwheelDefault(Cartwheel, Cell):
             instantiate a basic soma-only ("point") model
             """
             soma = h.Section(name="Cartwheel_Soma_%x" % id(self)) # one compartment of about 29000 um2
-            cm = 1
+#            cm = 1
             soma.nseg = 1
             self.add_section(soma, 'soma')
         else:
@@ -161,26 +163,39 @@ class CartwheelDefault(Cartwheel, Cell):
 
         # decorate the morphology with ion channels
         if decorator is None:   # basic model, only on the soma
-            v_potassium = -80       # potassium reversal potential
-            v_sodium = 50           # sodium reversal potential
+            # v_potassium = -80       # potassium reversal potential
+            # v_sodium = 50           # sodium reversal potential
 
             self.mechanisms = ['naRsg', 'bkpkj', 'hpkj', 'kpkj', 'kpkj2',
                                'kpkjslow', 'kpksk', 'lkpkj', 'cap']
             for mech in self.mechanisms:
                 self.soma.insert(mech)
             self.soma.insert('cadiff')
-           # soma().kpksk.gbar = 0.002
-           # soma().lkpkj.gbar = 3e-4
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
             self.decorate()
-#        print 'Mechanisms inserted: ', self.mechanisms
+        self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
         self.get_mechs(self.soma)
-#        self.cell_initialize(vrange=self.vrange)
         
         if debug:
             print "<< Cartwheel: Modified version of Raman Purkinje cell model created >>"
 
+    def get_cellpars(self, dataset, species='guineapig', celltype='II'):
+        somaDia = data.get(dataset, species=species, cell_type=celltype,
+            field='soma_Dia')
+        chtype = data.get(dataset, species=species, cell_type=celltype,
+            field='soma_na_type')
+        pcabar = data.get(dataset, species=species, cell_type=celltype,
+            field='soma_pcabar')
+        pars = Params(soma_Dia=somaDia, soma_natype=chtype, soma_pcabar=pcabar)
+        for g in ['soma_narsg_gbar', 'soma_kpkj_gbar', 'soma_kpkj2_gbar', 'soma_kpkjslow_gbar',
+                  'soma_kpksk_gbar', 'soma_lkpkj_gbar', 'soma_bkpkj_gbar', 'soma_hpkj_gbar',
+                  'soma_hpkj_eh','soma_lkpkj_e', 'soma_e_k', 'soma_e_na', 'soma_e_ca',
+                  ]:
+            pars.additem(g,  data.get(dataset, species=species, cell_type=celltype,
+            field=g))
+        return pars
+        
     def species_scaling(self, silent=True, species='mouse', modelType='I'):
         """
         Adjust all of the conductances and the cell size according to the species requested.
@@ -207,34 +222,30 @@ class CartwheelDefault(Cartwheel, Cell):
             raise ValueError ('Cartwheel species: only "mouse" is recognized')
         if modelType is not 'I':
             raise ValueError ('Cartwheel modelType: only "I" is recognized')
-        soma = self.soma
-        dia = 18.
-        self.set_soma_size_from_Diam(dia)# if species == 'rat' and modelType == 'I':
         self._valid_temperatures = (34.,)
         if self.status['temperature'] is None:
             self.set_temperature(34.)
-        #self.print_mechs(self.soma)
-        #     self.set_soma_size_from_Cm(12.0)
-        self.soma().bkpkj.gbar = nstomho(2., self.somaarea) # 2030
-        self.soma().hpkj.gbar = nstomho(5, self.somaarea) # 29
-        self.soma().kpkj.gbar = nstomho(100, self.somaarea) # 1160
-        self.soma().kpkj2.gbar = nstomho(50, self.somaarea) #579
-        self.soma().kpkjslow.gbar = nstomho(150, self.somaarea) # 1160
-        self.soma().kpksk.gbar = nstomho(25, self.somaarea) # 2900
-        self.soma().lkpkj.gbar = nstomho(5, self.somaarea) # 14.5
-        self.soma().naRsg.gbar = nstomho(500, self.somaarea)  # 4340
-        self.soma().cap.pcabar = 0.00015 # * (dia/2.)**2/(21./2.)**2 # 0.00005
-        self.soma().ena = 50
-        self.soma().ek = -80
-        self.soma().lkpkj.e = -65
-        self.soma().hpkj.eh = -43
-        self.soma().eca = 50
-        # else:
-        #     raise ValueError('Species %s or species-modelType %s is not recognized for T-stellate cells' % (species, modelType))
-
+        
+        pars = self.get_cellpars('CW_channels', species=species, celltype='cartwheel')
+        self.set_soma_size_from_Diam(pars.soma_Dia)
+        self.soma().bkpkj.gbar = nstomho(pars.soma_bkpkj_gbar, self.somaarea)
+        self.soma().hpkj.gbar = nstomho(pars.soma_hpkj_gbar, self.somaarea)
+        self.soma().kpkj.gbar = nstomho(pars.soma_kpkj_gbar, self.somaarea)
+        self.soma().kpkj2.gbar = nstomho(pars.soma_kpkj2_gbar, self.somaarea)
+        self.soma().kpkjslow.gbar = nstomho(pars.soma_kpkjslow_gbar, self.somaarea)
+        self.soma().kpksk.gbar = nstomho(pars.soma_kpksk_gbar, self.somaarea)
+        self.soma().lkpkj.gbar = nstomho(pars.soma_lkpkj_gbar, self.somaarea)
+        self.soma().naRsg.gbar = nstomho(pars.soma_narsg_gbar, self.somaarea)
+        self.soma().cap.pcabar = pars.soma_pcabar
+        self.soma().ena = pars.soma_e_na # 50
+        self.soma().ek = pars.soma_e_k # -80
+        self.soma().lkpkj.e = pars.soma_lkpkj_e  #-65
+        self.soma().hpkj.eh = pars.soma_hpkj_eh  #-43
+        self.soma().eca = pars.soma_e_ca # 50
+        
+        self.status['na'] = pars.soma_natype
         self.status['species'] = species
         self.status['modelType'] = modelType
-#        self.cell_initialize(showinfo=False)
         self.check_temperature()
         if not silent:
             print 'set cell as: ', species

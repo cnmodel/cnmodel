@@ -63,6 +63,7 @@ class VCCurve(Protocol):
             The Cell instance to test.
         """
         self.reset()
+        self.cell = cell
         try:
             (vmin, vmax, vstep) = vcrange  # unpack the tuple...
         except:
@@ -98,6 +99,7 @@ class VCCurve(Protocol):
             vstim.amp2 = self.voltage_cmd[i]
             custom_init(v_init=-60.)
             h.tstop = tend
+            self.cell.check_all_mechs()
             while h.t < h.tstop:
                     h.fadvance()
             self.voltage_traces.append(self['v_soma'])
@@ -113,8 +115,8 @@ class VCCurve(Protocol):
         """
         Im = self.current_traces
         steps = len(Im)
-        steadyStop = (self.durs[0] + self.durs[1]) / self.dt
-        steadyStart = steadyStop - (self.durs[1]*window) / self.dt
+        steadyStop = int((self.durs[0] + self.durs[1]) / self.dt)
+        steadyStart = int(steadyStop - (self.durs[1]*window) / self.dt)
         Isteady = [Im[i][steadyStart:steadyStop].mean() for i in range(steps)]
         return np.array(Isteady)
 
@@ -126,8 +128,8 @@ class VCCurve(Protocol):
         """
         Im = self.current_traces
         steps = len(Im)
-        peakStop = (self.durs[0] + window*self.durs[1]) / self.dt
-        peakStart = self.durs[0] / self.dt
+        peakStop = int((self.durs[0] + window*self.durs[1]) / self.dt)
+        peakStart = int(self.durs[0] / self.dt)
         Vhold = self.amps[0] # np.mean([self.voltage_traces[i][:peakStart].mean() for i in range(steps)])
         Ipeak = []
         for i in range(steps):

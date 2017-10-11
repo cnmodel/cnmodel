@@ -25,7 +25,7 @@ h.celsius = 22
 default_durs = [10., 100., 20.]
 cclamp = False
 
-cellinfo = {'types': ['bushy', 'bushycoop', 'stellate', 'stellatenav11', 'dstellate', 'dstellateeager', 'sgc',
+cellinfo = {'types': ['bushy', 'bushycoop', 'tstellate', 'tstellatenav11', 'dstellate', 'dstellateeager', 'sgc',
                       'cartwheel', 'pyramidal', 'octopus', 'tuberculoventral'],
             'morphology': ['point', 'waxon', 'stick'],
             'nav': ['std', 'jsrna', 'nav11', 'nacncoop'],
@@ -52,6 +52,7 @@ ccivrange = {'mouse':
             'dstellate': {'pulse': [(-0.25, 0.25, 0.025)]},
             'dstellateeager': {'pulse': [(-0.6, 1.0, 0.025)]},
             'octopus': {'pulse': [(-2., 6., 0.2)]},
+            'sgc': {'pulse': [(-0.3, 0.6, 0.02)]},
             },
             'rat':
             {'pyramidal': {'pulse': [(-0.3, 0.3, 0.025), (-0.040, 0.025, 0.005)]}, # 'prepulse': [(-0.25, -0.25, 0.25)]},
@@ -66,11 +67,11 @@ scale = {'bushy': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
                 'crossing', [0, -60]),
         'bushycoop': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
                 'crossing', [0, -60]),
-        'stellate': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
+        'tstellate': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
             'crossing', [0, -60]),
-        'stellatenav11': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
+        'tstellatenav11': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
             'crossing', [0, -60]),
-        'steldend': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
+        'tstellatedend': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
             'crossing', [0, -60]),
         'dstellate': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
             'crossing', [0, -60]),
@@ -119,6 +120,7 @@ class Tests():
         elif args.celltype == 'bushy' and args.morphology == 'point':
             cell = cells.Bushy.create(model='RM03', species=args.species, modelType=args.type,
                 ttx=args.ttx, nach=args.nav, debug=debugFlag)
+#            cell.soma().klt.gbar = 0.0003
 
         elif args.celltype == 'bushy' and args.morphology == 'waxon':
             cell = cells.Bushy.create(model='RM03', species=args.species, modelType=args.type,
@@ -138,21 +140,21 @@ class Tests():
         #
         # T-stellate tests
         #
-        elif args.celltype == 'stellate' and args.morphology == 'point':
+        elif args.celltype == 'tstellate' and args.morphology == 'point':
              cell = cells.TStellate.create(model='RM03', species=args.species, modelType=args.type,
                  nach=args.nav, ttx=args.ttx, debug=debugFlag)
 
-        elif args.celltype == 'stellate' and args.morphology == 'stick':
+        elif args.celltype == 'tstellate' and args.morphology == 'stick':
              cell = cells.TStellate.create(model='RM03', species=args.species, modelType=args.type,
                  nach=args.nav, ttx=args.ttx, debug=debugFlag, 
                  morphology='cnmodel/morphology/tstellate_stick.hoc', decorator=True)
 
-        elif args.celltype == 'stellatenav11' and args.morphology == 'point':  # note this uses a different model...
+        elif args.celltype == 'tstellatenav11' and args.morphology == 'point':  # note this uses a different model...
             print 'test_cells: Stellate NAV11'
             cell = cells.TStellateNav11.create(model='Nav11', species=args.species, modelType=None,
                 ttx=args.ttx, debug=debugFlag)
 
-        elif args.celltype == 'stellatenav11' and args.morphology == 'stick':  # note this uses a different model...
+        elif args.celltype == 'tstellatenav11' and args.morphology == 'stick':  # note this uses a different model...
             cell = cells.TStellateNav11.create(model='Nav11', species=args.species, modelType=None, 
                 morphology='cnmodel/morphology/tstellate_stick.hoc', decorator=True, 
                 ttx=args.ttx, debug=debugFlag,)

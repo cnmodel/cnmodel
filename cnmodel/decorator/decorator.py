@@ -172,7 +172,7 @@ class Decorator():
             gbar = (gbar - gminf) * np.exp(-dist/rate) + gminf
         if gbar < 0.:
             gbar = 0.
-        print 'gbaradjust: orig/adj: ', gbar_orig, gbar, method, dist, sectype
+        #print 'gbaradjust: orig/adj: ', gbar_orig, gbar, method, dist, sectype
         return gbar
 
     def channelValidate(self, cell, verify=False):
@@ -190,7 +190,8 @@ class Decorator():
             if sectype not in cell.channelMap.keys():
                 if sectype in ['undefined']:  # skip undefined sections
                     continue
-                print 'Validation: encountered unknown section group type: %s  Cannot Validate' % sectype
+                print '\033[1;31;40m Validation: encountered unknown section group type: %s  Cannot Validate' % sectype
+                print 'Cell morphology file: %s \033[0m' % cell.morphology_file
                 continue
 #            print 'Validating Section: %s' % s
             for mech in cell.channelMap[sectype].keys():

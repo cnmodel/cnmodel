@@ -21,6 +21,9 @@ class Params(object):
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
 
+    def additem(self, key, value):
+        self.__dict__[key] = value
+
     def getkeys(self):
         """
         Get the keys in the current dictionary

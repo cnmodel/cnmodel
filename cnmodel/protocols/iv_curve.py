@@ -196,6 +196,7 @@ class IVCurve(Protocol):
         custom_init(v_init=self.cell.vm0)
         h.t = 0.
         h.tstop = self.tend
+        self.cell.check_all_mechs()
         while h.t < h.tstop:
             h.fadvance()
 
