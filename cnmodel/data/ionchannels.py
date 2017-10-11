@@ -59,7 +59,7 @@ This table describes the ion channel densities (and voltage shifts if necessary)
 for different cell types based on the Xie and Manis 2013 models for mouse.
 
 -----------------------------------------------------------------------------------------------------------------------------------
-                    bushy-II      bushy-II-I    tstellate    bushy-II-I
+                    bushy-II      bushy-II-I    tstellate    bushy-I-II
                                                                     
 XM13_name           II            II-I          I-c          I-II      
 soma_na_gbar        1000. [1]     1000. [1]     3000. [1]    1000. [2] 
@@ -209,19 +209,6 @@ for a mouse tuberculoventral cell model.
 Ad-hoc model, based on the t-stellate cell model, but adjusted
 to match the data from Kuo and Trussell.
 
-            self.set_soma_size_from_Cm(35.0)
-            self._valid_temperatures = (34.,)
-            if self.status['temperature'] is None:
-                self.set_temperature(34.)
-            self.adjust_na_chans(soma, gbar=5800.)
-            soma().kht.gbar = nstomho(400.0, self.somaarea) # was 2000
-            soma().ka.gbar = nstomho(65.0, self.somaarea)
-            soma().ihvcn.gbar = nstomho(2.5, self.somaarea)  # 1.25
-            soma().ihvcn.eh = -43 # Rodrigues and Oertel, 2006
-            soma().leak.gbar = nstomho(4.5, self.somaarea)  # 5.5
-            soma().leak.erev = -72.0
-            self.axonsf = 0.5
-            
 -----------------------------------------------------------------------------------------------------------------------------------
                      TVmouse   
                               
