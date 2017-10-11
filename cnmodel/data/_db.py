@@ -39,8 +39,8 @@ def _lookup(ind, *args, **kwds):
             
 def setval(val, *args, **kwds):
     key = mk_key(*args, **kwds)
-    # if key in DATA:
-    #     raise RuntimeError("Data key '%s' has already been set." % str(key))
+    if key in DATA:
+        raise RuntimeError("Data key '%s' has already been set." % str(key))
     DATA[key] = val
     
 def mk_key(*args, **kwds):
