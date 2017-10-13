@@ -7,19 +7,19 @@ from ..util import Params
 import numpy as np
 from .. import data
 
-__all__ = ['Bushy', 'BushyRothman']
+__all__ = ['MSO']
 
 
-class Bushy(Cell):
+class MSO(Cell):
     
-    type = 'bushy'
+    type = 'MSO'
 
     @classmethod
     def create(cls, model='RM03', **kwds):
         if model == 'RM03':
-            return BushyRothman(**kwds)
+            return MSORothman(**kwds)
         else:
-            raise ValueError ('Bushy model %s is unknown', model)
+            raise ValueError ('MSO model %s is unknown', model)
 
     def make_psd(self, terminal, psd_type, **kwds):
         """
@@ -31,7 +31,7 @@ class Bushy(Cell):
         ----------
         terminal : Presynaptic terminal (NEURON object)
         
-        psd_type : either simple or multisite PSD for bushy cell
+        psd_type : either simple or multisite PSD for MSO cell
         
         kwds: dictionary of options. 
             Two are currently handled:
@@ -51,31 +51,24 @@ class Bushy(Cell):
         if psd_type == 'simple':
             return self.make_exp2_psd(post_sec, terminal, loc=loc)
         elif psd_type == 'multisite':
-            if terminal.cell.type == 'sgc':
+            if terminal.cell.type == 'bushy':
                 # Max conductances for the glu mechanisms are calibrated by 
                 # running `synapses/tests/test_psd.py`. The test should fail
                 # if these values are incorrect
-                self.AMPAR_gmax = data.get('sgc_synapse', species=self.species,
+                self.AMPAR_gmax = data.get('bushy_synapse', species=self.species,
                         post_type=self.type, field='AMPAR_gmax')*1e3
-                self.NMDAR_gmax = data.get('sgc_synapse', species=self.species,
+                self.NMDAR_gmax = data.get('bushy_mso_synapse', species=self.species,
                         post_type=self.type, field='NMDAR_gmax')*1e3
-                self.Pr = data.get('sgc_synapse', species=self.species,
+                self.Pr = data.get('bushy_synapse', species=self.species,
                         post_type=self.type, field='Pr')
                 # adjust gmax to correct for initial Pr
                 self.AMPAR_gmax = self.AMPAR_gmax/self.Pr
                 self.NMDAR_gmax = self.NMDAR_gmax/self.Pr
-#               original values (now in synapses.py):
-#                self.AMPA_gmax = 3.314707700918133*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
-#                self.NMDA_gmax = 0.4531929783503451*1e3
                 if 'AMPAScale' in kwds:  # normally, this should not be done!
                     self.AMPAR_gmax = self.AMPAR_gmax * kwds['AMPAScale']  # allow scaling of AMPA conductances
                 if 'NMDAScale' in kwds:
                     self.NMDAR_gmax = self.NMDAR_gmax * kwds['NMDAScale']  # and NMDA... 
                 return self.make_glu_psd(post_sec, terminal, self.AMPAR_gmax, self.NMDAR_gmax, loc=loc)
-            elif terminal.cell.type == 'dstellate':
-                return self.make_gly_psd(post_sec, terminal, type='glyslow', loc=loc)
-            elif terminal.cell.type == 'tuberculoventral':
-                return self.make_gly_psd(post_sec, terminal, type='glyslow', loc=loc)
             else:
                 raise TypeError("Cannot make PSD for %s => %s" % 
                             (terminal.cell.type, self.type))
@@ -83,17 +76,16 @@ class Bushy(Cell):
             raise ValueError("Unsupported psd type %s" % psd_type)
 
 
-class BushyRothman(Bushy):
+class MSORothman(MSO):
     """
-    VCN bushy cell models.
-        Rothman and Manis, 2003abc (Type II, Type II-I)
-        Xie and Manis, 2013
+    VCN MSO cell models.
+        Using Rothman and Manis, 2003abc (Type II)
     """
 
     def __init__(self, morphology=None, decorator=None, nach=None,
                  ttx=False, species='guineapig', modelType=None, debug=False):
         """
-        Create a bushy cell, using the default parameters for guinea pig from
+        Create a MSO cell, using the default parameters for guinea pig from
         R&M2003, as a type II cell.
         Additional modifications to the cell can be made by calling methods below.
         
@@ -139,7 +131,7 @@ class BushyRothman(Bushy):
             Nothing
                  
         """
-        super(BushyRothman, self).__init__()
+        super(MSORothman, self).__init__()
         self.i_test_range={'pulse': (-1, 1, 0.05)}  # note that this gets reset with decorator according to channels
                                                     # Changing the default values will cause the unit tests to fail!
         if modelType == None:
@@ -152,7 +144,7 @@ class BushyRothman(Bushy):
         
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False, 'hillock': False, 
                        'initialsegment': False, 'myelinatedaxon': False, 'unmyelinatedaxon': False,
-                       'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Bushy',
+                       'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'MSO',
                        'morphology': morphology, 'decorator': decorator, 'temperature': None}
 
         self.spike_threshold = -40
@@ -162,8 +154,8 @@ class BushyRothman(Bushy):
             """
             instantiate a basic soma-only ("point") model
             """
-            print "<< Bushy model: Creating point cell >>"
-            soma = h.Section(name="Bushy_Soma_%x" % id(self))  # one compartment of about 29000 um2
+            print "<< MSO model: Creating point cell >>"
+            soma = h.Section(name="MSO_Soma_%x" % id(self))  # one compartment of about 29000 um2
             soma.nseg = 1
             self.add_section(soma, 'soma')
         else:
@@ -171,7 +163,7 @@ class BushyRothman(Bushy):
             instantiate a structured model with the morphology as specified by 
             the morphology file
             """
-            print "<< Bushy model: Creating cell with morphology from %s >>" % morphology
+            print "<< MSO model: Creating cell with morphology from %s >>" % morphology
             self.set_morphology(morphology_file=morphology)
 
         # decorate the morphology with ion channels
@@ -187,9 +179,9 @@ class BushyRothman(Bushy):
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
             self.decorate()
-#        print 'Mechanisms inserted: ', self.mechanisms
+        self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
         self.get_mechs(self.soma)
-#        self.cell_initialize(vrange=self.vrange)  # no need to do this just yet.
+
         if debug:
             print "   << Created cell >>"
 
@@ -229,45 +221,16 @@ class BushyRothman(Bushy):
         
         """
         #print '\nSpecies scaling: %s   %s' % (species, type)
-        knownspecies = ['mouse', 'guineapig', 'cat']
+        knownspecies = ['guineapig']
         
         soma = self.soma
         if modelType == 'II':
-            celltype = 'bushy-II'
-        elif modelType == 'II-I':
-            celltype = 'bushy-II-I'
-        elif modelType == 'I-II':
-            celltype = 'bushy-I-II'
+            celltype = 'MSO-II'  # There are other possiblities in the literature - this is just the main one
         else:
             raise ValueError('model type not recognized')
-
-        if species == 'mouse':
-            # use conductance levels determined from Cao et al.,  J. Neurophys., 2007. as 
-            # model description in Xie and Manis 2013. Note that
-            # conductances were not scaled for temperature (rates were)
-            # so here we reset the default Q10's for conductance (g) to 1.0
-            if celltype not in ['bushy-II', 'bushy-II-I']:
-                raise ValueError('\nCell type %s is not implemented for mouse bushy cells' % celltype)
-            print '  Setting conductances for mouse bushy cell (%s), Xie and Manis, 2013' % celltype
-            dataset = 'XM13_channels'
-            self.vrange = [-68., -55.]  # set a default vrange for searching for rmp
-            self.i_test_range = {'pulse': (-1., 1., 0.05)}
-            self._valid_temperatures = (34., )
-            if self.status['temperature'] is None:
-                self.status['temperature'] = 34. 
-
-            pars = self.get_cellpars(dataset, species=species, celltype=celltype)
-            self.set_soma_size_from_Cm(pars.cap)
-            self.status['na'] = pars.natype
-            self.adjust_na_chans(soma, sf=1.0)
-            soma().kht.gbar = nstomho(pars.soma_kht_gbar, self.somaarea)
-            soma().klt.gbar = nstomho(pars.soma_klt_gbar, self.somaarea)
-            soma().ihvcn.gbar = nstomho(pars.soma_ih_gbar, self.somaarea)
-            soma().leak.gbar = nstomho(pars.soma_leak_gbar, self.somaarea)
-            self.axonsf = 0.57
             
-        elif species == 'guineapig':
-            print '  Setting conductances for guinea pig %s bushy cell, Rothman and Manis, 2003' % modelType
+        if species == 'guineapig':
+            print '  Setting conductances for guinea pig %s MSO cell, based on Rothman and Manis, 2003 bushy cell' % modelType
             self._valid_temperatures = (22., 38.)
             if self.status['temperature'] is None:
                 self.status['temperature'] = 22. 
@@ -276,7 +239,7 @@ class BushyRothman(Bushy):
             if self.status['temperature'] == 38.:  # adjust for 2003 model conductance levels at 38
                 sf = 2  # Q10 of 2, 22->38C. (p3106, R&M2003c)
                 # note that kinetics are scaled in the mod file.
-            dataset = 'RM03_channels'
+            dataset = 'RM03_MSO_channels'
             pars = self.get_cellpars(dataset, species=species, celltype=celltype)
             self.set_soma_size_from_Cm(pars.cap)
             self.status['na'] = pars.natype
@@ -289,7 +252,7 @@ class BushyRothman(Bushy):
             self.axonsf = 0.57
             
         else:
-            errmsg = 'Species "%s" or model type "%s" is not recognized for Bushy cells.' %  (species, modelType)
+            errmsg = 'Species "%s" or model type "%s" is not recognized for MSO cells.' %  (species, modelType)
             errmsg += '\n  Valid species are: \n'
             for s in knownspecies:
                 errmsg += '    %s\n' % s
@@ -317,11 +280,8 @@ class BushyRothman(Bushy):
         Parameters
         ----------
         modelType : string (default: 'RM03')
-            A string that defines the type of the model. Currently, 3 types are implemented:
-            RM03: Rothman and Manis, 2003 somatic densities for guinea pig
-            XM13: Xie and Manis, 2013, somatic densities for mouse
-            mGBC: experimental mouse globular bushy cell with dendrites, axon, hillock and initial segment, for
-            use with fully reconstructed neurons.
+            A string that defines the type of the model. Currently, only 1 type is implemented:
+            RM03: Rothman and Manis, 2003 somatic densities based on guinea pig bushy cell
         
         Returns
         -------
@@ -350,7 +310,7 @@ class BushyRothman(Bushy):
             self.c_m = 0.9E-6  # default in units of F/cm^2
             totcap = 12.0E-12  # in units of F, from Rothman and Manis, 2003.
             refarea = totcap / self.c_m  # area is in cm^2
-            # bushy Rothman-Manis, guinea pig type II
+            # MSO Rothman-Manis, guinea pig type II
             # model gave cell conductance in nS, but we want S/cm^2 for NEURON
             # so conversion is 1e-9*nS = uS, and refarea is already in cm2
             self._valid_temperatures = (22., 38.)
@@ -390,109 +350,7 @@ class BushyRothman(Bushy):
                                      'nacn': {'gradient': 'exp', 'gminf': 0., 'lambda': 100.}}, # gradients are: flat, linear, exponential
                             }
 
-        elif modelType == 'XM13':
-            #
-            # Create a model for a mouse bushy cell from Xie and Manis, 2013
-            # based on Cao and Oertel mouse conductance values
-            # and Rothman and Manis kinetics.
-            self.c_m = 0.9E-6  # default in units of F/cm^2
-            totcap = 26.0E-12 # uF/cm2 
-            refarea = totcap  / self.c_m  # see above for units
-            self._valid_temperatures = (34., )
-            if self.status['temperature'] == None:
-                self.status['temperature'] = 34.
-            self.gBar = Params(nabar=1000.E-9/refarea,
-                               khtbar=58.0E-9/refarea,
-                               kltbar=80.0E-9/refarea,  # note doubled here... 
-                               ihbar=30.0E-9/refarea,
-                               leakbar=2.0E-9/refarea,  # was 0.5
-            )
-            print 'XM13 gbar:\n', self.gBar.show()
-            self.channelMap = {
-                'axon': {'nav11': self.gBar.nabar*1, 'klt': self.gBar.kltbar * 1.0, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
-                         'leak': self.gBar.leakbar * 0.25},
-                'hillock': {'nav11': self.gBar.nabar*2, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar*2.0, 'ihvcn': 0.,
-                            'leak': self.gBar.leakbar, },
-                'initseg': {'nav11': self.gBar.nabar*3.0, 'klt': self.gBar.kltbar*1, 'kht': self.gBar.khtbar*2,
-                            'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
-                'soma': {'nav11': self.gBar.nabar*0.5, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
-                         'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
-                'dend': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar *0.5, 'kht': self.gBar.khtbar *0.5,
-                         'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
-                'dendrite': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar *0.5, 'kht': self.gBar.khtbar *0.5,
-                         'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
-                'apic': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar * 0.25,
-                         'ihvcn': self.gBar.ihbar *0.25, 'leak': self.gBar.leakbar * 0.25, },
-            }
-            self.irange = np.linspace(-2, 2, 7)
-            self.distMap = {'dend': {'klt': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
-                                     'kht': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
-                                     'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.}}, # linear with distance, gminf (factor) is multiplied by gbar
-                            'dendrite': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'nav11': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
-                            'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
-                            }
 
-                            
-        elif modelType == 'mGBC':
-            # bushy from Xie and Manis, 2013, based on Cao and Oertel mouse conductances,
-            # BUT modified ad hoc for SBEM reconstructions.
-            totcap = 26.0E-12 # uF/cm2 
-            refarea = totcap  / self.c_m  # see above for units
-            # original:
-            # self.gBar = Params(nabar=500.E-9/refarea,
-            #                    khtbar=58.0E-9/refarea,
-            #                    kltbar=80.0E-9/refarea,  # note doubled here...
-            #                    ihbar=0.25*30.0E-9/refarea,
-            #                    leakbar=0.05*2.0E-9/refarea,  # was 0.5
-            # )
-            self._valid_temperatures = (34.,)
-            if self.status['temperature'] == None:
-                self.status['temperature'] = 34.
-            self.gBar = Params(nabar=1600.E-9/refarea,
-                               khtbar=58.0E-9/refarea,
-                               kltbar=40.0E-9/refarea,  # note doubled here... 
-                               ihbar=0.25*30.0E-9/refarea,
-                               leakbar=0.02*2.0E-9/refarea,  # was 0.5
-            )
-            print 'mGBC gbar:\n', self.gBar.show()
-            sodiumch = 'jsrna'
-            self.channelMap = {
-                'axon': {sodiumch: self.gBar.nabar*1., 'klt': self.gBar.kltbar * 1.0, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
-                         'leak': self.gBar.leakbar * 0.25},
-                'unmyelinatedaxon': {sodiumch: self.gBar.nabar*3.0, 'klt': self.gBar.kltbar * 2.0,
-                         'kht': self.gBar.khtbar*3.0, 'ihvcn': 0.,
-                         'leak': self.gBar.leakbar * 0.25},
-                'myelinatedaxon': {sodiumch: self.gBar.nabar*0, 'klt': self.gBar.kltbar * 1e-2,
-                         'kht': self.gBar.khtbar*1e-2, 'ihvcn': 0.,
-                         'leak': self.gBar.leakbar * 0.25*1e-3},
-                'hillock': {sodiumch: self.gBar.nabar*4.0, 'klt': self.gBar.kltbar*1.0, 'kht': self.gBar.khtbar*3.0,
-                             'ihvcn': 0., 'leak': self.gBar.leakbar, },
-                'initseg': {sodiumch: self.gBar.nabar*3.0, 'klt': self.gBar.kltbar*2, 'kht': self.gBar.khtbar*2,
-                            'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
-                'soma': {sodiumch: self.gBar.nabar*0.65, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar*1.5,
-                         'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
-                'dend': {sodiumch: self.gBar.nabar * 0.2, 'klt': self.gBar.kltbar *1, 'kht': self.gBar.khtbar *1,
-                         'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
-                'dendrite': {sodiumch: self.gBar.nabar * 0.2, 'klt': self.gBar.kltbar *1, 'kht': self.gBar.khtbar *1,
-                         'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
-                'apic': {sodiumch: self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar * 0.25,
-                         'ihvcn': self.gBar.ihbar *0.25, 'leak': self.gBar.leakbar * 0.25, },
-            }
-            self.irange = np.arange(-1.5, 2.1, 0.25 )
-            self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     sodiumch: {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
-                            'dendrite': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 20.},
-                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 20.},
-                                      sodiumch: {'gradient': 'linear', 'gminf': 0., 'lambda': 20.}}, # linear with distance, gminf (factor) is multiplied by gbar
-                            'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     sodiumch: {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
-                            }
         else:
             raise ValueError('model type %s is not implemented' % modelType)
         self.check_temperature()
@@ -535,84 +393,12 @@ class BushyRothman(Bushy):
 #            print('gnabar: ', soma().nav11.gbar, ' vs: 0.0192307692308')
             soma().nav11.vsna = 4.3
             if debug:
-                print "bushy using inva11"
+                print "MSO using inva11"
         elif nach in ['na', 'nacn']:
             soma().na.gbar = gnabar
             soma.ena = self.e_na
             if debug:
                 print 'na gbar: ', soma().na.gbar
         else:
-            raise ValueError('Sodium channel %s is not recognized for Bushy cells', nach)
-
-    def add_axon(self):
-        """
-        Add a default axon from the generic cell class to the bushy cell (see cell class).
-        """
-        Cell.add_axon(self, self.c_m, self.R_a, self.axonsf)
-
-    def add_pumps(self):
-        """
-        Insert mechanisms for potassium ion management, sodium ion management, and a
-        sodium-potassium pump at the soma.
-        """
-        soma = self.soma
-        soma.insert('k_conc')
-
-        ki0_k_ion = 140
-        soma().ki = ki0_k_ion
-        soma().ki0_k_conc = ki0_k_ion
-        soma().beta_k_conc = 0.075
-
-        soma.insert('na_conc')
-        nai0_na_ion = 5
-        soma().nai = nai0_na_ion
-        soma().nai0_na_conc = nai0_na_ion
-        soma().beta_na_conc = 0.075
-
-        soma.insert('nakpump')
-        soma().nakpump.inakmax = 8
-        soma().nao = 145
-        soma().ko = 5
-        soma().nakpump.Nai_inf = 5
-        soma().nakpump.Ki_inf = 140
-        soma().nakpump.ATPi = 5
-        self.status['pumps'] = True
-
-    def add_dendrites(self, debug=False):
-        """
-        Add a simple dendrite to the bushy cell.
-        """
-        if debug:
-            print 'Adding dendrite to Bushy model'
-        section = h.Section
-        maindend = section(cell=self.soma)
-        maindend.connect(self.soma)
-        maindend.nseg = 10
-        maindend.L = 100.0
-        maindend.diam = 2.5
-        maindend.insert('klt')
-        maindend.insert('ihvcn')
-        maindend().klt.gbar = self.soma().klt.gbar / 2.0
-        maindend().ihvcn.gbar = self.soma().ihvcn.gbar / 2.0
-
-        maindend.cm = self.c_m
-        maindend.Ra = self.R_a
-        nsecd = range(0, 5)
-        secdend = []
-        for ibd in nsecd:
-            secdend.append(section(cell=self.soma))
-        for ibd in nsecd:
-            secdend[ibd].connect(maindend)
-            secdend[ibd].diam = 1.0
-            secdend[ibd].L = 15.0
-            secdend[ibd].cm = self.c_m
-            secdend[ibd].Ra = self.R_a
-        self.maindend = maindend
-        self.secdend = secdend
-        self.status['dendrite'] = True
-        if debug:
-            print 'Bushy: added dendrite'
-            h.topology()
-        self.add_section(maindend, 'maindend')
-        self.add_section(secdend, 'secdend')
+            raise ValueError('Sodium channel %s is not recognized for MSO cells', nach)
 

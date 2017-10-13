@@ -251,3 +251,45 @@ XMax         0.733 [1]    0.731 [1]        0.731 [1]     0.731 [2]         0.731
 # TV conductance onto TV cells: 1.8 ns SD 2.3 nS.
 #
 
+add_table_data('bushy_synapse', row_key='field', col_key='post_type', 
+               species='mouse', data=u"""
+
+AMPA_gmax and NMDA_gmax are the estimated average peak conductances (in nS) 
+resulting from an action potential in a single presynaptic terminal under 
+conditions that minimize the effects of short-term plasticity.
+AMPA_gmax are from values measured at -65 mV (or -70mV), and represent SINGLE TERMINAL 
+conductances
+AMPAR_gmax are the individual synapse postsynaptic conductance
+NMDA_gmax values are taken as the fraction of the current that is NMDAR dependent
+at +40 mV (see below)
+
+n_rsites is the number of release sites per terminal.
+
+-----------------------------------------------------------------------------------------------------------------------------------
+             MSO           
+                          
+AMPA_gmax    21.05±15.4 [1]
+AMPAR_gmax   4.6516398 [2]
+NMDA_gmax    0 [3]  
+NMDAR_gmax   0 [3]
+EPSC_cv      0.12 [4]      
+Pr           1.000 [5]    
+n_rsites     5 [6]         
+
+-----------------------------------------------------------------------------------------------------------------------------------
+
+[1] Taken from the bushy cell model.
+    Units are nS.
+    
+[2] See note [10] for the SGC-bushy synapse
+
+[3] Assume no NMDA receptors at this synapse
+
+[4] See SGC-bushy synapse
+
+[5] Just to scale with the multisite synapse model
+
+[6] This is a guess.
+
+""")
+
