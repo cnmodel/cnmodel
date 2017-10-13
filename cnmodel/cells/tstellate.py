@@ -182,7 +182,8 @@ class TStellateRothman(TStellate):
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
             self.decorate()
-        
+
+        self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
         self.get_mechs(self.soma)
         if debug:
                 print "<< T-stellate: JSR Stellate Type 1 cell model created >>"

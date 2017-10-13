@@ -187,9 +187,8 @@ class BushyRothman(Bushy):
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
             self.decorate()
-#        print 'Mechanisms inserted: ', self.mechanisms
+        self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
         self.get_mechs(self.soma)
-#        self.cell_initialize(vrange=self.vrange)  # no need to do this just yet.
         if debug:
             print "   << Created cell >>"
 
@@ -348,23 +347,26 @@ class BushyRothman(Bushy):
             # Create a model based on the Rothman and Manis 2003 conductance set from guinea pig
             # 
             self.c_m = 0.9E-6  # default in units of F/cm^2
-            totcap = 12.0E-12  # in units of F, from Rothman and Manis, 2003.
-            refarea = totcap / self.c_m  # area is in cm^2
+            # totcap = 12.0E-12  # in units of F, from Rothman and Manis, 2003.
+            # refarea = totcap / self.c_m  # area is in cm^2
             # bushy Rothman-Manis, guinea pig type II
             # model gave cell conductance in nS, but we want S/cm^2 for NEURON
             # so conversion is 1e-9*nS = uS, and refarea is already in cm2
-            self._valid_temperatures = (22., 38.)
-            sf = 1.0
-            if self.status['temperature'] == None:
-                self.status['temperature'] = 22.
-            if self.status['temperature'] == 38:
-                sf = 3.03
-            self.gBar = Params(nabar=sf*1000.0E-9/refarea,
-                               khtbar=sf*150.0E-9/refarea,
-                               kltbar=sf*200.0E-9/refarea,
-                               ihbar=sf*20.0E-9/refarea,
-                               leakbar=sf*2.0E-9/refarea,
-            )
+            # self._valid_temperatures = (22., 38.)
+            # sf = 1.0
+            # if self.status['temperature'] == None:
+            #     self.status['temperature'] = 22.
+            # if self.status['temperature'] == 38:
+            #     sf = 3.03
+            dataset = 'RM03_channels'
+            pars = self.get_cellpars(dataset, species=species, celltype='II')
+            refarea = pars.soma_Cap / self.c_m
+            self.gBar = Params(nabar=sf*pars.soma_na_gbar*1E-9/refarea, # 1000.0E-9/refarea,
+                               khtbar=sf*pars.soma_kht_gbar*1E-9/refarea,
+                               kltbar=sf*pars.soma_klt_gbar*1E-9/refarea,
+                               ihbar=sf*pars.soma_ih_gbar*1E-9/refarea,
+                               leakbar=sf*pars.soma_leak_gbar*1E-9/refarea,
+                              )
             print 'RM03 gbar:\n', self.gBar.show()
             
             self.channelMap = {
@@ -396,17 +398,20 @@ class BushyRothman(Bushy):
             # based on Cao and Oertel mouse conductance values
             # and Rothman and Manis kinetics.
             self.c_m = 0.9E-6  # default in units of F/cm^2
-            totcap = 26.0E-12 # uF/cm2 
-            refarea = totcap  / self.c_m  # see above for units
-            self._valid_temperatures = (34., )
-            if self.status['temperature'] == None:
-                self.status['temperature'] = 34.
-            self.gBar = Params(nabar=1000.E-9/refarea,
-                               khtbar=58.0E-9/refarea,
-                               kltbar=80.0E-9/refarea,  # note doubled here... 
-                               ihbar=30.0E-9/refarea,
-                               leakbar=2.0E-9/refarea,  # was 0.5
-            )
+            # totcap = 26.0E-12 # uF/cm2
+            # refarea = totcap  / self.c_m  # see above for units
+            # self._valid_temperatures = (34., )
+            # if self.status['temperature'] == None:
+            #     self.status['temperature'] = 34.
+            dataset = 'XM13_channels'
+            pars = self.get_cellpars(dataset, species=species, celltype='II')
+            refarea = pars.soma_Cap / self.c_m
+            self.gBar = Params(nabar=sf*pars.soma_na_gbar*1E-9/refarea, # 1000.0E-9/refarea,
+                               khtbar=sf*pars.soma_kht_gbar*1E-9/refarea,
+                               kltbar=sf*pars.soma_klt_gbar*1E-9/refarea,
+                               ihbar=sf*pars.soma_ih_gbar*1E-9/refarea,
+                               leakbar=sf*pars.soma_leak_gbar*1E-9/refarea,
+                              )
             print 'XM13 gbar:\n', self.gBar.show()
             self.channelMap = {
                 'axon': {'nav11': self.gBar.nabar*1, 'klt': self.gBar.kltbar * 1.0, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
@@ -440,24 +445,28 @@ class BushyRothman(Bushy):
         elif modelType == 'mGBC':
             # bushy from Xie and Manis, 2013, based on Cao and Oertel mouse conductances,
             # BUT modified ad hoc for SBEM reconstructions.
-            totcap = 26.0E-12 # uF/cm2 
-            refarea = totcap  / self.c_m  # see above for units
-            # original:
+            # totcap = 26.0E-12 # uF/cm2
+           #  refarea = totcap  / self.c_m  # see above for units
+           #           # original:
             # self.gBar = Params(nabar=500.E-9/refarea,
             #                    khtbar=58.0E-9/refarea,
             #                    kltbar=80.0E-9/refarea,  # note doubled here...
             #                    ihbar=0.25*30.0E-9/refarea,
             #                    leakbar=0.05*2.0E-9/refarea,  # was 0.5
             # )
-            self._valid_temperatures = (34.,)
-            if self.status['temperature'] == None:
-                self.status['temperature'] = 34.
-            self.gBar = Params(nabar=1600.E-9/refarea,
-                               khtbar=58.0E-9/refarea,
-                               kltbar=40.0E-9/refarea,  # note doubled here... 
-                               ihbar=0.25*30.0E-9/refarea,
-                               leakbar=0.02*2.0E-9/refarea,  # was 0.5
-            )
+            dataset = 'mGBC_channels'
+            
+            # self._valid_temperatures = (34.,)
+            # if self.status['temperature'] == None:
+            #     self.status['temperature'] = 34.
+            pars = self.get_cellpars(dataset, species=species, celltype='II')
+            refarea = pars.soma_Cap / self.c_m
+            self.gBar = Params(nabar=sf*pars.soma_na_gbar*1E-9/refarea, # 1000.0E-9/refarea,
+                               khtbar=sf*pars.soma_kht_gbar*1E-9/refarea,
+                               kltbar=sf*pars.soma_klt_gbar*1E-9/refarea,
+                               ihbar=sf*pars.soma_ih_gbar*1E-9/refarea,
+                               leakbar=sf*pars.soma_leak_gbar*1E-9/refarea,
+                              )
             print 'mGBC gbar:\n', self.gBar.show()
             sodiumch = 'jsrna'
             self.channelMap = {
