@@ -12,7 +12,7 @@ __all__ = ['MSO']
 
 class MSO(Cell):
     
-    type = 'MSO'
+    type = 'mso'
 
     @classmethod
     def create(cls, model='RM03', **kwds):
@@ -57,7 +57,7 @@ class MSO(Cell):
                 # if these values are incorrect
                 self.AMPAR_gmax = data.get('bushy_synapse', species=self.species,
                         post_type=self.type, field='AMPAR_gmax')*1e3
-                self.NMDAR_gmax = data.get('bushy_mso_synapse', species=self.species,
+                self.NMDAR_gmax = data.get('bushy_synapse', species=self.species,
                         post_type=self.type, field='NMDAR_gmax')*1e3
                 self.Pr = data.get('bushy_synapse', species=self.species,
                         post_type=self.type, field='Pr')

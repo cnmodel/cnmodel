@@ -1,7 +1,7 @@
 from neuron import h
 
 from .cell import Cell
-# from .. import synapses
+from .. import synapses
 from ..util import nstomho
 from ..util import Params
 import numpy as np
@@ -81,6 +81,24 @@ class Bushy(Cell):
                             (terminal.cell.type, self.type))
         else:
             raise ValueError("Unsupported psd type %s" % psd_type)
+
+    def make_terminal(self, post_cell, term_type, **kwds):
+        if term_type == 'simple':
+            return synapses.SimpleTerminal(self.soma, post_cell, **kwds)
+
+        elif term_type == 'multisite':
+            if post_cell.type == 'mso':
+                nzones = data.get('bushy_synapse', species=self.species,
+                        post_type=post_cell.type, field='n_rsites')
+                delay = 0
+            else:
+                raise NotImplementedError("No knowledge as to how to connect Bushy cell to cell type %s" %
+                                        type(post_cell))
+            pre_sec = self.soma
+            return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, 
+                                            delay=delay, **kwds)
+        else:
+            raise ValueError("Unsupported terminal type %s" % term_type)
 
 
 class BushyRothman(Bushy):

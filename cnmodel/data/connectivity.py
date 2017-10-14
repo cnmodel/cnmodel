@@ -119,9 +119,9 @@ J. Neurosci. 15: 3138, 1995)
 This table is just a guess... using mouse data...
 
 ----------------------------------------------------------------------------------------------
-                  bushy       tstellate   dstellate   octopus     pyramidal    tuberculoventral   MSO
+                  bushy       tstellate   dstellate   octopus     pyramidal    tuberculoventral   mso
 sgc               3.3±0.6 [2] 6.5±1.0 [2] 35±0 [3]    60±0 [2]    48±0 [5]     24±0 [5]           0
-bushy             0           0           0           0           0            0                  6 [8]
+bushy             0           0           0           0           0            0                  12 [8]
 dstellate         7 [1]       20 [1]      3 [1]       0 [4]       15 [5]       15 [5]             0
 tstellate         0 [6]       0 [6]       0 [6]       0 [6]       0 [6]        0 [6]              0
 tuberculoventral  6           6           0           0 [4]       21 [5]       0 [7]              0
@@ -179,7 +179,7 @@ the CF of the postsynaptic cell.
 *** This table is just a guess - using data from mouse... ****
 
 -------------------------------------------------------------------------------------------------------
-                  bushy       tstellate   dstellate   octopus     pyramidal    tuberculoventral   MSO
+                  bushy       tstellate   dstellate   octopus     pyramidal    tuberculoventral   mso
 sgc               0.05 [1]    0.1 [1]     0.4 [1]     0.5 [5]     0.1 [1]      0.1 [1]            0
 bushy             0           0           0           0           0            0                  0.05 [6]
 dstellate         0.208 [2]   0.347 [2]   0.5 [1]     0           0.2 [1]      0.2 [1]            0

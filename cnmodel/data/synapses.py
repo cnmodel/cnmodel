@@ -131,16 +131,16 @@ These parameters were selected to fit the model output to known EPSC shapes.
 PA is a polyamine block parameter ued in the AMPAR mechanism (concentration in micromolar).
 
 ------------------------------------------------------------------------------------------------
-             bushy              tstellate        dstellate        pyramidal    octopus         tuberculoventral
-                                                                                                               
-Ro1          107.85 [4]         39.25 [4]        39.25 [7]        39.25 [4]    107.85 [5]      39.25 [7]
-Ro2          0.6193 [4]         4.40 [4]         4.40 [7]         4.40 [4]     0.6193 [5]      4.40 [7] 
-Rc1          3.678 [4]          0.667 [4]        0.667 [7]        0.667 [4]    3.678 [5]       0.667 [7]
-Rc2          0.3212 [4]         0.237 [4]        0.237 [7]        0.237 [4]    0.3212 [5]      0.237 [7]
-tau_g        0.10 [4]           0.25 [4]         0.25 [7]         0.25 [4]     0.10 [5]        0.25 [4]   
-amp_g        0.770 [4]          1.56625 [4]      1.56625 [7]      1.56625 [4]  0.770 [5]       1.56625 [4]
-                                                                                                           
-PA           45 [12]            0.1 [12]         0.1 [7]          0.1 [12]     45 [5]          0.1 [7]
+             bushy              tstellate        dstellate        pyramidal    octopus         tuberculoventral       mso     
+                                                                                                                                
+Ro1          107.85 [4]         39.25 [4]        39.25 [7]        39.25 [4]    107.85 [5]      39.25 [7]              107.85 [4]
+Ro2          0.6193 [4]         4.40 [4]         4.40 [7]         4.40 [4]     0.6193 [5]      4.40 [7]               0.6193 [4]
+Rc1          3.678 [4]          0.667 [4]        0.667 [7]        0.667 [4]    3.678 [5]       0.667 [7]              3.678 [4] 
+Rc2          0.3212 [4]         0.237 [4]        0.237 [7]        0.237 [4]    0.3212 [5]      0.237 [7]              0.3212 [4]
+tau_g        0.10 [4]           0.25 [4]         0.25 [7]         0.25 [4]     0.10 [5]        0.25 [4]               0.10 [4]  
+amp_g        0.770 [4]          1.56625 [4]      1.56625 [7]      1.56625 [4]  0.770 [5]       1.56625 [4]            0.770 [4] 
+                                                                                                                                
+PA           45 [12]            0.1 [12]         0.1 [7]          0.1 [12]     45 [5]          0.1 [7]                45 [12]   
 
 ------------------------------------------------------------------------------------------------
 
@@ -155,7 +155,6 @@ PA           45 [12]            0.1 [12]         0.1 [7]          0.1 [12]     4
 [12] Wang & Manis (unpublished)
 
 """)
-
 
 
 add_table_data('sgc_epsp_kinetics', row_key='field', col_key='post_type', 
@@ -177,7 +176,6 @@ F            0.984 [11]    0.917 [11]                                     0.984 
 [13] Copied from bushy cells; no direct data
 
 """)
-
 
 
 add_table_data('sgc_release_dynamics', row_key='field', col_key='post_type', 
@@ -266,7 +264,7 @@ at +40 mV (see below)
 n_rsites is the number of release sites per terminal.
 
 -----------------------------------------------------------------------------------------------------------------------------------
-             MSO           
+             mso           
                           
 AMPA_gmax    21.05±15.4 [1]
 AMPAR_gmax   4.6516398 [2]
@@ -274,11 +272,11 @@ NMDA_gmax    0 [3]
 NMDAR_gmax   0 [3]
 EPSC_cv      0.12 [4]      
 Pr           1.000 [5]    
-n_rsites     5 [6]         
+n_rsites     36 [6]         
 
 -----------------------------------------------------------------------------------------------------------------------------------
 
-[1] Taken from the bushy cell model.
+[1] Taken from the mouse bushy cell model.
     Units are nS.
     
 [2] See note [10] for the SGC-bushy synapse
