@@ -1,16 +1,18 @@
 """
-Test generating a series of EPSPs in a MSO cell in response to tone pip.
+Test generating a series of EPSPs in a MSO cell in response to tone pip. This
+test demonstrates how a binaural circuit can be constructed.
 
 This script:
 
-1. Creates multiple SGCs (base instance has 3), two bushy cells and one mso cell
-2. Connects the a group of sgc cells from one ear to one bushy cell, and the 
+1. Creates multiple SGCs (base instance has 3) converging onto two bushy cells.
+     The 2 bushy cells then converge onto one MSO cell
+2. Connects the group of sgc cells from one ear to one bushy cell, and the 
     other sgcs from the other ear to the
-    other bushy cell. The two bushy cells are then connected to the mso neuron.
-3. The SGC cells can be offeset in frequency, and the stimuli can be ear-specific
-    allowing for "binaural beats"
-4. Specifies tone pip inputs to each ear.
-5. Records the bushy and mso cell Vms.
+    other bushy cell.
+3. Specifies the CFs of the SGC cells individually. Also specifies the frequency of 
+    and stimuli by ear allowing for "binaural beats"
+5. Records the bushy and MSO cell membrane voltages, sgc spike time, and calculates
+    vector strengths.
 
 
 The auditory nerve spike train is generated automatically by the DummySGC class
@@ -34,7 +36,7 @@ from cnmodel.util import custom_init
 import cnmodel.util.pynrnutilities as PU
 
 class MSOBinauralTest(Protocol):
-    def run(self, temp=34.0, dt=0.025, seed=575982035, simulator=None):
+    def run(self, temp=38.0, dt=0.025, seed=575982035, simulator=None):
         ears = {'left': [500., 502, 498], 'right': [500., 502., 498]}
         
         self.beatfreq = 0.
@@ -47,36 +49,40 @@ class MSOBinauralTest(Protocol):
         synapse = {}
         self.stim = {}
         self.ears = ears
-        self.stimdur = 1.0
+        self.stimdur = 0.2
         self.stimdelay = 0.02
         self.rundur = self.stimdelay + self.stimdur + 0.02
 
         for i, ear in enumerate(ears.keys()):
             nsgc = len(ears[ear])  # how many sgcs are specified for this ear
             sgcCell[ear] = [cells.DummySGC(cf=ears[ear][k], sr=2) for k in range(nsgc)]
-            bushyCell[ear] = cells.Bushy.create()
-            synapse[ear] = [sgcCell[ear][k].connect(bushyCell[ear]) for k in range(nsgc)]
+            bushyCell[ear] = [cells.Bushy.create(temperature=temp)]
+            synapse[ear] = [sgcCell[ear][k].connect(bushyCell[ear][0]) for k in range(nsgc)]
             self.stim[ear] = [sound.TonePip(rate=100e3, duration=self.stimdur+0.1, f0=f0[ear], dbspl=80,
                                   ramp_duration=2.5e-3, pip_duration=self.stimdur, 
                                   pip_start=[self.stimdelay]) for k in range(nsgc)]
             for k in range(len(self.stim[ear])):
                 sgcCell[ear][k].set_sound_stim(self.stim[ear][k], seed=seed + i*seed + k, simulator=simulator)
-            self['vm_bu_%s' % ear] = bushyCell[ear].soma(0.5)._ref_v
+            self['vm_bu_%s' % ear] = bushyCell[ear][0].soma(0.5)._ref_v
             for k in range(30):
                 self['xmtr%d_%s'%(k, ear)] = synapse[ear][0].terminal.relsite._ref_XMTR[k]
             for k in range(len(synapse[ear])):
                 synapse[ear][k].terminal.relsite.Dep_Flag = False  # turn off depression
 
-        msoCell = cells.MSO.create()  # one target MSO cell
+        msoCell = cells.MSO.create(temperature=temp)  # one target MSO cell
         msosyn = {}
         for ear in ears:
-            msosyn[ear] = bushyCell[ear].connect(msoCell)
+            msosyn[ear] = bushyCell[ear][0].connect(msoCell)
         self.sgc_cells = sgcCell
         self.bushy_cells = bushyCell
         self.synapses = synapse
         self.msyns = msosyn
         self.msoCell = msoCell
-         
+        self.all_cells = []  # hold all "real" cells (DummySGC does not have mechanisms)
+        for ear in ears.keys():
+            self.all_cells.append([c for c in self.bushy_cells[ear]])
+        self.all_cells.append([self.msoCell])
+        
         self['vm_mso'] = self.msoCell.soma(0.5)._ref_v
         for k, ear in enumerate(ears.keys()):
             for i in range(30):
@@ -90,7 +96,13 @@ class MSOBinauralTest(Protocol):
         h.dt = dt
         
         custom_init()
-        h.run()
+        # confirm that all cells are ok
+        for cg in self.all_cells:
+            for c in cg:
+                c.check_all_mechs()
+        while h.t < h.tstop:
+            h.fadvance()
+            
 
     def show(self):
         self.win = pg.GraphicsWindow()

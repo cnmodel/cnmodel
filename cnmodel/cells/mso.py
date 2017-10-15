@@ -83,7 +83,7 @@ class MSORothman(MSO):
     """
 
     def __init__(self, morphology=None, decorator=None, nach=None,
-                 ttx=False, species='guineapig', modelType=None, debug=False):
+                 ttx=False, species='guineapig', modelType=None, debug=False, temperature=None):
         """
         Create a MSO cell, using the default parameters for guinea pig from
         R&M2003, as a type II cell.
@@ -145,7 +145,7 @@ class MSORothman(MSO):
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False, 'hillock': False, 
                        'initialsegment': False, 'myelinatedaxon': False, 'unmyelinatedaxon': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'MSO',
-                       'morphology': morphology, 'decorator': decorator, 'temperature': None}
+                       'morphology': morphology, 'decorator': decorator, 'temperature': temperature}
 
         self.spike_threshold = -40
         self.vrange = [-70., -55.]  # set a default vrange for searching for rmp
