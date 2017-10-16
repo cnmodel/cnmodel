@@ -19,12 +19,12 @@ This package depends on the following:
 
    1. Python 2.7.10 with numpy (1.11), scipy (0.19.0), lmfit (0.9.6), pyqt4 (4.11.4), and pyqtgraph (0.9.10). 
       An Anaconda install with the appropriate scientific packages works well. lmfit is best obtained via pip
-      to install the latest versions. This package is not yet compatible with Python 3.x.
+      to install the latest versions. *This package is not yet compatible with Python 3.x.*
    2. A Python-linked version of NEURON (www.neuron.yale.edu). The code has been tested with NEURON 7.3 and 7.4.
    3. A C compiler (gcc). Needed for compilation of mechanisms for NEURON.
    4. The Zilany et al (JASA 2014) auditory periphery model. This can be provided one of two ways:
-      1. The original MATLAB-based Zilany model; requires MATLAB 2011 or later. A C compiler will also be needed to build this model.
-      2. The Python-based cochlea model by Rudnicki and Hemmert (https://github.com/mrkrd/cochlea; can be installed via pip)
+      * The original MATLAB-based Zilany model; requires MATLAB 2011 or later. A C compiler will also be needed to build this model.The model should be placed in the directory "cnmodel/cnmodel/an_model/model", with the following components: ANmodel.m, complex.c, complex.h, complex.hpp, ffGn.m, fituaudiogram2.m, mexANmodel.m, model_IHC.c, model_Synapse.c, and the THRESHOLD_ALL_* files.  
+      * The Python-based cochlea model by Rudnicki and Hemmert (https://github.com/mrkrd/cochlea; can be installed via pip).
    5. neuronvis (optional; available at https://github.com/campagnola/neuronvis or https://github.com/pbmanis/neuronvis).
       This provides 3D visualization for morphology.
 
@@ -32,27 +32,55 @@ This package depends on the following:
 Testing
 -------
 
-Before testing, enter the cnmodel directory and compile the NEURON mod files:
+After the code is installed, enter the cnmodel directory and compile the NEURON mod files:
 
     $ nrnivmodl cnmodel/mechanisms
 
-This will create a directory ("x86_64" or "special") in the top cnmodel directory. At that point
+This will create a directory ("x86_64" or "special") in the top cnmodel directory with the compiled mechanisms.
+
+At that point
 
     $ python examples/toy_model.py
      
 should generate a plot with several sets of traces showing responses of individual neuron models to depolarizing and hyperpolarizing current steps.
 
-The test suite can be run as:
+The test suite should be run as:
 
     $ python test.py
 
 This will test each of the models against reference data, the synapse mechanisms, a number of internal routines, and the auditory nerve model. The tests should pass for each component. Failures may indicate incorrect installation or incorrect function within individual components.
 
-Additional tests are included in the examples directory. For example:
+Example code and tests
+----------------------
+
+A number of additional tests are included in the examples directory. For example:
     
-    * `test_mechanisms.py` runs a voltage clamp I/V protocol on a selected mechanism and displays the result.
-    * `test_cells.py` can run protocols on selected cell models.
-    * `test_synapses.py` evokes spikes in a presynaptic cell while recording the postsynaptic potential.
+- `test_an_model.py` verifies that the auditory nerve model can be run. If necessary, it will compile (using MEX) the mechanisms for matlab. 
+- `test_ccstim.py` tests the generation of different stimulus waveforms by the pulse generator module.
+- `test_cells.py` runs different cell models in current or voltage clamp. 
+   - usage: test_cells.py c elltype species[-h] [--type TYPE] [--temp TEMP] [-m MORPHOLOGY]
+                     [--nav NAV] [--ttx] [-p PULSETYPE] [--vc | --cc | --rmp]
+                     For example: python test_cells.py bushy mouse --cc --temp 34
+- `test_mechanisms.py` runs a voltage clamp I/V protocol on a selected mechanism and displays the result.
+   - Usage: python test_mechanisms.py <mechname>
+           
+     Available channel mechanisms:
+              
+   | Channel | Channel | Channel | Channel | Channel |
+   |---|---|---|---|---|
+   | CaPCalyx | KIR    | bkpkj    | hcno        | hcnobo           |
+   | hh       | hpkj   | ihpyr    | ihsgcApical | ihsgcBasalMiddle |
+   | ihvcn    | jsrna  | k_ion    | ka          | kcnq             |
+   | kdpyr    | kht    | kif      | kis         | klt              |
+   | kpkj     | kpkj2  | kpkjslow | kpksk       | leak             |
+   | lkpkj    | na     | naRsg    | na_ion      | nacn             |
+   | nacncoop | nap    | napyr    | nav11       |                  |
+                  
+- `test_cells.py` can run protocols on selected cell models.
+- `test_synapses.py` evokes spikes in a presynaptic cell while recording the postsynaptic potential.
+  - Usage:  python test_synapses.py <pre_celltype> <post_celltype>
+          
+          Supported cell types: sgc, bushy, tstellate, dstellate
     
     
 References:
