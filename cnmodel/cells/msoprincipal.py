@@ -114,6 +114,9 @@ class MSOPrincipal(MSO):
             If ttx is True, then the sodium channel conductance is set to 0 everywhere in the cell.
             This flag duplicates the effects of tetrodotoxin in the model. Currently, the flag is not implemented.
         
+        temperature : float (default: None, sets to model default of 22)
+            temperature (deg C) to run the cell at. Must be a valid temperature for the model.
+        
         species: string (default 'guineapig')
             species defines the pattern of ion channel densities that will be inserted, according to 
             prior measurements in various species. Note that
