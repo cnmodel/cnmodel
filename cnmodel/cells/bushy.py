@@ -1,7 +1,7 @@
 from neuron import h
 
 from .cell import Cell
-# from .. import synapses
+from .. import synapses
 from ..util import nstomho
 from ..util import Params
 import numpy as np
@@ -82,6 +82,24 @@ class Bushy(Cell):
         else:
             raise ValueError("Unsupported psd type %s" % psd_type)
 
+    def make_terminal(self, post_cell, term_type, **kwds):
+        if term_type == 'simple':
+            return synapses.SimpleTerminal(self.soma, post_cell, **kwds)
+
+        elif term_type == 'multisite':
+            if post_cell.type == 'mso':
+                nzones = data.get('bushy_synapse', species=self.species,
+                        post_type=post_cell.type, field='n_rsites')
+                delay = 0
+            else:
+                raise NotImplementedError("No knowledge as to how to connect Bushy cell to cell type %s" %
+                                        type(post_cell))
+            pre_sec = self.soma
+            return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, 
+                                            delay=delay, **kwds)
+        else:
+            raise ValueError("Unsupported terminal type %s" % term_type)
+
 
 class BushyRothman(Bushy):
     """
@@ -91,7 +109,7 @@ class BushyRothman(Bushy):
     """
 
     def __init__(self, morphology=None, decorator=None, nach=None,
-                 ttx=False, species='guineapig', modelType=None, debug=False):
+                 ttx=False, species='guineapig', modelType=None, debug=False, temperature=None):
         """
         Create a bushy cell, using the default parameters for guinea pig from
         R&M2003, as a type II cell.
@@ -153,7 +171,7 @@ class BushyRothman(Bushy):
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False, 'hillock': False, 
                        'initialsegment': False, 'myelinatedaxon': False, 'unmyelinatedaxon': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Bushy',
-                       'morphology': morphology, 'decorator': decorator, 'temperature': None}
+                       'morphology': morphology, 'decorator': decorator, 'temperature': temperature}
 
         self.spike_threshold = -40
         self.vrange = [-70., -55.]  # set a default vrange for searching for rmp

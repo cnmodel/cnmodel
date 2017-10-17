@@ -26,7 +26,7 @@ default_durs = [10., 100., 20.]
 cclamp = False
 
 cellinfo = {'types': ['bushy', 'bushycoop', 'tstellate', 'tstellatenav11', 'dstellate', 'dstellateeager', 'sgc',
-                      'cartwheel', 'pyramidal', 'octopus', 'tuberculoventral'],
+                      'cartwheel', 'pyramidal', 'octopus', 'tuberculoventral', 'mso'],
             'morphology': ['point', 'waxon', 'stick'],
             'nav': ['std', 'jsrna', 'nav11', 'nacncoop'],
             'species': ['guineapig', 'cat', 'rat', 'mouse'],
@@ -53,6 +53,7 @@ ccivrange = {'mouse':
             'dstellateeager': {'pulse': [(-0.6, 1.0, 0.025)]},
             'octopus': {'pulse': [(-2., 6., 0.2)]},
             'sgc': {'pulse': [(-0.3, 0.6, 0.02)]},
+            'mso': {'pulse': [(-1, 1.2, 0.05)]},
             },
             'rat':
             {'pyramidal': {'pulse': [(-0.3, 0.3, 0.025), (-0.040, 0.025, 0.005)]}, # 'prepulse': [(-0.25, -0.25, 0.25)]},
@@ -86,7 +87,10 @@ scale = {'bushy': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
         'tuberculoventral': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
             'crossing', [0, -60]),
         'octopus': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
-            'crossing', [0, -60])}
+            'crossing', [0, -60]),
+        'mso': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
+                        'crossing', [0, -60]),
+        }
 
 class Tests():
     """
@@ -202,12 +206,18 @@ class Tests():
                     ttx=args.ttx, debug=debugFlag)
             h.topology()
 
-
         #
         # DCN cartwheel cell tests
         #
         elif args.celltype == 'cartwheel':
             cell = cells.Cartwheel.create(modelType=args.type, ttx=args.ttx, debug=debugFlag)
+
+        #
+        # MSO principal neuron tests
+        #
+        elif args.celltype == 'mso' and args.morphology == 'point':
+            cell = cells.MSO.create(model='RM03', species=args.species, modelType=args.type,
+                ttx=args.ttx, nach=args.nav, debug=debugFlag)    
 
         else:
             raise ValueError ("Cell Type %s and configurations nav=%s or config=%s are not available" %
