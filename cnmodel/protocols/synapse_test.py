@@ -89,17 +89,13 @@ class SynapseTest(Protocol):
         # create hoc vectors for each parameter we wish to monitor and display
         synapse = synapses[0]
         self.all_psd = []
-        if synapses[0].psd.n_psd > 1:
+        if isinstance(synapses[0].psd, GlyPSD) or isinstance(synapses[0].psd, GluPSD):
             for syn in synapses:
                 self.all_psd.extend(syn.psd.all_psd)
-        else:
-            try:
-                syntype = synapses[0].psd.syn.hname()[:-3]
-                self.all_psd.extend(synapses)
-            except:
-                for syn in synapses:
-                    self.all_psd.extend(syn.psd.all_psd)
-        
+        elif isinstance(synapses[0].psd, Exp2PSD):
+            for syn in synapses:
+                self.all_psd.append(syn)
+
         #for i, cleft in enumerate(synapse.psd.clefts):
             #self['cleft_xmtr%d' % i] = cleft._ref_CXmtr
             #self['cleft_pre%d' % i] = cleft._ref_pre
@@ -446,8 +442,9 @@ class SynapseTest(Protocol):
         events = self.release_events()
         ns = len(self.synapses)
         for i in range(ns):
-            v = (i, events['n_spikes'][i], events['n_zones'][i], events['n_releases'][i])
-            print 'Synapse %d:  spikes: %d  zones: %d  releases: %d' % v
+            if i < len(events['n_spikes']) and events['n_spikes'][i] > 0:
+                v = (i, events['n_spikes'][i], events['n_zones'][i], events['n_releases'][i])
+                print 'Synapse %d:  spikes: %d  zones: %d  releases: %d' % v
         print ""
         print 'Total release requests: %d' % events['tot_requests']
         print 'Total release events:   %d' % events['tot_releases']
