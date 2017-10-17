@@ -19,7 +19,7 @@ from .pyramidal import *
 from .sgc import *
 from .octopus import *
 from .tuberculoventral import *
-from .mso import *
+from .msoprincipal import *
 from .hh import *
 
 from .cell import Cell

@@ -316,16 +316,16 @@ soma_e_na           50.   [1]     50.   [1]
 
 """)
 
-add_table_data('RM03_MSO_channels', row_key='field', col_key='cell_type', 
+add_table_data('MSO_principal_channels', row_key='field', col_key='cell_type', 
                species='guineapig', data=u"""
 
 This table describes the ion channel densities
-for a putative MSO neoron based on the original Rothman Manis 2003 model.
+for a putative MSO principal neuron based on the original Rothman Manis 2003 model for bushy cells.
 
 -----------------------------------------------------------------------------------------------------------------------------------
-                    MSO-II   
+                    MSO-principal   
                              
-MSO_name            II       
+MSO_name            Principal       
 soma_na_gbar        1000. [1]
 soma_kht_gbar       150.0 [1]
 soma_klt_gbar       200.0 [1]
