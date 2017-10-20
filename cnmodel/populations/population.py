@@ -26,11 +26,11 @@ class Population(object):
     Subclasses represent populations for a specific cell type, and at least
     need to reimplement the `create_cell` and `connection_stats` methods.
     """
-    def __init__(self, species, size, fields, **kwds):
+    def __init__(self, species, size, fields, synapsetype='simple', **kwds):
         self._species = species
         self._post_connections = []  # populations this one connects to
         self._pre_connections = []  # populations connecting to this one
-        
+        self._synapsetype = synapsetype
         # numpy record array with information about each cell in the 
         # population
         fields = [
@@ -143,7 +143,6 @@ class Population(object):
         """
         cell_rec = self._cells[cell_index]
         cell = cell_rec['cell']
-        
         size, dist = self.connection_stats(pop, cell_rec) 
         # Select SGCs from distribution, create, and connect to this cell
         # todo: select sgcs with similar spont. rate?
@@ -151,7 +150,7 @@ class Population(object):
         for j in pre_cells:
             pre_cell = pop.get_cell(j)
             # use default settings for connecting these. 
-            pre_cell.connect(cell)
+            pre_cell.connect(cell, type=self._synapsetype)
         return pre_cells
 
     def connection_stats(self, pop, cell_rec):
@@ -182,7 +181,7 @@ class Population(object):
         # cells to connect)  
         try:
             n_connections = data.get(
-                'convergence', species=self.species, pre_type=pop.type, post_type=self.type)
+                '%s_convergence' % self.species, species=self.species, pre_type=pop.type, post_type=self.type)
         except KeyError:
             raise TypeError("Cannot connect population %s to %s; no convergence specified in data table." % (pop, self))
             
@@ -196,7 +195,7 @@ class Population(object):
         # Convergence ranges -- over what range of CFs should we
         # select presynaptic cells.
         try:
-            input_range = data.get('convergence_range', 
+            input_range = data.get('%s_convergence_range' % self.species, 
                 species=self.species, pre_type=pop.type, post_type=self.type)
         except KeyError:
             raise TypeError("Cannot connect population %s to %s; no convergence range specified in data table." % (pop, self))

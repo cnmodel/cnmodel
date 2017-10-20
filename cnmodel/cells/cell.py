@@ -378,8 +378,8 @@ class Cell(object):
                                 **kwds)
         return psd
 
-    def make_exp2_psd(self, post_sec, terminal, loc=0.5):
-        return synapses.Exp2PSD(post_sec, terminal, loc=loc)
+    def make_exp2_psd(self, post_sec, terminal, weight=0.01, loc=0.5):
+        return synapses.Exp2PSD(post_sec, terminal, weight=weight, loc=loc)
 
     def print_status(self):
         print("\nCell model: %s" % self.__class__.__name__)

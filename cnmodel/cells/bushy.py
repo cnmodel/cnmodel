@@ -49,7 +49,9 @@ class Bushy(Cell):
             post_sec = self.soma
         
         if psd_type == 'simple':
-            return self.make_exp2_psd(post_sec, terminal, loc=loc)
+            weight = data.get('sgc_synapse', species=self.species,
+                        post_type=self.type, field='weight')
+            return self.make_exp2_psd(post_sec, terminal, weight=weight, loc=loc)
         elif psd_type == 'multisite':
             if terminal.cell.type == 'sgc':
                 # Max conductances for the glu mechanisms are calibrated by 

@@ -8,7 +8,7 @@ class Exp2PSD(PSD):
     """
     Simple double-exponential PSD from Neuron (fast).
     """
-    def __init__(self, section, terminal, loc=0.5):
+    def __init__(self, section, terminal, weight=0.01, loc=0.5):
         """
         Parameters
         ----------
@@ -16,6 +16,7 @@ class Exp2PSD(PSD):
             The postsynaptic section in which to insert the receptor mechanism.
         terminal : Terminal
             The presynaptic Terminal instance
+        weight : 
         loc : float, default=0.5
             Position on the postsynaptic section to insert the mechanism, from [0..1]. 
         
@@ -26,7 +27,7 @@ class Exp2PSD(PSD):
         self.syn.tau2 = 0.3
         self.syn.e = 0
 
-        terminal.connect(self.syn, weight=0.01)
+        terminal.connect(self.syn, weight=weight)
  
     @property
     def n_psd(self):

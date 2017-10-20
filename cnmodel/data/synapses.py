@@ -25,7 +25,7 @@ NMDAR_gmax   0.4531933 [10]    1.2127097 [10]     0.9960820 [10]    0.6562702 [1
 EPSC_cv      0.12 [8]          0.499759 [9]       0.886406 [9]      1.393382 [9]    0.499 [8]      0.499 [8]
 Pr           1.000 [11]        1.000 [11]         1.000 [11]        1.000 [11]      1.000 [8]      1.000 [8]
 n_rsites     100 [5]           4 [6]              1 [4]             1 [4]           2 [8]          2 [8]
-
+weight       0.027 [12]        0.006 [12]         0.00064 [12]      0.0011 [12]     0.0023 [12]    0.0029 [12]
 -----------------------------------------------------------------------------------------------------------------------------------
 
 [1] Derived from Cao, X. & Oertel, D. (2010). Single-terminal conductance was
@@ -114,6 +114,11 @@ n_rsites     100 [5]           4 [6]              1 [4]             1 [4]       
       once all other parameters are set. The Pr is used to rescale
       the AMPAR_gmax so that the total current matches the data in 
       AMPA_gmax in the table (on average).
+
+[12]  weight is the weight to use in a netcon object (NEURON) for "simple"
+      synapses based on the exp2syn mechanism. These are ~ AMPAR_gmax * 
+      0.065*2e-2, to approximate the current injected by the multisite
+      synapse.
 """)
 
 

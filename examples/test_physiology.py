@@ -23,19 +23,20 @@ from pyqtgraph.Qt import QtGui, QtCore
 from cnmodel import populations
 from cnmodel.util import sound, random
 from cnmodel.protocols import Protocol
+import timeit
 
 
 class CNSoundStim(Protocol):
-    def __init__(self, seed, temp=34.0, dt=0.025):
+    def __init__(self, seed, temp=34.0, dt=0.025, synapsetype='simple'):
         Protocol.__init__(self)
         
         self.seed = seed
         self.temp = temp
         self.dt = dt
+#        self.synapsetype = synapsetype  # simple or multisite
         
         # Seed now to ensure network generation is stable
         random.set_seed(seed)
-        
         # Create cell populations.
         # This creates a complete set of _virtual_ cells for each population. No 
         # cells are instantiated at this point.
@@ -47,7 +48,8 @@ class CNSoundStim(Protocol):
         
         pops = [self.sgc, self.dstellate, self.tuberculoventral, self.tstellate, self.bushy]
         self.populations = OrderedDict([(pop.type,pop) for pop in pops])
-
+        for p in pops:  # set synapse type to use in the population - simple is fast, multisite is slower
+            p._synapsetype = synapsetype
         # Connect populations. 
         # This only defines the connections between populations; no synapses are 
         # created at this stage.
@@ -497,53 +499,82 @@ if __name__ == '__main__':
     # Create a sound stimulus and use it to generate spike trains for the SGC
     # population
     stims = []
-    
+    parallel = True
     fmin = 4e3
     fmax = 32e3
-    octavespacing = 1/8.
+    octavespacing = 1/3.
+#    octavespacing = 1.
     n_frequencies = int(np.log2(fmax/fmin) / octavespacing) + 1
     fvals = np.logspace(np.log2(fmin/1000.), np.log2(fmax/1000.), num=n_frequencies, endpoint=True, base=2)*1000.
     
-    n_levels = 11
+    n_levels = 9
+#    n_levels = 3
     levels = np.linspace(20, 100, n_levels)
     
     print("Frequencies:", fvals/1000.)
     print("Levels:", levels)
 
+    syntype = 'simple'
     path = os.path.dirname(__file__)
     cachepath = os.path.join(path, 'cache')
     if not os.path.isdir(cachepath):
         os.mkdir(cachepath)
 
     seed = 34657845
-    prot = CNSoundStim(seed=seed)
-    
+    prot = CNSoundStim(seed=seed, synapsetype=syntype)
     i = 0
     
+    start_time = timeit.default_timer()
+    
+    #stimpar = {'dur': 0.06, 'pip': 0.025, 'start': [0.02], 'baseline': [10, 20], 'response': [20, 45]}
+    stimpar = {'dur': 0.2, 'pip': 0.04, 'start': [0.1], 'baseline': [50, 100], 'response': [100, 140]}
     tasks = []
     for f in fvals:
         for db in levels:
             tasks.append((f, db))
             
     results = [None] * len(tasks)    
-    with mp.Parallelize(enumerate(tasks), results=results, progressDialog='Running parallel simulation..') as tasker:
-        for i, task in tasker:
-            f, db = task    
-            stim = sound.TonePip(rate=100e3, duration=0.2, f0=f, dbspl=db,
-                                 ramp_duration=2.5e-3, pip_duration=0.04, 
-                                 pip_start=[0.1])
+    if parallel:
+        with mp.Parallelize(enumerate(tasks), results=results, progressDialog='Running parallel simulation..') as tasker:
+            for i, task in tasker:
+                f, db = task    
+                stim = sound.TonePip(rate=100e3, duration=stimpar['dur'], f0=f, dbspl=db,  # dura 0.2, pip_start 0.1 pipdur 0.04
+                                     ramp_duration=2.5e-3, pip_duration=stimpar['pip'], 
+                                     pip_start=stimpar['start'])
         
+                print("=== Start run %d/%d ===" % (i+1, len(fvals)*len(levels)))
+                cachefile = os.path.join(cachepath, 'seed=%d_f0=%f_dbspl=%f_syntype=%s.pk' % (seed, f, db, syntype))
+                if '--ignore-cache' in sys.argv or not os.path.isfile(cachefile):
+                    result = prot.run(stim, seed=i)
+                    pickle.dump(result, open(cachefile, 'wb'))
+                else:
+                    print("  (Loading cached results)")
+                    result = pickle.load(open(cachefile, 'rb'))
+                tasker.results[i] = (stim, result)
+                print('--- finished run %d/%d ---' % (i+1, len(fvals)*len(levels)))
+    else:
+        for i, task in enumerate(tasks):
+            f, db = task    
+            stim = sound.TonePip(rate=100e3, duration=stimpar['dur'], f0=f, dbspl=db,  # dura 0.2, pip_start 0.1 pipdur 0.04
+                                 ramp_duration=2.5e-3, pip_duration=stimpar['pip'], 
+                                 pip_start=stimpar['start'])
+
             print("=== Start run %d/%d ===" % (i+1, len(fvals)*len(levels)))
-            cachefile = os.path.join(cachepath, 'seed=%d_f0=%f_dbspl=%f.pk' % (seed, f, db))
+            cachefile = os.path.join(cachepath, 'seed=%d_f0=%f_dbspl=%f_syntype=%s.pk' % (seed, f, db, syntype))
             if '--ignore-cache' in sys.argv or not os.path.isfile(cachefile):
                 result = prot.run(stim, seed=i)
                 pickle.dump(result, open(cachefile, 'wb'))
             else:
                 print("  (Loading cached results)")
                 result = pickle.load(open(cachefile, 'rb'))
-            tasker.results[i] = (stim, result)
-
-    nd = NetworkSimDisplay(prot, results, baseline=[50, 100], response=[100, 140])
+            results[i] = (stim, result)
+            print('--- finished run %d/%d ---' % (i+1, len(fvals)*len(levels)))
+        
+    # get time of run before display
+    elapsed = timeit.default_timer() - start_time
+    print 'Elapsed time for %d stimuli: %f  (%f sec per stim), synapses: %s' % (len(tasks), elapsed, elapsed/len(tasks), prot.bushy._synapsetype)
+    
+    nd = NetworkSimDisplay(prot, results, baseline=stimpar['baseline'], response=stimpar['response'])
     nd.show()
     
     if sys.flags.interactive == 0:
