@@ -55,7 +55,7 @@ pyramidal         0           0           0           0           0            0
 
 """
 
-add_table_data('mouse_convergence', row_key='pre_type', col_key='post_type', 
+add_table_data('convergence', row_key='pre_type', col_key='post_type', 
                species='mouse', data=mouse_convergence)
 
 
@@ -100,7 +100,7 @@ pyramidal         0           0           0           0           0            0
 
 """
 
-add_table_data('mouse_convergence_range', row_key='pre_type', col_key='post_type', 
+add_table_data('convergence_range', row_key='pre_type', col_key='post_type', 
                species='mouse', data=mouse_convergence_range)
 
 #--------------------------------------------------------------------------------------------
@@ -162,7 +162,7 @@ pyramidal         0           0           0           0           0            0
 [8] Bushy convergence to MSO is a guess
 """
 
-add_table_data('guineapig_convergence', row_key='pre_type', col_key='post_type', 
+add_table_data('convergence', row_key='pre_type', col_key='post_type', 
                species='guineapig', data=guineapig_convergence)
 
 
@@ -211,7 +211,7 @@ pyramidal         0           0           0           0           0            0
 
 """
 
-add_table_data('guineapig_convergence_range', row_key='pre_type', col_key='post_type', 
+add_table_data('convergence_range', row_key='pre_type', col_key='post_type', 
                species='guineapig', data=guineapig_convergence_range)
 
 
