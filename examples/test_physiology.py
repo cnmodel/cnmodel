@@ -162,11 +162,12 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         self.stim_order = []
         freqs = set()
         levels = set()
-        for stim, result in results:
-            f0 = stim.key()['f0']
-            dbspl = stim.key()['dbspl']
+        for k,v in results.items():
+            f0, dbspl, iteration = k
+            stim, result = v
             key = 'f0: %0.0f  dBspl: %0.0f' % (f0, dbspl)
-            self.results[key] = (stim, result)
+            self.results.setdefault(key, [stim, {}])
+            self.results[key][1][iteration] = result
             self.stim_order.append((f0, dbspl))
             freqs.add(f0)
             levels.add(dbspl)
@@ -233,7 +234,7 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         for pop in pop_order:
             pre_inds = rec['connections'].get(pop, [])
             for preind in pre_inds:
-                spikes = self.selected_results[(pop.type, preind)][1]
+                spikes = self.selected_results[0][(pop.type, preind)][1]
                 y = np.ones(len(spikes)) * i
                 self.input_plot.plot(spikes, y, pen=None, symbolBrush=pop_colors[pop.type], symbol='+', symbolPen=None)
                 i += 1
@@ -247,9 +248,9 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         pop, cell_ind = self.selected_cell
         
         self.cell_plot.setTitle("%s %d   %s" % (pop.type, cell_ind, str(self.stim_combo.currentText())))
-        y = self.selected_results[(pop.type, cell_ind)][0]
+        y = self.selected_results[0][(pop.type, cell_ind)][0]
         if y is not None:
-            p = self.cell_plot.plot(self.selected_results['t'], y, 
+            p = self.cell_plot.plot(self.selected_results[0]['t'], y, 
                                     name='%s-%d' % self.selected_cell, antialias=True)
         #p.curve.setClickable(True)
         #p.sigClicked.connect(self.cell_curve_clicked)
@@ -500,6 +501,8 @@ if __name__ == '__main__':
     # population
     stims = []
     parallel = True
+    
+    nreps = 5
     fmin = 4e3
     fmax = 32e3
     octavespacing = 1/3.
@@ -531,26 +534,27 @@ if __name__ == '__main__':
     tasks = []
     for f in fvals:
         for db in levels:
-            tasks.append((f, db))
+            for i in range(nreps):
+                tasks.append((f, db, i))
             
-    results = [None] * len(tasks)
+    results = {}
     workers = 1 if not parallel else None
     with mp.Parallelize(enumerate(tasks), results=results, progressDialog='Running parallel simulation..', workers=workers) as tasker:
         for i, task in tasker:
-            f, db = task    
+            f, db, iteration = task
             stim = sound.TonePip(rate=100e3, duration=stimpar['dur'], f0=f, dbspl=db,  # dura 0.2, pip_start 0.1 pipdur 0.04
                                     ramp_duration=2.5e-3, pip_duration=stimpar['pip'], 
                                     pip_start=stimpar['start'])
     
             print("=== Start run %d/%d ===" % (i+1, len(fvals)*len(levels)))
-            cachefile = os.path.join(cachepath, 'seed=%d_f0=%f_dbspl=%f_syntype=%s.pk' % (seed, f, db, syntype))
+            cachefile = os.path.join(cachepath, 'seed=%d_f0=%f_dbspl=%f_syntype=%s_iter=%d.pk' % (seed, f, db, syntype, iteration))
             if '--ignore-cache' in sys.argv or not os.path.isfile(cachefile):
                 result = prot.run(stim, seed=i)
                 pickle.dump(result, open(cachefile, 'wb'))
             else:
                 print("  (Loading cached results)")
                 result = pickle.load(open(cachefile, 'rb'))
-            tasker.results[i] = (stim, result)
+            tasker.results[(f, db, iteration)] = (stim, result)
             print('--- finished run %d/%d ---' % (i+1, len(fvals)*len(levels)))
         
     # get time of run before display
