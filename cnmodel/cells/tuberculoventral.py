@@ -49,7 +49,10 @@ class Tuberculoventral(Cell):
             post_sec = self.soma
         
         if psd_type == 'simple':
-            return self.make_exp2_psd(post_sec, terminal, loc=loc)
+            weight = data.get('sgc_synapse', species=self.species,
+                        post_type=self.type, field='weight')
+            return self.make_exp2_psd(post_sec, terminal, weight=weight, loc=loc)
+
         elif psd_type == 'multisite':
             if terminal.cell.type == 'sgc':
                 # Max conductances for the glu mechanisms are calibrated by 
@@ -83,7 +86,7 @@ class Tuberculoventral(Cell):
         pre_sec = self.soma
         if term_type == 'simple':
             return synapses.SimpleTerminal(pre_sec, post_cell, 
-                                           spike_source=self.spike_source, **kwds)
+                                            **kwds)
         elif term_type == 'multisite':
             if post_cell.type == 'bushy':
                 nzones, delay = 10, 0

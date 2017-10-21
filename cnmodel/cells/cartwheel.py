@@ -65,7 +65,7 @@ class Cartwheel(Cell):
     def make_terminal(self, post_cell, term_type, **kwds):
         if term_type == 'simple':
             return synapses.SimpleTerminal(self.pre_sec, post_cell, 
-                                           spike_source=self.spike_source, **kwds)
+                                            **kwds)
         elif term_type == 'multisite':
             if post_cell.type == 'pyramidal':
                 nzones, delay = 5, 0

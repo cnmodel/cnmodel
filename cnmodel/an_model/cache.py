@@ -60,7 +60,7 @@ def get_spiketrain(cf, sr, stim, seed, **kwds):
                 create = True
                 sys.excepthook(*sys.exc_info())
                 logging.error("Error reading AN spike train cache file; will "
-                    "re-generate. File: %s", data_file)
+                    "re-generate. File: %s", filename)
 
         if create:
             logging.info("Generate new AN spike train: %s", filename)
