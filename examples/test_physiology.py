@@ -61,12 +61,12 @@ class CNSoundStim(Protocol):
         # Select cells to record from.
         # At this time, we actually instantiate the selected cells.
         # Select 4 cells centered around 16kHz
-        frequencies = [16e3]
-        cells_per_band = 3
-        for f in frequencies:
-            bushy_cell_ids = self.bushy.select(cells_per_band, cf=f, create=True)
-            #tstel_cell_ids = self.tstellate.select(cells_per_band, cf=f, create=True)
-        #self.bushy.select(3, cf=scipy.stats.norm(loc=16e3, scale=100), sgc_sr=1, create=True)
+        #frequencies = [16e3]
+        #cells_per_band = 3
+        #for f in frequencies:
+            #bushy_cell_ids = self.bushy.select(cells_per_band, cf=f, create=True)
+            ##tstel_cell_ids = self.tstellate.select(cells_per_band, cf=f, create=True)
+        self.bushy.select(1, cf=scipy.stats.norm(loc=16e3, scale=100), sgc_sr=1, create=True)
 
         # Now create the supporting circuitry needed to drive the cells we selected.
         # At this time, cells are created in all populations and automatically 
