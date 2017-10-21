@@ -533,32 +533,15 @@ if __name__ == '__main__':
         for db in levels:
             tasks.append((f, db))
             
-    results = [None] * len(tasks)    
-    if parallel:
-        with mp.Parallelize(enumerate(tasks), results=results, progressDialog='Running parallel simulation..') as tasker:
-            for i, task in tasker:
-                f, db = task    
-                stim = sound.TonePip(rate=100e3, duration=stimpar['dur'], f0=f, dbspl=db,  # dura 0.2, pip_start 0.1 pipdur 0.04
-                                     ramp_duration=2.5e-3, pip_duration=stimpar['pip'], 
-                                     pip_start=stimpar['start'])
-        
-                print("=== Start run %d/%d ===" % (i+1, len(fvals)*len(levels)))
-                cachefile = os.path.join(cachepath, 'seed=%d_f0=%f_dbspl=%f_syntype=%s.pk' % (seed, f, db, syntype))
-                if '--ignore-cache' in sys.argv or not os.path.isfile(cachefile):
-                    result = prot.run(stim, seed=i)
-                    pickle.dump(result, open(cachefile, 'wb'))
-                else:
-                    print("  (Loading cached results)")
-                    result = pickle.load(open(cachefile, 'rb'))
-                tasker.results[i] = (stim, result)
-                print('--- finished run %d/%d ---' % (i+1, len(fvals)*len(levels)))
-    else:
-        for i, task in enumerate(tasks):
+    results = [None] * len(tasks)
+    workers = 1 if not parallel else None
+    with mp.Parallelize(enumerate(tasks), results=results, progressDialog='Running parallel simulation..', workers=workers) as tasker:
+        for i, task in tasker:
             f, db = task    
             stim = sound.TonePip(rate=100e3, duration=stimpar['dur'], f0=f, dbspl=db,  # dura 0.2, pip_start 0.1 pipdur 0.04
-                                 ramp_duration=2.5e-3, pip_duration=stimpar['pip'], 
-                                 pip_start=stimpar['start'])
-
+                                    ramp_duration=2.5e-3, pip_duration=stimpar['pip'], 
+                                    pip_start=stimpar['start'])
+    
             print("=== Start run %d/%d ===" % (i+1, len(fvals)*len(levels)))
             cachefile = os.path.join(cachepath, 'seed=%d_f0=%f_dbspl=%f_syntype=%s.pk' % (seed, f, db, syntype))
             if '--ignore-cache' in sys.argv or not os.path.isfile(cachefile):
@@ -567,7 +550,7 @@ if __name__ == '__main__':
             else:
                 print("  (Loading cached results)")
                 result = pickle.load(open(cachefile, 'rb'))
-            results[i] = (stim, result)
+            tasker.results[i] = (stim, result)
             print('--- finished run %d/%d ---' % (i+1, len(fvals)*len(levels)))
         
     # get time of run before display
