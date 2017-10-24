@@ -26,7 +26,7 @@ class Population(object):
     Subclasses represent populations for a specific cell type, and at least
     need to reimplement the `create_cell` and `connection_stats` methods.
     """
-    def __init__(self, species, size, fields, synapsetype='simple', **kwds):
+    def __init__(self, species, size, fields, synapsetype='multisite', **kwds):
         self._species = species
         self._post_connections = []  # populations this one connects to
         self._pre_connections = []  # populations connecting to this one

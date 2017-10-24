@@ -48,8 +48,11 @@ class CNSoundStim(Protocol):
         
         pops = [self.sgc, self.dstellate, self.tuberculoventral, self.tstellate, self.bushy]
         self.populations = OrderedDict([(pop.type,pop) for pop in pops])
-        for p in pops:  # set synapse type to use in the population - simple is fast, multisite is slower
-            p._synapsetype = synapsetype
+        
+        # set synapse type to use in the sgc population - simple is fast, multisite is slower
+        # (eventually, we could do this for all synapse types..)
+        self.sgc._synapsetype = synapsetype
+            
         # Connect populations. 
         # This only defines the connections between populations; no synapses are 
         # created at this stage.
@@ -234,9 +237,11 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         for pop in pop_order:
             pre_inds = rec['connections'].get(pop, [])
             for preind in pre_inds:
-                spikes = self.selected_results[0][(pop.type, preind)][1]
-                y = np.ones(len(spikes)) * i
-                self.input_plot.plot(spikes, y, pen=None, symbolBrush=pop_colors[pop.type], symbol='+', symbolPen=None)
+                # iterate over all trials
+                for j,result in enumerate(self.selected_results.values()):
+                    spikes = result[(pop.type, preind)][1]
+                    y = np.ones(len(spikes)) * i + j / (2. * len(self.selected_results))
+                    self.input_plot.plot(spikes, y, pen=None, symbolBrush=pop_colors[pop.type], symbol='+', symbolPen=None)
                 i += 1
                 labels.append(pop.type + " " + str(preind))
         self.input_plot.getAxis('left').setTicks([list(enumerate(labels))])
@@ -248,10 +253,12 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         pop, cell_ind = self.selected_cell
         
         self.cell_plot.setTitle("%s %d   %s" % (pop.type, cell_ind, str(self.stim_combo.currentText())))
-        y = self.selected_results[0][(pop.type, cell_ind)][0]
-        if y is not None:
-            p = self.cell_plot.plot(self.selected_results[0]['t'], y, 
-                                    name='%s-%d' % self.selected_cell, antialias=True)
+        for i, result in enumerate(self.selected_results.values()):
+            y = result[(pop.type, cell_ind)][0]
+            if y is not None:
+                p = self.cell_plot.plot(self.selected_results[0]['t'], y, 
+                    name='%s-%d' % self.selected_cell, antialias=True, 
+                    pen=(i, len(self.selected_results)*1.5))
         #p.curve.setClickable(True)
         #p.sigClicked.connect(self.cell_curve_clicked)
         #p.cell_ind = ind
@@ -263,7 +270,7 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         y = stimpos.y()
         
         best = None
-        for stim, result in results:
+        for stim, result in self.results.values():
             f0 = stim.opts['f0']
             dbspl = stim.opts['dbspl']
             if x < f0 or y < dbspl:
@@ -335,21 +342,25 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         # Get spontaneous rate statistics
         spont_spikes = 0
         spont_time = 0
-        for stim, vec in self.results.values():
-            spikes = vec[(pop.type, ind)][1]
-            spont_spikes += ((spikes >= self.baseline[0]) & (spikes < self.baseline[1])).sum()
-            spont_time += self.baseline[1] - self.baseline[0]
+        for stim, iterations in self.results.values():
+            for vec in iterations.values():
+                spikes = vec[(pop.type, ind)][1]
+                spont_spikes += ((spikes >= self.baseline[0]) & (spikes < self.baseline[1])).sum()
+                spont_time += self.baseline[1] - self.baseline[0]
         spont_rate = spont_spikes / spont_time
         
         # next count the number of spikes for the selected cell at each point in the matrix
         matrix = np.zeros((len(fvals), len(lvals)))
-        for stim, vec in self.results.values():
-            spikes = vec[(pop.type, ind)][1]
-            n_spikes = ((spikes >= self.response[0]) & (spikes < self.response[1])).sum()
-            i = fvals.index(stim.key()['f0'])
-            j = lvals.index(stim.key()['dbspl'])
-            matrix[i, j] = n_spikes - spont_rate * (self.response[1]-self.response[0])
-            
+        for stim, iteration in self.results.values():
+            n_trials = len(iterations)
+            for vec in iteration.values():
+                spikes = vec[(pop.type, ind)][1]
+                n_spikes = ((spikes >= self.response[0]) & (spikes < self.response[1])).sum()
+                i = fvals.index(stim.key()['f0'])
+                j = lvals.index(stim.key()['dbspl'])
+                matrix[i, j] += n_spikes - spont_rate * (self.response[1]-self.response[0])
+        matrix /= n_trials
+        
         # plot and scale the matrix image 
         # note that the origin (lower left) of each image pixel indicates its actual test freq/level. 
         self.tuning_img.setImage(matrix)
@@ -505,19 +516,19 @@ if __name__ == '__main__':
     nreps = 5
     fmin = 4e3
     fmax = 32e3
-    octavespacing = 1/3.
-#    octavespacing = 1.
+#    octavespacing = 1/3.
+    octavespacing = 1.
     n_frequencies = int(np.log2(fmax/fmin) / octavespacing) + 1
     fvals = np.logspace(np.log2(fmin/1000.), np.log2(fmax/1000.), num=n_frequencies, endpoint=True, base=2)*1000.
     
-    n_levels = 9
-#    n_levels = 3
+    #n_levels = 9
+    n_levels = 3
     levels = np.linspace(20, 100, n_levels)
     
     print("Frequencies:", fvals/1000.)
     print("Levels:", levels)
 
-    syntype = 'simple'
+    syntype = 'multisite'
     path = os.path.dirname(__file__)
     cachepath = os.path.join(path, 'cache')
     if not os.path.isdir(cachepath):
