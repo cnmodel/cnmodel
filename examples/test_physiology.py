@@ -63,13 +63,13 @@ class CNSoundStim(Protocol):
 
         # Select cells to record from.
         # At this time, we actually instantiate the selected cells.
-        # Select 4 cells centered around 16kHz
-        #frequencies = [16e3]
-        #cells_per_band = 3
-        #for f in frequencies:
-            #bushy_cell_ids = self.bushy.select(cells_per_band, cf=f, create=True)
-            ##tstel_cell_ids = self.tstellate.select(cells_per_band, cf=f, create=True)
-        self.bushy.select(1, cf=scipy.stats.norm(loc=16e3, scale=100), sgc_sr=1, create=True)
+        
+        # Pick a single bushy cell near 16kHz, with medium-SR inputs
+        bc = self.bushy.cells
+        msr_cells = bc[bc['sgc_sr'] == 1]  # filter for msr cells
+        ind = np.argmin(np.abs(msr_cells['cf'] - 16e3))  # find the one closest to 16kHz
+        cell_id = msr_cells[ind]['id']
+        self.bushy.create_cells([cell_id])  # instantiate just one cell
 
         # Now create the supporting circuitry needed to drive the cells we selected.
         # At this time, cells are created in all populations and automatically 
@@ -516,13 +516,13 @@ if __name__ == '__main__':
     nreps = 5
     fmin = 4e3
     fmax = 32e3
-#    octavespacing = 1/3.
-    octavespacing = 1.
+    octavespacing = 1/8.
+    #octavespacing = 1.
     n_frequencies = int(np.log2(fmax/fmin) / octavespacing) + 1
     fvals = np.logspace(np.log2(fmin/1000.), np.log2(fmax/1000.), num=n_frequencies, endpoint=True, base=2)*1000.
     
-    #n_levels = 9
-    n_levels = 3
+    n_levels = 11
+    #n_levels = 3
     levels = np.linspace(20, 100, n_levels)
     
     print("Frequencies:", fvals/1000.)
