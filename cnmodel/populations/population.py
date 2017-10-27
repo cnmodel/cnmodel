@@ -34,12 +34,14 @@ class Population(object):
         # numpy record array with information about each cell in the 
         # population
         fields = [
+            ('id', int),
             ('cell', object), 
             ('input_resolved', bool),
             ('connections', object),  # {pop: [cells], ...}
         ] + fields
         self._cells = np.zeros(size, dtype=fields)
-        self._cell_indexes = {}
+        self._cells['id'] = np.arange(size)
+        self._cell_indexes = {}  # maps cell:index
         self._cell_args = kwds
 
     @property
