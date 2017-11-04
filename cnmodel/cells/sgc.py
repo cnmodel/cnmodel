@@ -234,6 +234,19 @@ class SGC_TypeI(SGC):
         if debug:
             print "<< SGC: Spiral Ganglion Cell created >>"
 
+    def get_cellpars(self, dataset, species='mouse', celltype='a'):
+        cellcap = data.get(dataset, species=species, cell_type=celltype,
+            field='soma_Cap')
+        chtype = data.get(dataset, species=species, cell_type=celltype,
+            field='soma_na_type')
+        pars = Params(cap=cellcap, natype=chtype)
+        for g in ['soma_na_gbar', 'soma_kht_gbar', 'soma_klt_gbar', 'soma_ihap_gbar', 'soma_ihbm_gbar',
+                  'soma_ihap_eh', 'soma_ihbm_eh', 'soma_leak_erev', 
+                  'soma_e_k', 'soma_e_na']:
+            pars.additem(g,  data.get(dataset, species=species, cell_type=celltype,
+            field=g))
+        return pars
+
     def species_scaling(self, silent=True, species='guineapig', modelType='a'):
         """
         Adjust all of the conductances and the cell size according to the species requested.
@@ -265,24 +278,28 @@ class SGC_TypeI(SGC):
         """
         
         soma = self.soma
+            
         if species == 'mouse':
-            self.set_soma_size_from_Cm(12.0)
             self._valid_temperatures = (34.,)
             if self.status['temperature'] is None:
                 self.set_temperature(34.)
-            self.adjust_na_chans(soma, gbar=350.)
-            soma().kht.gbar = nstomho(58.0, self.somaarea)
-            soma().klt.gbar = nstomho(80.0, self.somaarea)
+            
+            par = get_cellpars(self, 'sgc', species='mouse', celltype=modelType)
+            self.set_soma_size_from_Cm(12.0)
+            self.adjust_na_chans(soma, gbar=par.soma_na_gbar)
+            soma().kht.gbar = nstomho(par.soma_kht_gbar, self.somaarea)
+            soma().klt.gbar = nstomho(par.soma_klt_gbar, self.somaarea)
                 # nstomho(200.0, somaarea) * scalefactor
             if modelType == 'a':
-                soma().ihsgcApical.gbar = nstomho(3.0, self.somaarea)
-                soma().ihsgcApical.eh = -41
+                soma().ihsgcApical.gbar = nstomho(par.soma_ihap_gbar, self.somaarea)
+                soma().ihsgcApical.eh = par.soma_ihap_eh
             elif modelType == 'bm':
-                soma().ihsgcBasalMiddle.gbar = nstomho(3.0, self.somaarea)
-                soma().ihsgcBasalMiddle.eh = -41
+                soma().ihsgcBasalMiddle.gbar = nstomho(par.soma_ihbm_gbar,  self.somaarea)
+                soma().ihsgcBasalMiddle.eh = par.soma_ihap_bm
             else:
                 raise ValueError('Ihsgc modelType %s not recognized for species %s' % (species, modelType))
-            soma().leak.gbar = nstomho(2.0, self.somaarea)
+            soma().leak.gbar = nstomho(par.soma_leak_gbar, self.somaarea)
+            soma().leak.erev = nstomho(par.soma_leak_erev, self.somaarea)
 
         elif species == 'guineapig':
             # guinea pig data from Rothman and Manis, 2003, modelType II

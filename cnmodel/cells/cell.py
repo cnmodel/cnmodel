@@ -132,8 +132,10 @@ class Cell(object):
                # print '\nmechanisms for section: %s', section
                # self.print_mechs(section)
         self.set_soma_size_from_Section(self.soma)  # this is used for reporting and setting g values...
-        print ('self.morphology, get distances')
-        self.distances(self.soma[1])
+        if isinstance(self.soma, list):
+            self.distances(self.soma[1])
+        else:
+            self.distances(self.soma)
         self.hr.distanceMap = self.distanceMap
 
     def add_section(self, sec, sec_type):

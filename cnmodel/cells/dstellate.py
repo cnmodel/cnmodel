@@ -1,6 +1,4 @@
-import numpy as np
 from neuron import h
-import neuron as nrn
 from ..util import nstomho
 from .cell import Cell
 from ..util import Params
@@ -210,6 +208,20 @@ class DStellateRothman(DStellate):
         if debug:
             print "<< D-stellate: JSR Stellate Type I-II cell model created >>"
 
+    def get_cellpars(self, dataset, species='guineapig', celltype='I-II'):
+        cellcap = data.get(dataset, species=species, cell_type=celltype,
+            field='soma_Cap')
+        chtype = data.get(dataset, species=species, cell_type=celltype,
+            field='soma_na_type')
+        pars = Params(cap=cellcap, natype=chtype)
+        for g in ['soma_na_gbar', 'soma_kht_gbar', 'soma_ka_gbar',
+                  'soma_ih_gbar', 'soma_ih_eh',
+                  'soma_leak_gbar', 'soma_leak_erev',
+                  'soma_e_k', 'soma_e_na']:
+            pars.additem(g,  data.get(dataset, species=species, cell_type=celltype,
+            field=g))
+        return pars
+
     def species_scaling(self, species='guineapig', modelType='I-II', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
@@ -229,21 +241,28 @@ class DStellateRothman(DStellate):
             
         """
         soma = self.soma
-        if species == 'mouse' and modelType == 'I-II':
+        celltype = modelType
+        if species == 'mouse':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
+            dataset = 'XM13_channels'
             self._valid_temperatures = (34., )
             if self.status['temperature'] is None:
                 self.set_temperature(34.)
             self.c_m = 0.9
-            self.set_soma_size_from_Cm(25.0)
-            self.adjust_na_chans(soma, gbar=1800.)
-            soma().kht.gbar = nstomho(150.0, self.somaarea)
-            soma().klt.gbar = nstomho(14.0, self.somaarea)
-            soma().ihvcn.gbar = nstomho(2.0, self.somaarea)
-            soma().ihvcn.eh = -43 # Rodrigues and Oertel, 2006
-            soma().leak.gbar = nstomho(2.0, self.somaarea)
+            pars = self.get_cellpars(dataset, species=species, celltype=celltype)
+            self.set_soma_size_from_Cm(pars.cap)
+            self.status['na'] = pars.natype
+#            pars.show()
+            self.adjust_na_chans(soma, gbar=pars.soma_na_gbar, sf=1.0)
+            soma().kht.gbar = nstomho(pars.soma_kht_gbar, self.somaarea)
+            soma().ka.gbar = nstomho(pars.soma_ka_gbar, self.somaarea)
+            soma().ihvcn.gbar = nstomho(pars.soma_ih_gbar, self.somaarea)
+            soma().leak.gbar = nstomho(pars.soma_leak_gbar, self.somaarea)
+            soma().leak.erev = pars.soma_leak_erev
             self.axonsf = 0.5
-        elif species == 'guineapig' and modelType == 'I-II':  # values from R&M 2003, Type II-I
+            
+        elif species == 'guineapig':  # values from R&M 2003, Type II-I
+            dataset = 'RM03_channels'
             self.c_m = 0.9
             self._valid_temperatures = (22., 38.)
             if self.status['temperature'] is None:
@@ -252,12 +271,17 @@ class DStellateRothman(DStellate):
             if self.status['temperature'] == 38.:  # adjust for 2003 model conductance levels at 38
                 sf = 3.03  # Q10 of 2, 22->38C. (p3106, R&M2003c)
                 self.i_test_range={'pulse': (-0.3, 0.3, 0.03)}
-            self.set_soma_size_from_Cm(12.0)
-            self.adjust_na_chans(soma, gbar=1000., sf=sf)
-            soma().kht.gbar = sf*nstomho(150.0, self.somaarea)
-            soma().klt.gbar = sf*nstomho(20.0, self.somaarea)
-            soma().ihvcn.gbar = sf*nstomho(2.0, self.somaarea)
-            soma().leak.gbar = sf*nstomho(2.0, self.somaarea)
+            self.vrange = [-75., -55.]
+            pars = self.get_cellpars(dataset, species=species, celltype=celltype)
+            self.set_soma_size_from_Cm(pars.cap)
+            self.status['na'] = pars.natype
+#            pars.show()
+            self.adjust_na_chans(soma, gbar=pars.soma_na_gbar, sf=sf)
+            soma().kht.gbar = nstomho(pars.soma_kht_gbar, self.somaarea)
+            soma().ka.gbar = nstomho(pars.soma_ka_gbar, self.somaarea)
+            soma().ihvcn.gbar = nstomho(pars.soma_ih_gbar, self.somaarea)
+            soma().leak.gbar = nstomho(pars.soma_leak_gbar, self.somaarea)
+            soma().leak.erev = pars.soma_leak_erev
             self.axonsf = 0.5
 
         else:

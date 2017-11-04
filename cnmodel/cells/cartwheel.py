@@ -1,5 +1,4 @@
 from neuron import h
-import neuron as nrn
 from ..util import nstomho
 import numpy as np
 from .cell import Cell
@@ -19,7 +18,7 @@ class Cartwheel(Cell):
         """
         Connect a presynaptic terminal to one post section at the specified location, with the fraction
         of the "standard" conductance determined by gbar.
-        The default condition is designed to pass the unit test (loc=0.5)
+        The default condition is to try to pass the default unit test (loc=0.5)
         
         Parameters
         ----------
@@ -27,59 +26,25 @@ class Cartwheel(Cell):
         
         psd_type : either simple or multisite PSD for bushy cell
         
-        kwds: dictionary of options. 
-            Two are currently handled:
-            postsize : expect a list consisting of [sectionno, location (float)]
-            AMPAScale : float to scale the ampa currents
+        kwds: dict of options. Two are currently handled:
+        postsize : expect a list consisting of [sectionno, location (float)]
+        AMPAScale : float to scale the ampa currents
         
         """
-        pre_sec = terminal.section
-        pre_cell = terminal.cell
-        post_sec = self.soma
-
-        if psd_type == 'simple':
-            return self.make_exp2_psd(post_sec, terminal)
+        if 'postsite' in kwds:  # use a defined location instead of the default (soma(0.5)
+            postsite = kwds['postsite']
+            loc = postsite[1]  # where on the section?
+            uname = 'sections[%d]' % postsite[0]  # make a name to look up the neuron section object
+            post_sec = self.hr.get_section(uname)  # Tell us where to put the synapse.
+        else:
+            loc = 0.5
+            post_sec = self.soma
         
-        elif psd_type == 'multisite':
-            if pre_cell.type == 'granule':
-                # Max conductances for the glu mechanisms are calibrated by 
-                # running `synapses/tests/test_psd.py`. The test should fail
-                # if these values are incorrect:
-                AMPA_gmax = 0.526015135636368*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
-                NMDA_gmax = 0.28738714531937265*1e3
-                return self.make_glu_psd(post_sec, terminal, AMPA_gmax, NMDA_gmax)
-            elif pre_cell.type == 'cartwheel':
-                # Get GLY kinetic constants from database 
-                return self.make_gly_psd(post_sec, terminal, type='glyfast')
-            elif pre_cell.type == 'MLStellate':
-                # Get GLY kinetic constants from database 
-                return self.make_gly_psd(post_sec, terminal, type='glyfast')
-            else:
-                raise TypeError("Cannot make PSD for %s => %s" % 
-                                (pre_cell.type, self.type))
+        if psd_type == 'simple':
+            return self.make_exp2_psd(post_sec, terminal, loc=loc)
         else:
-            raise ValueError("Unsupported psd type %s" % psd_type)
+            raise ValueError("Unsupported psd type %s for cartwheel cell (inputs not implemented yet)" % psd_type)
 
-    def make_terminal(self, post_cell, term_type, **kwds):
-        if term_type == 'simple':
-            return synapses.SimpleTerminal(pre_sec, post_cell, 
-                                           spike_source=self.spike_source, **kwds)
-        elif term_type == 'multisite':
-            if post_cell.type == 'pyramidal':
-                nzones, delay = 5, 0
-            elif post_cell.type == 'cartwheel':
-                nzones, delay = 5, 0
-            elif post_cell.type == 'MLStellate':
-                nzones, delay = 5, 0
-            else:
-                raise NotImplementedError("No knowledge as to how to connect Cartwheel cell to cell type %s" %
-                                        type(post_cell))
-            
-            pre_sec = self.soma
-            return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, 
-                                            delay=delay, **kwds)
-        else:
-            raise ValueError("Unsupported terminal type %s" % term_type)
 
 class CartwheelDefault(Cartwheel, Cell):
     """
@@ -149,7 +114,6 @@ class CartwheelDefault(Cartwheel, Cell):
             instantiate a basic soma-only ("point") model
             """
             soma = h.Section(name="Cartwheel_Soma_%x" % id(self)) # one compartment of about 29000 um2
-            cm = 1
             soma.nseg = 1
             self.add_section(soma, 'soma')
         else:
@@ -161,26 +125,38 @@ class CartwheelDefault(Cartwheel, Cell):
 
         # decorate the morphology with ion channels
         if decorator is None:   # basic model, only on the soma
-            v_potassium = -80       # potassium reversal potential
-            v_sodium = 50           # sodium reversal potential
+            # v_potassium = -80       # potassium reversal potential
+            # v_sodium = 50           # sodium reversal potential
 
             self.mechanisms = ['naRsg', 'bkpkj', 'hpkj', 'kpkj', 'kpkj2',
                                'kpkjslow', 'kpksk', 'lkpkj', 'cap']
             for mech in self.mechanisms:
                 self.soma.insert(mech)
             self.soma.insert('cadiff')
-           # soma().kpksk.gbar = 0.002
-           # soma().lkpkj.gbar = 3e-4
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
             self.decorate()
-#        print 'Mechanisms inserted: ', self.mechanisms
         self.get_mechs(self.soma)
-#        self.cell_initialize(vrange=self.vrange)
         
         if debug:
             print "<< Cartwheel: Modified version of Raman Purkinje cell model created >>"
 
+    def get_cellpars(self, dataset, species='guineapig', celltype='II'):
+        cellDia = data.get(dataset, species=species, cell_type=celltype,
+            field='soma_Dia')
+        chtype = data.get(dataset, species=species, cell_type=celltype,
+            field='soma_na_type')
+        pcabar = data.get(dataset, species=species, cell_type=celltype,
+            field='soma_pcabar')
+        pars = Params(cap=cellDia, natype=chtype, pcabar=pcabar)
+        for g in ['soma_narsg_gbar', 'soma_kpkj_gbar', 'soma_kpkj2_gbar', 'soma_kpkjslow_gbar',
+                  'soma_kpsk_gbar', 'soma_lkpkj_gbar', 'soma_bkpkj_gbar', 'soma_hpkj_gbar',
+                  'soma_hpkj_eh','soma_lkpkj_e', 'soma_e_k', 'soma_e_na', 'soma_e_ca',
+                  ]:
+            pars.additem(g,  data.get(dataset, species=species, cell_type=celltype,
+            field=g))
+        return pars
+        
     def species_scaling(self, silent=True, species='mouse', modelType='I'):
         """
         Adjust all of the conductances and the cell size according to the species requested.
@@ -208,38 +184,36 @@ class CartwheelDefault(Cartwheel, Cell):
         if modelType is not 'I':
             raise ValueError ('Cartwheel modelType: only "I" is recognized')
         soma = self.soma
-        dia = 18.
-        self.set_soma_size_from_Diam(dia)# if species == 'rat' and modelType == 'I':
+#        dia = 18.
         self._valid_temperatures = (34.,)
         if self.status['temperature'] is None:
             self.set_temperature(34.)
-        #self.print_mechs(self.soma)
-        #     self.set_soma_size_from_Cm(12.0)
-        self.soma().bkpkj.gbar = nstomho(2., self.somaarea) # 2030
-        self.soma().hpkj.gbar = nstomho(5, self.somaarea) # 29
-        self.soma().kpkj.gbar = nstomho(100, self.somaarea) # 1160
-        self.soma().kpkj2.gbar = nstomho(50, self.somaarea) #579
-        self.soma().kpkjslow.gbar = nstomho(150, self.somaarea) # 1160
-        self.soma().kpksk.gbar = nstomho(25, self.somaarea) # 2900
-        self.soma().lkpkj.gbar = nstomho(5, self.somaarea) # 14.5
-        self.soma().naRsg.gbar = nstomho(500, self.somaarea)  # 4340
-        self.soma().cap.pcabar = 0.00015 # * (dia/2.)**2/(21./2.)**2 # 0.00005
-        self.soma().ena = 50
-        self.soma().ek = -80
-        self.soma().lkpkj.e = -65
-        self.soma().hpkj.eh = -43
-        self.soma().eca = 50
-        # else:
-        #     raise ValueError('Species %s or species-modelType %s is not recognized for T-stellate cells' % (species, modelType))
+        
+        pars = get_cellpars('CW_channels', species=species, celltype=celltype)
+        self.set_soma_size_from_Diam(pars.dia)
+        self.soma().bkpkj.gbar = nstomho(soma_bkpkj_gbar, self.somaarea)
+        self.soma().hpkj.gbar = nstomho(soma_hpkj_gbar, self.somaarea)
+        self.soma().kpkj.gbar = nstomho(soma_kpkj_gbar, self.somaarea)
+        self.soma().kpkj2.gbar = nstomho(soma_kpkj_gbar, self.somaarea)
+        self.soma().kpkjslow.gbar = nstomho(soma_kpkjslow_gbar, self.somaarea)
+        self.soma().kpksk.gbar = nstomho(soma_kpsk_gbar, self.somaarea)
+        self.soma().lkpkj.gbar = nstomho(soma_lkpkj_gbar, self.somaarea)
+        self.soma().naRsg.gbar = nstomho(soma_narsg_gbar, self.somaarea)
+        self.soma().cap.pcabar = soma_pcabar
+        self.soma().ena = soma_e_na # 50
+        self.soma().ek = soma_e_k # -80
+        self.soma().lkpkj.e = soma_lkpkj_e  #-65
+        self.soma().hpkj.eh = soma_hpkj_eh  #-43
+        self.soma().eca = soma_e_ca # 50
 
         self.status['species'] = species
         self.status['modelType'] = modelType
-#        self.cell_initialize(showinfo=False)
         self.check_temperature()
         if not silent:
             print 'set cell as: ', species
             print ' with Vm rest = %f' % self.vm0
-
+        print 'set up'
+        
     def i_currents(self, V):
         """
         For the steady-state case, return the total current at voltage V
