@@ -52,7 +52,7 @@ class Decorator():
                         'ihvcn': 'eh', 'jsrna': 'ena', 'nav11': 'ena', 'nacncoop': 'ena',
                         'hcnobo': 'eh'}
         self._biophys(cell, verify=verify)
-        print 'Decorator: Model Decorated with channels (if this appears more than once per cell, there is a problem)'
+        print ('\033[1;31;40m Decorator: Model Decorated with channels (if this appears more than once per cell, there is a problem)\033[0m')
 
 
     def _biophys(self, cell, verify=False):
@@ -158,6 +158,7 @@ class Decorator():
         method = cell.distMap[sectype][mech]['gradient'] # grab the type
         gminf = cell.distMap[sectype][mech]['gminf']
         rate = cell.distMap[sectype][mech]['lambda']
+      #  print('sectype: %s  mech: %s method: %s  rate: %s' % (sectype, mech, method, rate))
         if method == 'flat':
             return gbar
         if sec in self.channelInfo.distanceMap.keys():
@@ -165,9 +166,11 @@ class Decorator():
         else:  # the sec should be in the map, but there could be a coding error that would break that relationship
             raise NameError('gbarAdjust in channel_decorate.py: section %s not in distance map' % sec)
         if method == 'linear':  # rate is "half" point drop
-            gbar = gbar - dist*(gbar-gminf)/(2*rate)
+           # print('doing linear, orig gbar: ', gbar)
+            gbar = gbar - dist*(gbar-gminf)/rate
             if gbar < 0.:
                 gbar = 0. # clip
+        #    print('sec dist: %f  final gbar: %f' % (dist, gbar))
         elif method in ['exp', 'expdown']:
             gbar = (gbar - gminf) * np.exp(-dist/rate) + gminf
         if gbar < 0.:
@@ -191,7 +194,8 @@ class Decorator():
                 if sectype in ['undefined']:  # skip undefined sections
                     continue
                 print 'Validation: encountered unknown section group type: %s  Cannot Validate' % sectype
-                continue
+                raise ValueError('Unknown section group, decoration is incomplete')
+#                continue
 #            print 'Validating Section: %s' % s
             for mech in cell.channelMap[sectype].keys():
                 if mech not in self.gmapper.keys():
@@ -225,8 +229,8 @@ class Decorator():
             sectype = 'axon'
         if sectype in ['initseg', 'initialsegment']:
             sectype = 'initseg'
-        if sectype in ['dendscaled_0', 'dendscaled_1', 'dendscaled_2', 'dendrite']:
-            sectype = 'dend'
+        if sectype in ['dendscaled_0', 'dendscaled_1', 'dendscaled_2', 'dendrite', 'dend']:
+            sectype = 'dendrite'
         if sectype in ['apical_dendrite']:
             sectype = 'apic'
         return sectype
