@@ -105,7 +105,7 @@ class Cell(object):
         nothing
             
         """
-        print('morphology file: ', morphology_file)
+        self.morphology_file = morphology_file  # save the source file name
         if isinstance(morphology_file, str):
             if morphology_file.endswith('.hoc'):
                 self.morphology = morphology.HocReader(morphology_file)
@@ -706,9 +706,12 @@ class Cell(object):
         print('   cm:   ', self.c_m)
         print('-'*40)
         
-    def distances(self, section):
+    def distances(self, section=None):
         self.distanceMap = {}
-        self.hr.h('access %s' % self.soma.name()) # reference point
+        if section is None:
+            self.hr.h('access %s' % self.soma.name()) # reference point
+        else:
+            self.hr.h('access %s' % section.name())
         d = self.hr.h.distance()
         for sec in self.all_sections:
             s = self.all_sections[sec]
@@ -716,6 +719,17 @@ class Cell(object):
                 for u in s:
                     self.hr.h('access %s' % u.name())
                     self.distanceMap[u.name()] = self.hr.h.distance(0.5) - d # should be distance from first point
+
+    def computeAreas(self):
+        self.areaMap = {}
+        for sec in self.all_sections:
+            s = self.all_sections[sec]
+            sectype = self.get_section_type(sec)
+            if len(s) > 0:
+                for u in s:
+                    self.areaMap[u] = np.pi*u.diam*u.L
+            else:
+                print('    No section of type %s in cell' % sectype)
 
     def add_axon(self, c_m=1.0, R_a=150, axonsf=1.0, nodes=5, debug=False, dia=None, len=None, seg=None):
         """
