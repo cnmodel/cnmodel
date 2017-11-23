@@ -161,12 +161,16 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
                 
         self.stim_combo = pg.QtGui.QComboBox()
         self.layout.addWidget(self.stim_combo)
+        self.trial_combo = pg.QtGui.QComboBox()
+        self.layout.addWidget(self.trial_combo)
         self.results = OrderedDict()
         self.stim_order = []
         freqs = set()
         levels = set()
+        max_iter = 0
         for k,v in results.items():
             f0, dbspl, iteration = k
+            max_iter = max(max_iter, iteration)
             stim, result = v
             key = 'f0: %0.0f  dBspl: %0.0f' % (f0, dbspl)
             self.results.setdefault(key, [stim, {}])
@@ -177,7 +181,13 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
             self.stim_combo.addItem(key)
         self.freqs = sorted(list(freqs))
         self.levels = sorted(list(levels))
+        self.iterations = max_iter + 1
+        self.trial_combo.addItem("all trials")
+        for i in range(self.iterations):
+            self.trial_combo.addItem(str(i))
+            
         self.stim_combo.currentIndexChanged.connect(self.stim_selected)
+        self.trial_combo.currentIndexChanged.connect(self.trial_selected)
 
         self.tuning_plot = pg.PlotWidget()
         self.tuning_plot.setLogMode(x=True, y=False)
@@ -234,11 +244,13 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         pop_colors = {'dstellate': 'y', 'tuberculoventral': 'r', 'sgc': 'g', 'tstellate': 'b'}
         pop_symbols = {'dstellate': 'x', 'tuberculoventral': '+', 'sgc': 't', 'tstellate': 'o'}
         pop_order = [self.prot.sgc, self.prot.dstellate, self.prot.tuberculoventral]
+        trials = self.selected_trials()
         for pop in pop_order:
             pre_inds = rec['connections'].get(pop, [])
             for preind in pre_inds:
                 # iterate over all trials
-                for j,result in enumerate(self.selected_results.values()):
+                for j in trials:
+                    result = self.selected_results[j]
                     spikes = result[(pop.type, preind)][1]
                     y = np.ones(len(spikes)) * i + j / (2. * len(self.selected_results))
                     self.input_plot.plot(spikes, y, pen=None, symbolBrush=pop_colors[pop.type], symbol='+', symbolPen=None)
@@ -253,7 +265,9 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         pop, cell_ind = self.selected_cell
         
         self.cell_plot.setTitle("%s %d   %s" % (pop.type, cell_ind, str(self.stim_combo.currentText())))
-        for i, result in enumerate(self.selected_results.values()):
+        trials = self.selected_trials()
+        for i in trials:
+            result = self.selected_results[i]
             y = result[(pop.type, cell_ind)][0]
             if y is not None:
                 p = self.cell_plot.plot(self.selected_results[0]['t'], y, 
@@ -299,6 +313,17 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         self.update_cell_plot()
         
         self.stim_rect.setPos(np.log10(results[0].opts['f0']), results[0].opts['dbspl'])
+
+    def trial_selected(self):
+        self.update_raster_plot()
+        self.update_cell_plot()
+        self.update_tuning()
+
+    def selected_trials(self):
+        if self.trial_combo.currentIndex() == 0:
+            return range(self.iterations)
+        else:
+            return [self.trial_combo.currentIndex() - 1]
 
     def select_stim(self, f0, dbspl):
         i = self.stim_order.index((f0, dbspl))
@@ -351,15 +376,16 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         
         # next count the number of spikes for the selected cell at each point in the matrix
         matrix = np.zeros((len(fvals), len(lvals)))
+        trials = self.selected_trials()
         for stim, iteration in self.results.values():
-            n_trials = len(iterations)
-            for vec in iteration.values():
+            for i in trials:
+                vec = iteration[i]
                 spikes = vec[(pop.type, ind)][1]
                 n_spikes = ((spikes >= self.response[0]) & (spikes < self.response[1])).sum()
                 i = fvals.index(stim.key()['f0'])
                 j = lvals.index(stim.key()['dbspl'])
                 matrix[i, j] += n_spikes - spont_rate * (self.response[1]-self.response[0])
-        matrix /= n_trials
+        matrix /= self.iterations
         
         # plot and scale the matrix image 
         # note that the origin (lower left) of each image pixel indicates its actual test freq/level. 
@@ -550,6 +576,7 @@ if __name__ == '__main__':
             
     results = {}
     workers = 1 if not parallel else None
+    tot_runs = len(fvals) * len(levels) * nreps
     with mp.Parallelize(enumerate(tasks), results=results, progressDialog='Running parallel simulation..', workers=workers) as tasker:
         for i, task in tasker:
             f, db, iteration = task
@@ -557,7 +584,7 @@ if __name__ == '__main__':
                                     ramp_duration=2.5e-3, pip_duration=stimpar['pip'], 
                                     pip_start=stimpar['start'])
     
-            print("=== Start run %d/%d ===" % (i+1, len(fvals)*len(levels)))
+            print("=== Start run %d/%d ===" % (i+1, tot_runs))
             cachefile = os.path.join(cachepath, 'seed=%d_f0=%f_dbspl=%f_syntype=%s_iter=%d.pk' % (seed, f, db, syntype, iteration))
             if '--ignore-cache' in sys.argv or not os.path.isfile(cachefile):
                 result = prot.run(stim, seed=i)
@@ -566,7 +593,7 @@ if __name__ == '__main__':
                 print("  (Loading cached results)")
                 result = pickle.load(open(cachefile, 'rb'))
             tasker.results[(f, db, iteration)] = (stim, result)
-            print('--- finished run %d/%d ---' % (i+1, len(fvals)*len(levels)))
+            print('--- finished run %d/%d ---' % (i+1, tot_runs))
         
     # get time of run before display
     elapsed = timeit.default_timer() - start_time
