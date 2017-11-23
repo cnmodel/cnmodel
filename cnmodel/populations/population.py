@@ -26,7 +26,7 @@ class Population(object):
     Subclasses represent populations for a specific cell type, and at least
     need to reimplement the `create_cell` and `connection_stats` methods.
     """
-    def __init__(self, species, size, fields, synapsetype='simple', **kwds):
+    def __init__(self, species, size, fields, synapsetype='multisite', **kwds):
         self._species = species
         self._post_connections = []  # populations this one connects to
         self._pre_connections = []  # populations connecting to this one
@@ -34,12 +34,14 @@ class Population(object):
         # numpy record array with information about each cell in the 
         # population
         fields = [
+            ('id', int),
             ('cell', object), 
             ('input_resolved', bool),
             ('connections', object),  # {pop: [cells], ...}
         ] + fields
         self._cells = np.zeros(size, dtype=fields)
-        self._cell_indexes = {}
+        self._cells['id'] = np.arange(size)
+        self._cell_indexes = {}  # maps cell:index
         self._cell_args = kwds
 
     @property
