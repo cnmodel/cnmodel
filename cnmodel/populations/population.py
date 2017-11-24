@@ -183,7 +183,7 @@ class Population(object):
         # cells to connect)  
         try:
             n_connections = data.get(
-                '%s_convergence' % self.species, species=self.species, pre_type=pop.type, post_type=self.type)
+                'convergence' , species=self.species, pre_type=pop.type, post_type=self.type)
         except KeyError:
             raise TypeError("Cannot connect population %s to %s; no convergence specified in data table." % (pop, self))
             
@@ -197,7 +197,7 @@ class Population(object):
         # Convergence ranges -- over what range of CFs should we
         # select presynaptic cells.
         try:
-            input_range = data.get('%s_convergence_range' % self.species, 
+            input_range = data.get('convergence_range', 
                 species=self.species, pre_type=pop.type, post_type=self.type)
         except KeyError:
             raise TypeError("Cannot connect population %s to %s; no convergence range specified in data table." % (pop, self))
