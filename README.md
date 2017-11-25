@@ -86,8 +86,8 @@ where fignum is one of 2a, 2b, 2c, 3, 4, 5, 6a, 6b, or 7.
                      [--nav NAV] [--ttx] [-p PULSETYPE] [--vc | --cc | --rmp]
                      celltype species
 
--`test_circuit.py` tests the generation of circuits with populations of cells. No simulations are run.
--`test_decorator.py` generates an IV curve for the reconstructed cell LC_bushy.hoc (Figure 5B,C)
+- `test_circuit.py` tests the generation of circuits with populations of cells. No simulations are run.
+- `test_decorator.py` generates an IV curve for the reconstructed cell LC_bushy.hoc (Figure 5B,C)
 - `test_mechanisms.py` runs a voltage clamp I/V protocol on a selected mechanism and displays the result.
    - Usage: python test_mechanisms.py <mechname>
            
