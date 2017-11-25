@@ -17,7 +17,7 @@ Installation requirements
 -------------------------
 This package depends on the following:
 
-   1. Python 2.7.10 with numpy (1.11), scipy (0.19.0), lmfit (0.9.6), pyqt4 (4.11.4), and pyqtgraph (0.9.10). 
+   1. Python 2.7.10 with numpy (1.11), scipy (0.19.0), lmfit (0.9.6), pyqt4 (4.11.4), matplotlib (2.0 or 1.5) and pyqtgraph (0.9.10). 
       An Anaconda install with the appropriate scientific packages works well. lmfit is best obtained via pip
       to install the latest versions. *This package is not yet compatible with Python 3.x.*
    2. A Python-linked version of NEURON (www.neuron.yale.edu). The code has been tested with NEURON 7.3 and 7.4.
@@ -48,7 +48,7 @@ The test suite should be run as:
 
     $ python test.py
 
-This will test each of the models against reference data, the synapse mechanisms, a number of internal routines, and the auditory nerve model. The tests should pass for each component. Failures may indicate incorrect installation or incorrect function within individual components.
+This will test each of the models against reference data, the synapse mechanisms, a number of internal routines, and the auditory nerve model. The tests should pass for each component. Failures may indicate incorrect installation or incorrect function within individual components. These should be corrected before proceeding with simulations.
 
 
 Figures
@@ -64,7 +64,14 @@ Note that figure 6, although generated using the cell and decoration code from c
 Example code and tests
 ----------------------
 
-A number of additional tests are included in the examples directory. For example:
+A number of additional tests are included in the examples directory.
+
+The data for the figures in the manuscript (Manis and Campagnola, Hearing Research, submitted) can be generated using the bash script "figures.sh" in the examples subdirectory. 
+From the main cnmodel directory:
+    $ ./examples figures.sh fignum
+
+where fignum is one of 2a, 2b, 2c, 3, 4, 5, 6a, 6b, or 7.
+
     
 - `test_an_model.py` verifies that the auditory nerve model can be run. If necessary, it will compile (using MEX) the mechanisms for matlab. 
 - `test_ccstim.py` tests the generation of different stimulus waveforms by the pulse generator module.
@@ -72,6 +79,15 @@ A number of additional tests are included in the examples directory. For example
    - usage: test_cells.py c elltype species[-h] [--type TYPE] [--temp TEMP] [-m MORPHOLOGY]
                      [--nav NAV] [--ttx] [-p PULSETYPE] [--vc | --cc | --rmp]
                      For example: python test_cells.py bushy mouse --cc --temp 34
+
+                  
+- `test_cells.py` can run protocols on selected cell models.
+  -usage: test_cells.py [-h] [--type TYPE] [--temp TEMP] [-m MORPHOLOGY]
+                     [--nav NAV] [--ttx] [-p PULSETYPE] [--vc | --cc | --rmp]
+                     celltype species
+
+-`test_circuit.py` tests the generation of circuits with populations of cells. No simulations are run.
+-`test_decorator.py` generates an IV curve for the reconstructed cell LC_bushy.hoc (Figure 5B,C)
 - `test_mechanisms.py` runs a voltage clamp I/V protocol on a selected mechanism and displays the result.
    - Usage: python test_mechanisms.py <mechname>
            
@@ -86,13 +102,23 @@ A number of additional tests are included in the examples directory. For example
    | kpkj     | kpkj2  | kpkjslow | kpksk       | leak             |
    | lkpkj    | na     | naRsg    | na_ion      | nacn             |
    | nacncoop | nap    | napyr    | nav11       |                  |
-                  
-- `test_cells.py` can run protocols on selected cell models.
+
+- `test_mso_inputs.py` runs a circuit that creates a point MSO neuron, innervated by bushy cells from independent "ears". This demonstrates how to construct a binaural circuit using CNModel.
+- `test_physiology.py` runs a large VCN circuit that converges onto a single bushy cell. This run can take a long time. The output was used to create Figure 7 of the manuscript.
+- `test_populations.py` tests synaptic connections between two cell types.
+    Usage:  python test_populations.py <pre_celltype> <post_celltype>
+- `test_sgc_input_phaselocking.py` tests phase locking with SGC inputs to a bushy cell.
+- `test_sgc_input_PSTH.py` shows SGC inputs and postsynaptic bushy cell PSTHs.
+- `test_sgc_input.py` demonstrates SGC input to a VCN bushy cell.
+- `test_simple_synapses.py` tests simple Exp2Syn inputs to different cell types.
+    - Usage:  python test_synapses.py <pre_celltype> <post_celltype>
+      Supported cell types: sgc, bushy, tstellate, dstellate, tuberculoventral, pyramidal
+- `test_sound_stim.py` generates spike trains from the selected model (cochlea, matlab) and plots rate-intensity functions for the 3 different SR groups.
+- `test_sounds.py` generates waveforms for different kinds of sounds included in the sounds class.
 - `test_synapses.py` evokes spikes in a presynaptic cell while recording the postsynaptic potential.
   - Usage:  python test_synapses.py <pre_celltype> <post_celltype>
-          
-          Supported cell types: sgc, bushy, tstellate, dstellate
-    
+    Supported cell types: sgc, bushy, tstellate, dstellate
+- `toy_model.py` generates IV plots for each of the principal point cell types included in CNModel. This is the data for Figure 3 of the manuscript.
     
 References:
 -----------

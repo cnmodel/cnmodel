@@ -55,7 +55,7 @@ class SGCInputTestPL(Protocol):
                         click_interval=self.click_rate, nclicks=int((self.run_duration-0.01)/self.click_rate),
                         ramp_duration=2.5e-3)
         
-        n_sgc = data.get('%s_convergence' % species, species=species, post_type=postCell.type, pre_type='sgc')[0]
+        n_sgc = data.get('convergence', species=species, post_type=postCell.type, pre_type='sgc')[0]
         self.n_sgc = int(np.round(n_sgc))
 
         self.pre_cells = []
