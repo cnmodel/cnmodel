@@ -54,29 +54,24 @@ This will test each of the models against reference data, the synapse mechanisms
 Figures
 -------
 
-The plots for several figures from our paper (Manis and Campagnola; in review) can be generated as:
-
-Usage: ./examples/figures.sh {2a | 2b | 2c | 3 | 4 | 5a | 5b | 7}
-
-Note that figure 6, although generated using the cell and decoration code from cnmodel, includes initialization not yet incorporated into cnmodel. Note that figure 7 may take hours to generate.
-
-
-Example code and tests
-----------------------
-
-A number of additional tests are included in the examples directory.
-
 The data for the figures in the manuscript (Manis and Campagnola, Hearing Research, submitted) can be generated using the bash script "figures.sh" in the examples subdirectory. 
 From the main cnmodel directory:
     $ ./examples figures.sh fignum
 
 where fignum is one of 2a, 2b, 2c, 3, 4, 5, 6a, 6b, or 7.
 
+Note that Figure 7 may take several hours to generate.
+
+Example code and tests
+----------------------
+
+A number of additional tests are included in the examples directory.
+
     
 - `test_an_model.py` verifies that the auditory nerve model can be run. If necessary, it will compile (using MEX) the mechanisms for matlab. 
 - `test_ccstim.py` tests the generation of different stimulus waveforms by the pulse generator module.
 - `test_cells.py` runs different cell models in current or voltage clamp. 
-   - usage: test_cells.py c elltype species[-h] [--type TYPE] [--temp TEMP] [-m MORPHOLOGY]
+   - usage: test_cells.py celltype species[-h] [--type TYPE] [--temp TEMP] [-m MORPHOLOGY]
                      [--nav NAV] [--ttx] [-p PULSETYPE] [--vc | --cc | --rmp]
                      For example: python test_cells.py bushy mouse --cc --temp 34
 
