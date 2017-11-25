@@ -50,6 +50,17 @@ The test suite should be run as:
 
 This will test each of the models against reference data, the synapse mechanisms, a number of internal routines, and the auditory nerve model. The tests should pass for each component. Failures may indicate incorrect installation or incorrect function within individual components.
 
+
+Figures
+-------
+
+The plots for several figures from our paper (Manis and Campagnola; in review) can be generated as:
+
+Usage: ./examples/figures.sh {2a | 2b | 2c | 3 | 4 | 5a | 5b | 7}
+
+Note that figure 6, although generated using the cell and decoration code from cnmodel, includes initialization not yet incorporated into cnmodel. Note that figure 7 may take hours to generate.
+
+
 Example code and tests
 ----------------------
 
