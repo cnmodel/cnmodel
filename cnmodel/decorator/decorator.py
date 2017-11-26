@@ -23,7 +23,7 @@ class Decorator():
         print 'cell type: ', cell.type
         cellType = cell.type.lower().capitalize()
         self.channelInfo = Params(newCm=1.0,
-                              newRa=100.0,  # changed 10/20/2007 to center in range
+                              newRa=150.0,  # standard value
                               newg_leak=0.000004935,
                               eK_def=-85, eNa_def=50,
                               ca_init=70e-6,  # free calcium in molar
@@ -122,8 +122,10 @@ class Decorator():
                     gbar = gbar * parMap[mech]
                     if verify:
                         print '  new gbar: ', gbar
+                cell.hr.h.Ra = self.channelInfo.newRa
                 for sec in cell.hr.sec_groups[s]:  # set cpmdictamces///
                     setattr(cell.hr.get_section(sec), setup, gbar)  # set conductance magnitude
+                    cell.hr.get_section(sec).Ra = self.channelInfo.newRa  # set Ra here
                     if hasattr(cell, 'channelErevMap'):  # may not always have this mapping
                         secobj = cell.hr.get_section(sec)  # get the NEURON section object
                         mechsinsec = cell.get_mechs(secobj)  # get list of mechanisms in this section

@@ -63,7 +63,7 @@ def make_pulse(stim):
     if stim['PT'] == 0:
         ndur = 1
 
-    maxt = dt * (stim['delay'] + stim['predur'] + (ipi * (stim['NP'] + 3)) +
+    maxt = dt * (delay + predur + (ipi * (stim['NP'] + 3)) +
         posttest + pdur * ndur)
     hold = stim.get('hold', None)
     
@@ -83,6 +83,7 @@ def make_pulse(stim):
     if stim['PT'] > 0.0:
         for i in range(start + posttest, start + posttest + pdur):
             w[i] = stim['amp']
-
+    w = np.append(w, 0.)
+    maxt = maxt + dt
     return(w, maxt, tstims)
 
