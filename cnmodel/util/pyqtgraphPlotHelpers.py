@@ -21,11 +21,7 @@ stdFont = 'Arial'
 
 import scipy.stats
 import numpy as np
-try:
-    import pyqtgraph as pg
-    from PyQt4 import QtCore, QtGui
-except:
-    pass
+import pyqtgraph as pg
 import talbotetalTicks as ticks # logical tick formatting... 
 
 """
@@ -394,17 +390,17 @@ def refline(axl, refline=None, color=[64, 64, 64], linestyle='--' ,linewidth=0.5
     if type(axl) is not list:
         axl = [axl]
     if linestyle == '--':
-        style = QtCore.Qt.DashLine
+        style = pg.QtCore.Qt.DashLine
     elif linestyle == '.':
-        style=QtCore.Qt.DotLine
+        style = pg.QtCore.Qt.DotLine
     elif linestyle == '-':
-        style=QtCore.Qt.SolidLine
+        style = pg.QtCore.Qt.SolidLine
     elif linestyle == '-.':
-        style = QtCore.Qt.DsahDotLine
+        style = pg.QtCore.Qt.DsahDotLine
     elif linestyle == '-..':
-        style = QtCore.Qt.DashDotDotLine
+        style = pg.QtCore.Qt.DashDotDotLine
     else:
-        style = QtCore.Qt.SolidLine # default is solid
+        style = pg.QtCore.Qt.SolidLine # default is solid
     if orient is 'horizontal':
         for ax in axl:
             if refline is not None:
@@ -611,8 +607,8 @@ class polarPlot():
                 rMax = np.max(self.data['y'])
         self.rMax = rMax
         # Add radial grid lines (theta markers)
-        gridPen = pg.mkPen(width=0.55, color='k',  style=QtCore.Qt.DotLine)
-        ringPen = pg.mkPen(width=0.75, color='k',  style=QtCore.Qt.SolidLine)  
+        gridPen = pg.mkPen(width=0.55, color='k',  style = pg.QtCore.Qt.DotLine)
+        ringPen = pg.mkPen(width=0.75, color='k',  style = pg.QtCore.Qt.SolidLine)  
         for th in np.linspace(0., np.pi*2, 8, endpoint=False):
             rx = np.cos(th)*rMax
             ry = np.sin(th)*rMax
@@ -857,7 +853,7 @@ def do_talbotTicks(ax, ndec=3,
     abottom.setTicks(xtickl)
     # now set the point size (this may affect spacing from axis, and that would have to be adjusted - see the pyqtgraph google groups)
     if pointSize is not None:
-        b=QtGui.QFont()
+        b = pg.QtGui.QFont()
         b.setPixelSize(pointSize)
         aleft.tickFont = b
         abottom.tickFont = b
@@ -1088,7 +1084,7 @@ class LayoutMaker():
         if self.win is not None:
             self.gridLayout = self.win.ci.layout  # the window's 'central item' is the main gridlayout.
         else:
-            self.gridLayout = QtGui.QGridLayout()  # just create the grid layout to add to another item
+            self.gridLayout = pg.QtGui.QGridLayout()  # just create the grid layout to add to another item
         self.gridLayout.setContentsMargins(margins, margins, margins, margins)
         self.gridLayout.setSpacing(spacing)
         self.plots = [[0 for x in xrange(self.cols)] for x in xrange(self.rows)]
@@ -1214,7 +1210,7 @@ def figure(title = None, background='w'):
 
 
 def show():
-    QtGui.QApplication.instance().exec_()
+    pg.QApplication.instance().exec_()
 
 
 def test_layout(win):
