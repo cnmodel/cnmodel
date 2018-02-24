@@ -55,7 +55,7 @@ Step 3: Install MS visual studio for python::
 
     https://www.visualstudio.com/vs/python/
 
-Step 4: Install cochlea (Rudnicki and Hemmter's implementation of several models under python)::
+Step 4: Install cochlea (Rudnicki and Hemmert's implementation of several models under python)::
 
     pip install cochlea
 
@@ -171,7 +171,26 @@ Mac OSX (24 Feb 2018)
 
     loading membrane mechanisms from x86_64/.libs/libnrnmech.so
     Additional mechanisms from files
-     cnmodel/mechanisms//CaPCalyx.mod cnmodel/mechanisms//Gly5GC.mod cnmodel/mechanisms//Gly5PL.mod cnmodel/mechanisms//Gly5State.mod cnmodel/mechanisms//Gly6S.mod cnmodel/mechanisms//Iclamp2.mod cnmodel/mechanisms//NMDA.mod cnmodel/mechanisms//NMDA_Kampa.mod cnmodel/mechanisms//ampa_trussell.mod cnmodel/mechanisms//bkpkj.mod cnmodel/mechanisms//cabpump.mod cnmodel/mechanisms//cadiff.mod cnmodel/mechanisms//cadyn.mod cnmodel/mechanisms//cap.mod cnmodel/mechanisms//capmp.mod cnmodel/mechanisms//capump.mod cnmodel/mechanisms//cleftXmtr.mod cnmodel/mechanisms//gly.mod cnmodel/mechanisms//gly2.mod cnmodel/mechanisms//hcno.mod cnmodel/mechanisms//hcno_bo.mod cnmodel/mechanisms//iStim.mod cnmodel/mechanisms//ihpkj.mod cnmodel/mechanisms//ihpyr.mod cnmodel/mechanisms//ihsgc_apical.mod cnmodel/mechanisms//ihsgc_basalmiddle.mod cnmodel/mechanisms//ihvcn.mod cnmodel/mechanisms//inav11.mod cnmodel/mechanisms//jsrnaf.mod cnmodel/mechanisms//ka.mod cnmodel/mechanisms//kcnq.mod cnmodel/mechanisms//kdpyr.mod cnmodel/mechanisms//kht.mod cnmodel/mechanisms//kif.mod cnmodel/mechanisms//kir.mod cnmodel/mechanisms//kis.mod cnmodel/mechanisms//klt.mod cnmodel/mechanisms//kpkj.mod cnmodel/mechanisms//kpkj2.mod cnmodel/mechanisms//kpkjslow.mod cnmodel/mechanisms//kpksk.mod cnmodel/mechanisms//leak.mod cnmodel/mechanisms//multisite.mod cnmodel/mechanisms//na.mod cnmodel/mechanisms//nacn.mod cnmodel/mechanisms//nacncoop.mod cnmodel/mechanisms//nap.mod cnmodel/mechanisms//napyr.mod cnmodel/mechanisms//pkjlk.mod cnmodel/mechanisms//rsg.mod cnmodel/mechanisms//vecevent.mod
+     cnmodel/mechanisms//CaPCalyx.mod cnmodel/mechanisms//Gly5GC.mod cnmodel/mechanisms//Gly5PL.mod 
+     cnmodel/mechanisms//Gly5State.mod cnmodel/mechanisms//Gly6S.mod cnmodel/mechanisms//Iclamp2.mod 
+     cnmodel/mechanisms//NMDA.mod cnmodel/mechanisms//NMDA_Kampa.mod 
+     cnmodel/mechanisms//ampa_trussell.mod cnmodel/mechanisms//bkpkj.mod 
+     cnmodel/mechanisms//cabpump.mod cnmodel/mechanisms//cadiff.mod cnmodel/mechanisms//cadyn.mod 
+     cnmodel/mechanisms//cap.mod cnmodel/mechanisms//capmp.mod 
+     cnmodel/mechanisms//capump.mod cnmodel/mechanisms//cleftXmtr.mod 
+     cnmodel/mechanisms//gly.mod cnmodel/mechanisms//gly2.mod cnmodel/mechanisms//hcno.mod 
+     cnmodel/mechanisms//hcno_bo.mod cnmodel/mechanisms//iStim.mod cnmodel/mechanisms//ihpkj.mod 
+     cnmodel/mechanisms//ihpyr.mod cnmodel/mechanisms//ihsgc_apical.mod 
+     cnmodel/mechanisms//ihsgc_basalmiddle.mod cnmodel/mechanisms//ihvcn.mod 
+     cnmodel/mechanisms//inav11.mod cnmodel/mechanisms//jsrnaf.mod 
+     cnmodel/mechanisms//ka.mod cnmodel/mechanisms//kcnq.mod cnmodel/mechanisms//kdpyr.mod 
+     cnmodel/mechanisms//kht.mod cnmodel/mechanisms//kif.mod cnmodel/mechanisms//kir.mod 
+     cnmodel/mechanisms//kis.mod cnmodel/mechanisms//klt.mod cnmodel/mechanisms//kpkj.mod 
+     cnmodel/mechanisms//kpkj2.mod cnmodel/mechanisms//kpkjslow.mod cnmodel/mechanisms//kpksk.mod 
+     cnmodel/mechanisms//leak.mod cnmodel/mechanisms//multisite.mod cnmodel/mechanisms//na.mod 
+     cnmodel/mechanisms//nacn.mod cnmodel/mechanisms//nacncoop.mod cnmodel/mechanisms//nap.mod c
+     nmodel/mechanisms//napyr.mod cnmodel/mechanisms//pkjlk.mod cnmodel/mechanisms//rsg.mod 
+     cnmodel/mechanisms//vecevent.mod
     Testing with flags: -v --tb=short cnmodel/
     =============================================== test session starts ===============================================
     platform darwin -- Python 2.7.14, pytest-3.0.7, py-1.4.33, pluggy-0.4.0 -- /Users/pbmanis/anaconda/bin/python
