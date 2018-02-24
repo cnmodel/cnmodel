@@ -15,7 +15,6 @@ import cnmodel.decorator as Decorator
 from cnmodel.util import pyqtgraphPlotHelpers as PH
 from cnmodel.protocols import IVCurve
 import pyqtgraph as pg
-from PyQt4 import QtGui
 import timeit
 
 
@@ -79,7 +78,7 @@ class F5():
         text = (u"{0:2d}\u00b0C {1:.2f}-{2:.2f} nA".format(
                 int(self.temperature), np.min(self.iv.current_cmd), np.max(self.iv.current_cmd)))
         ti = pg.TextItem(text, anchor=(1, 0))
-        ti.setFont(QtGui.QFont('Arial', 9))
+        ti.setFont(pg.QtGui.QFont('Arial', 9))
         ti.setPos(120., -120.)
         self.plots['p1'].addItem(ti)
 
