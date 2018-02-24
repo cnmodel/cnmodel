@@ -216,7 +216,7 @@ class Toy(Protocol):
             nrn_cell = netcells[name]
             nrn_cell.vm0 = nrn_cell.soma.v
             pars = nrn_cell.compute_rmrintau(auto_initialize=False)
-            print(u'{0:>14s} [{1:>24s}]   *** Rin = {2:6.1f} M\u03A9  \u03C4 = {3:6.1f} ms   Vm = {4:6.1f} mV'.
+            print(u'{0:>14s} [{1:>24s}]   *** Rin = {2:6.1f} M\ohm  Tau = {3:6.1f} ms   Vm = {4:6.1f} mV'.
                 format(nrn_cell.status['name'], name, pars['Rin'], pars['tau'], pars['v']))
 
 
