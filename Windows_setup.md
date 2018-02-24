@@ -161,7 +161,99 @@ Pylibrary is only needed for a few of the example files.
 Test results
 ============
 
-Mac OSX (24 Feb 2018)
+Windows 10 (24 Feb 2018; Qt5 Branch)
+------------------------------------
+
+::
+    C:\Users\pbmanis\Desktop\Python\cnmodel>python test.py > testresults.txt
+    NEURON -- VERSION 7.5 master (6b4c19f) 2017-09-25
+    Duke, Yale, and the BlueBrain Project -- Copyright 1984-2016
+    See http://neuron.yale.edu/neuron/credits
+
+    loading membrane mechanisms from C:\Users\pbmanis\Desktop\Python\cnmodel\nrnmech.dll
+    Additional mechanisms from files
+     CaPCalyx.mod Gly5GC.mod Gly5PL.mod Gly5State.mod Gly6S.mod Iclamp2.mod NMDA.mod NMDA_Kampa.mod
+      ampa_trussell.mod bkpkj.mod cabpump.mod cadiff.mod cadyn.mod cap.mod capmp.mod capump.mod cleftXmtr.mod
+       gly.mod gly2.mod hcno.mod hcno_bo.mod iStim.mod ihpkj.mod ihpyr.mod ihsgc_apical.mod ihsgc_
+       basalmiddle.mod ihvcn.mod inav11.mod jsrnaf.mod ka.mod kcnq.mod kdpyr.mod kht.mod kif.mod 
+       kir.mod kis.mod klt.mod kpkj.mod kpkj2.mod kpkjslow.mod kpksk.mod leak.mod multisite.mod 
+       na.mod nacn.mod nacncoop.mod nap.mod napyr.mod pkjlk.mod rsg.mod vecevent.mod
+
+     Testing with flags: -v --tb=short cnmodel/
+    ============================= test session starts =============================
+    platform win32 -- Python 2.7.14, pytest-3.3.2, py-1.5.2, pluggy-0.6.0 -- C:\Users\pbmanis\Anaconda2\python.exe
+    cachedir: .cache
+    rootdir: C:\Users\pbmanis\Desktop\Python\cnmodel, inifile:
+    collecting ... collected 36 items
+
+    cnmodel/an_model/tests/test_cache.py::test_cache PASSED                  [  2%]
+    cnmodel/an_model/tests/test_cache.py::test_parallel PASSED               [  5%]
+    cnmodel/cells/tests/test_cells.py::test_bushy PASSED                     [  8%]
+    cnmodel/cells/tests/test_cells.py::test_bushy21 PASSED                   [ 11%]
+    cnmodel/cells/tests/test_cells.py::test_bushy_mouse PASSED               [ 13%]
+    cnmodel/cells/tests/test_cells.py::test_tstellate PASSED                 [ 16%]
+    cnmodel/cells/tests/test_cells.py::test_tstellate_mouse PASSED           [ 19%]
+    cnmodel/cells/tests/test_cells.py::test_tstellatet PASSED                [ 22%]
+    cnmodel/cells/tests/test_cells.py::test_dstellate PASSED                 [ 25%]
+    cnmodel/cells/tests/test_cells.py::test_dstellate_mouse PASSED           [ 27%]
+    cnmodel/cells/tests/test_cells.py::test_octopus PASSED                   [ 30%]
+    cnmodel/cells/tests/test_cells.py::test_pyramidal PASSED                 [ 33%]
+    cnmodel/cells/tests/test_cells.py::test_tuberculoventral PASSED          [ 36%]
+    cnmodel/cells/tests/test_cells.py::test_cartwheel PASSED                 [ 38%]
+    cnmodel/cells/tests/test_cells.py::test_sgc_basal_middle PASSED          [ 41%]
+    cnmodel/cells/tests/test_cells.py::test_sgc_apical PASSED                [ 44%]
+    cnmodel/data/tests/test_db.py::test_db PASSED                            [ 47%]
+    cnmodel/mechanisms/tests/test_mechanisms.py::test_max_open_probability PASSED [ 50%]
+    cnmodel/synapses/tests/test_psd.py::test_sgc_bushy_psd PASSED            [ 52%]
+    cnmodel/synapses/tests/test_psd.py::test_sgc_tstellate_psd PASSED        [ 55%]
+    cnmodel/synapses/tests/test_psd.py::test_sgc_dstellate_psd PASSED        [ 58%]
+    cnmodel/synapses/tests/test_psd.py::test_sgc_octopus_psd PASSED          [ 61%]
+    cnmodel/synapses/tests/test_synapses.py::test_sgc_bushy PASSED           [ 63%]
+    cnmodel/synapses/tests/test_synapses.py::test_sgc_tstellate PASSED       [ 66%]
+    cnmodel/synapses/tests/test_synapses.py::test_sgc_tstellate2 PASSED      [ 69%]
+    cnmodel/synapses/tests/test_synapses.py::test_sgc_dstellate PASSED       [ 72%]
+    cnmodel/synapses/tests/test_synapses.py::test_dstellate_bushy PASSED     [ 75%]
+    cnmodel/synapses/tests/test_synapses.py::test_dstellate_tstellate PASSED [ 77%]
+    cnmodel/synapses/tests/test_synapses.py::test_dstellate_dstellate FAILED [ 80%]
+    cnmodel/util/tests/test_expfitting.py::test_fit1 PASSED                  [ 83%]
+    cnmodel/util/tests/test_expfitting.py::test_fit2 PASSED                  [ 86%]
+    cnmodel/util/tests/test_matlab.py::test_matlab SKIPPED                   [ 88%]
+    cnmodel/util/tests/test_sound.py::test_conversions PASSED                [ 91%]
+    cnmodel/util/tests/test_sound.py::test_tonepip PASSED                    [ 94%]
+    cnmodel/util/tests/test_sound.py::test_noisepip PASSED                   [ 97%]
+    cnmodel/util/tests/test_stim.py::test_make_pulse PASSED                  [100%]
+
+    ================================== FAILURES ===================================
+    __________________________ test_dstellate_dstellate ___________________________
+    cnmodel\synapses\tests\test_synapses.py:40: in test_dstellate_dstellate
+        SynapseTester('dstellate', 'dstellate')
+    cnmodel\synapses\tests\test_synapses.py:72: in __init__
+        UserTester.__init__(self, "%s_%s" % (pre, post), pre, post)
+    cnmodel\util\user_tester.py:33: in __init__
+        self.assert_test_info(*args, **kwds)
+    cnmodel\synapses\tests\test_synapses.py:108: in assert_test_info
+        super(SynapseTester, self).assert_test_info(*args, **kwds)
+    cnmodel\util\user_tester.py:127: in assert_test_info
+        self.compare_results(result, expect)
+    cnmodel\util\user_tester.py:60: in compare_results
+        self.compare_results(info[k], expect[k])
+    cnmodel\util\user_tester.py:63: in compare_results
+        self.compare_results(info[i], expect[i])
+    cnmodel\util\user_tester.py:79: in compare_results
+        self.compare_results(info[k], expect[k])
+    cnmodel\util\user_tester.py:71: in compare_results
+        assert np.all(inans == enans)
+    E   AssertionError
+    ---------------------------- Captured stdout call -----------------------------
+    << D-stellate: JSR Stellate Type I-II cell model created >>
+    << D-stellate: JSR Stellate Type I-II cell model created >>
+    Elapsed time for 1 Repetions: 0.355309
+    =============== 1 failed, 34 passed, 1 skipped in 96.33 seconds ===============
+
+
+
+Mac OSX (24 Feb 2018; Qt5 Branch)
+---------------------
 
 ::
     (base) pbmanis: cnmodel [qt5+]$ python test.py
