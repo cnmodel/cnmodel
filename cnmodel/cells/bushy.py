@@ -376,8 +376,9 @@ class BushyRothman(Bushy):
             totcap = 12.0E-12  # in units of F, from Rothman and Manis, 2003.
             refarea = totcap / self.c_m  # area is in cm^2
             # bushy Rothman-Manis, guinea pig type II
-            # model gave cell conductance in nS, but we want S/cm^2 for NEURON
-            # so conversion is 1e-9*nS = uS, and refarea is already in cm2
+            # The original model provided cell conductance in nS,
+            # but we want S/cm^2 for NEURON.
+            # The conversion facthor is 1e-9*nS = uS, and refarea is already in cm^2.
             self._valid_temperatures = (22., 38.)
             sf = 1.0
             if self.status['temperature'] == None:
@@ -397,20 +398,20 @@ class BushyRothman(Bushy):
                          'leak': self.gBar.leakbar / 2.},
                 'hillock': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
                             'leak': self.gBar.leakbar, },
-                'initseg': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
+                'initialsegment': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
                             'ihvcn': self.gBar.ihbar / 2., 'leak': self.gBar.leakbar, },
                 'soma': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
                          'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
-                'dend': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar * 0.5, 'kht': self.gBar.khtbar * 0.5,
+                'primarydendrite': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar * 0.5, 'kht': self.gBar.khtbar * 0.5,
                          'ihvcn': self.gBar.ihbar / 3., 'leak': self.gBar.leakbar * 0.5, },
-                'apic': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar * 0.2, 'kht': self.gBar.khtbar * 0.2,
+                'secondarydendrite': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar * 0.2, 'kht': self.gBar.khtbar * 0.2,
                          'ihvcn': self.gBar.ihbar / 4., 'leak': self.gBar.leakbar * 0.2, },
             }
 #            self.irange = np.linspace(-1., 1., 21)
-            self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+            self.distMap = {'primarydendrite': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'nacn': {'gradient': 'exp', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
-                            'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                            'secondarydendrite': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'nacn': {'gradient': 'exp', 'gminf': 0., 'lambda': 100.}}, # gradients are: flat, linear, exponential
                             }
@@ -440,7 +441,7 @@ class BushyRothman(Bushy):
                          'kht': self.gBar.khtbar*1e-2, 'ihvcn': 0.},
                 'hillock': {'nav11': self.gBar.nabar*2, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar*2.0, 'ihvcn': 0.,
                             'leak': self.gBar.leakbar, },
-                'initseg': {'nav11': self.gBar.nabar*3.0, 'klt': self.gBar.kltbar*1, 'kht': self.gBar.khtbar*2,
+                'initialsegment': {'nav11': self.gBar.nabar*3.0, 'klt': self.gBar.kltbar*1, 'kht': self.gBar.khtbar*2,
                             'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
                 'initsegment': {'nav11': self.gBar.nabar*3.0, 'klt': self.gBar.kltbar*1, 'kht': self.gBar.khtbar*2,
                             'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
@@ -448,22 +449,22 @@ class BushyRothman(Bushy):
                             'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
                 'soma': {'nav11': self.gBar.nabar*0.5, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
                          'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
-                'dend': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar *0.5, 'kht': self.gBar.khtbar *0.5,
+                'primarydendrite': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar *0.5, 'kht': self.gBar.khtbar *0.5,
                          'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
                 'dendrite': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar *0.5, 'kht': self.gBar.khtbar *0.5,
                          'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
-                'apic': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar * 0.25,
+                'secondarydendrite': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar * 0.25,
                          'ihvcn': self.gBar.ihbar *0.25, 'leak': self.gBar.leakbar * 0.25, },
             }
             self.irange = np.linspace(-2, 2, 7)
             self.i_test_range={'pulse': (-2, 2, 0.2)}
-            self.distMap = {'dend': {'klt': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
+            self.distMap = {'primarydendrite': {'klt': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
                                      'kht': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
                                      'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.}}, # linear with distance, gminf (factor) is multiplied by gbar
                             'dendrite': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'nav11': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
-                            'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                            'secondarydendrite': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                      'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
                             }
@@ -474,17 +475,11 @@ class BushyRothman(Bushy):
             # BUT modified ad hoc for SBEM reconstructions.
             totcap = 26.0E-12 # uF/cm2 
             refarea = totcap  / self.c_m  # see above for units
-            # original:
-            # self.gBar = Params(nabar=500.E-9/refarea,
-            #                    khtbar=58.0E-9/refarea,
-            #                    kltbar=80.0E-9/refarea,  # note doubled here...
-            #                    ihbar=0.25*30.0E-9/refarea,
-            #                    leakbar=0.05*2.0E-9/refarea,  # was 0.5
-            # )
+
             self._valid_temperatures = (34.,)
             if self.status['temperature'] == None:
                 self.status['temperature'] = 34.
-            self.gBar = Params(nabar=2100.E-9/refarea,
+            self.gBar = Params(nabar=2100.E-9/refarea,  # was 500.E-9 for nav11 channel
                                khtbar=58.0E-9/refarea,
                                kltbar=80.0E-9/refarea,
                                ihbar=20.0E-9/refarea,
@@ -501,10 +496,18 @@ class BushyRothman(Bushy):
                          'kht': self.gBar.khtbar*2.0, 'ihvcn': 0.,
                          'leak': self.gBar.leakbar * 0.25},
                          # AKA "initialsegment"
+                'initialsegment': {sodiumch: self.gBar.nabar*1.0, 'klt': self.gBar.kltbar * 2.0,
+                         'kht': self.gBar.khtbar*2.0, 'ihvcn': 0.,
+                         'leak': self.gBar.leakbar * 0.25},
                 'myelinatedaxon': {sodiumch: self.gBar.nabar*0, 'klt': self.gBar.kltbar * 1e-2,
                          'kht': self.gBar.khtbar*1e-2, 'ihvcn': 0.,
                          'leak': self.gBar.leakbar * 0.25*1e-3},
+                'axon': {sodiumch: self.gBar.nabar*1, 'klt': self.gBar.kltbar * 1.0,
+                        'kht': self.gBar.khtbar, 'ihvcn': 0.,
+                        'leak': self.gBar.leakbar * 0.25},
                 'dendrite': {sodiumch: self.gBar.nabar * 0.65, 'klt': self.gBar.kltbar *1, 'kht': self.gBar.khtbar *1,
+                         'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
+                'primarydendrite': {sodiumch: self.gBar.nabar * 0.65, 'klt': self.gBar.kltbar *1, 'kht': self.gBar.khtbar *1,
                          'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
             }
             self.irange = np.arange(-1.5, 2.1, 0.25 )
@@ -513,6 +516,9 @@ class BushyRothman(Bushy):
             self.distMap = {'dendrite': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                       'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                       sodiumch: {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
+                           'primarydendrite': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                                                 'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                                                 sodiumch: {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
                            }
         else:
             raise ValueError('model type %s is not implemented' % modelType)
@@ -606,34 +612,34 @@ class BushyRothman(Bushy):
         if debug:
             print 'Adding dendrite to Bushy model'
         section = h.Section
-        maindend = section(cell=self.soma)
-        maindend.connect(self.soma)
-        maindend.nseg = 10
-        maindend.L = 100.0
-        maindend.diam = 2.5
-        maindend.insert('klt')
-        maindend.insert('ihvcn')
-        maindend().klt.gbar = self.soma().klt.gbar / 2.0
-        maindend().ihvcn.gbar = self.soma().ihvcn.gbar / 2.0
+        primarydendrite = section(cell=self.soma)
+        primarydendrite.connect(self.soma)
+        primarydendrite.nseg = 10
+        primarydendrite.L = 100.0
+        primarydendrite.diam = 2.5
+        primarydendrite.insert('klt')
+        primarydendrite.insert('ihvcn')
+        primarydendrite().klt.gbar = self.soma().klt.gbar / 2.0
+        primarydendrite().ihvcn.gbar = self.soma().ihvcn.gbar / 2.0
 
-        maindend.cm = self.c_m
-        maindend.Ra = self.R_a
+        primarydendrite.cm = self.c_m
+        primarydendrite.Ra = self.R_a
         nsecd = range(0, 5)
-        secdend = []
+        secondarydendrite = []
         for ibd in nsecd:
-            secdend.append(section(cell=self.soma))
+            secondarydendrite.append(section(cell=self.soma))
         for ibd in nsecd:
-            secdend[ibd].connect(maindend)
-            secdend[ibd].diam = 1.0
-            secdend[ibd].L = 15.0
-            secdend[ibd].cm = self.c_m
-            secdend[ibd].Ra = self.R_a
-        self.maindend = maindend
-        self.secdend = secdend
+            secondarydendrite[ibd].connect(primarydendrite)
+            secondarydendrite[ibd].diam = 1.0
+            secondarydendrite[ibd].L = 15.0
+            secondarydendrite[ibd].cm = self.c_m
+            secondarydendrite[ibd].Ra = self.R_a
+        self.primarydendrite = primarydendrite
+        self.secondarydendrite = secondarydendrite
         self.status['dendrite'] = True
         if debug:
-            print 'Bushy: added dendrite'
+            print 'Bushy: added dendrites'
             h.topology()
-        self.add_section(maindend, 'maindend')
-        self.add_section(secdend, 'secdend')
+        self.add_section(maindend, 'primarydendrite')
+        self.add_section(secdend, 'secondarydendrite')
 

@@ -23,7 +23,7 @@ class Decorator():
         print 'cell type: ', cell.type
         cellType = cell.type.lower().capitalize()
         self.channelInfo = Params(newCm=1.0,
-                              newRa=100.0,  # changed 10/20/2007 to center in range
+                              newRa=150.0,  # standard Ra
                               newg_leak=0.000004935,
                               eK_def=-85, eNa_def=50,
                               ca_init=70e-6,  # free calcium in molar
@@ -122,8 +122,9 @@ class Decorator():
                     gbar = gbar * parMap[mech]
                     if verify:
                         print '  new gbar: ', gbar
-                for sec in cell.hr.sec_groups[s]:  # set cpmdictamces///
+                for sec in cell.hr.sec_groups[s]:  # set conductances ///
                     setattr(cell.hr.get_section(sec), setup, gbar)  # set conductance magnitude
+                    cell.hr.get_section(sec).Ra = self.channelInfo.newRa
                     if hasattr(cell, 'channelErevMap'):  # may not always have this mapping
                         secobj = cell.hr.get_section(sec)  # get the NEURON section object
                         mechsinsec = cell.get_mechs(secobj)  # get list of mechanisms in this section
@@ -189,7 +190,9 @@ class Decorator():
         print 'channelmaps: ', cell.channelMap.keys()
         secstuff = {}
         for s in cell.hr.sec_groups.keys():
+            print 's: ', s
             sectype = self.remapSectionType(string.rsplit(s, '[')[0])
+            print sectype
             if sectype not in cell.channelMap.keys():
                 if sectype in ['undefined']:  # skip undefined sections
                     continue
@@ -228,8 +231,8 @@ class Decorator():
     def remapSectionType(self, sectype):
         if sectype in ['AXON_0']:
             sectype = 'axon'
-        if sectype in ['initseg', 'initialsegment']:
-            sectype = 'initseg'
+        if sectype in ['initseg']: # , 'initialsegment']:
+            sectype = 'initialsegment'
         if sectype in ['dendscaled_0', 'dendscaled_1', 'dendscaled_2', 'dendrite', 'dend']:
             sectype = 'dendrite'
         if sectype in ['apical_dendrite']:

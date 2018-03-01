@@ -18,10 +18,10 @@ n_rsites is the number of release sites per SGC terminal.
 -----------------------------------------------------------------------------------------------------------------------------------
              bushy             tstellate          dstellate         octopus         pyramidal      tuberculoventral
                                                                                                                     
-AMPA_gmax    21.05±15.4 [1]    4.6±3.1 [2]        0.49±0.29 [7]     0.87±0.23 [3]   1.8±1.05 [8]   2.2±1.5 [8]
-AMPAR_gmax   4.6516398 [10]    4.632848  [10]     1.7587450 [10]    16.975147 [10]  1.8 [8]        2.2  [8]
-NMDA_gmax    10.8±4.6 [1]      2.4±1.6 [2]        0.552±0.322 [7]   0.17±0.046 [3]  0.8±0.66 [8]   2.4±1.6 [8]
-NMDAR_gmax   0.4531933 [10]    1.2127097 [10]     0.9960820 [10]    0.6562702 [10]  0.4 [8]        1.2127097 [8]
+AMPA_gmax    21.05±15.4 [1]    4.6±3.1 [2]        0.49±0.29 [7]     0.87±0.23 [3]   0.6±0.3 [8]    2.2±1.5 [8]
+AMPAR_gmax   4.6516398 [10]    4.632848  [10]     1.7587450 [10]    16.975147 [10]  0.9 [8]        2.2  [8]
+NMDA_gmax    10.8±4.6 [1]      2.4±1.6 [2]        0.552±0.322 [7]   0.17±0.046 [3]  0.4±0.33 [8]   2.4±1.6 [8]
+NMDAR_gmax   0.4531933 [10]    1.2127097 [10]     0.9960820 [10]    0.6562702 [10]  0.2 [8]        1.2127097 [8]
 NMDAR_vshift -15.0 [12]        -15.0 [12]         -15.0 [12]        -15.0 [12]      -15.0 [12]     -15.0 [12]
 EPSC_cv      0.12 [8]          0.499759 [9]       0.886406 [9]      1.393382 [9]    0.499 [8]      0.499 [8]
 Pr           1.000 [11]        1.000 [11]         1.000 [11]        1.000 [11]      1.000 [8]      1.000 [8]
@@ -80,8 +80,19 @@ n_rsites     100 [5]           4 [6]              1 [4]             1 [4]       
 [8] Thin air.  These are for testing the software, not necessarily for performing
     real simulations.  Note: Pyramidal cell strength has been reduced 
     because of large convergence and high input resistance of the reference cell model.
-    
-
+    Release 1 (Nov 2017):
+     pyramidal    
+                  
+     0.6 ±1.05 [8]
+     1.8 [8]      
+     0.8±0.66 [8] 
+     0.4 [8]      
+     -15.0 [12]   
+     0.499 [8]    
+     1.000 [8]    
+     2 [8]        
+     
+     
 [9] Reanalysis of evoked EPSCs in stellate cells (Manis/Xie, 2014)
 
 [10]  Maximum AMPA open conductance per synaptic site (units are pS). 

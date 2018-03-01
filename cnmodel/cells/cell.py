@@ -255,18 +255,20 @@ class Cell(object):
         """
         self.hr.h('access %s' % section.name())
         if self.hr.h.n3d() < 2:
-            return 1e5*np.sqrt(section.diam/(4.0*np.pi*freq*section.Ra*section.cm))
+            return 1e-5*np.sqrt(section.diam/(4.0*np.pi*freq*section.Ra*section.cm))
         # above was too inaccurate with large variation in 3d diameter
         # so now we use all 3-d points to get a better approximate lambda
         x1 = self.hr.h.arc3d(0)
         d1 = self.hr.h.diam3d(0)
-        lam = 0
+        lam = 0.
+        print( int(self.hr.h.n3d())-1)
         for i in range(int(self.hr.h.n3d())-1):
                 x2 = self.hr.h.arc3d(i)
                 d2 = self.hr.h.diam3d(i)
                 lam = lam + ((x2 - x1)/np.sqrt(d1 + d2))
                 x1 = x2
                 d1 = d2
+        
         #  length of the section in units of lambda
         lam = lam * np.sqrt(2.0) * 1e-5*np.sqrt(4.0*np.pi*freq*section.Ra*section.cm)
         return section.L/lam
