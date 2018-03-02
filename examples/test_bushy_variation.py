@@ -15,7 +15,7 @@ import cnmodel.util.pynrnutilities as PU
 from cnmodel import data
 
 import matplotlib.pyplot as mpl
-from pylibrary import PlotHelpers as PH
+import cnmodel.util.PlotHelpers as PH
 import timeit
 
 """
