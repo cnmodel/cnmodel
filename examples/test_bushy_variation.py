@@ -2,7 +2,6 @@ import sys
 import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.multiprocess as mp
-from PyQt4 import QtGui
 import pickle
 import time
 from neuron import h
@@ -16,7 +15,7 @@ import cnmodel.util.pynrnutilities as PU
 from cnmodel import data
 
 import matplotlib.pyplot as mpl
-from pylibrary import PlotHelpers as PH
+import cnmodel.util.PlotHelpers as PH
 import timeit
 
 """
@@ -731,6 +730,7 @@ def showplots(name):
     
 if __name__ == '__main__':
     runname = None
+    panel = None
     if len(sys.argv) == 2:
         panel = sys.argv[1]
     if panel == 'a':
@@ -741,7 +741,8 @@ if __name__ == '__main__':
         runname = 'Figure6_AN'
     else:
         runtype = panel
-        
+    if panel is None:
+        raise ValueError("Must specify figure panel to generate: 'a', 'b'")
     if runtype in ['sound', 'IV']:
          prot = Variations(runtype, runname)
          if runtype == 'IV':

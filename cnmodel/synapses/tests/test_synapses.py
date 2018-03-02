@@ -13,7 +13,7 @@ import cnmodel
 import cnmodel.cells as cells
 from cnmodel.util import UserTester
 from cnmodel.protocols import SynapseTest
-from cnmodel.util import random, reset
+from cnmodel.util import reset
 
 #
 # Synapse tests

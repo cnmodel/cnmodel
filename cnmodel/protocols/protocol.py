@@ -1,6 +1,6 @@
 from neuron import h
 import numpy as np
-from ..util import random, custom_init
+from ..util import random_seed, custom_init
 
 class Protocol(object):
     """
@@ -20,7 +20,7 @@ class Protocol(object):
         Subclasses should extend this method.
         """
         if seed is not None:
-            random.set_seed(seed)
+            random_seed.set_seed(seed)
         self.reset()
     
     def __setitem__(self, name, variable):

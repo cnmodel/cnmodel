@@ -1,7 +1,7 @@
 About CNModel
 =============
 
-CNModel is a Python-based interface to NEURON models of cochlear nucleus neurons, synapses, network connectivity. To drive the model with sound stimuli, the Zilaney et al (2010, 2014) auditory periphery model is used to generate auditory nerve spike trains (either via the "cochlea" Python package or by the original MATLAB model; see below). The overall goal is to provide a platform for modeling networks of cochlear nucleus neurons with different levels of biological realism in the context of an accurate simulation of auditory nerve input.
+CNModel is a Python-based interface to NEURON models of cochlear nucleus neurons, synapses, network connectivity. To drive the model with sound stimuli, the Zilany et al (2010, 2014) auditory periphery model is used to generate auditory nerve spike trains (either via the "cochlea" Python package or by the original MATLAB model; see below). The overall goal is to provide a platform for modeling networks of cochlear nucleus neurons with different levels of biological realism in the context of an accurate simulation of auditory nerve input.
 
 At the lowest level are NEURON-based implementations of ion channels and synapses. Ion channel models for potassium channels are derived largely from the measurements and models of Rothman and Manis (2003abc), and Kanold and Manis (1999, 2001); other channels are derived or modified from the literature. Cell models are in turn based on the insertion of ion channels in densities based on measurements in guinea pig and mouse. The "point" somatic cell models, which form the base set of models in CNModel, replicate the data reported in the original papers. 
 
@@ -13,32 +13,56 @@ Network connectivity may be defined programmatically, or based on a table of con
 
 Included in this package is a set of test suites for different components. An overriding set of unit tests is available to confirm performance of the base models against a set of reference runs, several of which are in turn directly traceable to the original manuscripts. The test suites are useful in verifying performance of the model after modifications of the code or changes in the installation (upgrades of Python or Matlab, for example). 
 
+A manuscript describing this package has been published:
+--------------------------------------------------------
+
+    Paul B. Manis, Luke Campagnola,
+    A biophysical modelling platform of the cochlear nucleus and other auditory circuits: 
+        From channels to networks,
+    Hearing Research,
+    Volume 360,
+    2018,
+    Pages 76-91,
+    ISSN 0378-5955,
+    https://doi.org/10.1016/j.heares.2017.12.017.
+    Open Access: http://www.sciencedirect.com/science/article/pii/S037859551730360X
+
+If you use this package, we would appreciate it if you cite our work in any publications or abstracts.
+
+
 Installation requirements
 -------------------------
 This package depends on the following:
 
-   1. Python 2.7.10 with numpy (1.11), scipy (0.19.0), lmfit (0.9.6), pyqt4 (4.11.4), matplotlib (2.0 or 1.5) and pyqtgraph (0.9.10). 
-      An Anaconda install with the appropriate scientific packages works well. lmfit is best obtained via pip
-      to install the latest versions. *This package is not yet compatible with Python 3.x.*
-   2. A Python-linked version of NEURON (www.neuron.yale.edu). The code has been tested with NEURON 7.3 and 7.4.
-   3. A C compiler (gcc). Needed for compilation of mechanisms for NEURON.
-   4. The Zilany et al (JASA 2014) auditory periphery model. This can be provided one of two ways:
-      * The original MATLAB-based Zilany model; requires MATLAB 2011 or later. A C compiler will also be needed to build this model.The model should be placed in the directory "cnmodel/cnmodel/an_model/model", with the following components: ANmodel.m, complex.c, complex.h, complex.hpp, ffGn.m, fituaudiogram2.m, mexANmodel.m, model_IHC.c, model_Synapse.c, and the THRESHOLD_ALL_* files.  
-      * The Python-based cochlea model by Rudnicki and Hemmert (https://github.com/mrkrd/cochlea; can be installed via pip).
-   5. neuronvis (optional; available at https://github.com/campagnola/neuronvis or https://github.com/pbmanis/neuronvis).
+   1. Python 2.7 with numpy (1.11), scipy (0.19.0), lmfit (0.9.6), matplotlib (2.0 or 1.5), faulthandler, and pyqtgraph (0.9.10). The cochlea module requires pandas as well. 
+      An Anaconda install with the appropriate scientific packages works well:
+      conda install python=2.7 pyqt pyqtgraph matplotlib numpy scipy pandas pytest faulthandler`
+   2. lmfit (nonlinear fitter) is best obtained via pip to install the latest versions: `pip install lmfit`
+   3. A Python-linked version of NEURON (www.neuron.yale.edu). The code has been tested with NEURON 7.3, 7.4 and 7.5.
+   4. A C compiler (`gcc`). Needed for compilation of mechanisms for NEURON.
+   5. The Zilany et al (JASA 2014) auditory periphery model. This can be provided one of two ways:
+      * The original MATLAB-based Zilany model; requires MATLAB 2011 or later. A C compiler will also be needed to build this model.The model should be placed in the directory "cnmodel/cnmodel/an_model/model", with the following components: ANmodel.m, complex.c, complex.h, complex.hpp, ffGn.m, fituaudiogram2.m, mexANmodel.m, model_IHC.c, model_Synapse.c, and the THRESHOLD_ALL_* files. When cnmodel attempts to access this code the first time, it will perform the necessary compilation.
+      * The Python-based cochlea model by Rudnicki and Hemmert at https://github.com/mrkrd/cochlea. This is probably best installed via pip per the instructions on the PyPi site: `pip install cochlea`. Note that 
+    
+    Optional
+    --------
+    neuronvis (optional; available at https://github.com/campagnola/neuronvis or https://github.com/pbmanis/neuronvis).
       This provides 3D visualization for morphology.
 
+For more detailed information on setup in a Windows environment, see the file Windows_setup.md. Thanks to Laurel Carney for prompting the generation of this set of instructions, and for identifying issues on Windows.
+
+Note: *This package is not yet compatible with Python 3.x. Neuron is not yet compatible with Python 3.x*
 
 Testing
 -------
 
-After the code is installed, enter the cnmodel directory and compile the NEURON mod files:
+After the code is installed, enter the cnmodel directory and compile the NEURON mod files::
 
     $ nrnivmodl cnmodel/mechanisms
 
 This will create a directory ("x86_64" or "special") in the top cnmodel directory with the compiled mechanisms.
 
-At that point
+At that point::
 
     $ python examples/toy_model.py
      
@@ -54,13 +78,14 @@ This will test each of the models against reference data, the synapse mechanisms
 Figures
 -------
 
-The data for the figures in the manuscript (Manis and Campagnola, Hearing Research, submitted) can be generated using the bash script "figures.sh" in the examples subdirectory. 
-From the main cnmodel directory:
+The data for the figures in the manuscript (Manis and Campagnola, Hearing Research 2018) can be generated using the bash script "figures.sh" in the examples subdirectory. 
+From the main cnmodel directory::
+
     $ ./examples figures.sh fignum
 
 where fignum is one of 2a, 2b, 2c, 3, 4, 5, 6a, 6b, or 7.
 
-Note that Figure 7 may take several hours to generate.
+Note that Figure 7 may take several **hours** to generate.
 
 Example code and tests
 ----------------------
@@ -113,7 +138,7 @@ A number of additional tests are included in the examples directory.
 - `test_synapses.py` evokes spikes in a presynaptic cell while recording the postsynaptic potential.
   - Usage:  python test_synapses.py <pre_celltype> <post_celltype>
     Supported cell types: sgc, bushy, tstellate, dstellate
-- `toy_model.py` generates IV plots for each of the principal point cell types included in CNModel. This is the data for Figure 3 of the manuscript.
+- `toy_model.py` generates IV plots for each of the principal point cell types included in CNModel. This is the code that generates Figure 3 of the manuscript.
     
 References:
 -----------
