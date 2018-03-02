@@ -6,7 +6,7 @@ import neuron
 import cnmodel
 import cnmodel.cells as cells
 from cnmodel.protocols import SynapseTest
-from cnmodel.util import random, reset
+from cnmodel.util import random_seed, reset
 from cnmodel import data
 
 """
@@ -56,7 +56,7 @@ def sgc_psd_test(cell_class, seed, plot=False, tstop=5.0, n_syn=20):
     """
     celltyp = cell_class.__name__.lower()
     
-    random.set_seed(seed)
+    random_seed.set_seed(seed)
     reset(raiseError=False)  # avoid failure because we cannot release NEURON objects completely.
     tsc = cell_class.create(ttx=True)
     (ampa_gmax, nmda_gmax, epsc_cv) = measure_gmax(tsc, n_syn=n_syn, tstop=tstop, plot=plot)

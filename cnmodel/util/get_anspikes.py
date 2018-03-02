@@ -381,20 +381,21 @@ class ManageANSpikes():
         return result
 
 if __name__ == '__main__':
-    import pylibrary.Params as Params
-
+    from cnmodel.util import Params
+    
     modes = ['CMR', 'CMD', 'REF']
     sr_types = ['H', 'M', 'L']
     sr_type = sr_types[0]
     sr_names = {'H': 'HS', 'M': 'MS', 'L': 'LS'} # spontaneous rate groups (AN fiber input selection)
     # define params for reading/testing. This is a subset of params...
-    P = Params.Params(mode = modes[0], s2m = 0, n_rep=0, start_rep=0,
+    P = Params(mode = modes[0], s2m = 0, n_rep=0, start_rep=0,
                       sr = sr_names['L'],
                       modulation_freq = 10, DS_phase = 0, dataset='test',
                       sr_types=sr_types, sr_names=sr_names, fileVersion=1.5,
                      )
 
     manager = ManageANSpikes()  # create instance of the manager
+    print dir(manager)
     test='RI'
 
     if test == 'all':
@@ -405,7 +406,7 @@ if __name__ == '__main__':
         MP.show()
 
     if test == manager.dataType:
-        spikes = manager.get_AN_at_F_and_SPL(spontclass = 'MS', freq=10000., CF=None, SPL=50)
+        spikes = manager.getANatFandSPL(spontclass = 'MS', freq=10000., CF=None, SPL=50)
         spks = manager.combine_reps(spikes)
         if spks != []:
             print 'spikes.'

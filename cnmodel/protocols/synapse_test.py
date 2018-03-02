@@ -173,7 +173,7 @@ class SynapseTest(Protocol):
 
             if not isinstance(synapse.psd, Exp2PSD):
                 for i, s in enumerate(synapses):
-                    s.terminal.relsite.rseed = util.random.current_seed() + nrep
+                    s.terminal.relsite.rseed = util.random_seed.current_seed() + nrep
             util.custom_init()
             h.run()
 
