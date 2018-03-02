@@ -17,7 +17,8 @@ A manuscript describing this package has been published:
 --------------------------------------------------------
 
     Paul B. Manis, Luke Campagnola,
-    A biophysical modelling platform of the cochlear nucleus and other auditory circuits: From channels to networks,
+    A biophysical modelling platform of the cochlear nucleus and other auditory circuits: 
+        From channels to networks,
     Hearing Research,
     Volume 360,
     2018,
@@ -78,7 +79,8 @@ Figures
 -------
 
 The data for the figures in the manuscript (Manis and Campagnola, Hearing Research 2018) can be generated using the bash script "figures.sh" in the examples subdirectory. 
-From the main cnmodel directory:
+From the main cnmodel directory::
+
     $ ./examples figures.sh fignum
 
 where fignum is one of 2a, 2b, 2c, 3, 4, 5, 6a, 6b, or 7.
