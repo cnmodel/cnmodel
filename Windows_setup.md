@@ -27,7 +27,7 @@ Install only for yourself.
 
 If you want, create an environment for python 2.7, Using the standard windows terminal ("Command Prompt"), install the additional required pacakges::
 
-    conda create --name models python=2.7 pyqt pyqtgraph matplotlib numpy scipy pytest faulthandler
+    conda create --name models python=2.7 pyqt pyqtgraph matplotlib numpy scipy pandas pytest faulthandler
 
 Note: this may take a while, and will install many other packages that are required dependencies.
 
