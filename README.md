@@ -48,8 +48,9 @@ This package depends on the following:
     neuronvis (optional; available at https://github.com/campagnola/neuronvis or https://github.com/pbmanis/neuronvis).
       This provides 3D visualization for morphology.
 
+For more detailed information on setup in a Windows environment, see the file Windows_setup.md. Thanks to Laurel Carney for prompting the generation of this set of instructions, and for identifying issues on Windows.
 
-Note: *This package is not yet compatible with Python 3.x. Neuron is not compatible with Python 3.x*
+Note: *This package is not yet compatible with Python 3.x. Neuron is not yet compatible with Python 3.x*
 
 Testing
 -------
