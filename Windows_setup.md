@@ -1,7 +1,7 @@
-Windows setup
-=============
+CNMODEL Setup for Windows Systems
+=================================
 
-(as of 24 Feb 2018, tested on Windows 10, )
+(as of 2 March 2018, tested on Windows 10)
 On a bare system, you will need to install the following packages:
 
     1. Anaconda Python 2.7 (this may also include the Microsoft Visual Studio for Python)
@@ -13,7 +13,7 @@ On a bare system, you will need to install the following packages:
     7. build the .dll file for the Neuron mechanisms used in cnmodel
 
 Some installs are accomplished via a graphical interface (anaconda, git, msvc, neuron). 
-Other parts of the install are done from the terminal (Winows "Command Prompt" - look in the Windows Accessories)
+Other parts of the install are done from the terminal (Windows "Command Prompt" - look in the Windows Accessories)
 
 Follow the instructions below to do this installation. The order only partially matters - msvcforpython must be installed before cochlea can be built; python should be installed before NEURON; and git is required get the cnmodel repository.
 
@@ -25,7 +25,7 @@ The most recent versions of the Anaconda installer (5.x) are OK to use.
 Check the box to set DOS path variables so can run from command prompt.
 Install only for yourself.
 
-If you want, create an environment for python 2.7, Using the standard windows terminal ("Command Prompt"), install the additional required pacakges::
+If you want, create an environment for python 2.7, Using the standard windows terminal ("Command Prompt"), install the additional required packages::
 
     conda create --name models python=2.7 pyqt pyqtgraph matplotlib numpy scipy pandas pytest faulthandler
 
@@ -62,6 +62,7 @@ Step 4: Install cochlea (Rudnicki and Hemmert's implementation of several models
 This should build quickly and have no errors. 
 
 Step 5: Install NEURON7.5 for mswindows from::
+    
     www.neuron.yale.edu. 
 
 Restart the command window so that the paths to the python installation are updated.
@@ -85,20 +86,16 @@ Step 6: Go to where you want to put the model code repository, and clone the rep
     git clone https://github.com/cnmodel/cnmodel.git
 
 Jump into the cnmodel directory.
-Currently, you will need to switch the active branch to Qt5::
-
-    git checkout Qt5
-
-(I hope to remove this step soon).
 
 Step 7: Find the mknrndll gui from where you installed neuron with the Explorer (the program in the nrn folder). Run the program, and select the directory cnmodel\cnmodel\mechanisms, then build.
 This will make nrnmech.dll in the mechanisms directory.
 Copy the nrnmech.dll into the main cnmodel directory.
 
-For Windows, you may also need to copy the example files out of the examples directory into the main cnmodel directory (this is where they lived before we cleaned up the organization, and probably never tested against windows again).
+Step 8: Run::
 
-You can run "python setup.py build install" in the main cnmodel directory to make a library version. This will make cnmodel accessible as an import into python from any location. The only catch is that the nrnmech.dll must be placed locally in the directory that you are running from, and it may lead to problems in the future.
-
+    python setup.py develop
+    
+in the main cnmodel directory to make a library version in the anaconda site-packages directory. This will make cnmodel accessible as an import into python from any location. However, you will (on Windows) need to copy the nrnmech.dll file to the directory that you are starting in. (If you import cnmodel and there is not a list of mechanisms after the Neuron banner, then nrnmech.dll was not found).
 
 Running
 =======
@@ -107,56 +104,45 @@ The following should be all that is needed once everything is set up.
 
 Go the the cnmodel main directory.
 
-if you have an environment, activate it to make sure in the right anaconda python environment
+if you set up a Python environment, activate it to make sure you have the right dependencies available.
 
 Now, these scripts should run just fine::
 
-    python toy_model.py 
-    python test_mechanisms.py klt
-    python test_synapses.py sgc bushy
-    python test_phaselocking.py   will fail as it needs the matlab AN model.
+    python examples/test_mechanisms.py klt
+    python examples/toy_model.py 
+    python examples/test_synapses.py sgc bushy
+    python examples/test_phaselocking.py
 
 You should also be able to run the full battery of tests::
 
     python test.py
 
-All the tests should pass (except maybe dstellate->dstellate; this passes under MacOSX so I'll have to investigate why it fails under windows). MacOSX test result is listed below.
+All the tests should pass (except perhaps with the exception dstellate->dstellate; this passes under MacOSX so we will need to investigate why it fails under Windows). MacOSX and Windows test results are listed below.
 
 Notes
 =====
+
 1. You cannot use the "bash" terminal window that comes with neuron - it doesn't set the paths correctly for access to the anaconda python.
 
 2. Some of the graphical displays are not correctly sized in Windows. You may need to expand the window to see all the plots (specifically, toy_model has this problem).
 
-3. You may encounter failures to load PyQt4 (such as, from PyQt4 import QtGui). If so, comment out the import line. Find where QtGui (or QtCore) is used and replace it with pg.QtGui (or pg.QtCore). This lets pyqtgraph resolve the appropriate Qt library. Report any such occurances to me (pmanis@med.unc.edu)
+3. Report occurrences of failures to "import PyQt4" to: https://github.com/cnmodel/cnmodel/issues.
 
-4. The test suite (python test.py) may fail on one test: dstellate -> dstellate synapses (as of 23Feb2018), and if you do not have matlab, the matlab test will be skipped.
-
-5. Developing programs to use cnmodel: Under mac os x and linux, I use a separate directory for the code, and create a symbolic link to the top cnmodel directory for the imports. This lets me tinker with cnmodel while developing external code. However, I have not tried this under windows. Using the setup.py/install is the next best thing, although any changes to cnmodel must be followed by a setup/install call to update the package.
-
+4. The test suite (python test.py) may fail on one test: dstellate -> dstellate synapses (as of 23Feb2018), and if you do not have Matlab, the Matlab test will be skipped.
 
 
 Things solved with Windows
 ==========================
 
 1. The test suite works and most tests pass (python test.py).
-2. Qt5 and current anaconda install are acceptable (no longer trying to force Qt4).
+2. Qt5 and current anaconda install are acceptable (we are no longer trying to force Qt4).
+3. The prior dependency on pylibrary has been removed.
 
 
 Potential problems
 ==================
-If a run fails because it cannot find pylibrary for an import, you can get pylibrary as follows. However, the only place that pylibrary appears to be used is in a routine that is not currently used by cnmodel.
 
-Go to a reasonable directory (not in cnmodel) - I use Desktop\Python for all of these then get pylibrary::
-
-    git clone https://github.com/pbmanis/pylibrary
-    cd pylibrary
-    python setup.py build install  # puts pylibrary in the anaconda environment models only.
-    cd ..
-    
-Pylibrary is only needed for a few of the example files.
-
-
+This software has been tested primarily on Mac OSX and Linux systems. Some tests have been performed on Windows. If issues are found, please report them via github as an issue (as noted above).
 
 Test results
 ============
