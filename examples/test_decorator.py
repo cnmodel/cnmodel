@@ -29,7 +29,7 @@ class F5():
         
     def run(self):
         self.post_cell = cells.Bushy.create(morphology=self.filename, decorator=Decorator,
-                    species='mouse', modelType='XM13')
+                    species='mouse', modelName='XM13', modelType='II')
         self.post_cell.set_temperature(float(self.temperature))
         self.post_cell.set_d_lambda(freq=2000.)  # necessary to ensure appropriate spatial 
         self.iv.reset()

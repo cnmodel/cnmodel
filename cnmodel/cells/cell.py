@@ -2,6 +2,7 @@ from __future__ import print_function
 import weakref
 import numpy as np
 import scipy.optimize
+from collections import OrderedDict
 import neuron
 from neuron import h
 from ..util import nstomho, mho2ns
@@ -529,7 +530,7 @@ class Cell(object):
         raise NotImplementedError('get_cellpars should be reimplemented in the individual cell modules')
     
 
-    def channel_manager(self, modelType=None, cell_type=None):
+    def channel_manager(self, modelName=None, modelType=None):
         """
         This routine defines channel density maps and distance map patterns
         for each type of compartment in the cell. The maps
@@ -569,10 +570,10 @@ class Cell(object):
         
         """
 
-        dataset = '%s_channels' % modelType
+        dataset = '%s_channels' % modelName
         decorationmap = dataset + '_compartments'
         # print('dataset: {0:s}   decorationmap: {1:s}'.format(dataset, decorationmap))
-        cellpars = self.get_cellpars(dataset, species=self.status['species'], cell_type=cell_type)
+        cellpars = self.get_cellpars(dataset, species=self.status['species'], modelType=modelType)
         refarea = 1e-3*cellpars.cap / self.c_m
 
         table = data.get_table_info(dataset)
@@ -580,7 +581,7 @@ class Cell(object):
         pars = {}
         # retrive the conductances from the data set
         for g in table['field']:
-            x = data.get(dataset, species=self.status['species'], cell_type=cell_type,
+            x = data.get(dataset, species=self.status['species'], model_type=modelType,
                                 field=g)
             if not isinstance(x, float):
                 continue
@@ -596,7 +597,7 @@ class Cell(object):
                 if g not in chscale['parameter']:
 #                    print ('Parameter %s not found in chscale parameters!' % g)
                     continue
-                scale = data.get(decorationmap, species=self.status['species'], cell_type=cell_type,
+                scale = data.get(decorationmap, species=self.status['species'], model_type=modelType,
                         compartment=c, parameter=g)
                 if '_gbar' in g:
                     self.channelMap[c][g] = pars[g]*scale
@@ -604,8 +605,7 @@ class Cell(object):
                     self.channelMap[c][g] = pars[g]
 
         self.irange = np.linspace(-0.6, 1, 9)
-        self.distMap = self.set_distancemap()
-        {'dend': {'klt': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
+        self.distMap =         {'dend': {'klt': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
                                  'kht': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
                                  'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.}}, # linear with distance, gminf (factor) is multiplied by gbar
                         'dendrite': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},

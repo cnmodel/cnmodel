@@ -36,8 +36,9 @@ class Decorator():
         )
         self.excludeMechs = [] # ['ihvcn', 'kht', 'klt', 'nav11']
         print 'modelType in dec: ', cell.status['modelType']
+        print 'modelName in dec is ', cell.status['modelName']
         print 'cell type in dec: ', cellType
-        cell.channel_manager(modelType=cell.status['modelType'], cell_type=cellType)
+        cell.channel_manager(modelName=cell.status['modelName'], modelType=cell.status['modelType'])
 #        print 'Cell: \n', dir(cell)
 #        print 'mechanisms: ', cell.hr.mechanisms
         # gmapper allows us tor remap the names of mechanisms and their conductance names, which may
