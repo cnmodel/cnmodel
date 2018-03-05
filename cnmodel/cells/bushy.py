@@ -1,12 +1,14 @@
 from neuron import h
-
+from collections import OrderedDict
 from .cell import Cell
 from .. import synapses
 from ..util import nstomho
 from ..util import Params
 import numpy as np
 from .. import data
-
+import pprint
+pp = pprint.PrettyPrinter(indent=4, width=60)
+    
 __all__ = ['Bushy', 'BushyRothman']
 
 
@@ -111,7 +113,8 @@ class BushyRothman(Bushy):
     """
 
     def __init__(self, morphology=None, decorator=None, nach=None,
-                 ttx=False, species='guineapig', modelType=None, debug=False, temperature=None):
+                 ttx=False, species='guineapig', modelType=None, modelName=None,
+                 debug=False, temperature=None):
         """
         Create a bushy cell, using the default parameters for guinea pig from
         R&M2003, as a type II cell.
@@ -160,24 +163,39 @@ class BushyRothman(Bushy):
                  
         """
         super(BushyRothman, self).__init__()
-        self.i_test_range={'pulse': (-1, 1, 0.05)}  # note that this gets reset with decorator according to channels
+        self.i_test_range={'pulse': (-1, 1, 0.05)}  # note that this might get reset with decorator according to channels
                                                     # Changing the default values will cause the unit tests to fail!
         if modelType == None:
             modelType = 'II'
-        if nach == None and species == 'guineapig':
-            nach = 'na'
-        if nach == None and species == 'mouse':
-            nach = 'na'
+        if species == 'guineapig':
+            modelName = 'RM03'
+            temp = 22.
+            if nach == None:
+                nach = 'na'
+        if species == 'mouse':
+            temp = 34.
+            if modelName is None:
+                modelName = 'XM13'
+            if nach is None:
+                nach = 'na'
             self.i_test_range={'pulse': (-1, 1.2, 0.05)}
         
-        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False, 'hillock': False, 
+        self.status = {'species': species, 'cellClass': self.type, 'modelType': modelType, 'modelName': modelName,
+                        'soma': True, 'axon': False, 'dendrites': False, 'pumps': False, 'hillock': False, 
                        'initialsegment': False, 'myelinatedaxon': False, 'unmyelinatedaxon': False,
-                       'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Bushy',
+                       'na': nach, 'ttx': ttx, 'name': self.type,
                        'morphology': morphology, 'decorator': decorator, 'temperature': temperature}
 
         self.spike_threshold = -40
         self.vrange = [-70., -55.]  # set a default vrange for searching for rmp
-        print 'model type, species: ', modelType, species, nach
+        print 'model type, model name, species: ', modelType, modelName, species, nach
+
+        self.c_m = 0.9E-6  # default in units of F/cm^2
+
+        self._valid_temperatures = (temp, )
+        if self.status['temperature'] == None:
+            self.status['temperature'] = temp
+
         if morphology is None:
             """
             instantiate a basic soma-only ("point") model
@@ -195,7 +213,7 @@ class BushyRothman(Bushy):
             self.set_morphology(morphology_file=morphology)
 
         # decorate the morphology with ion channels
-        if decorator is None:   # basic model, only on the soma
+        if decorator is None:   # basic model, only on the soma, does not use tables.
             self.mechanisms = ['klt', 'kht', 'ihvcn', 'leak', nach]
             for mech in self.mechanisms:
                 self.soma.insert(mech)
@@ -205,24 +223,36 @@ class BushyRothman(Bushy):
             self.soma().leak.erev = self.e_leak
             self.c_m = 0.9
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
-        else:  # decorate according to a defined set of rules on all cell compartments
+        else:  # decorate according to a defined set of rules on all cell compartments, with tables.
             self.decorate()
         self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
         self.get_mechs(self.soma)
         if debug:
             print "   << Created cell >>"
 
-    def get_cellpars(self, dataset, species='guineapig', celltype='II'):
-        cellcap = data.get(dataset, species=species, cell_type=celltype,
+    def get_cellpars(self, dataset, species='guineapig', modelType='II'):
+        """
+        Read data for ion channels and cell parameters from the tables
+        """
+        #cell_type = self.map_celltype(cell_type)
+        cellcap = data.get(dataset, species=species, model_type=modelType,
             field='soma_Cap')
-        chtype = data.get(dataset, species=species, cell_type=celltype,
-            field='soma_na_type')
+        chtype = data.get(dataset, species=species, model_type=modelType,
+            field='na_type')
+        if chtype == 'nacn':
+            chtype = 'na'
         pars = Params(cap=cellcap, natype=chtype)
-        for g in ['soma_na_gbar', 'soma_kht_gbar', 'soma_klt_gbar', 'soma_ih_gbar', 'soma_leak_gbar']:
-            pars.additem(g,  data.get(dataset, species=species, cell_type=celltype,
-            field=g))
+        if self.status['modelName'] == 'RM03':
+            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ih_gbar', 'leak_gbar']:
+                pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
+                    field=g))
+        if self.status['modelName'] == 'XM13':
+            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ihvcn_gbar', 'leak_gbar']:
+                pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
+                    field=g))
+        #print dir(pars)
         return pars
-
+        
     def species_scaling(self, species='guineapig', modelType='II', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
@@ -251,23 +281,16 @@ class BushyRothman(Bushy):
         knownspecies = ['mouse', 'guineapig', 'cat']
         
         soma = self.soma
-        if modelType == 'II':
-            celltype = 'bushy-II'
-        elif modelType == 'II-I':
-            celltype = 'bushy-II-I'
-        elif modelType == 'I-II':
-            celltype = 'bushy-I-II'
-        else:
-            raise ValueError('model type not recognized')
+ #       cellType = self.map_celltype(modelType)
 
         if species == 'mouse':
             # use conductance levels determined from Cao et al.,  J. Neurophys., 2007. as 
             # model description in Xie and Manis 2013. Note that
             # conductances were not scaled for temperature (rates were)
             # so here we reset the default Q10's for conductance (g) to 1.0
-            if celltype not in ['bushy-II', 'bushy-II-I']:
-                raise ValueError('\nCell type %s is not implemented for mouse bushy cells' % celltype)
-            print '  Setting conductances for mouse bushy cell (%s), Xie and Manis, 2013' % celltype
+            if modelType not in ['II', 'II-I']:
+                raise ValueError('\nModel type %s is not implemented for mouse bushy cells' % modelType)
+            print '  Setting conductances for mouse bushy cell (%s), Xie and Manis, 2013' % modelType
             dataset = 'XM13_channels'
             self.vrange = [-68., -55.]  # set a default vrange for searching for rmp
             self.i_test_range = {'pulse': (-1., 1., 0.05)}
@@ -275,14 +298,14 @@ class BushyRothman(Bushy):
             if self.status['temperature'] is None:
                 self.status['temperature'] = 34. 
 
-            pars = self.get_cellpars(dataset, species=species, celltype=celltype)
+            pars = self.get_cellpars(dataset, species=species, modelType=modelType)
             self.set_soma_size_from_Cm(pars.cap)
             self.status['na'] = pars.natype
             self.adjust_na_chans(soma, sf=1.0)
-            soma().kht.gbar = nstomho(pars.soma_kht_gbar, self.somaarea)
-            soma().klt.gbar = nstomho(pars.soma_klt_gbar, self.somaarea)
-            soma().ihvcn.gbar = nstomho(pars.soma_ih_gbar, self.somaarea)
-            soma().leak.gbar = nstomho(pars.soma_leak_gbar, self.somaarea)
+            soma().kht.gbar = nstomho(pars.kht_gbar, self.somaarea)
+            soma().klt.gbar = nstomho(pars.klt_gbar, self.somaarea)
+            soma().ihvcn.gbar = nstomho(pars.ihvcn_gbar, self.somaarea)
+            soma().leak.gbar = nstomho(pars.leak_gbar, self.somaarea)
             self.axonsf = 0.57
             
         elif species == 'guineapig':
@@ -296,14 +319,14 @@ class BushyRothman(Bushy):
                 sf = 2  # Q10 of 2, 22->38C. (p3106, R&M2003c)
                 # note that kinetics are scaled in the mod file.
             dataset = 'RM03_channels'
-            pars = self.get_cellpars(dataset, species=species, celltype=celltype)
+            pars = self.get_cellpars(dataset, species=species, modelType=modelType)
             self.set_soma_size_from_Cm(pars.cap)
             self.status['na'] = pars.natype
             self.adjust_na_chans(soma, sf=sf)
-            soma().kht.gbar = nstomho(pars.soma_kht_gbar, self.somaarea)
-            soma().klt.gbar = nstomho(pars.soma_klt_gbar, self.somaarea)
-            soma().ihvcn.gbar = nstomho(pars.soma_ih_gbar, self.somaarea)
-            soma().leak.gbar = nstomho(pars.soma_leak_gbar, self.somaarea)
+            soma().kht.gbar = nstomho(pars.kht_gbar, self.somaarea)
+            soma().klt.gbar = nstomho(pars.klt_gbar, self.somaarea)
+            soma().ihvcn.gbar = nstomho(pars.ih_gbar, self.somaarea)
+            soma().leak.gbar = nstomho(pars.leak_gbar, self.somaarea)
 
             self.axonsf = 0.57
             
@@ -323,193 +346,302 @@ class BushyRothman(Bushy):
            print ' set cell as: ', species
            print ' with Vm rest = %6.3f' % self.vm0
 
-    def channel_manager(self, modelType='RM03'):
-        """
-        This routine defines channel density maps and distance map patterns
-        for each type of compartment in the cell. The maps
-        are used by the ChannelDecorator class (specifically, its private
-        \_biophys function) to decorate the cell membrane.
-        These settings are only used if the decorator is called; otherwise
-        for point cells, the species_scaling routine defines the channel
-        densities.
-        
-        Parameters
-        ----------
-        modelType : string (default: 'RM03')
-            A string that defines the type of the model. Currently, 3 types are implemented:
-            RM03: Rothman and Manis, 2003 somatic densities for guinea pig
-            XM13: Xie and Manis, 2013, somatic densities for mouse
-            mGBC: experimental mouse globular bushy cell with dendrites, axon, hillock and initial segment, for
-            use with fully reconstructed neurons.
-        
-        Returns
-        -------
-        Nothing
-        
-        Notes
-        -----
-        This routine defines the following variables for the class:
-        
-            * conductances (gBar)
-            * a channelMap (dictonary of channel densities in defined anatomical compartments)
-            * a current injection range for IV's (used for testing)
-            * a distance map, which defines how each conductance in a selected compartment
-              changes with distance from the soma. The current implementation includes both
-              linear and exponential gradients,
-              the minimum conductance at the end of the gradient, and the space constant or
-              slope for the gradient.
-        
-        """
-        
-        self.c_m = 1E-6  # default in units of F/cm^2
-        if modelType == 'RM03':
-            #
-            # Create a model based on the Rothman and Manis 2003 conductance set from guinea pig
-            # 
-            self.c_m = 0.9E-6  # default in units of F/cm^2
-            self._valid_temperatures = (22., 38.)
-            sf = 1.0
-            if self.status['temperature'] == None:
-                self.status['temperature'] = 22.
-            if self.status['temperature'] == 38:
-                sf = 3.03
-            dataset = 'RM03_channels'
-            pars = self.get_cellpars(dataset, species=self.status['species'], celltype='bushy-II')
-            refarea = 1e-3*pars.cap / self.c_m
-            self.gBar = Params(nabar=sf*pars.soma_na_gbar/refarea, # 1000.0E-9/refarea,
-                               khtbar=sf*pars.soma_kht_gbar/refarea,
-                               kltbar=sf*pars.soma_klt_gbar/refarea,
-                               ihbar=sf*pars.soma_ih_gbar/refarea,
-                               leakbar=sf*pars.soma_leak_gbar/refarea,
-                              )
-            print 'RM03 gbar:\n', self.gBar.show()
-            
-            self.channelMap = {
-                'axon': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
-                         'leak': self.gBar.leakbar / 2.},
-                'hillock': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
-                            'leak': self.gBar.leakbar, },
-                'initseg': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
-                            'ihvcn': self.gBar.ihbar / 2., 'leak': self.gBar.leakbar, },
-                'soma': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
-                         'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
-                'dend': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar * 0.5, 'kht': self.gBar.khtbar * 0.5,
-                         'ihvcn': self.gBar.ihbar / 3., 'leak': self.gBar.leakbar * 0.5, },
-                'apic': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar * 0.2, 'kht': self.gBar.khtbar * 0.2,
-                         'ihvcn': self.gBar.ihbar / 4., 'leak': self.gBar.leakbar * 0.2, },
-            }
-#            self.irange = np.linspace(-1., 1., 21)
-            self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'nacn': {'gradient': 'exp', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
-                            'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'nacn': {'gradient': 'exp', 'gminf': 0., 'lambda': 100.}}, # gradients are: flat, linear, exponential
-                            }
+#     def channel_manager(self, modelType='RM03', cell_type='bushy-II'):
+#         """
+#         This routine defines channel density maps and distance map patterns
+#         for each type of compartment in the cell. The maps
+#         are used by the ChannelDecorator class (specifically, its private
+#         \_biophys function) to decorate the cell membrane.
+#         These settings are only used if the decorator is called; otherwise
+#         for point cells, the species_scaling routine defines the channel
+#         densities.
+#
+#         Parameters
+#         ----------
+#         modelType : string (default: 'RM03')
+#             A string that defines the type of the model. Currently, 3 types are implemented:
+#             RM03: Rothman and Manis, 2003 somatic densities for guinea pig
+#             XM13: Xie and Manis, 2013, somatic densities for mouse
+#             mGBC: experimental mouse globular bushy cell with dendrites, axon, hillock and initial segment, for
+#             use with fully reconstructed neurons.
+#
+#         Returns
+#         -------
+#         Nothing
+#
+#         Notes
+#         -----
+#         This routine defines the following variables for the class:
+#
+#             * conductances (gBar)
+#             * a channelMap (dictonary of channel densities in defined anatomical compartments)
+#             * a current injection range for IV's (used for testing)
+#             * a distance map, which defines how each conductance in a selected compartment
+#               changes with distance from the soma. The current implementation includes both
+#               linear and exponential gradients,
+#               the minimum conductance at the end of the gradient, and the space constant or
+#               slope for the gradient.
+#
+#         """
+#
+#
+#         dataset = '%s_channels' % modelType
+#         decorationmap = dataset + '_compartments'
+#         # print('dataset: {0:s}   decorationmap: {1:s}'.format(dataset, decorationmap))
+#         cellpars = self.get_cellpars(dataset, species=self.status['species'], celltype=cell_type)
+#         refarea = 1e-3*cellpars.cap / self.c_m
+#
+#         table = data.get_table_info(dataset)
+#         chscale = data.get_table_info(decorationmap)
+#         pars = {}
+#         # retrive the conductances from the data set
+#         for g in table['field']:
+#             x = data.get(dataset, species=self.status['species'], cell_type=cell_type,
+#                                 field=g)
+#             if not isinstance(x, float):
+#                 continue
+#             if '_gbar' in g:
+#                 pars[g] = x/refarea
+#             else:
+#                 pars[g] = x
+#
+#         self.channelMap = OrderedDict()
+#         for c in chscale['compartment']:
+#             self.channelMap[c] = {}
+#             for g in pars.keys():
+#                 if g not in chscale['parameter']:
+# #                    print ('Parameter %s not found in chscale parameters!' % g)
+#                     continue
+#                 scale = data.get(decorationmap, species=self.status['species'], cell_type=cell_type,
+#                         compartment=c, parameter=g)
+#                 if '_gbar' in g:
+#                     self.channelMap[c][g] = pars[g]*scale
+#                 else:
+#                     self.channelMap[c][g] = pars[g]
+#
+        # self.irange = np.linspace(-0.6, 1, 9)
 
-        elif modelType == 'XM13':
-            #
-            # Create a model for a mouse bushy cell from Xie and Manis, 2013
-            # based on Cao and Oertel mouse conductance values
-            # and Rothman and Manis kinetics.
-            self.c_m = 0.9E-6  # default in units of F/cm^2
-            self._valid_temperatures = (34., )
-            if self.status['temperature'] == None:
-                self.status['temperature'] = 34.
-            dataset = 'XM13_channels'
-            pars = self.get_cellpars(dataset, species=self.status['species'], celltype='bushy-II')
-            refarea = 1e-3*pars.cap / self.c_m
-            self.gBar = Params(nabar=pars.soma_na_gbar/refarea, # 1000.0E-9/refarea,
-                               khtbar=pars.soma_kht_gbar/refarea,
-                               kltbar=pars.soma_klt_gbar/refarea,
-                               ihbar=pars.soma_ih_gbar/refarea,
-                               leakbar=pars.soma_leak_gbar/refarea,
-                              )
-            print 'XM13 gbar:\n', self.gBar.show()
-            self.channelMap = {
-                'axon': {'nav11': self.gBar.nabar*1, 'klt': self.gBar.kltbar * 1.0, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
-                         'leak': self.gBar.leakbar * 0.25},
-                'hillock': {'nav11': self.gBar.nabar*2, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar*2.0, 'ihvcn': 0.,
-                            'leak': self.gBar.leakbar, },
-                'initseg': {'nav11': self.gBar.nabar*3.0, 'klt': self.gBar.kltbar*1, 'kht': self.gBar.khtbar*2,
-                            'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
-                'soma': {'nav11': self.gBar.nabar*0.5, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
-                         'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
-                'dend': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar *0.5, 'kht': self.gBar.khtbar *0.5,
-                         'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
-                'dendrite': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar *0.5, 'kht': self.gBar.khtbar *0.5,
-                         'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
-                'apic': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar * 0.25,
-                         'ihvcn': self.gBar.ihbar *0.25, 'leak': self.gBar.leakbar * 0.25, },
-            }
-            self.irange = np.linspace(-0.6, 1, 9)
-            self.distMap = {'dend': {'klt': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
-                                     'kht': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
-                                     'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.}}, # linear with distance, gminf (factor) is multiplied by gbar
-                            'dendrite': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'nav11': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
-                            'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
-                            }
-
-        elif modelType == 'mGBC':
-            # bushy from Xie and Manis, 2013, based on Cao and Oertel mouse conductances,
-            # BUT modified ad hoc for SBEM reconstructions.
-            dataset = 'mGBC_channels'
-            
-            self._valid_temperatures = (34.,)
-            if self.status['temperature'] == None:
-                self.status['temperature'] = 34.
-            pars = self.get_cellpars(dataset, species=self.status['species'], celltype='bushy-II')
-            refarea = 1e-3*pars.cap / self.c_m
-            print (pars.cap, pars.soma_kht_gbar, refarea)  # refarea should be about 30e-6
-            
-            self.gBar = Params(nabar=pars.soma_na_gbar/refarea, # 1000.0E-9/refarea,
-                               khtbar=pars.soma_kht_gbar/refarea,
-                               kltbar=pars.soma_klt_gbar/refarea,
-                               ihbar=pars.soma_ih_gbar/refarea,
-                               leakbar=pars.soma_leak_gbar/refarea,
-                              )
-            print 'mGBC gbar:\n', self.gBar.show()
-            sodiumch = 'jsrna'
-            self.channelMap = {
-                'axon': {sodiumch: self.gBar.nabar*1., 'klt': self.gBar.kltbar * 1.0, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
-                         'leak': self.gBar.leakbar * 0.25},
-                'unmyelinatedaxon': {sodiumch: self.gBar.nabar*3.0, 'klt': self.gBar.kltbar * 2.0,
-                         'kht': self.gBar.khtbar*3.0, 'ihvcn': 0.,
-                         'leak': self.gBar.leakbar * 0.25},
-                'myelinatedaxon': {sodiumch: self.gBar.nabar*0, 'klt': self.gBar.kltbar * 1e-2,
-                         'kht': self.gBar.khtbar*1e-2, 'ihvcn': 0.,
-                         'leak': self.gBar.leakbar * 0.25*1e-3},
-                'hillock': {sodiumch: self.gBar.nabar*4.0, 'klt': self.gBar.kltbar*1.0, 'kht': self.gBar.khtbar*3.0,
-                             'ihvcn': 0., 'leak': self.gBar.leakbar, },
-                'initseg': {sodiumch: self.gBar.nabar*3.0, 'klt': self.gBar.kltbar*2, 'kht': self.gBar.khtbar*2,
-                            'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
-                'soma': {sodiumch: self.gBar.nabar*0.65, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar*1.5,
-                         'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
-                'dend': {sodiumch: self.gBar.nabar * 0.2, 'klt': self.gBar.kltbar *1, 'kht': self.gBar.khtbar *1,
-                         'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
-                'dendrite': {sodiumch: self.gBar.nabar * 0.2, 'klt': self.gBar.kltbar *1, 'kht': self.gBar.khtbar *1,
-                         'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
-                'apic': {sodiumch: self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar * 0.25,
-                         'ihvcn': self.gBar.ihbar *0.25, 'leak': self.gBar.leakbar * 0.25, },
-            }
-            self.irange = np.arange(-1.5, 2.1, 0.25 )
-            self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     sodiumch: {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
-                            'dendrite': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 20.},
-                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 20.},
-                                      sodiumch: {'gradient': 'linear', 'gminf': 0., 'lambda': 20.}}, # linear with distance, gminf (factor) is multiplied by gbar
-                            'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     sodiumch: {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
-                            }
-        else:
-            raise ValueError('model type %s is not implemented' % modelType)
-        self.check_temperature()
+    def get_distancemap(self):
+        return {'dend': {'klt': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
+                                 'kht': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
+                                 'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.}}, # linear with distance, gminf (factor) is multiplied by gbar
+                        'dendrite': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                 'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                 'nav11': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
+                        'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                 'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                 'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
+                        }
+        # self.check_temperature()
+        # return
+        #    
+        
+#
+#
+#         if modelType == 'RM03':
+#             #
+#             # Create a model based on the Rothman and Manis 2003 conductance set from guinea pig
+#             #
+#             self.c_m = 0.9E-6  # default in units of F/cm^2
+#             self._valid_temperatures = (22., 38.)
+#             sf = 1.0
+#             if self.status['temperature'] == None:
+#                 self.status['temperature'] = 22.
+#             if self.status['temperature'] == 38:
+#                 sf = 3.03
+#             dataset = 'RM03_channels'
+#             pars = self.get_cellpars(dataset, species=self.status['species'], celltype='bushy-II')
+#             refarea = 1e-3*pars.cap / self.c_m
+#             self.gBar = Params(nabar=sf*pars.soma_na_gbar/refarea, # 1000.0E-9/refarea,
+#                                khtbar=sf*pars.soma_kht_gbar/refarea,
+#                                kltbar=sf*pars.soma_klt_gbar/refarea,
+#                                ihbar=sf*pars.soma_ih_gbar/refarea,
+#                                leakbar=sf*pars.soma_leak_gbar/refarea,
+#                               )
+#             print 'RM03 gbar:\n', self.gBar.show()
+#
+#             self.channelMap = {
+#                 'axon': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
+#                          'leak': self.gBar.leakbar / 2.},
+#                 'hillock': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
+#                             'leak': self.gBar.leakbar, },
+#                 'initseg': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
+#                             'ihvcn': self.gBar.ihbar / 2., 'leak': self.gBar.leakbar, },
+#                 'soma': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
+#                          'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
+#                 'dend': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar * 0.5, 'kht': self.gBar.khtbar * 0.5,
+#                          'ihvcn': self.gBar.ihbar / 3., 'leak': self.gBar.leakbar * 0.5, },
+#                 'apic': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar * 0.2, 'kht': self.gBar.khtbar * 0.2,
+#                          'ihvcn': self.gBar.ihbar / 4., 'leak': self.gBar.leakbar * 0.2, },
+#             }
+# #            self.irange = np.linspace(-1., 1., 21)
+#             self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+#                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+#                                      'nacn': {'gradient': 'exp', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
+#                             'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+#                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+#                                      'nacn': {'gradient': 'exp', 'gminf': 0., 'lambda': 100.}}, # gradients are: flat, linear, exponential
+#                             }
+#
+#         elif modelType == 'XM13':
+#             #
+#             # Create a model for a mouse bushy cell from Xie and Manis, 2013
+#             # based on Cao and Oertel mouse conductance values
+#             # and Rothman and Manis kinetics.
+#             self.c_m = 0.9E-6  # default in units of F/cm^2
+#             self._valid_temperatures = (34., )
+#             if self.status['temperature'] == None:
+#                 self.status['temperature'] = 34.
+#             dataset = 'XM13_channels'
+#             pars = self.get_cellpars(dataset, species=self.status['species'], celltype='bushy-II')
+#             refarea = 1e-3*pars.cap / self.c_m
+#             # self.gBar = Params(nabar=pars.soma_nav11_gbar/refarea, # 1000.0E-9/refarea,
+#             #                    khtbar=pars.soma_kht_gbar/refarea,
+#             #                    kltbar=pars.soma_klt_gbar/refarea,
+#             #                    ihbar=pars.soma_ihvcn_gbar/refarea,
+#             #                    leakbar=pars.soma_leak_gbar/refarea,
+#             #                   )
+#             # print 'XM13 gbar:\n', self.gBar.show()
+#             # # create channel map:
+#             decorationmap = 'XM13_channels_bycompartment'
+#
+#             table = data.get_table_info(dataset)
+#             pars = {}
+#             for g in table['field']:
+#                 x = data.get(dataset, species=self.status['species'], cell_type='bushy-II',
+#                                     field=g)
+#                 if not isinstance(x, float):
+#                     continue
+#                 pars[g] = (1./refarea)*data.get(dataset, species=self.status['species'], cell_type='bushy-II',
+#                     field=g)
+#             chscale = data.get_table_info(decorationmap)
+#             self.channelMap1 = OrderedDict()
+# #            print chscale['parameter']
+#             for c in chscale['compartment']:
+#                 self.channelMap1[c] = {}
+#                 for g in pars.keys():
+# #                    print g
+#                     if g[5:] not in chscale['parameter']:
+#                         continue
+#                     scale = data.get(decorationmap, species=self.status['species'], cell_type='bushy-II',
+#                             compartment=c, parameter=g[5:])
+#                     self.channelMap1[c][g] = pars[g]*scale
+#
+#             #
+#             # self.channelMap = {
+#             #     'unmyelinatedaxon': {'nav11': self.gBar.nabar*1, 'klt': self.gBar.kltbar * 1.0, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
+#             #              'leak': self.gBar.leakbar * 0.25},
+#             #     'hillock': {'nav11': self.gBar.nabar*2, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar*2.0, 'ihvcn': 0.,
+#             #                 'leak': self.gBar.leakbar, },
+#             #     'initialsegment': {'nav11': self.gBar.nabar*3.0, 'klt': self.gBar.kltbar*1, 'kht': self.gBar.khtbar*2,
+#             #                 'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
+#             #     'soma': {'nav11': self.gBar.nabar*1.0, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
+#             #              'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
+#             #     'dend': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar *0.5, 'kht': self.gBar.khtbar *0.5,
+#             #              'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
+#             #     'primarydendrite': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar *0.5, 'kht': self.gBar.khtbar *0.5,
+#             #              'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
+#             #     'apic': {'nav11': self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar * 0.25,
+#             #              'ihvcn': self.gBar.ihbar *0.25, 'leak': self.gBar.leakbar * 0.25, },
+#             # }
+#             import pprint
+# #            print 'original map:\n'
+# #             for k in self.channelMap.keys():
+# #                 print('Region: %s' % k)
+# #                 if k in self.channelMap1.keys():
+# #                     print 'overlapping Region: %s' % k
+# #                     for ch in self.channelMap[k].keys():
+# #                         # print ch
+# #                        #  print self.channelMap1[k].keys()
+# #                        #  print self.channelMap[k].keys()
+# #                         if 'soma_' + ch + '_gbar' in self.channelMap1[k].keys():
+# #                             cx = u'soma_' + ch + u'_gbar'
+# # #                            print ch, cx
+# #                             print( '    {0:>4s} = {1:e}   {2:e}   {3:<5s}'.format(ch, self.channelMap[k][ch], self.channelMap1[k][cx],
+# #                                     str(np.isclose(self.channelMap[k][ch], self.channelMap1[k][cx]))))
+#
+#             # print 'original: ', self.channelMap['soma']
+#             self.channelMap = self.channelMap1 # use the data table
+#             # except need to remove soma_ from keys
+#             for k in self.channelMap.keys():
+#                 for n in self.channelMap[k].keys():
+#                     new_key = n.replace('_gbar', '')
+#                    # new_key = n
+#                     new_key = new_key.replace('soma_', '')
+#                   # strip 'soma_' from key
+#                     #print 'newkey: ', new_key, n
+#                     self.channelMap[k][new_key] = self.channelMap[k].pop(n)
+#
+#             print 'final map: ', self.channelMap['soma']
+#
+#             self.irange = np.linspace(-0.6, 1, 9)
+#             self.distMap = {'dend': {'klt': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
+#                                      'kht': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
+#                                      'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.}}, # linear with distance, gminf (factor) is multiplied by gbar
+#                             'dendrite': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+#                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+#                                      'nav11': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
+#                             'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+#                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+#                                      'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
+#                             }
+#
+#         elif modelType == 'mGBC':
+#             # bushy from Xie and Manis, 2013, based on Cao and Oertel mouse conductances,
+#             # BUT modified ad hoc for SBEM reconstructions.
+#             dataset = 'mGBC_channels'
+#
+#             self._valid_temperatures = (34.,)
+#             if self.status['temperature'] == None:
+#                 self.status['temperature'] = 34.
+#             pars = self.get_cellpars(dataset, species=self.status['species'], celltype='bushy-II')
+#             refarea = 1e-3*pars.cap / self.c_m
+#             print (pars.cap, pars.soma_kht_gbar, refarea)  # refarea should be about 30e-6
+#
+#             self.gBar = Params(nabar=pars.soma_na_gbar/refarea, # 1000.0E-9/refarea,
+#                                khtbar=pars.soma_kht_gbar/refarea,
+#                                kltbar=pars.soma_klt_gbar/refarea,
+#                                ihbar=pars.soma_ih_gbar/refarea,
+#                                leakbar=pars.soma_leak_gbar/refarea,
+#                               )
+#             print 'mGBC gbar:\n', self.gBar.show()
+#             sodiumch = 'jsrna'
+#             self.channelMap = {
+#                 'axon': {sodiumch: self.gBar.nabar*1., 'klt': self.gBar.kltbar * 1.0, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
+#                          'leak': self.gBar.leakbar * 0.25},
+#                 'unmyelinatedaxon': {sodiumch: self.gBar.nabar*3.0, 'klt': self.gBar.kltbar * 2.0,
+#                          'kht': self.gBar.khtbar*3.0, 'ihvcn': 0.,
+#                          'leak': self.gBar.leakbar * 0.25},
+#                 'myelinatedaxon': {sodiumch: self.gBar.nabar*0, 'klt': self.gBar.kltbar * 1e-2,
+#                          'kht': self.gBar.khtbar*1e-2, 'ihvcn': 0.,
+#                          'leak': self.gBar.leakbar * 0.25*1e-3},
+#                 'hillock': {sodiumch: self.gBar.nabar*4.0, 'klt': self.gBar.kltbar*1.0, 'kht': self.gBar.khtbar*3.0,
+#                              'ihvcn': 0., 'leak': self.gBar.leakbar, },
+#                 'initseg': {sodiumch: self.gBar.nabar*3.0, 'klt': self.gBar.kltbar*2, 'kht': self.gBar.khtbar*2,
+#                             'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
+#                 'soma': {sodiumch: self.gBar.nabar*0.65, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar*1.5,
+#                          'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
+#                 'dend': {sodiumch: self.gBar.nabar * 0.2, 'klt': self.gBar.kltbar *1, 'kht': self.gBar.khtbar *1,
+#                          'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
+#                 'dendrite': {sodiumch: self.gBar.nabar * 0.2, 'klt': self.gBar.kltbar *1, 'kht': self.gBar.khtbar *1,
+#                          'ihvcn': self.gBar.ihbar *0.5, 'leak': self.gBar.leakbar * 0.5, },
+#                 'apic': {sodiumch: self.gBar.nabar * 0.25, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar * 0.25,
+#                          'ihvcn': self.gBar.ihbar *0.25, 'leak': self.gBar.leakbar * 0.25, },
+#             }
+#             self.irange = np.arange(-1.5, 2.1, 0.25 )
+#             self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+#                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+#                                      sodiumch: {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
+#                             'dendrite': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 20.},
+#                                       'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 20.},
+#                                       sodiumch: {'gradient': 'linear', 'gminf': 0., 'lambda': 20.}}, # linear with distance, gminf (factor) is multiplied by gbar
+#                             'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+#                                      'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+#                                      sodiumch: {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
+#                             }
+#         else:
+#             raise ValueError('model type %s is not implemented' % modelType)
+#         self.check_temperature()
 
     def adjust_na_chans(self, soma, sf=1.0, gbar=1000., debug=False):
         """

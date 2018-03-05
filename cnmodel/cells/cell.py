@@ -85,7 +85,7 @@ class Cell(object):
                 self.species_scaling(species=self.status['species'], modelType=self.status['modelType'])
         else:
             self.status['temperature'] = temperature
-            self.decorate()  # call the decorator
+#            self.decorate()  # call the decorator
             
     def set_morphology(self, morphology_file=None):
         """
@@ -256,22 +256,22 @@ class Cell(object):
         self.decorated.channelValidate(self, verify=False)
         self.mechanisms = self.hr.mechanisms  # copy out all of the mechanisms that were inserted
 
-    def channel_manager(self, modelType='RM03'):
-        """
-        Every cell class should have a channel manager if it is set up to handle morphology.
-        This function should be overridden in the class with an appropriate routine that
-        builds the dictionary needed to decorate the cell. See the bushy cell class for
-        an example.
-        
-        Parameters
-        ----------
-        modelType : string (default: 'RM03')
-             A string that identifies what type of model the channel manager will implement.
-             This may be used to define different kinds of channels, or channel densities
-             and compartmental placement for different cells.
-        """
-        raise NotImplementedError("No channel manager exists for cells of the class: %s" %
-                                  (self.__class__.__name__))
+    # def channel_manager(self, modelType='RM03'):
+    #     """
+    #     Every cell class should have a channel manager if it is set up to handle morphology.
+    #     This function should be overridden in the class with an appropriate routine that
+    #     builds the dictionary needed to decorate the cell. See the bushy cell class for
+    #     an example.
+    #
+    #     Parameters
+    #     ----------
+    #     modelType : string (default: 'RM03')
+    #          A string that identifies what type of model the channel manager will implement.
+    #          This may be used to define different kinds of channels, or channel densities
+    #          and compartmental placement for different cells.
+    #     """
+    #     raise NotImplementedError("No channel manager exists for cells of the class: %s" %
+    #                               (self.__class__.__name__))
 
     def connect(self, post_cell, pre_opts=None, post_opts=None, **kwds):
         """
@@ -524,6 +524,101 @@ class Cell(object):
                         raise ValueError('Conductance for mechanism %s in cell part %s has changed (%f, %f), section = ' %
                             (m, part, self.initial_mechanisms[part][sec][m], gx), sec)
         return True
+    
+    def get_cellpars(self, dataset, species='guineapig', cell_type='II'):
+        raise NotImplementedError('get_cellpars should be reimplemented in the individual cell modules')
+    
+
+    def channel_manager(self, modelType=None, cell_type=None):
+        """
+        This routine defines channel density maps and distance map patterns
+        for each type of compartment in the cell. The maps
+        are used by the ChannelDecorator class (specifically, its private
+        \_biophys function) to decorate the cell membrane.
+        These settings are only used if the decorator is called; otherwise
+        for point cells, the species_scaling routine defines the channel
+        densities.
+        
+        Parameters
+        ----------
+        modelType : string (default: 'None'
+            A string that defines the type of the model. 
+            These are determined in the tables in the data directory, for ionchannels.py
+        # Currently, 3 types are implemented:
+#             RM03: Rothman and Manis, 2003 somatic densities for guinea pig
+#             XM13: Xie and Manis, 2013, somatic densities for mouse
+#             mGBC: experimental mouse globular bushy cell with dendrites, axon, hillock and initial segment, for
+#             use with fully reconstructed neurons.
+#
+        Returns
+        -------
+        Nothing
+        
+        Notes
+        -----
+        This routine defines the following variables for the class:
+        
+            * conductances (gBar)
+            * a channelMap (dictonary of channel densities in defined anatomical compartments)
+            * a current injection range for IV's (used for testing)
+            * a distance map, which defines how each conductance in a selected compartment
+              changes with distance from the soma. The current implementation includes both
+              linear and exponential gradients,
+              the minimum conductance at the end of the gradient, and the space constant or
+              slope for the gradient.
+        
+        """
+
+        dataset = '%s_channels' % modelType
+        decorationmap = dataset + '_compartments'
+        # print('dataset: {0:s}   decorationmap: {1:s}'.format(dataset, decorationmap))
+        cellpars = self.get_cellpars(dataset, species=self.status['species'], cell_type=cell_type)
+        refarea = 1e-3*cellpars.cap / self.c_m
+
+        table = data.get_table_info(dataset)
+        chscale = data.get_table_info(decorationmap)
+        pars = {}
+        # retrive the conductances from the data set
+        for g in table['field']:
+            x = data.get(dataset, species=self.status['species'], cell_type=cell_type,
+                                field=g)
+            if not isinstance(x, float):
+                continue
+            if '_gbar' in g:
+                pars[g] = x/refarea
+            else:
+                pars[g] = x
+        
+        self.channelMap = OrderedDict()
+        for c in chscale['compartment']:
+            self.channelMap[c] = {}
+            for g in pars.keys():
+                if g not in chscale['parameter']:
+#                    print ('Parameter %s not found in chscale parameters!' % g)
+                    continue
+                scale = data.get(decorationmap, species=self.status['species'], cell_type=cell_type,
+                        compartment=c, parameter=g)
+                if '_gbar' in g:
+                    self.channelMap[c][g] = pars[g]*scale
+                else:
+                    self.channelMap[c][g] = pars[g]
+
+        self.irange = np.linspace(-0.6, 1, 9)
+        self.distMap = self.set_distancemap()
+        {'dend': {'klt': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
+                                 'kht': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
+                                 'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.}}, # linear with distance, gminf (factor) is multiplied by gbar
+                        'dendrite': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                 'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                 'nav11': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
+                        'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                 'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                                 'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
+                        }
+        self.check_temperature()
+        return        
+
+
 
 
     def i_currents(self, V):
