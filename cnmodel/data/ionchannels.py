@@ -8,30 +8,29 @@ cnmodel code itself.
 
 """
 
-add_table_data('RM03_channels', row_key='field', col_key='cell_type', 
+add_table_data('RM03_channels', row_key='field', col_key='model_type', 
                species='guineapig', data=u"""
 
 This table describes the ion channel densities (and voltage shifts if necessary)
 for different cell types in the original Rothman Manis 2003 model.
 Data from Table 1, except for "octopus" cells, which is modified (see note 3)
-
+map to cell:    bushy-II      bushy-II-I    tstellate     tstellate-t   bushy-I-II    octopus
 -----------------------------------------------------------------------------------------------------------------------------------
-                    bushy-II      bushy-II-I    tstellate     tstellate-t   bushy-I-II    octopus
-                                                                                                   
-RM03_name           II            II-I          I-c           I-t           I-II          II-o  [4]
-soma_na_gbar        1000. [1]     1000. [1]     1000. [1]     1000. [1]     1000. [2]     1000. [3]
-soma_kht_gbar       150.0 [1]     150.0 [1]     150.0 [1]     80.0  [1]     150.0 [2]     150.0 [3] 
-soma_klt_gbar       200.0 [1]     35.0  [1]     0.0   [1]     0.0   [1]     20.0  [2]     1000. [3] 
-soma_ka_gbar        0.0   [1]     0.0   [1]     0.0   [1]     65.0  [1]     0.0   [2]     0.0   [3]
-soma_ih_gbar        20.0  [1]     3.5   [1]     0.5   [1]     0.5   [1]     2.0   [2]     30.0  [3]
-soma_leak_gbar      2.0   [1]     2.0   [1]     2.0   [1]     2.0   [1]     2.0   [2]     2.0   [3]
-soma_leak_erev      -65   [1]     -65   [1]     -65   [1]     -65   [1]     -65   [2]     -65   [3]
-soma_na_type        nacn  [1]     nacn  [1]     nacn  [1]     nacn  [1]     nacn  [2]     nacn  [3]
-soma_ih_type        ihvcn [1]     ihvcn [1]     ihvcn [1]     ihvcn [1]     ihvcn [2]     ihvcn [3]
-soma_Cap            12.0  [1]     12.0  [1]     12.0  [1]     12.0  [1]     12.0  [2]     25.0  [3]
-soma_e_k            -84   [1]     -84   [1]     -84   [1]     -84   [2]     -84   [2]     -84   [2] 
-soma_e_na           50.   [1]     50.   [1]     50.   [1]     50.   [2]     50.   [2]     50.   [2] 
-soma_ih_eh          -43   [1]     -43   [1]     -43   [1]     -43   [2]     -43   [2]     -43   [2] 
+               II            II-I          I-c           I-t           I-II          II-o
+
+na_gbar        1000. [1]     1000. [1]     1000. [1]     1000. [1]     1000. [2]     1000. [3]
+kht_gbar       150.0 [1]     150.0 [1]     150.0 [1]     80.0  [1]     150.0 [2]     150.0 [3] 
+klt_gbar       200.0 [1]     35.0  [1]     0.0   [1]     0.0   [1]     20.0  [2]     1000. [3] 
+ka_gbar        0.0   [1]     0.0   [1]     0.0   [1]     65.0  [1]     0.0   [2]     0.0   [3]
+ih_gbar        20.0  [1]     3.5   [1]     0.5   [1]     0.5   [1]     2.0   [2]     30.0  [3]
+leak_gbar      2.0   [1]     2.0   [1]     2.0   [1]     2.0   [1]     2.0   [2]     2.0   [3]
+leak_erev      -65   [1]     -65   [1]     -65   [1]     -65   [1]     -65   [2]     -65   [3]
+na_type        nacn  [1]     nacn  [1]     nacn  [1]     nacn  [1]     nacn  [2]     nacn  [3]
+ih_type        ihvcn [1]     ihvcn [1]     ihvcn [1]     ihvcn [1]     ihvcn [2]     ihvcn [3]
+soma_Cap       12.0  [1]     12.0  [1]     12.0  [1]     12.0  [1]     12.0  [2]     25.0  [3]
+e_k            -84   [1]     -84   [1]     -84   [1]     -84   [2]     -84   [2]     -84   [2] 
+e_na           50.   [1]     50.   [1]     50.   [1]     50.   [2]     50.   [2]     50.   [2] 
+ih_eh          -43   [1]     -43   [1]     -43   [1]     -43   [2]     -43   [2]     -43   [2] 
 
 -----------------------------------------------------------------------------------------------------------------------------------
 
@@ -52,30 +51,35 @@ soma_ih_eh          -43   [1]     -43   [1]     -43   [1]     -43   [2]     -43 
 
 """)
 
-add_table_data('XM13_channels', row_key='field', col_key='cell_type', 
+add_table_data('XM13_channels', row_key='field', col_key='model_type', 
                species='mouse', data=u"""
 
-This table describes the ion channel densities (and voltage shifts if necessary)
+This table describes the REFERENCE ion channel densities (and voltage shifts if necessary)
 for different cell types based on the Xie and Manis 2013 models for mouse.
 
+The REFERENCE values are applied to "point" models, and to the soma of
+compartmental models.
+The names of the mechanisms must match a channel mechanism (Neuron .mod files)
+and the following _(gbar, vshift, etc) must match an attribute of that channel
+that can be accessed.
+
 -----------------------------------------------------------------------------------------------------------------------------------
-                    bushy-II      bushy-II-I    tstellate    bushy-I-II
+               II             II-I           I             I-II
                                                                     
-XM13_name           II            II-I          I-c          I-II      
-soma_na_gbar        1000. [1]     1000. [1]     3000. [1]    1000. [2] 
-soma_kht_gbar       58.0  [1]     58.0  [1]     500.0 [1]    150.0 [2] 
-soma_klt_gbar       80.0  [1]     14.0  [1]     0.0   [1]    20.0  [2] 
-soma_ka_gbar        0.0   [1]     0.0   [1]     0.0   [1]    0.0   [2] 
-soma_ih_gbar        30.0  [1]     30.0  [1]     18.0  [1]    2.0   [2] 
-soma_leak_gbar      2.0   [1]     2.0   [1]     8.0   [1]    2.0   [2] 
-soma_leak_erev      -65   [1]     -65   [1]     -65   [1]    -65   [2] 
-soma_na_type        nacn  [1]     nacn  [1]     nacn  [1]    nacn  [2] 
-soma_ih_type        ihvcn [1]     ihvcn [1]     ihvcn [1]    ihvcn [2] 
-soma_Cap            26.0  [1]     26.0  [1]     25.0  [1]    26.0  [2] 
-soma_na_vshift      4.3   [1]     4.3   [1]     4.3   [1]    4.3   [1]
-soma_e_k            -84   [1]     -84   [1]     -84   [1]    -84   [2] 
-soma_e_na           50.   [1]     50.   [1]     50.   [1]    50.   [2] 
-soma_ih_eh          -43   [1]     -43   [1]     -43   [1]    -43   [2] 
+nav11_gbar     1000.  [1]     1000.  [1]     3000.  [1]    1000.  [2] 
+kht_gbar       58.0   [1]     58.0   [1]     500.0  [1]    150.0  [2] 
+klt_gbar       80.0   [1]     14.0   [1]     0.0    [1]    20.0   [2] 
+ka_gbar        0.0    [1]     0.0    [1]     0.0    [1]    0.0    [2] 
+ihvcn_gbar     30.0   [1]     30.0   [1]     18.0   [1]    2.0    [2] 
+leak_gbar      2.0    [1]     2.0    [1]     8.0    [1]    2.0    [2] 
+leak_erev      -65    [1]     -65    [1]     -65    [1]    -65    [2] 
+na_type        nav11  [1]     nav11  [1]     nav11  [1]    nav11  [1] 
+ih_type        ihvcn  [1]     ihvcn  [1]     ihvcn  [1]    ihvcn  [2] 
+soma_Cap       26.0   [1]     26.0   [1]     25.0   [1]    26.0   [2] 
+nav11_vshift   4.3    [1]     4.3    [1]     4.3    [1]    4.3    [1]
+e_k            -84    [1]     -84    [1]     -84    [1]    -84    [2] 
+e_na           50.    [1]     50.    [1]     50.    [1]    50.    [2] 
+ih_eh          -43    [1]     -43    [1]     -43    [1]    -43    [2] 
 
 -----------------------------------------------------------------------------------------------------------------------------------
 
@@ -89,6 +93,34 @@ soma_ih_eh          -43   [1]     -43   [1]     -43   [1]    -43   [2]
     Some low-voltage K current, based on observations of
     a single spike near threshold and regular firing for higher
     currents (Xie and Manis, 2017)
+
+
+""")
+
+add_table_data('XM13_channels_compartments', row_key='parameter', col_key='compartment', 
+               species='mouse', model_type='II', data=u"""
+
+This table describes the ion channel densities relative to somatic densities,
+e.g., relative to REFERENCE densities in the table XM13_channels.
+and voltage shifts, for different compartments of the specified neuron,
+Conductances will be calculated from the Model for Xie and Manis 2013 for mouse
+(data table: XM13_channels).
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+               axon       unmyelinatedaxon     myelinatedaxon     initialsegment    hillock     soma        dendrite         primarydendrite    secondarydendrite
+                                                                                                                                                                                              
+nav11_gbar     3.0 [1]    3.0 [1]              0.0 [1]            3.0 [1]           2.0 [1]     1.0 [1]     0.25 [1]         0.25 [1]           0.25 [1]       
+kht_gbar       1.0 [1]    2.0 [1]              0.01 [1]           2.0 [1]           2.0 [1]     1.0 [1]     0.5 [1]          0.5 [1]            0.25 [1]       
+klt_gbar       1.0 [1]    1.0 [1]              0.01 [1]           1.0 [1]           1.0 [1]     1.0 [1]     0.5 [1]          0.5 [1]            0.25 [1]       
+ihvcn_gbar     0.0 [1]    0.0 [1]              0.0 [1]            0.5 [1]           0.0 [1]     1.0 [1]     0.5 [1]          0.5 [1]            0.5 [1]       
+leak_gbar      1.0 [1]    0.25 [1]             0.25e-3 [1]        1.0 [1]           1.0 [1]     1.0 [1]     0.5 [1]          0.5 [1]            0.5 [1]       
+leak_erev      -65. [1]   -65. [1]             -65. [1]           -65. [1]          -65. [1]    -65. [1]    -65. [1]         -65. [1]           -65. [1]      
+nav11_vshift   4.3  [1]   4.3  [1]             0.0 [1]            4.3  [1]          4.3  [1]    0.0 [1]     0.0 [1]          0.0 [1]            0.0 [1]       
+na_type        nav11      nav11                nav11              nav11             nav11       nav11       nav11            nav11              nav11
+ih_type        ihvcn      ihvcn                ihvcn              ihvcn             ihvcn       ihvcn       ihvcn            ihvcn              ihvcn                            
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+[1] Scaling is relative to soma scaling. Numbers are estimates based on general distribution from literature on cortical neurons.
 
 
 """)
