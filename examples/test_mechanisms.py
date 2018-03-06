@@ -12,7 +12,6 @@ with his routine
 import neuron as h
 from neuron import *
 import gc
-import faulthandler
 import numpy as np
 #import scipy as sp
 import cnmodel.util
@@ -20,7 +19,6 @@ import pyqtgraph as pg
 import pyqtgraph.exporters
 from pyqtgraph.Qt import QtCore, QtGui
 import cnmodel.util.pynrnutilities as Util
-faulthandler.enable()
 
 nottestablemechs = ['cadyn', 'ca_ion', 'cadiff', 'cadifpmp', 'Mechanism',
                 'capmp', 'capump', 'cl_ion', 'extracellular', 'fastpas',
