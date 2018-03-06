@@ -20,8 +20,8 @@ case $1 in
      6a)
          python examples/test_bushy_variation.py a
          ;;
-     6b)
-         python examples/test_bushy_variation.py b
+     6d)
+         python examples/test_bushy_variation.py d
          ;;
 
      7)
