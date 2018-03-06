@@ -95,8 +95,9 @@ class TStellateRothman(TStellate):
     Rothman and Manis, 2003abc (Type I-c, Type I-t)
     """
     def __init__(self, morphology=None, decorator=None, nach=None,
-                ttx=False,
-                species='guineapig', modelType=None, debug=False):
+                ttx=False, temperature=None,
+                species='guineapig', modelType=None, modelName=None, 
+                debug=False):
         """
         Initialize a planar stellate (T-stellate) cell, using the default parameters for guinea pig from
         R&M2003, as a type I cell.
@@ -143,17 +144,31 @@ class TStellateRothman(TStellate):
         
         super(TStellateRothman, self).__init__()
         self.i_test_range={'pulse': (-0.15, 0.15, 0.01)}
-        if modelType == None:
+        if modelType is None:
             modelType = 'I-c'
-        if nach == None and species == 'guineapig':
-            nach = 'nacn'
-        if nach == None and species == 'mouse':
-            nach = 'nacn'
+        if species == 'guineapig':
+            modelName = 'RM03'
+            temp = 22.
+            if nach == None:
+                nach = 'nacn'
+        if species == 'mouse':
+            temp = 34.
+            if modelName is None:
+                modelName = 'XM13'
+            if nach == None:
+                nach = 'nacn'
             self.i_test_range={'pulse': (-1.0, 1.0, 0.05)}
-        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'TStellate',
+        self.status = {'species': species, 'cellClass': self.type, 'modelType': modelType, 'modelName': modelName,
+                        'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+                       'na': nach, 'ttx': ttx, 'name': self.type,
                        'morphology': morphology, 'decorator': decorator, 'temperature': None}
+        self.c_m = 0.9E-6  # default in units of F/cm^2
+        self.spike_threshold = -10.
         self.vrange = [-70., -55.]
+        self._valid_temperatures = (temp, )
+        if self.status['temperature'] == None:
+            self.status['temperature'] = temp
+
         if morphology is None:
             """
             instantiate a basic soma-only ("point") model
@@ -188,17 +203,17 @@ class TStellateRothman(TStellate):
         if debug:
                 print "<< T-stellate: JSR Stellate Type 1 cell model created >>"
 
-    def get_cellpars(self, dataset, species='guineapig', celltype='I-c'):
-        cellcap = data.get(dataset, species=species, cell_type=celltype,
+    def get_cellpars(self, dataset, species='guineapig', modelType='I-c'):
+        cellcap = data.get(dataset, species=species, model_type=modelType,
             field='soma_Cap')
-        chtype = data.get(dataset, species=species, cell_type=celltype,
-            field='soma_na_type')
+        chtype = data.get(dataset, species=species, model_type=modelType,
+            field='na_type')
         pars = Params(cap=cellcap, natype=chtype)
-        for g in ['soma_na_gbar', 'soma_kht_gbar', 'soma_ka_gbar',
-                  'soma_ih_gbar', 'soma_ih_eh',
-                  'soma_leak_gbar', 'soma_leak_erev',
-                  'soma_e_k', 'soma_e_na']:
-            pars.additem(g,  data.get(dataset, species=species, cell_type=celltype,
+        for g in ['na_gbar', 'kht_gbar', 'ka_gbar',
+                  'ih_gbar', 'ih_eh',
+                  'leak_gbar', 'leak_erev',
+                  'e_k', 'e_na']:
+            pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
             field=g))
         return pars
 
@@ -246,7 +261,7 @@ class TStellateRothman(TStellate):
             if self.status['temperature'] is None:
                 self.set_temperature(34.)
 
-            pars = self.get_cellpars(dataset, species=species, celltype=celltype)
+            pars = self.get_cellpars(dataset, species=species, modelType=modelType)
             # pars.show()
             self.set_soma_size_from_Cm(pars.cap)
             self.status['na'] = pars.natype
@@ -277,16 +292,16 @@ class TStellateRothman(TStellate):
             if self.status['temperature'] == 38.:  # adjust for 2003 model conductance levels at 38
                 sf = 3.03  # Q10 of 2, 22->38C. (p3106, R&M2003c)
                 # note that kinetics are scaled in the mod file.
-            pars = self.get_cellpars(dataset, species=species, celltype=celltype)
+            pars = self.get_cellpars(dataset, species=species, modelType=modelType)
             self.set_soma_size_from_Cm(pars.cap)
             self.status['na'] = pars.natype
             # pars.show()
-            self.adjust_na_chans(soma, gbar=pars.soma_na_gbar, sf=sf)
-            soma().kht.gbar = nstomho(pars.soma_kht_gbar, self.somaarea)
-            soma().ka.gbar = nstomho(pars.soma_ka_gbar, self.somaarea)
-            soma().ihvcn.gbar = nstomho(pars.soma_ih_gbar, self.somaarea)
-            soma().leak.gbar = nstomho(pars.soma_leak_gbar, self.somaarea)
-            soma().leak.erev = pars.soma_leak_erev
+            self.adjust_na_chans(soma, gbar=pars.na_gbar, sf=sf)
+            soma().kht.gbar = nstomho(pars.kht_gbar, self.somaarea)
+            soma().ka.gbar = nstomho(pars.ka_gbar, self.somaarea)
+            soma().ihvcn.gbar = nstomho(pars.ih_gbar, self.somaarea)
+            soma().leak.gbar = nstomho(pars.leak_gbar, self.somaarea)
+            soma().leak.erev = pars.leak_erev
             self.axonsf = 0.5
 
         else:
@@ -296,158 +311,159 @@ class TStellateRothman(TStellate):
         self.status['modelType'] = modelType
         self.check_temperature()
 
-    def channel_manager(self, modelType='RM03'):
-        """
-        This routine defines channel density maps and distance map patterns
-        for each type of compartment in the cell. The maps
-        are used by the ChannelDecorator class (specifically, called from it's private
-        _biophys function) to decorate the cell membrane with channels.
-        
-        Parameters
-        ----------
-        modelType : string (default: 'RM03')
-            A string that defines the type of the model. Currently, 3 types are implemented:
-            RM03: Rothman and Manis, 2003 somatic densities for guinea pig
-            XM13: Xie and Manis, 2013, somatic densities for mouse
-            XM13PasDend: XM13, but with only passive dendrites, no channels.
-        
-        Returns
-        -------
-        Nothing
-        
-        Notes
-        -----
-        
-        This routine defines the following variables for the class:
-            
-            - conductances (gBar)
-            - a channelMap (dictonary of channel densities in defined anatomical compartments)
-            - a current injection range for IV's (when testing)
-            - a distance map, which defines how selected conductances in selected compartments
-                will change with distance. This includes both linear and exponential gradients,
-                the minimum conductance at the end of the gradient, and the space constant or
-                slope for the gradient.
-        
-        """
-        if modelType == 'RM03':
-            totcap = 12.0E-12  # TStellate cell (type I) from Rothman and Manis, 2003, as base model
-            refarea = totcap / self.c_m  # see above for units
-            # Type I stellate Rothman and Manis, 2003c
-            self._valid_temperatures = (22., 38.)
-            if self.status['temperature'] is None:
-                self.set_temperature(22.)
-            sf = 1.0
-            if self.status['temperature'] == 38.:  # adjust for 2003 model conductance levels at 38
-                sf = 3.03  # Q10 of 2, 22->38C. (p3106, R&M2003c)
-            self.gBar = Params(nabar=sf*1000.0E-9/refarea,
-                               khtbar=sf*150.0E-9/refarea,
-                               kltbar=sf*0.0E-9/refarea,
-                               ihbar=sf*0.5E-9/refarea,
-                               leakbar=sf*2.0E-9/refarea,
-            )
-            
-            self.channelMap = {
-                'axon': {'nacn': 0.0, 'klt': 0., 'kht': self.gBar.khtbar,
-                         'ihvcn': 0., 'leak': self.gBar.leakbar / 4.},
-                'hillock': {'nacn': self.gBar.nabar, 'klt': 0., 'kht': self.gBar.khtbar,
-                             'ihvcn': 0., 'leak': self.gBar.leakbar, },
-                'initseg': {'nacn': self.gBar.nabar, 'klt': 0., 'kht': self.gBar.khtbar,
-                            'ihvcn': self.gBar.ihbar / 2.,
-                            'leak': self.gBar.leakbar, },
-                'soma': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar,
-                         'kht': self.gBar.khtbar, 'ihvcn': self.gBar.ihbar,
-                         'leak': self.gBar.leakbar, },
-                'dend': {'nacn': self.gBar.nabar / 2.0, 'klt': 0., 'kht': self.gBar.khtbar * 0.5,
-                         'ihvcn': self.gBar.ihbar / 3., 'leak': self.gBar.leakbar * 0.5, },
-                'apic': {'nacn': 0.0, 'klt': 0., 'kht': self.gBar.khtbar * 0.2,
-                         'ihvcn': self.gBar.ihbar / 4.,
-                         'leak': self.gBar.leakbar * 0.2, },
-            }
-            self.irange = np.linspace(-0.1, 0.1, 7)
-            self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
-                            'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # gradients are: flat, linear, exponential
-                            }
-
-        elif modelType  == 'XM13':
-            totcap = 25.0E-12  # Base model from Xie and Manis, 2013 for type I stellate cell
-            refarea = totcap / self.c_m  # see above for units
-            self._valid_temperatures = (34.,)
-            if self.status['temperature'] is None:
-                self.set_temperature(34.)
-            self.gBar = Params(nabar=1800.0E-9/refarea,
-                               khtbar=250.0E-9/refarea,
-                               kltbar=0.0E-9/refarea,
-                               ihbar=18.0E-9/refarea,
-                               leakbar=8.0E-9/refarea,
-            )
-            self.channelMap = {
-                'axon': {'nav11': 0.0, 'klt': 0., 'kht': self.gBar.khtbar,
-                         'ihvcn': 0., 'leak': self.gBar.leakbar / 4.},
-                'hillock': {'nav11': self.gBar.nabar, 'klt': 0., 'kht': self.gBar.khtbar,
-                            'ihvcn': 0.,
-                            'leak': self.gBar.leakbar, },
-                'initseg': {'nav11': self.gBar.nabar, 'klt': 0., 'kht': self.gBar.khtbar,
-                            'ihvcn': self.gBar.ihbar / 2.,
-                            'leak': self.gBar.leakbar, },
-                'soma': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar,
-                         'kht': self.gBar.khtbar, 'ihvcn': self.gBar.ihbar,
-                         'leak': self.gBar.leakbar, },
-                'dend': {'nav11': self.gBar.nabar, 'klt': 0., 'kht': self.gBar.khtbar * 0.5,
-                         'ihvcn': self.gBar.ihbar / 3., 'leak': self.gBar.leakbar * 0.5, },
-                'apic': {'nav11': 0.0, 'klt': 0., 'kht': self.gBar.khtbar * 0.2,
-                         'ihvcn': self.gBar.ihbar / 4.,
-                         'leak': self.gBar.leakbar * 0.2, },
-            }
-            self.irange = np.linspace(-0.5, 0.5, 9)
-            self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
-                            'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 100.}}, # gradients are: flat, linear, exponential
-                            }
-
-        elif modelType == 'XM13PasDend':
-            # bushy form Xie and Manis, 2013, based on Cao and Oertel mouse conductances
-            # passive dendritestotcap = 26.0E-12 # uF/cm2 
-            totcap = 26.0E-12 # uF/cm2 
-            refarea = totcap  / self.c_m  # see above for units
-            self._valid_temperatures = (34.,)
-            if self.status['temperature'] is None:
-                self.set_temperature(34.)
-            self.gBar = Params(nabar=1000.0E-9/refarea,
-                               khtbar=150.0E-9/refarea,
-                               kltbar=0.0E-9/refarea,
-                               ihbar=0.5E-9/refarea,
-                               leakbar=2.0E-9/refarea,
-            )
-            self.channelMap = {
-                'axon': {'nav11': self.gBar.nabar*0, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
-                         'leak': self.gBar.leakbar * 0.25},
-                'hillock': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
-                            'leak': self.gBar.leakbar, },
-                'initseg': {'nav11': self.gBar.nabar*3, 'klt': self.gBar.kltbar*2, 'kht': self.gBar.khtbar*2,
-                            'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
-                'soma': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
-                         'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
-                'dend': {'nav11': self.gBar.nabar * 0.0, 'klt': self.gBar.kltbar*0 , 'kht': self.gBar.khtbar*0,
-                         'ihvcn': self.gBar.ihbar*0, 'leak': self.gBar.leakbar*0.5, },
-                'apic': {'nav11': self.gBar.nabar * 0.0, 'klt': self.gBar.kltbar * 0, 'kht': self.gBar.khtbar * 0.,
-                         'ihvcn': self.gBar.ihbar *0., 'leak': self.gBar.leakbar * 0.25, },
-            }
-            self.irange = np.linspace(-1, 1, 21)
-            self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.},
-                                     'kht': {'gradient': 'llinear', 'gminf': 0., 'lambda': 200.},
-                                     'nav11': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.}}, # linear with distance, gminf (factor) is multiplied by gbar
-                            'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-                                     'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
-                            }
-        else:
-            raise ValueError('model type %s is not implemented' % modelType)
-        self.check_temperature()
+    # def channel_manager(self, modelType='RM03'):
+    #     """
+    #     This routine defines channel density maps and distance map patterns
+    #     for each type of compartment in the cell. The maps
+    #     are used by the ChannelDecorator class (specifically, called from it's private
+    #     _biophys function) to decorate the cell membrane with channels.
+    #
+    #     Parameters
+    #     ----------
+    #     modelType : string (default: 'RM03')
+    #         A string that defines the type of the model. Currently, 3 types are implemented:
+    #         RM03: Rothman and Manis, 2003 somatic densities for guinea pig
+    #         XM13: Xie and Manis, 2013, somatic densities for mouse
+    #         XM13PasDend: XM13, but with only passive dendrites, no channels.
+    #
+    #     Returns
+    #     -------
+    #     Nothing
+    #
+    #     Notes
+    #     -----
+    #
+    #     This routine defines the following variables for the class:
+    #
+    #         - conductances (gBar)
+    #         - a channelMap (dictonary of channel densities in defined anatomical compartments)
+    #         - a current injection range for IV's (when testing)
+    #         - a distance map, which defines how selected conductances in selected compartments
+    #             will change with distance. This includes both linear and exponential gradients,
+    #             the minimum conductance at the end of the gradient, and the space constant or
+    #             slope for the gradient.
+    #
+    #     """
+    #     if modelType == 'RM03':
+    #         totcap = 12.0E-12  # TStellate cell (type I) from Rothman and Manis, 2003, as base model
+    #         refarea = totcap / self.c_m  # see above for units
+    #         # Type I stellate Rothman and Manis, 2003c
+    #         self._valid_temperatures = (22., 38.)
+    #         if self.status['temperature'] is None:
+    #             self.set_temperature(22.)
+    #         sf = 1.0
+    #         if self.status['temperature'] == 38.:  # adjust for 2003 model conductance levels at 38
+    #             sf = 3.03  # Q10 of 2, 22->38C. (p3106, R&M2003c)
+    #         self.gBar = Params(nabar=sf*1000.0E-9/refarea,
+    #                            khtbar=sf*150.0E-9/refarea,
+    #                            kltbar=sf*0.0E-9/refarea,
+    #                            ihbar=sf*0.5E-9/refarea,
+    #                            leakbar=sf*2.0E-9/refarea,
+    #         )
+    #
+    #         self.channelMap = {
+    #             'axon': {'nacn': 0.0, 'klt': 0., 'kht': self.gBar.khtbar,
+    #                      'ihvcn': 0., 'leak': self.gBar.leakbar / 4.},
+    #             'hillock': {'nacn': self.gBar.nabar, 'klt': 0., 'kht': self.gBar.khtbar,
+    #                          'ihvcn': 0., 'leak': self.gBar.leakbar, },
+    #             'initseg': {'nacn': self.gBar.nabar, 'klt': 0., 'kht': self.gBar.khtbar,
+    #                         'ihvcn': self.gBar.ihbar / 2.,
+    #                         'leak': self.gBar.leakbar, },
+    #             'soma': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar,
+    #                      'kht': self.gBar.khtbar, 'ihvcn': self.gBar.ihbar,
+    #                      'leak': self.gBar.leakbar, },
+    #             'dend': {'nacn': self.gBar.nabar / 2.0, 'klt': 0., 'kht': self.gBar.khtbar * 0.5,
+    #                      'ihvcn': self.gBar.ihbar / 3., 'leak': self.gBar.leakbar * 0.5, },
+    #             'apic': {'nacn': 0.0, 'klt': 0., 'kht': self.gBar.khtbar * 0.2,
+    #                      'ihvcn': self.gBar.ihbar / 4.,
+    #                      'leak': self.gBar.leakbar * 0.2, },
+    #         }
+    #         self.irange = np.linspace(-0.1, 0.1, 7)
+    #         self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+    #                                  'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
+    #                         'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+    #                                  'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # gradients are: flat, linear, exponential
+    #                         }
+    #
+    #     elif modelType  == 'XM13':
+    #         totcap = 25.0E-12  # Base model from Xie and Manis, 2013 for type I stellate cell
+    #         refarea = totcap / self.c_m  # see above for units
+    #         self._valid_temperatures = (34.,)
+    #         if self.status['temperature'] is None:
+    #             self.set_temperature(34.)
+    #         self.gBar = Params(nabar=1800.0E-9/refarea,
+    #                            khtbar=250.0E-9/refarea,
+    #                            kltbar=0.0E-9/refarea,
+    #                            ihbar=18.0E-9/refarea,
+    #                            leakbar=8.0E-9/refarea,
+    #         )
+    #         self.channelMap = {
+    #             'axon': {'nav11': 0.0, 'klt': 0., 'kht': self.gBar.khtbar,
+    #                      'ihvcn': 0., 'leak': self.gBar.leakbar / 4.},
+    #             'hillock': {'nav11': self.gBar.nabar, 'klt': 0., 'kht': self.gBar.khtbar,
+    #                         'ihvcn': 0.,
+    #                         'leak': self.gBar.leakbar, },
+    #             'initseg': {'nav11': self.gBar.nabar, 'klt': 0., 'kht': self.gBar.khtbar,
+    #                         'ihvcn': self.gBar.ihbar / 2.,
+    #                         'leak': self.gBar.leakbar, },
+    #             'soma': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar,
+    #                      'kht': self.gBar.khtbar, 'ihvcn': self.gBar.ihbar,
+    #                      'leak': self.gBar.leakbar, },
+    #             'dend': {'nav11': self.gBar.nabar, 'klt': 0., 'kht': self.gBar.khtbar * 0.5,
+    #                      'ihvcn': self.gBar.ihbar / 3., 'leak': self.gBar.leakbar * 0.5, },
+    #             'apic': {'nav11': 0.0, 'klt': 0., 'kht': self.gBar.khtbar * 0.2,
+    #                      'ihvcn': self.gBar.ihbar / 4.,
+    #                      'leak': self.gBar.leakbar * 0.2, },
+    #         }
+    #         self.irange = np.linspace(-0.5, 0.5, 9)
+    #         self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+    #                                  'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+    #                                  'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
+    #                         'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+    #                                  'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+    #                                  'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 100.}}, # gradients are: flat, linear, exponential
+    #                         }
+    #
+    #     elif modelType == 'XM13PasDend':
+    #         # bushy form Xie and Manis, 2013, based on Cao and Oertel mouse conductances
+    #         # passive dendritestotcap = 26.0E-12 # uF/cm2
+    #         totcap = 26.0E-12 # uF/cm2
+    #         refarea = totcap  / self.c_m  # see above for units
+    #         self._valid_temperatures = (34.,)
+    #         if self.status['temperature'] is None:
+    #             self.set_temperature(34.)
+    #         self.gBar = Params(nabar=1000.0E-9/refarea,
+    #                            khtbar=150.0E-9/refarea,
+    #                            kltbar=0.0E-9/refarea,
+    #                            ihbar=0.5E-9/refarea,
+    #                            leakbar=2.0E-9/refarea,
+    #         )
+    #         self.channelMap = {
+    #             'axon': {'nav11': self.gBar.nabar*0, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
+    #                      'leak': self.gBar.leakbar * 0.25},
+    #             'hillock': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
+    #                         'leak': self.gBar.leakbar, },
+    #             'initseg': {'nav11': self.gBar.nabar*3, 'klt': self.gBar.kltbar*2, 'kht': self.gBar.khtbar*2,
+    #                         'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
+    #             'soma': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
+    #                      'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
+    #             'dend': {'nav11': self.gBar.nabar * 0.0, 'klt': self.gBar.kltbar*0 , 'kht': self.gBar.khtbar*0,
+    #                      'ihvcn': self.gBar.ihbar*0, 'leak': self.gBar.leakbar*0.5, },
+    #             'apic': {'nav11': self.gBar.nabar * 0.0, 'klt': self.gBar.kltbar * 0, 'kht': self.gBar.khtbar * 0.,
+    #                      'ihvcn': self.gBar.ihbar *0., 'leak': self.gBar.leakbar * 0.25, },
+    #         }
+    #         self.irange = np.linspace(-1, 1, 21)
+    def get_distancemap(self):
+        return {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.},
+                         'kht': {'gradient': 'llinear', 'gminf': 0., 'lambda': 200.},
+                         'nav11': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.}}, # linear with distance, gminf (factor) is multiplied by gbar
+                'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                         'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
+                         'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
+                }
+        # else:
+        #     raise ValueError('model type %s is not implemented' % modelType)
+        # self.check_temperature()
         
     def adjust_na_chans(self, soma, sf=1.0, gbar=1000., debug=False):
         """

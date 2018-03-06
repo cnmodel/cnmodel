@@ -12,6 +12,19 @@ from .. import data
 from .. import morphology
 from .. import decorator
 
+"""
+Term definitions:
+cell class is the class of morphological cell: bushy, tstellate, etc. 
+Each cell class is implmeneted as a separate python class (no pun)
+modelName is name of the source model used so it is like the type, but one level up). 
+ModelNames are RM03, XM13, and for other cell types may refer to the original model, 
+such as POK (Kanold pyramidal cell), MCG (McGinley octopus), Eager, etc.
+These model designations may have only one model type (POK), or may have multiple types (RM03, XM13)
+modelType refers to the Rothman and Manis 2003 model classes (I, II, I-c, I-t, II-1, I-II, etc)
+These are physiologically based, but in the ion channel tables are mapped to morphological classes sort of,
+
+
+"""
 
 class Cell(object):
     """
@@ -529,7 +542,6 @@ class Cell(object):
     def get_cellpars(self, dataset, species='guineapig', cell_type='II'):
         raise NotImplementedError('get_cellpars should be reimplemented in the individual cell modules')
     
-
     def channel_manager(self, modelName=None, modelType=None):
         """
         This routine defines channel density maps and distance map patterns
@@ -545,12 +557,7 @@ class Cell(object):
         modelType : string (default: 'None'
             A string that defines the type of the model. 
             These are determined in the tables in the data directory, for ionchannels.py
-        # Currently, 3 types are implemented:
-#             RM03: Rothman and Manis, 2003 somatic densities for guinea pig
-#             XM13: Xie and Manis, 2013, somatic densities for mouse
-#             mGBC: experimental mouse globular bushy cell with dendrites, axon, hillock and initial segment, for
-#             use with fully reconstructed neurons.
-#
+
         Returns
         -------
         Nothing
