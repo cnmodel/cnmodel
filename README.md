@@ -74,6 +74,24 @@ The test suite should be run as:
 
 This will test each of the models against reference data, the synapse mechanisms, a number of internal routines, and the auditory nerve model. The tests should pass for each component. Failures may indicate incorrect installation or incorrect function within individual components. These should be corrected before proceeding with simulations.
 
+Potential Issues and Solutions
+------------------------------
+
+Occasionally one of the AN spike train files, which are stored in the directory `cnmodel/an_model/cache`, become "locked". This can occur if the calling routines are aborted (^C, ^Z) in the middle of a transaction accessing the cache file, or perhaps during when parallel processing is enabled and a routine fails or is aborted. In this case, a file with the extension ``".lock"`` exists, which prevents the an_model code from accessing the file. To remove these files (on a Unix system):
+
+To print a list of the locked files,
+
+    $ find /path/to/cache -name '*.lock'
+    
+Where /path/to/cache may be something like `cnmodel/an_model/cache`.
+
+To delete the files:
+
+    $ find /path/to/cache -name '*.lock' -delete
+
+Under Windows, you should be able do accomplish the same thing with the File Explorer, limiting the files by extension.
+    
+
 
 Figures
 -------
