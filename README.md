@@ -145,17 +145,21 @@ Potential Issues and Solutions
 
 1.  Occasionally one of the AN spike train files, which are stored in the directory `cnmodel/an_model/cache`, become locked. This can occur if the calling routines are aborted (^C, ^Z) in the middle of a transaction accessing the cache file, or perhaps during when parallel processing is enabled and a routine fails or is aborted. In this case, a file with the extension ``".lock"`` exists, which prevents the an_model code from accessing the file. The ``".lock"`` file needs to be deleted from the cache directory.
     
-  *  First, print a list of the locked files::
-
-      $ find /path/to/cache -name '*.lock'
+  *  First, print a list of the locked files:
+  
+     ```
+     $ find /path/to/cache -name '*.lock'
+     ```
     
-    *    Where /path/to/cache may be something like `cnmodel/an_model/cache`. 
+    *  Where /path/to/cache may be something like `cnmodel/an_model/cache`. 
     There is most likely only one such file in the diretory.
 
-  *    Next, to delete the files::
-
-      $ find /path/to/cache -name '*.lock' -delete
-    
+  *    Next, to delete the files:
+  
+       ```
+       $ find /path/to/cache -name '*.lock' -delete
+       ```
+       
   *    Under Windows (and other OS's), you should be able do accomplish the same thing
     with the File Explorer/Finder, limiting the files by extension.
     
