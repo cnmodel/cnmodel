@@ -103,6 +103,81 @@ add_table_data('XM13_channels_compartments', row_key='parameter', col_key='compa
 This table describes the ion channel densities relative to somatic densities,
 e.g., relative to REFERENCE densities in the table XM13_channels.
 and voltage shifts, for different compartments of the specified neuron,
+Conductances will be calculated from the Model derived from Xie and Manis 2013 for mouse
+(data table: mGVC_channels).
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+               axon       unmyelinatedaxon     myelinatedaxon     initialsegment    hillock     soma        dendrite         primarydendrite    secondarydendrite
+                                                                                                                                                                                              
+nav11_gbar     3.0 [1]    3.0 [1]              0.0 [1]            5.0 [1]           5.0 [1]     1.0 [1]     0.5 [1]          0.50 [1]           0.25 [1]       
+kht_gbar       1.0 [1]    2.0 [1]              0.01 [1]           2.0 [1]           2.0 [1]     1.0 [1]     0.5 [1]          0.5 [1]            0.25 [1]       
+klt_gbar       1.0 [1]    1.0 [1]              0.01 [1]           1.0 [1]           1.0 [1]     1.0 [1]     0.5 [1]          0.5 [1]            0.25 [1]       
+ihvcn_gbar     0.0 [1]    0.0 [1]              0.0 [1]            0.5 [1]           0.0 [1]     1.0 [1]     0.5 [1]          0.5 [1]            0.5 [1]       
+leak_gbar      1.0 [1]    0.25 [1]             0.25e-3 [1]        1.0 [1]           1.0 [1]     1.0 [1]     0.5 [1]          0.5 [1]            0.5 [1]       
+leak_erev      -65. [1]   -65. [1]             -65. [1]           -65. [1]          -65. [1]    -65. [1]    -65. [1]         -65. [1]           -65. [1]      
+nav11_vshift   4.3  [1]   4.3  [1]             0.0 [1]            4.3  [1]          4.3  [1]    0.0 [1]     0.0 [1]          0.0 [1]            0.0 [1]       
+na_type        nav11      nav11                nav11              nav11             nav11       nav11       nav11            nav11              nav11
+ih_type        ihvcn      ihvcn                ihvcn              ihvcn             ihvcn       ihvcn       ihvcn            ihvcn              ihvcn                            
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+[1] Scaling is relative to soma scaling. Numbers are estimates based on general distribution from literature on cortical neurons.
+
+
+""")
+
+
+add_table_data('mGBC_channels', row_key='field', col_key='model_type', 
+               species='mouse', data=u"""
+
+This table describes the REFERENCE ion channel densities (and voltage shifts if necessary)
+for different cell types based on the Xie and Manis 2013 models for mouse.
+
+The REFERENCE values are applied to "point" models, and to the soma of
+compartmental models.
+The names of the mechanisms must match a channel mechanism (Neuron .mod files)
+and the following _(gbar, vshift, etc) must match an attribute of that channel
+that can be accessed.
+
+-----------------------------------------------------------------------------------------------------------------------------------
+               II             II-I           I-c           I-II          I-t       
+                                                                                   
+nav11_gbar     1600.  [1]     1600.  [1]     3000.  [1]    1600.  [2]    3000.  [1] 
+kht_gbar       58.0   [1]     58.0   [1]     500.0  [1]    150.0  [2]    500.0  [1] 
+klt_gbar       80.0   [1]     14.0   [1]     0.0    [1]    20.0   [2]    0.0    [1] 
+ka_gbar        0.0    [1]     0.0    [1]     0.0    [1]    0.0    [2]    125.0    [1] 
+ihvcn_gbar     30.0   [1]     30.0   [1]     18.0   [1]    2.0    [2]    18.0   [1] 
+leak_gbar      2.0    [1]     2.0    [1]     8.0    [1]    2.0    [2]    8.0    [1] 
+leak_erev      -65    [1]     -65    [1]     -65    [1]    -65    [2]    -65    [1] 
+na_type        nav11  [1]     nav11  [1]     nav11  [1]    nav11  [1]    nav11  [1] 
+ih_type        ihvcn  [1]     ihvcn  [1]     ihvcn  [1]    ihvcn  [2]    ihvcn  [1] 
+soma_Cap       26.0   [1]     26.0   [1]     25.0   [1]    26.0   [2]    25.0   [1] 
+nav11_vshift   4.3    [1]     4.3    [1]     4.3    [1]    4.3    [1]    4.3    [1]
+e_k            -84    [1]     -84    [1]     -84    [1]    -84    [2]    -84    [1] 
+e_na           50.    [1]     50.    [1]     50.    [1]    50.    [2]    50.    [1] 
+ih_eh          -43    [1]     -43    [1]     -43    [1]    -43    [2]    -43    [1] 
+
+-----------------------------------------------------------------------------------------------------------------------------------
+
+[1] Uses channels from Rothman and Manis, 2003, except for Na channels
+    Conductances are for Mouse bushy cells
+    Xie and Manis, 2013
+    Age "adult", Temperature=34C
+    Units are nS.
+
+[2] Rothman and Manis, 2003, model I-II
+    Some low-voltage K current, based on observations of
+    a single spike near threshold and regular firing for higher
+    currents (Xie and Manis, 2017)
+
+
+""")
+
+add_table_data('mGBC_channels_compartments', row_key='parameter', col_key='compartment', 
+               species='mouse', model_type='II', data=u"""
+
+This table describes the ion channel densities relative to somatic densities,
+e.g., relative to REFERENCE densities in the table XM13_channels.
+and voltage shifts, for different compartments of the specified neuron,
 Conductances will be calculated from the Model for Xie and Manis 2013 for mouse
 (data table: XM13_channels).
 
@@ -122,43 +197,6 @@ ih_type        ihvcn      ihvcn                ihvcn              ihvcn         
 
 [1] Scaling is relative to soma scaling. Numbers are estimates based on general distribution from literature on cortical neurons.
 
-
-""")
-
-add_table_data('mGBC_channels', row_key='field', col_key='cell_type', 
-               species='mouse', data=u"""
-
-This table describes the ion channel densities (and voltage shifts if necessary)
-for different cell types based on the Xie and Manis 2013 models for mouse.
-
-This table is EXPERIMENTAL and should not be used for production-level simulations.
-
------------------------------------------------------------------------------------------------------------------------------------
-                    bushy-II 
-                    
-mGBC_name           II       
-soma_na_gbar        1600. [1]
-soma_kht_gbar       58.0  [1]
-soma_klt_gbar       40.0  [1]
-soma_ka_gbar        0.0   [1]
-soma_ih_gbar        7.50  [1]
-soma_leak_gbar      0.04  [1]
-soma_leak_erev      -65   [1]
-soma_na_type        jsrna [1]
-soma_ih_type        ihvcn [1]
-soma_Cap            26.0  [1]
-soma_na_vshift      4.3   [1]
-soma_e_k            -84   [1]
-soma_e_na           50.   [1]
-soma_ih_eh          -43   [1]
-
------------------------------------------------------------------------------------------------------------------------------------
-
-[1] Uses channels from Rothman and Manis, 2003
-    Conductances are for Mouse bushy cells
-    Xie and Manis, 2013
-    Age "adult", Temperature=34C
-    Units are nS.
 
 """)
 

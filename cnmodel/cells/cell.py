@@ -74,7 +74,7 @@ class Cell(object):
         self.R_a = 150  # axial resistivity of cytoplasm/axoplasm, ohm.cm
         self.e_leak = -65
         # Recommended current (min, max, step) for testing this cell
-        self.i_test_range=(-0.5, 0.5, 0.05)
+        self.i_test_range=(-0.5, 0.5, 0.05)  # defines default current steps for IC curve
         
         # Recommended threshold for detecting spikes from this cell
         self.spike_threshold = -40
@@ -537,8 +537,8 @@ class Cell(object):
                     if self.initial_mechanisms[part][sec][m] != gx:
                         raise ValueError('Conductance for mechanism %s in cell part %s has changed (%f, %f), section = ' %
                             (m, part, self.initial_mechanisms[part][sec][m], gx), sec)
-        return True
     
+        return True
     def get_cellpars(self, dataset, species='guineapig', cell_type='II'):
         raise NotImplementedError('get_cellpars should be reimplemented in the individual cell modules')
     
@@ -582,11 +582,24 @@ class Cell(object):
         # print('dataset: {0:s}   decorationmap: {1:s}'.format(dataset, decorationmap))
         cellpars = self.get_cellpars(dataset, species=self.status['species'], modelType=modelType)
         refarea = 1e-3*cellpars.cap / self.c_m
-
+        print ('cellpars: ' )
+        cellpars.show()
+        print(' species: ', self.status['species'])
+        print('m# odelType: ', modelType)
+#         print('dataset: ', dataset)
         table = data.get_table_info(dataset)
+#         table = data.get_table_info('mGBC_channels')
+#         print(dir(data.ionchannels))
+#         print( data.print_table('mGBC_channels'))
+        
+        if len(table.keys()) == 0:
+            raise ValueError('data table %s lacks keys - does it exist?' % dataset)
         chscale = data.get_table_info(decorationmap)
         pars = {}
         # retrive the conductances from the data set
+        # print ('table keys: ', table.keys())
+        # print('table: ', table)
+        # print('chscale: ', chscale)
         for g in table['field']:
             x = data.get(dataset, species=self.status['species'], model_type=modelType,
                                 field=g)

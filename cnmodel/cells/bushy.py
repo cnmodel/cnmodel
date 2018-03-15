@@ -178,7 +178,6 @@ class BushyRothman(Bushy):
                 modelName = 'XM13'
             if nach is None:
                 nach = 'na'
-            self.i_test_range={'pulse': (-1, 1.2, 0.05)}
         
         self.status = {'species': species, 'cellClass': self.type, 'modelType': modelType, 'modelName': modelName,
                         'soma': True, 'axon': False, 'dendrites': False, 'pumps': False, 'hillock': False, 
@@ -235,6 +234,8 @@ class BushyRothman(Bushy):
         Read data for ion channels and cell parameters from the tables
         """
         #cell_type = self.map_celltype(cell_type)
+        print('getcellpars: dataset, species, mmodeltype: ', dataset, species, modelType)
+        print ('model name: ', self.status['modelName'])
         cellcap = data.get(dataset, species=species, model_type=modelType,
             field='soma_Cap')
         chtype = data.get(dataset, species=species, model_type=modelType,
@@ -242,6 +243,8 @@ class BushyRothman(Bushy):
         if chtype == 'nacn':
             chtype = 'na'
         pars = Params(cap=cellcap, natype=chtype)
+        print('pars cell/chtype: ')
+        pars.show()
         if self.status['modelName'] == 'RM03':
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ih_gbar', 'leak_gbar']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
@@ -250,11 +253,18 @@ class BushyRothman(Bushy):
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ihvcn_gbar', 'leak_gbar']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
+        if self.status['modelName'] == 'mGBC':
+            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ihvcn_gbar', 'leak_gbar']:
+                pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
+                    field=g))
         #print dir(pars)
+        print('pars after checking self.status: ')
+        pars.show()
         return pars
         
     def species_scaling(self, species='guineapig', modelType='II', silent=True):
         """
+        This is called for POINT CELLS ONLY
         Adjust all of the conductances and the cell size according to the species requested.
         This scaling should be used ONLY for point models, as no other compartments
         are scaled.
