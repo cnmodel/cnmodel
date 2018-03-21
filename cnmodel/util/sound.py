@@ -4,7 +4,7 @@ Tools for generating auditory stimuli.
 from __future__ import division
 import numpy as np
 import scipy
-
+import scipy.io.wavfile
 
 def create(type, **kwds):
     """ Create a Sound instance using a key returned by Sound.key().
@@ -495,6 +495,36 @@ class SAMNoise(Sound):
         basenoise = pipnoise(self.time, o['ramp_duration'], o['rate'],
                         o['dbspl'], o['pip_duration'], o['pip_start'], o['seed'])
         return sinusoidal_modulation(self.time, basenoise, o['pip_start'], o['fmod'], o['dmod'], 0.)
+
+
+class ReadWavefile(Sound):
+    def __init__(self, **kwds):
+        reqdWords = ['rate', 'duration', 'dbspl', 'wavefile']
+        for k in reqdWords:
+            if k not in kwds.keys():
+                raise TypeError("ReadWaveFile Missing required argument '%s'" % k)
+        Sound.__init__(self, **kwds)
+        
+    def generate(self):
+        """
+        Read the wave file from disk, and resample if necessary
+        
+        Returns
+        -------
+        array :   generated waveform
+        """
+        [fs_wav, stimulus] = scipy.io.wavfile.read(self.opts['wavefile']) # raw is a numpy array of integer, representing the samples
+        rms = np.sqrt(np.mean(stimulus**2.0))  # find rms of the waveform
+        self.opts['duration'] = (stimulus.shape[0]-1)/float(fs_wav)  # recompute the duration.
+        frate = 1./self.opts['rate']
+        if frate != 1.0/fs_wav:
+            xnew = np.arange(0, self.opts['duration']+frate, frate)
+            xwave = np.arange(0, len(stimulus)/fs_wav, 1.0/fs_wav)
+            stimulus = np.interp(xnew, xwave, stimulus)
+        self._time = None
+        self.time  # reequesting time will cause recalulation of the time
+        stimulus = 20e-6 * 10**(self.opts['dbspl'] / 20.0) * stimulus / rms # scale into Pascals
+        return stimulus
     
 
 def sinusoidal_modulation(t, basestim, tstart, fmod, dmod, phaseshift):
