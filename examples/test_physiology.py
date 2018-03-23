@@ -21,7 +21,7 @@ import pyqtgraph as pg
 import pyqtgraph.multiprocess as mp
 from pyqtgraph.Qt import QtGui, QtCore
 from cnmodel import populations
-from cnmodel.util import sound, random
+from cnmodel.util import sound, random_seed
 from cnmodel.protocols import Protocol
 import timeit
 
@@ -36,7 +36,7 @@ class CNSoundStim(Protocol):
 #        self.synapsetype = synapsetype  # simple or multisite
         
         # Seed now to ensure network generation is stable
-        random.set_seed(seed)
+        random_seed.set_seed(seed)
         # Create cell populations.
         # This creates a complete set of _virtual_ cells for each population. No 
         # cells are instantiated at this point.
@@ -92,7 +92,7 @@ class CNSoundStim(Protocol):
         rs = np.random.RandomState()
         rs.seed(self.seed ^ seed)
         seed1, seed2 = rs.randint(0, 2**32, 2)
-        random.set_seed(seed1)
+        random_seed.set_seed(seed1)
         self.sgc.set_seed(seed2)
         
         self.sgc.set_sound_stim(stim, parallel=False)
