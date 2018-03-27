@@ -39,10 +39,15 @@ def _lookup(ind, *args, **kwds):
             
 def setval(val, *args, **kwds):
     key = mk_key(*args, **kwds)
+    oldval = None
+    #change_flag = False
     if key in DATA:
-        raise RuntimeError("Data key '%s' has already been set." % str(key))
+#        change_flag = True  # any attempt to change key will set this
+        oldval = DATA[key]  # save the previous stored value
+    #     raise RuntimeError("Data key '%s' has already been set." % str(key))
     DATA[key] = val
-    
+    return oldval
+
 def mk_key(*args, **kwds):
     # Make a unique key (or list of keys) used to access values from the 
     # database. The generated key is independent of the order that arguments
@@ -208,12 +213,26 @@ def add_table_data(name, row_key, col_key, data, **kwds):
     #print col_names
     #print row_names
     #print cells
+
+    changes = [] # a list of parameters that are changed if we are rewriting a table
     for i,row in enumerate(row_names):
         for j,col in enumerate(col_names):
             kwds[row_key] = row
             kwds[col_key] = col
-            setval(cells[i][j], name, **kwds)
+            oldval = setval(cells[i][j], name, **kwds)
+            if oldval is not None and oldval != cells[i][j]:
+                changes.append({'name': name, 'row': row, 'col': col, 'new': cells[i][j], 'old': oldval})
+    return changes
 
+
+def report_changes(changes):
+    """
+    For changes to data tables, give user a readout
+    """
+    if len(changes) > 0:
+        print("\nWarning: Data Table '%s' has been modified!" % changes[0]['name'])
+        for ch in changes:
+            print('  >>> Changing %s, %s from default (%s) to %s' % (ch['row'], ch['col'], str(ch['new'][0]), str(ch['old'][0])))
 
 
 def parse_sources(lines):
