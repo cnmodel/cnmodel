@@ -498,8 +498,33 @@ class SAMNoise(Sound):
 
 
 class ReadWavefile(Sound):
+    """ One or more gaussian noise pips with cosine-ramped edges, sinusoidally modulated.
+    
+    Parameters
+    ----------
+    wavefile : str
+        name of the .wav file to read
+    rate : float
+        Sample rate in Hz
+    duration : float
+        Total duration of the sound (computed from file)
+    dbspl : float
+         Sound level (from RMS) in dB SPL. 
+    delay: float 
+        delay time to start sound, in s. Allow anmodel to run to steady-state
+    maxdur : float
+        Maximum duration of waveform to return (in seconds)
+    channel: int
+        If wavefile has 2 channels, select 0 or 1 for the channel to read
+    
+    Returns
+    -------
+    array :
+        waveform
+    
+    """
     def __init__(self, **kwds):
-        reqdWords = ['rate', 'duration', 'dbspl', 'wavefile']
+        reqdWords = ['rate', 'duration', 'dbspl', 'wavefile', 'maxdur', 'channel', 'delay']
         for k in reqdWords:
             if k not in kwds.keys():
                 raise TypeError("ReadWaveFile Missing required argument '%s'" % k)
@@ -514,6 +539,14 @@ class ReadWavefile(Sound):
         array :   generated waveform
         """
         [fs_wav, stimulus] = scipy.io.wavfile.read(self.opts['wavefile']) # raw is a numpy array of integer, representing the samples
+        fs_wav = float(fs_wav)
+        maxt = self.opts['maxdur']
+        if len(stimulus.shape) > 1 and stimulus.shape[1] > 0:
+            stimulus = stimulus[:,self.opts['channel']]  # just use selected channel
+        if len(stimulus)/fs_wav > maxt:  # more than 0.5 seconds long... clip to 400 msec with 100 msec zeros at begin
+            st = np.zeros(int(maxt*fs_wav))
+            st[int(self.opts['delay']*fs_wav):int(maxt*fs_wav)] = stimulus[0:int((maxt-self.opts['delay'])*fs_wav)]  # need to prepend a startup time for anmodel
+            stimulus = st
         rms = np.sqrt(np.mean(stimulus**2.0))  # find rms of the waveform
         self.opts['duration'] = (stimulus.shape[0]-1)/float(fs_wav)  # recompute the duration.
         frate = 1./self.opts['rate']
@@ -522,10 +555,10 @@ class ReadWavefile(Sound):
             xwave = np.arange(0, len(stimulus)/fs_wav, 1.0/fs_wav)
             stimulus = np.interp(xnew, xwave, stimulus)
         self._time = None
-        self.time  # reequesting time will cause recalulation of the time
+        self.time  # requesting time will cause recalulation of the time
         stimulus = 20e-6 * 10**(self.opts['dbspl'] / 20.0) * stimulus / rms # scale into Pascals
         return stimulus
-    
+
 
 def sinusoidal_modulation(t, basestim, tstart, fmod, dmod, phaseshift):
     """
