@@ -221,7 +221,9 @@ def add_table_data(name, row_key, col_key, data, **kwds):
             kwds[col_key] = col
             oldval = setval(cells[i][j], name, **kwds)
             if oldval is not None and oldval != cells[i][j]:
-                changes.append({'name': name, 'row': row, 'col': col, 'new': cells[i][j], 'old': oldval})
+                key = mk_key(name, **kwds)
+                changes.append({'key': key, 'new': cells[i][j], 'old': oldval, 'name': name})
+                #changes.append({'name': name, 'row': row, 'col': col, 'new': cells[i][j], 'old': oldval})
     return changes
 
 
@@ -230,9 +232,10 @@ def report_changes(changes):
     For changes to data tables, give user a readout
     """
     if len(changes) > 0:
-        print("\nWarning: Data Table '%s' has been modified!" % changes[0]['name'])
+        print("\nWarning: Data Table '%s' (in memory) has been modified!" % changes[0]['name'])
         for ch in changes:
-            print('  >>> Changing %s, %s from default (%s) to %s' % (ch['row'], ch['col'], str(ch['new'][0]), str(ch['old'][0])))
+            # print('  >>> Changing %s, %s from default (%s) to %s' % (ch['row'], ch['col'], str(ch['new'][0]), str(ch['old'][0])))
+            print('  >>> Changing %s, from default (%s) to %s' % (ch['key'], str(ch['old'][0]), str(ch['new'][0])))
 
 
 def parse_sources(lines):
