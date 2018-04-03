@@ -149,7 +149,11 @@ class BushyRothman(Bushy):
             prior measurements in various species. Note that
             if a decorator function is specified, this argument is ignored as the decorator will
             specify the channel density.
-            
+
+        modelName: string (default: None)
+            modelName specifies the source conductance pattern (RM03, XM13, etc).
+            modelName is passed to the decorator, or to species_scaling to adjust point (single cylinder) models.
+                             
         modelType: string (default: None)
             modelType specifies the subtype of the cell model that will be used (e.g., "II", "II-I", etc).
             modelType is passed to the decorator, or to species_scaling to adjust point (single cylinder) models.
