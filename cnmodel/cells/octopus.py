@@ -263,6 +263,7 @@ class OctopusRothman(Octopus, Cell):
     def adjust_na_chans(self, soma, sf=1.0, gbar=1000., debug=False):
         """
         adjust the sodium channel conductance
+        
         Parameters
         ----------
         soma : neuron section object
@@ -279,6 +280,7 @@ class OctopusRothman(Octopus, Cell):
         -------
         Nothing
         """
+        
         if self.status['ttx']:
             gnabar = 0.0
         else:

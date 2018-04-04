@@ -1,7 +1,17 @@
-cnmodel
-=======
+Modules
+=============
+
+Contents:
 
 .. toctree::
-   :maxdepth: 4
+    :maxdepth: 0
 
-   cnmodel
+    an_model
+    cells
+    data
+    decorator
+    synapses
+    populations
+    protocols
+    util
+

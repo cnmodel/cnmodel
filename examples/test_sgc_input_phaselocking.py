@@ -1,3 +1,17 @@
+"""
+test_sgc_input_phaselocking.py
+
+Test phase locking from an input sgc to a target cell type. Runs simulations
+with AN input, and plots the results, including PSTH and phase histogram.
+
+Usage: python test_sgc_input_phaselocking.py celltype stimulus species
+   where:
+      celltype is one of [bushy, tstellate, octopus, dstellate] (default: bushy)
+      stimulus is one of [tone, SAM, clicks] (default: tone)
+      species is one of [guineapig, mouse] (default: guineapig)
+
+"""
+
 import sys
 import numpy as np
 import pyqtgraph as pg

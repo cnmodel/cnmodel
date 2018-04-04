@@ -15,9 +15,11 @@ import numpy as np
 def ccstim(stim, dt, pulsetype='square'):
     """
     Create stimulus pulse waveforms of different types.
+    
     Parameters
     ----------
-    stim: a dictionary with keys [required]
+    stim : dict
+        a dictionary with keys [required]
         delay (delay to start of pulse train, msec [all]
         duration: duration of pulses in train, msec [all]
         Sfreq: stimulus train frequency (Hz) [timedSpikes]
@@ -35,21 +37,21 @@ def ccstim(stim, dt, pulsetype='square'):
         Type of pulse to generate: one of square, hyp, timedspikes or exp
         square produces a train of "square" (retangular) pulses levels 0 and ampitude
         hyp is like square, but precedes the pulse train with a single prepulse
-            of hypamp and hypdur
+        of hypamp and hypdur
         timedspikes is like square, excpet the pulses are generated at times specified
-            in the spikeTimes key in the stim dictionary
+        in the spikeTimes key in the stim dictionary
         exp: pulses with an exponential decay.
     
     TO DO: 
         add pulsetypes, including sine wave, rectified sine wave, etc.
 
-    
     Returns
     -------
     list containing [waveform (numpy array),
                     maxtime(float),
                     timebase (numpy array)]
     """
+    
     assert dt is not None
     assert 'delay' in stim.keys()
     delay = int(np.floor(stim['delay']/dt))

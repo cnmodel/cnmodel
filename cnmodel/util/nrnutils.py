@@ -94,9 +94,10 @@ def alias(attribute_path):
 
     For example, suppose that an object of class A has an attribute b which
     itself has an attribute c which itself has an attribute d. Then placing
-      e = alias('b.c.d')
+    e = alias('b.c.d')
     in the class definition of A makes A.e an alias for A.b.c.d
     """
+    
     parts = attribute_path.split('.')
     attr_name = parts[-1]
     attr_path = parts[:-1]

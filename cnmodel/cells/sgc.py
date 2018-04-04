@@ -138,9 +138,9 @@ class SGC_TypeI(SGC):
                  modelType='bm', cf=None, sr=None, debug=False):
         """
         Initialize a spiral ganglion Type I cell, based on a bushy cell model.
-        Modifications to the cell can be made by calling the methods below. These include:
-            Converting to a model with modified size and conductances (experimental).
-            Changing the sodium channel conductances.
+        Modifications to the cell can be made by calling the methods below. These include
+        converting to a model with modified size and conductances (experimental), and
+        and changing the sodium channel conductances.
         
         Parameters
         ----------

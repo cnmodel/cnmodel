@@ -52,7 +52,8 @@ class VCCurve(Protocol):
         """
         Run voltage-clamp I/V curve.
 
-        Parameters:
+        Parameters
+        ----------
         vmin : float
             Minimum voltage step value
         vmax :
@@ -109,9 +110,14 @@ class VCCurve(Protocol):
 
     def steady_im(self, window=0.1):
         """
-        :param window: fraction of window to use for steady-state measurement, taken
-        immediately before the end of the step
-        Return steady-state membrane current for each trace.
+        Parameters
+        ----------
+        window : float (default: 0.1)
+            fraction of window to use for steady-state measurement, taken
+            immediately before the end of the step
+        Returns
+        -------
+            steady-state membrane current for each trace.
         """
         Im = self.current_traces
         steps = len(Im)
@@ -122,9 +128,14 @@ class VCCurve(Protocol):
 
     def peak_im(self, window=0.4):
         """
-        :param window: fraction of window to use for peak measurement, taken
-        immediately following the beginning of the step
-        Return steady-state membrane current for each trace.
+        Parameters
+        ----------
+        window: float (default=0.4)
+            fraction of window to use for peak measurement, taken
+            immediately following the beginning of the step
+        Returns
+        ------
+            steady-state membrane current for each trace.
         """
         Im = self.current_traces
         steps = len(Im)
