@@ -18,7 +18,7 @@ A manuscript describing this package has been published:
 
     Paul B. Manis, Luke Campagnola,
     A biophysical modelling platform of the cochlear nucleus and other auditory circuits: 
-        From channels to networks,
+    From channels to networks,
     Hearing Research,
     Volume 360,
     2018,
@@ -34,20 +34,27 @@ Installation requirements
 -------------------------
 This package depends on the following:
 
-   1. Python 2.7 with numpy (1.11), scipy (0.19.0), lmfit (0.9.6), matplotlib (2.0 or 1.5), faulthandler, and pyqtgraph (0.9.10). The cochlea module requires pandas as well. 
-      An Anaconda install with the appropriate scientific packages works well:
-      conda install python=2.7 pyqt pyqtgraph matplotlib numpy scipy pandas pytest faulthandler`
-   2. lmfit (nonlinear fitter) is best obtained via pip to install the latest versions: `pip install lmfit`
-   3. A Python-linked version of NEURON (www.neuron.yale.edu). The code has been tested with NEURON 7.3, 7.4 and 7.5.
-   4. A C compiler (`gcc`). Needed for compilation of mechanisms for NEURON.
-   5. The Zilany et al (JASA 2014) auditory periphery model. This can be provided one of two ways:
-      * The original MATLAB-based Zilany model; requires MATLAB 2011 or later. A C compiler will also be needed to build this model.The model should be placed in the directory "cnmodel/cnmodel/an_model/model", with the following components: ANmodel.m, complex.c, complex.h, complex.hpp, ffGn.m, fituaudiogram2.m, mexANmodel.m, model_IHC.c, model_Synapse.c, and the THRESHOLD_ALL_* files. When cnmodel attempts to access this code the first time, it will perform the necessary compilation.
-      * The Python-based cochlea model by Rudnicki and Hemmert at https://github.com/mrkrd/cochlea. This is probably best installed via pip per the instructions on the PyPi site: `pip install cochlea`. Note that 
+1. Python 2.7 with numpy (1.11), scipy (0.19.0), lmfit (0.9.6), matplotlib (2.0 or 1.5), faulthandler, and pyqtgraph (0.9.10). The cochlea module requires pandas as well. 
+   An Anaconda install with the appropriate scientific packages works well::
+       
+       conda install python=2.7 pyqt pyqtgraph matplotlib numpy scipy pandas pytest faulthandler
+       
+2. lmfit (nonlinear fitter) is best obtained via pip to install the latest versions: ``pip install lmfit``
+3. A Python-linked version of NEURON (www.neuron.yale.edu). The code has been tested with NEURON 7.3, 7.4 and 7.5.
+4. A C compiler (gcc). Needed for compilation of mechanisms for NEURON.
+5. The Zilany et al (JASA 2014) auditory periphery model. This can be provided one of two ways:
     
-    Optional
-    --------
-    neuronvis (optional; available at https://github.com/campagnola/neuronvis or https://github.com/pbmanis/neuronvis).
-      This provides 3D visualization for morphology.
+   * The Python-based cochlea model by Rudnicki and Hemmert at https://github.com/mrkrd/cochlea. 
+     This is probably best installed via pip per the instructions on the PyPi site: ``pip install cochlea``.
+   * The original MATLAB-based Zilany model; requires MATLAB 2011 or later. A C compiler will also
+     be needed to build this model. The model should be placed in the directory 
+     ``cnmodel/cnmodel/an_model/model``, with the following components: ANmodel.m, complex.c, complex.h, 
+     complex.hpp, ffGn.m, fituaudiogram2.m, mexANmodel.m, model_IHC.c, model_Synapse.c, 
+     and the THRESHOLD_ALL_* files. When cnmodel attempts to access this code the first time, 
+     it will perform the necessary compilation.
+   
+6. neuronvis (optional) available at https://github.com/campagnola/neuronvis or https://github.com/pbmanis/neuronvis).
+   This provides 3D visualization for morphology.
 
 For more detailed information on setup in a Windows environment, see the file Windows_setup.md. Thanks to Laurel Carney for prompting the generation of this set of instructions, and for identifying issues on Windows.
 
@@ -96,48 +103,61 @@ A number of additional tests are included in the examples directory.
 - `test_an_model.py` verifies that the auditory nerve model can be run. If necessary, it will compile (using MEX) the mechanisms for matlab. 
 - `test_ccstim.py` tests the generation of different stimulus waveforms by the pulse generator module.
 - `test_cells.py` runs different cell models in current or voltage clamp. 
-   - usage: test_cells.py celltype species[-h] [--type TYPE] [--temp TEMP] [-m MORPHOLOGY]
-                     [--nav NAV] [--ttx] [-p PULSETYPE] [--vc | --cc | --rmp]
-                     For example: python test_cells.py bushy mouse --cc --temp 34
+  Usage:: 
+      
+      test_cells.py celltype species[-h] [--type TYPE] [--temp TEMP] [-m MORPHOLOGY]
+                    [--nav NAV] [--ttx] [-p PULSETYPE] [--vc | --cc | --rmp]
+                    
+  For example: ``python test_cells.py bushy mouse --cc --temp 34``
 
                   
 - `test_cells.py` can run protocols on selected cell models.
-  -usage: test_cells.py [-h] [--type TYPE] [--temp TEMP] [-m MORPHOLOGY]
-                     [--nav NAV] [--ttx] [-p PULSETYPE] [--vc | --cc | --rmp]
-                     celltype species
+  Usage:: 
+    
+        test_cells.py [-h] [--type TYPE] [--temp TEMP] [-m MORPHOLOGY]
+                      [--nav NAV] [--ttx] [-p PULSETYPE] [--vc | --cc | --rmp]
+                      celltype species
 
 - `test_circuit.py` tests the generation of circuits with populations of cells. No simulations are run.
 - `test_decorator.py` generates an IV curve for the reconstructed cell LC_bushy.hoc (Figure 5B,C)
 - `test_mechanisms.py` runs a voltage clamp I/V protocol on a selected mechanism and displays the result.
-   - Usage: python test_mechanisms.py <mechname>
+  Usage:: 
+       
+         python test_mechanisms.py <mechname>
            
-     Available channel mechanisms:
+  Available channel mechanisms:
               
-   | Channel | Channel | Channel | Channel | Channel |
-   |---|---|---|---|---|
-   | CaPCalyx | KIR    | bkpkj    | hcno        | hcnobo           |
-   | hh       | hpkj   | ihpyr    | ihsgcApical | ihsgcBasalMiddle |
-   | ihvcn    | jsrna  | k_ion    | ka          | kcnq             |
-   | kdpyr    | kht    | kif      | kis         | klt              |
-   | kpkj     | kpkj2  | kpkjslow | kpksk       | leak             |
-   | lkpkj    | na     | naRsg    | na_ion      | nacn             |
-   | nacncoop | nap    | napyr    | nav11       |                  |
+   ========== ========= ========== ============= ==================
+    CaPCalyx   KIR       bkpkj      hcno          hcnobo           
+    hh         hpkj      ihpyr      ihsgcApical   ihsgcBasalMiddle 
+    ihvcn      jsrna     k_ion      ka            kcnq             
+    kdpyr      kht       kif        kis           klt              
+    kpkj       kpkj2     kpkjslow   kpksk         leak             
+    lkpkj      na        naRsg      na_ion        nacn             
+    nacncoop   nap       napyr      nav11                          
+   ========== ========= ========== ============= ==================
 
 - `test_mso_inputs.py` runs a circuit that creates a point MSO neuron, innervated by bushy cells from independent "ears". This demonstrates how to construct a binaural circuit using CNModel.
 - `test_physiology.py` runs a large VCN circuit that converges onto a single bushy cell. This run can take a long time. The output was used to create Figure 7 of the manuscript.
-- `test_populations.py` tests synaptic connections between two cell types.
-    Usage:  python test_populations.py <pre_celltype> <post_celltype>
+- `test_populations.py` tests synaptic connections between two cell types. Usage::
+    
+      python test_populations.py <pre_celltype> <post_celltype>
+      
 - `test_sgc_input_phaselocking.py` tests phase locking with SGC inputs to a bushy cell.
 - `test_sgc_input_PSTH.py` shows SGC inputs and postsynaptic bushy cell PSTHs.
 - `test_sgc_input.py` demonstrates SGC input to a VCN bushy cell.
-- `test_simple_synapses.py` tests simple Exp2Syn inputs to different cell types.
-    - Usage:  python test_synapses.py <pre_celltype> <post_celltype>
-      Supported cell types: sgc, bushy, tstellate, dstellate, tuberculoventral, pyramidal
+- `test_simple_synapses.py` tests simple Exp2Syn inputs to different cell types. Usage::
+    
+      python test_synapses.py <pre_celltype> <post_celltype>
+      
+  Supported cell types: sgc, bushy, tstellate, dstellate, tuberculoventral, pyramidal
 - `test_sound_stim.py` generates spike trains from the selected model (cochlea, matlab) and plots rate-intensity functions for the 3 different SR groups.
 - `test_sounds.py` generates waveforms for different kinds of sounds included in the sounds class.
-- `test_synapses.py` evokes spikes in a presynaptic cell while recording the postsynaptic potential.
-  - Usage:  python test_synapses.py <pre_celltype> <post_celltype>
-    Supported cell types: sgc, bushy, tstellate, dstellate
+- `test_synapses.py` evokes spikes in a presynaptic cell while recording the postsynaptic potential. Usage::
+    
+      python test_synapses.py <pre_celltype> <post_celltype>
+      
+  Supported cell types: sgc, bushy, tstellate, dstellate
 - `toy_model.py` generates IV plots for each of the principal point cell types included in CNModel. This is the code that generates Figure 3 of the manuscript.
 
 Potential Issues and Solutions
@@ -145,27 +165,23 @@ Potential Issues and Solutions
 
 1.  Occasionally one of the AN spike train files, which are stored in the directory `cnmodel/an_model/cache`, become locked. This can occur if the calling routines are aborted (^C, ^Z) in the middle of a transaction accessing the cache file, or perhaps during when parallel processing is enabled and a routine fails or is aborted. In this case, a file with the extension ``".lock"`` exists, which prevents the an_model code from accessing the file. The ``".lock"`` file needs to be deleted from the cache directory.
     
-  *  First, print a list of the locked files:
+  *  First, print a list of the locked files::
   
-     ```
-     $ find /path/to/cache -name '*.lock'
-     ```
+      $ find /path/to/cache -name '*.lock'
     
-    *  Where /path/to/cache may be something like `cnmodel/an_model/cache`. 
+  * Where /path/to/cache may be something like `cnmodel/an_model/cache`. 
     There is most likely only one such file in the diretory.
 
-  *    Next, to delete the files:
+  * Next, to delete the files::
   
-       ```
-       $ find /path/to/cache -name '*.lock' -delete
-       ```
+      $ find /path/to/cache -name '*.lock' -delete
        
-  *    Under Windows (and other OS's), you should be able do accomplish the same thing
+  * Under Windows (and other OS's), you should be able do accomplish the same thing
     with the File Explorer/Finder, limiting the files by extension.
     
    
-References:
------------
+References
+----------
 
 1.   Cao XJ, Oertel D. The magnitudes of hyperpolarization-activated and
 low-voltage-activated potassium currents co-vary in neurons of the ventral
