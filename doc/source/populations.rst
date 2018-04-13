@@ -8,6 +8,15 @@ cnmodel.populations package
     :show-inheritance:
 
 
+cnmodel.populations.population
+===============================
+
+.. automodule:: cnmodel.populations.population
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :noindex:
+    
 cnmodel.populations.bushy
 =========================
 
@@ -26,15 +35,6 @@ cnmodel.populations.dstellate
     :show-inheritance:
     :noindex:
 
-cnmodel.populations.population
-===============================
-
-.. automodule:: cnmodel.populations.population
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :noindex:
-    
 cnmodel.populations.sgc
 =======================
 

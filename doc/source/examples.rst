@@ -27,3 +27,5 @@ Contents:
     examples/test_sgc_input_PSTH
     examples/test_synapses
     examples/test_decorator
+    examples/plot_hcno_kinetics
+    examples/play_test_sounds

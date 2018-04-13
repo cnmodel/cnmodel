@@ -9,8 +9,13 @@ import pyqtgraph as pg
 from cnmodel.util import sound
 from collections import OrderedDict
 import scipy.signal
-import PySounds
 import sys
+try:
+    import PySounds
+    HAVE_PYSOUNDS = True
+except ImportError:
+    HAVE_PYSOUNDS = False
+
 
 def play():
     if len(sys.argv) >= 2:
@@ -20,7 +25,8 @@ def play():
 
     plots = True
 
-    PS = PySounds.PySounds()
+    if HAVE_PYSOUNDS:
+        PS = PySounds.PySounds()
     
     cf = 2e3
     Fs = 44100  # sample frequency
@@ -92,11 +98,14 @@ def play():
             f, Pxx_spec = scipy.signal.periodogram(wave.sound, Fs) #, window='flattop', nperseg=8192,
                                # noverlap=512, scaling='spectrum')
             specs[stim][0].plot(f, np.sqrt(Pxx_spec))
-        print ('Playing %s' % stim)
-        PS.playSound(wave.sound, wave.sound, Fs)
+        if HAVE_PYSOUNDS:
+            print ('Playing %s' % stim)
+            PS.playSound(wave.sound, wave.sound, Fs)
 
     if plots and sys.flags.interactive == 0:
          pg.QtGui.QApplication.exec_()
          
 if __name__ == '__main__':
+    if not HAVE_PYSOUNDS:
+        print("Could not import PySounds; will not play audio.")
     play()

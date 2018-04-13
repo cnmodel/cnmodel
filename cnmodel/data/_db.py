@@ -75,23 +75,21 @@ def _mk_key(*args, **kwds):
 
 def add_table_data(name, row_key, col_key, data, **kwds):
     """
-    Read data like
+    Read data like::
     
-    '''
-    Description
-    
-    ------------------------------------
-            col1      col2         col3
-    row1    1.2  [1]  0.9e-6 [1]   27 [2]
-    row2    1.7  [1]               [3]
-    row3    0.93 [2]  0.3e-6       3 [2]
-    
-    ------------------------------------
-    
-    [1] citation 1
-    [2] citation 2
-    [3] missing because.
-    '''
+        Description
+        
+        ------------------------------------
+                col1      col2         col3
+        row1    1.2  [1]  0.9e-6 [1]   27 [2]
+        row2    1.7  [1]               [3]
+        row3    0.93 [2]  0.3e-6       3 [2]
+        
+        ------------------------------------
+        
+        [1] citation 1
+        [2] citation 2
+        [3] missing because.
     
     
     """

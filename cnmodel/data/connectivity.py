@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 from ._db import add_table_data
 
+#: Mouse synaptic convregence table
 mouse_convergence = u"""
 
 Convergence defines the average number of presynaptic cells of a particular

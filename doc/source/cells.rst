@@ -1,5 +1,5 @@
-Cells
------
+Cell classes
+------------
 
 .. automodule:: cnmodel.cells
     :members:
@@ -9,8 +9,8 @@ Cells
 .. autoclass:: Cell
    :members:
 
-Individual cell classes
------------------------
+Individual cell subclasses
+--------------------------
 
 cnmodel.cells.bushy
 ===================

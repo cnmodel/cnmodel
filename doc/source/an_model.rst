@@ -5,9 +5,6 @@ an_model
     :members:
     :undoc-members:
     :show-inheritance:
-
-.. autoclass:: an_model
-   :members:
  
 
 cnmodel.an_model.cache

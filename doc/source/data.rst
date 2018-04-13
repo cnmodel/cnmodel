@@ -1,46 +1,37 @@
 cnmodel.data package
 --------------------
 
-.. automodule:: cnmodel.data
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. autofunction:: cnmodel.data.get
 
+.. autofunction:: cnmodel.data.get_source
+
+.. autofunction:: cnmodel.data.add_table_data
 
 cnmodel.data.connectivity
 =========================
 
-.. automodule:: cnmodel.data.connectivity
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :noindex:
+.. literalinclude:: ../../cnmodel/data/connectivity.py
+   :language: python
+   :linenos:
 
 cnmodel.data.synapses
 =====================
 
-.. automodule:: cnmodel.data.synapses
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :noindex:
+.. literalinclude:: ../../cnmodel/data/synapses.py
+   :language: python
+   :linenos:
 
 cnmodel.data.populations
 ========================
 
-.. automodule:: cnmodel.data.populations
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :noindex:
+.. literalinclude:: ../../cnmodel/data/populations.py
+   :language: python
+   :linenos:
     
 cnmodel.data.ionchannels
 ========================
 
-.. automodule:: cnmodel.data.ionchannels
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :noindex:
-    
+.. literalinclude:: ../../cnmodel/data/ionchannels.py
+   :language: python
+   :linenos:
     

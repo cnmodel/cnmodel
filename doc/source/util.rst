@@ -108,10 +108,10 @@ cnmodel.util.pynrnutilities
     :show-inheritance:
     :noindex:
 
-cnmodel.util.random 
-===================
+cnmodel.util.random_seed 
+========================
 
-.. automodule:: cnmodel.util.random
+.. automodule:: cnmodel.util.random_seed
     :members:
     :undoc-members:
     :show-inheritance:
