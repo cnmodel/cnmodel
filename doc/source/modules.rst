@@ -1,4 +1,4 @@
-Modules
+API Reference
 =============
 
 Contents:
@@ -10,6 +10,7 @@ Contents:
     cells
     data
     decorator
+    morphology
     synapses
     populations
     protocols
