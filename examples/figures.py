@@ -6,7 +6,7 @@ import sys
 import subprocess
 
 if len(sys.argv) < 2:  # if no argument, print helpful message
-    print("Plot selected figures from paper, Manis and Campagnoal, Hearing Research. 2018")
+    print("Plot selected figures from paper, Manis and Campagnola, Hearing Research. 2018")
     print("Usage: figures.py [2a | 2b | 2c | 3 | 4 | 5 | 6a | 6d | 7]")
     exit(1)
     

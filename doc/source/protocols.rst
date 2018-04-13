@@ -15,15 +15,6 @@ cnmodel.protocols.cc
     :show-inheritance:
     :noindex:
 
-cnmodel.protocols.democlamp
----------------------------
-
-.. automodule:: cnmodel.protocols.democlamp
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :noindex:
-
 cnmodel.protocols.iv_curve
 --------------------------
 
