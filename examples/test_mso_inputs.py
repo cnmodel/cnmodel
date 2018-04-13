@@ -11,7 +11,7 @@ This script:
     other bushy cell.
 3. Specifies the CFs of the SGC cells individually. Also specifies the frequency of 
     and stimuli by ear allowing for "binaural beats"
-5. Records the bushy and MSO cell membrane voltages, sgc spike time, and calculates
+4. Records the bushy and MSO cell membrane voltages, sgc spike time, and calculates
     vector strengths.
 
 The auditory nerve spike train is generated automatically by the DummySGC class
