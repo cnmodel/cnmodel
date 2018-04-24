@@ -32,12 +32,13 @@ class F5():
         
     def run(self):
         self.post_cell = cells.Bushy.create(morphology=self.filename, decorator=Decorator,
-                    species='mouse', modelType='XM13')
+                    species='mouse', modelName='XM13', modelType='II')
         self.post_cell.set_temperature(float(self.temperature))
         self.post_cell.set_d_lambda(freq=2000.)  # necessary to ensure appropriate spatial 
         self.iv.reset()
         irange = self.post_cell.i_test_range
-        irange = {'pulse': (-0.6, 1.1, 0.2)}
+        #irange = {'pulse': (-0.6, 1.1, 0.2)} for Figure 5 of paper
+        irange = {'pulse': (-0.5, 1.5, 0.25)}
         self.durs = (self.initdelay+20., 100., 50.)
         self.iv.run(irange, self.post_cell, durs=self.durs, temp=float(self.temperature),
                 initdelay=self.initdelay)
@@ -87,7 +88,11 @@ class F5():
 
 
 if __name__ == '__main__':
-    fig5 = F5('examples/LC_bushy.hoc')
+    if len(sys.argv) == 1:
+        fig5 = F5('examples/LC_bushy.hoc')
+    else:
+        fn = ('/Users/pbmanis/Desktop/Python/VCNModel/VCN_Cells/VCN_c{0:02d}/Morphology/VCN_c{0:02d}.hoc'.format(int(sys.argv[1])))
+        fig5 = F5(fn)
     start_time = timeit.default_timer()
     fig5.run()
     elapsed = timeit.default_timer() - start_time

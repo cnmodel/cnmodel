@@ -27,6 +27,29 @@ def get_source(*args, **kwds):
     """
     return _lookup(1, *args, **kwds)
 
+def print_table(table):
+    for k in DATA.keys():
+        if table == k[0]:
+            print'data key: ', k
+            print DATA[k][0]
+
+def get_table_info(table):
+    """
+    Return a dictionary of row and column names in the table
+    """
+    tinfo = {}
+    for k in DATA.keys():
+        if table == k[0]:
+            for p in k:
+                if not isinstance(p, tuple):
+                    continue
+                if p[0] not in tinfo.keys():
+                    tinfo[p[0]] = []
+                if p[1] not in tinfo[p[0]]:
+                    tinfo[p[0]].append(p[1])
+    return tinfo
+            
+
 def _lookup(ind, *args, **kwds):
     key = mk_key(*args, **kwds)
     if isinstance(key, dict):

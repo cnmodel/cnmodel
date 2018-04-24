@@ -36,8 +36,8 @@ cellinfo = {'types': ['bushy', 'bushycoop', 'tstellate', 'tstellatenav11', 'dste
 ccivrange = {'mouse':
                 {'bushy': {'pulse': [(-1, 1.2, 0.05)]},
                  'bushycoop': {'pulse': [(-0.5, 0.7, 0.02)]},
-                 'stellate': {'pulse': [(-1., 1.01, 0.05), (-0.015, 0, 0.005)]},
-                 'stellatenav11': {'pulse': [(-1, 1., 0.1)]},
+                 'tstellate': {'pulse': [(-1., 1.01, 0.05), (-0.015, 0, 0.005)]},
+                 'tstellatenav11': {'pulse': [(-1, 1., 0.1)]},
                  'dstellate': {'pulse': [(-0.3, 0.301, 0.015)]},
                  'octopus': {'pulse': [(-1.0, 1.0, 0.05)]},
                  'sgc': {'pulse': [(-0.3, 0.6, 0.02)]},
@@ -48,7 +48,7 @@ ccivrange = {'mouse':
 
             'guineapig':
             {'bushy': {'pulse': [(-1, 1.2, 0.05)]},
-            'stellate': {'pulse': [(-0.15, 0.15, 0.01)]},
+            'tstellate': {'pulse': [(-0.15, 0.15, 0.01)]},
             'dstellate': {'pulse': [(-0.25, 0.25, 0.025)]},
             'dstellateeager': {'pulse': [(-0.6, 1.0, 0.025)]},
             'octopus': {'pulse': [(-2., 6., 0.2)]},
