@@ -35,7 +35,7 @@ def _lookup(ind, *args, **kwds):
             data[k] = DATA[key][ind]
         return data
     else:
-            return DATA[key][ind]
+        return DATA[key][ind]
             
 def setval(val, *args, **kwds):
     key = mk_key(*args, **kwds)
@@ -75,23 +75,21 @@ def _mk_key(*args, **kwds):
 
 def add_table_data(name, row_key, col_key, data, **kwds):
     """
-    Read data like
+    Read data like::
     
-    '''
-    Description
-    
-    ------------------------------------
-            col1      col2         col3
-    row1    1.2  [1]  0.9e-6 [1]   27 [2]
-    row2    1.7  [1]               [3]
-    row3    0.93 [2]  0.3e-6       3 [2]
-    
-    ------------------------------------
-    
-    [1] citation 1
-    [2] citation 2
-    [3] missing because.
-    '''
+        Description
+        
+        ------------------------------------
+                col1      col2         col3
+        row1    1.2  [1]  0.9e-6 [1]   27 [2]
+        row2    1.7  [1]               [3]
+        row3    0.93 [2]  0.3e-6       3 [2]
+        
+        ------------------------------------
+        
+        [1] citation 1
+        [2] citation 2
+        [3] missing because.
     
     
     """
@@ -165,7 +163,6 @@ def add_table_data(name, row_key, col_key, data, **kwds):
     for i in range(len(cells)):
         for j in range(len(cells[0])):
             cell = cells[i][j].strip()
-            
             m = re.match(r'([^\[]*)(\[([^\]]+)\])?', cell)  # match like "0.7 [3]"
             if m is None:
                 raise ValueError("Table cell (%d, %d) has bad format: '%s'" % (i, j, cell))
@@ -187,7 +184,10 @@ def add_table_data(name, row_key, col_key, data, **kwds):
                         try:
                             p = float(p)
                         except ValueError:
-                            raise ValueError("Table cell (%d, %d) value has bad format: '%s'" % (i, j, val))
+                            try:
+                                 p = str(p.strip())  # allow strings to identify mechanisms also
+                            except ValueError:
+                                raise ValueError("Table cell (%d, %d) value has bad format: '%s'" % (i, j, val))
                     vals.append(p)
                 if len(vals) == 1:
                     val = vals[0]

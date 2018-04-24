@@ -195,9 +195,8 @@ class OctopusRothman(Octopus, Cell):
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
             self.decorate()
-#        print 'Mechanisms inserted: ', self.mechanisms
+        self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
         self.get_mechs(self.soma)
-#        self.cell_initialize(vrange=self.vrange)
         
         if debug:
             print "<< octopus: octopus cell model created >>"
@@ -264,6 +263,7 @@ class OctopusRothman(Octopus, Cell):
     def adjust_na_chans(self, soma, sf=1.0, gbar=1000., debug=False):
         """
         adjust the sodium channel conductance
+        
         Parameters
         ----------
         soma : neuron section object
@@ -280,6 +280,7 @@ class OctopusRothman(Octopus, Cell):
         -------
         Nothing
         """
+        
         if self.status['ttx']:
             gnabar = 0.0
         else:

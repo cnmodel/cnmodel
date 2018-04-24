@@ -1,0 +1,201 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>cnmodel.util.ccstim &#8212; CNModel 0.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cnmodel.util.ccstim</h1><div class="highlight"><pre>
+<span></span><span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;pbmanis&#39;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">ccstim</span>
+<span class="sd">Generate current-clamp (or voltage-clamp) stimulus waveforms from a dictionary</span>
+<span class="sd">used for vectory play modes in current clamp</span>
+<span class="sd">(prior version was called &#39;makestim&#39;)</span>
+
+<span class="sd">Can generate several types of pulses</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<div class="viewcode-block" id="ccstim"><a class="viewcode-back" href="../../../util.html#cnmodel.util.ccstim.ccstim">[docs]</a><span class="k">def</span> <span class="nf">ccstim</span><span class="p">(</span><span class="n">stim</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">pulsetype</span><span class="o">=</span><span class="s1">&#39;square&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create stimulus pulse waveforms of different types.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    stim : dict</span>
+<span class="sd">        a dictionary with keys [required]</span>
+<span class="sd">        delay (delay to start of pulse train, msec [all]</span>
+<span class="sd">        duration: duration of pulses in train, msec [all]</span>
+<span class="sd">        Sfreq: stimulus train frequency (Hz) [timedSpikes]</span>
+<span class="sd">        PT: post-train test delay [all]</span>
+<span class="sd">        NP: number of pulses in the train [timedSpikes, exp]</span>
+<span class="sd">        amp: amplitude of the pulses in the train [all]</span>
+<span class="sd">        hypamp: amplitude of prehyperpolarizing pulse [hyp]</span>
+<span class="sd">        hypdur: duration of prehyperpolarizing pulse [hyp]</span>
+<span class="sd">        spikeTimes&quot; times of spikes [timedSpikes]</span>
+
+<span class="sd">    dt : time (microseconds) [required]</span>
+<span class="sd">        step time, in microseconds. Required parameter</span>
+
+<span class="sd">    pulsetype : string (default: &#39;square&#39;)</span>
+<span class="sd">        Type of pulse to generate: one of square, hyp, timedspikes or exp</span>
+<span class="sd">        square produces a train of &quot;square&quot; (retangular) pulses levels 0 and ampitude</span>
+<span class="sd">        hyp is like square, but precedes the pulse train with a single prepulse</span>
+<span class="sd">        of hypamp and hypdur</span>
+<span class="sd">        timedspikes is like square, excpet the pulses are generated at times specified</span>
+<span class="sd">        in the spikeTimes key in the stim dictionary</span>
+<span class="sd">        exp: pulses with an exponential decay.</span>
+<span class="sd">    </span>
+<span class="sd">    TO DO: </span>
+<span class="sd">        add pulsetypes, including sine wave, rectified sine wave, etc.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list containing [waveform (numpy array),</span>
+<span class="sd">                    maxtime(float),</span>
+<span class="sd">                    timebase (numpy array)]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">assert</span> <span class="n">dt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">assert</span> <span class="s1">&#39;delay&#39;</span> <span class="ow">in</span> <span class="n">stim</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+    <span class="n">delay</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">stim</span><span class="p">[</span><span class="s1">&#39;delay&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">dt</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">pulsetype</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;square&#39;</span><span class="p">,</span> <span class="s1">&#39;hyp&#39;</span><span class="p">,</span> <span class="s1">&#39;exp&#39;</span><span class="p">]:</span>
+        <span class="n">ipi</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">((</span><span class="mf">1000.0</span><span class="o">/</span><span class="n">stim</span><span class="p">[</span><span class="s1">&#39;Sfreq&#39;</span><span class="p">])</span><span class="o">/</span><span class="n">dt</span><span class="p">))</span>
+    <span class="n">pdur</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">stim</span><span class="p">[</span><span class="s1">&#39;duration&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">dt</span><span class="p">))</span>
+    <span class="n">posttest</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">stim</span><span class="p">[</span><span class="s1">&#39;PT&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">dt</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">pulsetype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;timedSpikes&#39;</span><span class="p">]:</span>
+        <span class="n">NP</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">stim</span><span class="p">[</span><span class="s1">&#39;NP&#39;</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">NP</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stim</span><span class="p">[</span><span class="s1">&#39;spikeTimes&#39;</span><span class="p">])</span>
+    <span class="n">tstims</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">NP</span>
+    <span class="k">if</span> <span class="n">pulsetype</span> <span class="o">==</span> <span class="s1">&#39;hyp&#39;</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="s1">&#39;hypamp&#39;</span> <span class="ow">in</span> <span class="n">stim</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="s1">&#39;hypdur&#39;</span> <span class="ow">in</span> <span class="n">stim</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="n">hypdur</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">stim</span><span class="p">[</span><span class="s1">&#39;hypdur&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">dt</span><span class="p">))</span>
+        <span class="n">delay0</span> <span class="o">=</span> <span class="n">delay</span> <span class="c1"># save original delay</span>
+
+
+    <span class="k">if</span> <span class="n">pulsetype</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;square&#39;</span><span class="p">,</span> <span class="s1">&#39;hyp&#39;</span><span class="p">]:</span>
+        <span class="n">maxt</span> <span class="o">=</span> <span class="n">dt</span><span class="o">*</span><span class="p">(</span><span class="n">stim</span><span class="p">[</span><span class="s1">&#39;delay&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">ipi</span><span class="o">*</span><span class="p">(</span><span class="n">NP</span><span class="o">+</span><span class="mi">2</span><span class="p">))</span> <span class="o">+</span> <span class="n">posttest</span> <span class="o">+</span> <span class="n">pdur</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">pulsetype</span> <span class="o">==</span> <span class="s1">&#39;hyp&#39;</span><span class="p">:</span>
+            <span class="n">maxt</span> <span class="o">=</span> <span class="n">maxt</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">stim</span><span class="p">[</span><span class="s1">&#39;hypdur&#39;</span><span class="p">]</span>
+            <span class="n">delay</span> <span class="o">=</span> <span class="n">delay</span> <span class="o">+</span> <span class="n">hypdur</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">maxt</span><span class="o">/</span><span class="n">dt</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">NP</span><span class="p">):</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="p">(</span><span class="n">delay</span> <span class="o">+</span> <span class="n">j</span> <span class="o">*</span><span class="n">ipi</span><span class="p">)</span><span class="o">*</span><span class="n">dt</span>
+            <span class="n">w</span><span class="p">[</span><span class="n">delay</span><span class="o">+</span><span class="n">ipi</span><span class="o">*</span><span class="n">j</span><span class="p">:</span><span class="n">delay</span><span class="o">+</span><span class="p">(</span><span class="n">ipi</span><span class="o">*</span><span class="n">j</span><span class="p">)</span><span class="o">+</span><span class="n">pdur</span><span class="p">]</span> <span class="o">=</span> <span class="n">stim</span><span class="p">[</span><span class="s1">&#39;amp&#39;</span><span class="p">]</span>
+            <span class="n">tstims</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">delay</span><span class="o">+</span><span class="n">ipi</span><span class="o">*</span><span class="n">j</span>
+        <span class="k">if</span> <span class="n">stim</span><span class="p">[</span><span class="s1">&#39;PT&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">send</span> <span class="o">=</span> <span class="n">delay</span><span class="o">+</span><span class="n">ipi</span><span class="o">*</span><span class="n">j</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">send</span><span class="o">+</span><span class="n">posttest</span><span class="p">,</span> <span class="n">send</span><span class="o">+</span><span class="n">posttest</span><span class="o">+</span><span class="n">pdur</span><span class="p">):</span>
+                <span class="n">w</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">stim</span><span class="p">[</span><span class="s1">&#39;amp&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">pulsetype</span> <span class="o">==</span> <span class="s1">&#39;hyp&#39;</span><span class="p">:</span> <span class="c1"># fill in the prepulse now</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">delay0</span><span class="p">,</span> <span class="n">delay0</span><span class="o">+</span><span class="n">hypdur</span><span class="p">):</span>
+                <span class="n">w</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">stim</span><span class="p">[</span><span class="s1">&#39;hypamp&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">pulsetype</span> <span class="o">==</span> <span class="s1">&#39;timedSpikes&#39;</span><span class="p">:</span>
+        <span class="n">maxt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">stim</span><span class="p">[</span><span class="s1">&#39;spikeTimes&#39;</span><span class="p">])</span><span class="o">+</span><span class="n">stim</span><span class="p">[</span><span class="s1">&#39;PT&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">stim</span><span class="p">[</span><span class="s1">&#39;duration&#39;</span><span class="p">]</span><span class="o">*</span><span class="mi">2</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">maxt</span><span class="o">/</span><span class="n">dt</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">stim</span><span class="p">[</span><span class="s1">&#39;spikeTimes&#39;</span><span class="p">])):</span>
+            <span class="n">st</span> <span class="o">=</span> <span class="n">delay</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">stim</span><span class="p">[</span><span class="s1">&#39;spikeTimes&#39;</span><span class="p">][</span><span class="n">j</span><span class="p">]</span><span class="o">/</span><span class="n">dt</span><span class="p">))</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">st</span><span class="o">*</span><span class="n">dt</span>
+            <span class="n">w</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">st</span><span class="o">+</span><span class="n">pdur</span><span class="p">]</span> <span class="o">=</span> <span class="n">stim</span><span class="p">[</span><span class="s1">&#39;amp&#39;</span><span class="p">]</span>
+            <span class="n">tstims</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">st</span>
+
+        <span class="k">if</span> <span class="n">stim</span><span class="p">[</span><span class="s1">&#39;PT&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">st</span><span class="o">+</span><span class="n">posttest</span><span class="p">,</span> <span class="n">st</span><span class="o">+</span><span class="n">posttest</span><span class="o">+</span><span class="n">pdur</span><span class="p">):</span>
+                <span class="n">w</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">stim</span><span class="p">[</span><span class="s1">&#39;amp&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">pulsetype</span> <span class="o">==</span> <span class="s1">&#39;exp&#39;</span><span class="p">:</span>
+        <span class="n">maxt</span> <span class="o">=</span> <span class="n">dt</span><span class="o">*</span><span class="p">(</span><span class="n">stim</span><span class="p">[</span><span class="s1">&#39;delay&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">ipi</span><span class="o">*</span><span class="p">(</span><span class="n">NP</span><span class="o">+</span><span class="mi">2</span><span class="p">))</span> <span class="o">+</span> <span class="n">posttest</span> <span class="o">+</span> <span class="n">pdur</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">maxt</span><span class="o">/</span><span class="n">dt</span><span class="p">)))</span>
+
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">NP</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">delay</span><span class="o">+</span><span class="n">ipi</span><span class="o">*</span><span class="n">j</span><span class="o">+</span><span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">):</span>
+                    <span class="n">w</span><span class="p">[</span><span class="n">delay</span><span class="o">+</span><span class="n">ipi</span><span class="o">*</span><span class="n">j</span><span class="o">+</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span><span class="p">[</span><span class="n">delay</span><span class="o">+</span><span class="n">ipi</span><span class="o">*</span><span class="n">j</span><span class="o">+</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">stim</span><span class="p">[</span><span class="s1">&#39;amp&#39;</span><span class="p">]</span><span class="o">*</span><span class="p">((</span><span class="mf">1.0</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">i</span><span class="o">/</span><span class="p">(</span><span class="n">pdur</span><span class="o">/</span><span class="mf">3.0</span><span class="p">)))</span><span class="o">*</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">i</span><span class="o">-</span><span class="p">(</span><span class="n">pdur</span><span class="o">/</span><span class="mf">3.0</span><span class="p">))</span><span class="o">/</span><span class="n">pdur</span><span class="p">))</span>
+            <span class="n">tstims</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">delay</span><span class="o">+</span><span class="n">ipi</span><span class="o">*</span><span class="n">j</span>
+        <span class="k">if</span> <span class="n">stim</span><span class="p">[</span><span class="s1">&#39;PT&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">send</span> <span class="o">=</span> <span class="n">delay</span><span class="o">+</span><span class="n">ipi</span><span class="o">*</span><span class="n">j</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">send</span><span class="o">+</span><span class="n">posttest</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)):</span>
+                <span class="n">w</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">stim</span><span class="p">[</span><span class="s1">&#39;amp&#39;</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">i</span><span class="o">/</span><span class="p">(</span><span class="n">pdur</span><span class="o">/</span><span class="mf">3.0</span><span class="p">)))</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">i</span><span class="o">-</span><span class="p">(</span><span class="n">pdur</span><span class="o">/</span><span class="mf">3.0</span><span class="p">))</span><span class="o">/</span><span class="n">pdur</span><span class="p">)</span>
+
+    <span class="k">return</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">maxt</span><span class="p">,</span> <span class="n">tstims</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, 2018, Paul B. Manis and Luke Campagnola.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.2.
+    </div>
+  </body>
+</html>

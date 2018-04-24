@@ -1,18 +1,30 @@
 """
-ChannelKinetics.py
-Simple function to display the responses of .mod files to voltage steps in voltage
-clamp in a model cell.
+test_mechanisms.py
+
+This program displays the results of inserting NEURON mechaanisms from .mod files 
+into a point cell to voltage steps in voltage clamp.
 This code is primarily for visual verification of model function.
-Call: ChannelKinetics modfile
+
+Usage: python test_mechanisms.py <mechname>
+
+Available mechanisms::
+
+   CaPCalyx                bkpkj                 hcno               hcnobo                 hpkj
+      ihpyr          ihsgcApical     ihsgcBasalMiddle                ihvcn                jsrna
+         ka                 kcnq                kdpyr                  kht                  kif
+        kis                  klt                 kpkj                kpkj2             kpkjslow
+      kpksk                 leak                lkpkj                   na                naRsg
+       nacn             nacncoop                  nap                napyr                nav11
+
 Note: only modfiles that implement voltage-dependent ion channel models make sense to run
-with his routine
-2/3/2014 PB Manis
+with this routine. the list "nottestablemechs" in the file defines mechanisms provided
+with cnmodel that cannot be run with this program.
+
 """
 
 import neuron as h
 from neuron import *
 import gc
-import faulthandler
 import numpy as np
 #import scipy as sp
 import cnmodel.util
@@ -20,7 +32,6 @@ import pyqtgraph as pg
 import pyqtgraph.exporters
 from pyqtgraph.Qt import QtCore, QtGui
 import cnmodel.util.pynrnutilities as Util
-faulthandler.enable()
 
 nottestablemechs = ['cadyn', 'ca_ion', 'cadiff', 'cadifpmp', 'Mechanism',
                 'capmp', 'capump', 'cl_ion', 'extracellular', 'fastpas',
@@ -205,12 +216,15 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print "\n\nUsage: python test_mechanisms.py <mechname>"
         print "  Available mechanisms:"
+        linelen = 0
         for i, n in enumerate(mechs):
-            if n == 'Mechanism':
+            if n in nottestablemechs: # 'Mechanism':
                 continue
             print "%20s" % n,
-            if i > 0 and (i % 5) == 0:
+            linelen += 20
+            if linelen > 80:
                 print ""
+                linelen = 0
         sys.exit(1)
     
     if sys.argv[1:] in nottestablemechs:

@@ -49,7 +49,10 @@ class Tuberculoventral(Cell):
             post_sec = self.soma
         
         if psd_type == 'simple':
-            return self.make_exp2_psd(post_sec, terminal, loc=loc)
+            weight = data.get('sgc_synapse', species=self.species,
+                        post_type=self.type, field='weight')
+            return self.make_exp2_psd(post_sec, terminal, weight=weight, loc=loc)
+
         elif psd_type == 'multisite':
             if terminal.cell.type == 'sgc':
                 # Max conductances for the glu mechanisms are calibrated by 
@@ -83,7 +86,7 @@ class Tuberculoventral(Cell):
         pre_sec = self.soma
         if term_type == 'simple':
             return synapses.SimpleTerminal(pre_sec, post_cell, 
-                                           spike_source=self.spike_source, **kwds)
+                                            **kwds)
         elif term_type == 'multisite':
             if post_cell.type == 'bushy':
                 nzones, delay = 10, 0
@@ -164,7 +167,7 @@ class Tuberculoventral(Tuberculoventral):
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Tuberculoventral',
                        'morphology': morphology, 'decorator': decorator, 'temperature': None}
 
-        self.i_test_range = {'pulse': (-0.4, 0.6, 0.02)}
+        self.i_test_range = {'pulse': [(-0.35, 1.0, 0.05), (-0.04, 0.01, 0.01)]}
         self.vrange = [-80., -60.]  # set a default vrange for searching for rmp
         
         if morphology is None:
@@ -188,20 +191,28 @@ class Tuberculoventral(Tuberculoventral):
             self.mechanisms = ['kht', 'ka', 'ihvcn', 'leak', nach]
             for mech in self.mechanisms:
                 self.soma.insert(mech)
-            self.soma.ek = self.e_k
-            self.soma.ena = self.e_na
-            self.soma().ihvcn.eh = self.e_h
-            self.soma().leak.erev = self.e_leak
             self.species_scaling(silent=True, species=species, modelType=modelType)  # adjust the default parameters
         else:  # decorate according to a defined set of rules on all cell compartments
             self.decorate()
-#        print 'Mechanisms inserted: ', self.mechanisms
-        
+        self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
         self.get_mechs(self.soma)
-#        self.cell_initialize(vrange=self.vrange)
         if debug:
                 print "<< Tuberculoventral cell model created >>"
 
+    def get_cellpars(self, dataset, species='mouse', celltype='TVmouse'):
+        cellcap = data.get(dataset, species=species, cell_type=celltype,
+            field='soma_Cap')
+        chtype = data.get(dataset, species=species, cell_type=celltype,
+            field='soma_na_type')
+        pars = Params(soma_cap=cellcap, soma_na_type=chtype)
+        for g in ['soma_nacncoop_gbar', 'soma_kht_gbar', 'soma_ka_gbar',
+                  'soma_ihvcn_gbar', 'soma_ihvcn_eh',
+                  'soma_leak_gbar', 'soma_leak_erev',
+                  'soma_e_k', 'soma_e_na']:
+            pars.additem(g,  data.get(dataset, species=species, cell_type=celltype,
+            field=g))
+        return pars
+        
     def species_scaling(self, species='guineapig', modelType='TVmouse', silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
@@ -220,6 +231,11 @@ class Tuberculoventral(Tuberculoventral):
             run silently (True) or verbosely (False)
         """
         soma = self.soma
+        if modelType == 'TVmouse':
+            celltype = modelType
+        else:
+            raise ValueError('Tuberuloventral: Model type not recognized')
+        
         if species == 'mouse' and modelType == 'TVmouse':
             """#From Kuo 150 Mohm, 10 msec tau
             Firing at 600 pA about 400 Hz
@@ -230,17 +246,24 @@ class Tuberculoventral(Tuberculoventral):
             """
             # Adapted from TStellate model type I-c'
             self.vrange=[-80., -58.]
-            self.set_soma_size_from_Cm(35.0)
             self._valid_temperatures = (34.,)
             if self.status['temperature'] is None:
                 self.set_temperature(34.)
-            self.adjust_na_chans(soma, gbar=5800.)
-            soma().kht.gbar = nstomho(400.0, self.somaarea) # was 2000
-            soma().ka.gbar = nstomho(65.0, self.somaarea)
-            soma().ihvcn.gbar = nstomho(2.5, self.somaarea)  # 1.25
-            soma().ihvcn.eh = -43 # Rodrigues and Oertel, 2006
-            soma().leak.gbar = nstomho(4.5, self.somaarea)  # 5.5
-            soma().leak.erev = -72.0
+
+            pars = self.get_cellpars('TV_channels', species='mouse', celltype=modelType)
+            self.set_soma_size_from_Cm(pars.soma_cap)
+            self.status['na'] = pars.soma_na_type
+            self.adjust_na_chans(soma, gbar=pars.soma_nacncoop_gbar)
+            soma().kht.gbar = nstomho(pars.soma_kht_gbar, self.somaarea)
+            soma().ka.gbar = nstomho(pars.soma_ka_gbar, self.somaarea)
+            soma().ihvcn.gbar = nstomho(pars.soma_ihvcn_gbar, self.somaarea)
+            soma().ihvcn.eh = pars.soma_ihvcn_eh
+            soma().leak.gbar = nstomho(pars.soma_leak_gbar, self.somaarea)
+            soma().leak.erev = pars.soma_leak_erev
+            self.e_leak = pars.soma_leak_erev
+            self.soma.ek = self.e_k = pars.soma_e_k
+            self.soma.ena = self.e_na = pars.soma_e_na
+
             self.axonsf = 0.5
         else:
             raise ValueError('Species %s or species-type %s is not recognized for Tuberculoventralcells' % (species, type))
@@ -250,7 +273,7 @@ class Tuberculoventral(Tuberculoventral):
         self.check_temperature()
 
 
-    def channel_manager(self, modelType='RM03'):
+    def channel_manager(self, modelType='TVmouse'):
         """
         This routine defines channel density maps and distance map patterns
         for each type of compartment in the cell. The maps

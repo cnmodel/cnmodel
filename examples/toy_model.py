@@ -1,11 +1,18 @@
 #!/usr/bin/python
+"""
+Basic test of initialization of multiple cells in the model, and running multiple cells at one time.
+Plots the resposnes to a series of current injections for most implemented baseic cell types in
+in cnmodel.
+
+Usage:
+    python examples/toy_model.py  (no arguments)
+
+"""
+
 from __future__ import print_function
 __author__ = 'pbmanis'
 
-"""
-Basic test of initialization of multiple cells in the model, and running multiple cells at one time.
 
-"""
 
 import sys
 from neuron import h
@@ -17,16 +24,13 @@ from collections import OrderedDict
 import re
 import pyqtgraph.exporters
 from cnmodel.util import pyqtgraphPlotHelpers as PH
+from cnmodel.protocols import IVCurve
 
 
 try:  # check for pyqtgraph install
     import pyqtgraph as pg
-    HAVE_PG = True
 except ImportError:
-    HAVE_PG = False
-
-if HAVE_PG:
-    from PyQt4 import QtGui
+    raise ImportError("This model requires pyqtgraph")
 
 from cnmodel.util.stim import make_pulse
 
@@ -56,8 +60,8 @@ def makeLayout(cols=1, rows=1, letters=True, margins=4, spacing=4, nmax=None):
     """
     import string
     letters = string.ascii_uppercase
-    widget = QtGui.QWidget()
-    gridLayout = QtGui.QGridLayout()
+    widget = pg.QtGui.QWidget()
+    gridLayout = pg.QtGui.QGridLayout()
     widget.setLayout(gridLayout)
     gridLayout.setContentsMargins(margins, margins, margins, margins)
     gridLayout.setSpacing(spacing)
@@ -181,63 +185,36 @@ class Toy(Protocol):
         row = 0
         col = 0
         labelStyle = {'color': '#000', 'font-size': '9pt', 'weight': 'normal'}
-        tickStyle = QtGui.QFont('Arial', 9, QtGui.QFont.Light)
+        tickStyle = pg.QtGui.QFont('Arial', 9, pg.QtGui.QFont.Light)
+        self.iv = IVCurve()  # use standard IVCurve here...
         for n, name in enumerate(self.celltypes.keys()):
             nrn_cell = netcells[name]  # get the Neuron object we are using for this cell class
-            injcmds = self.celltypes[name][3]  # list of injections
+            injcmds = list(self.celltypes[name][3])  # list of injections
+            injcmds[2] = (injcmds[1]-injcmds[0])/(float(injcmds[2]-1))  # convert to pulse format for IVCurve
             temperature = self.celltypes[name][4]
             nrn_cell.set_temperature(float(temperature))
             ninjs = len(injcmds)
-            if ninjs > 2:  # 2 values or a range?
-                injcmds = np.linspace(injcmds[0], injcmds[1], num=injcmds[2], endpoint=True)
-                ninjs = len(injcmds)
             print( 'cell: ', name)
-            print( 'injs: ', injcmds)
+            # print( 'injs: ', injcmds)
             pl[name] = self.win.addPlot(labels={'left': 'V (mV)', 'bottom': 'Time (ms)'})
-            # pl[name].axes['left']['item'].setLabel(**labelStyle)
-            # pl[name].axes['left']['item'].setStyle(tickFont = tickStyle)
-            # pl[name].axes['bottom']['item'].setLabel(**labelStyle)
-            # pl[name].axes['bottom']['item'].setStyle(tickFont = tickStyle)
             PH.nice_plot(pl[name])
-            pl[name].setTitle(title=name, font=QtGui.QFont('Arial', 10) )
+            pl[name].setTitle(title=name, font=pg.QtGui.QFont('Arial', 10) )
             col += 1
             if col >= cols:
                 col = 0
                 self.win.nextRow()
                 row += 1
-            for ninj in range(ninjs):  # for each current level
-                iname = self.current_name(name, ninj)
-                runname = name + ' ' + iname 
-                rvec[runname] = {'v_soma': h.Vector(), 'i_inj': h.Vector(), 'time': h.Vector()}
-                stim['amp'] = injcmds[ninj]  # currents[name]
-                (secmd, maxt, tstims) = make_pulse(stim)
-                if ninj == 0: # install stimulus electronde first run only
-                    istim[name] = h.iStim(0.5, sec=nrn_cell.soma)
-                    istim[name].delay = 5.
-                    istim[name].dur = 1e9 # these actually do not matter...
-                vec[runname] = {'i_stim': h.Vector(secmd)}
-                rvec[runname]['v_soma'].record(nrn_cell.soma(0.5)._ref_v)
-                rvec[runname]['i_inj'].record(istim[name]._ref_i)
-                rvec[runname]['time'].record(h._ref_t)
-                vec[runname]['i_stim'].play(istim[name]._ref_i, h.dt, 0, sec=nrn_cell.soma)
-                h.celsius = temperature
-                nrn_cell.cell_initialize()
-                h.dt = dt
-                custom_init(v_init=nrn_cell.vm0)
-                h.t = 0.
-                h.tstop = tend
-                while h.t < h.tstop:
-                    h.fadvance()
-                #h.batch_save() # save nothing
-                #h.batch_run(h.tstop, h.dt, "v.dat")
-                
-                pl[name].plot(np.array(rvec[runname]['time']), np.array(rvec[runname]['v_soma']), pen=pg.mkPen('k', width=0.75))
-            pl[name].setRange(xRange=(0., 120.), yRange=(-160., 40.))
+            self.iv.reset()
+            self.iv.run({'pulse': [injcmds]}, nrn_cell, durs=(stim['delay'], stim['dur'], 20.),
+                   sites=None, reppulse=None, temp=float(temperature))
+            for k in range(len(self.iv.voltage_traces)):
+                pl[name].plot(self.iv.time_values, self.iv.voltage_traces[k], pen=pg.mkPen('k', width=0.75))
+            pl[name].setRange(xRange=(0., 130.), yRange=(-160., 40.))
             PH.noaxes(pl[name])
             PH.calbar(pl[self.celltypes.keys()[0]], calbar=[0, -120., 10., 20.], unitNames={'x': 'ms', 'y': 'mV'})
-            text = (u"{0:2d}\u00b0C {1:.2f}-{2:.2f} nA".format(int(temperature), np.min(injcmds), np.max(injcmds)))
+            text = (u"{0:2d}\u00b0C {1:.2f}-{2:.2f} nA".format(int(temperature), np.min(self.iv.current_cmd), np.max(self.iv.current_cmd)))
             ti = pg.TextItem(text, anchor=(1, 0))
-            ti.setFont(QtGui.QFont('Arial', 9))
+            ti.setFont(pg.QtGui.QFont('Arial', 9))
             ti.setPos(120., -120.)
             pl[name].addItem(ti)
         # get overall Rin, etc; need to initialize all cells
@@ -246,7 +223,7 @@ class Toy(Protocol):
             nrn_cell = netcells[name]
             nrn_cell.vm0 = nrn_cell.soma.v
             pars = nrn_cell.compute_rmrintau(auto_initialize=False)
-            print(u'{0:>14s} [{1:>24s}]   *** Rin = {2:6.1f} M\u03A9  \u03C4 = {3:6.1f} ms   Vm = {4:6.1f} mV'.
+            print(u'{0:>14s} [{1:>24s}]   *** Rin = {2:6.1f} M\ohm  Tau = {3:6.1f} ms   Vm = {4:6.1f} mV'.
                 format(nrn_cell.status['name'], name, pars['Rin'], pars['tau'], pars['v']))
 
 

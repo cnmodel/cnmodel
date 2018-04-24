@@ -456,6 +456,7 @@ def vector_strength(spikes, freq):
     :param spikes: Spike train, in msec.
     :param freq: Stimulus frequency in Hz
     :return: a dictionary containing:
+    
         r: vector strength
         n: number of spikes
         R: Rayleigh coefficient
@@ -463,6 +464,7 @@ def vector_strength(spikes, freq):
         ph: the circularized spike train over period of the stimulus freq, freq, in radians
         d: the "dispersion" computed according to Ashida et al., 2010, etc.
     """
+    
     per = 1e3/freq # convert from Hz to period in msec
     ph = 2*np.pi*np.fmod(spikes, per)/(per) # convert to radians within a cycle
     c = np.sum(np.cos(ph))**2

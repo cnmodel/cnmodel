@@ -48,7 +48,9 @@ class DStellate(Cell):
             loc = 0.5
             post_sec = self.soma
         if psd_type == 'simple':
-            return self.make_exp2_psd(post_sec, terminal, loc=loc)
+            weight = data.get('sgc_synapse', species=self.species,
+                        post_type=self.type, field='weight')
+            return self.make_exp2_psd(post_sec, terminal, weight=weight, loc=loc)
         
         elif psd_type == 'multisite':
             if terminal.cell.type == 'sgc':
@@ -201,9 +203,8 @@ class DStellateRothman(DStellate):
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
             self.decorate()
-    #        print 'Mechanisms inserted: ', self.mechanisms
+        self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
         self.get_mechs(self.soma)
-#        self.cell_initialize(self.vrange)
 
         if debug:
             print "<< D-stellate: JSR Stellate Type I-II cell model created >>"
@@ -446,10 +447,12 @@ class DStellateEager(DStellate):
         soma().leak.erev = self.e_leak
         self.mechanisms = ['kht', 'klt', 'ihvcn', 'leak', nach]
         self.add_section(soma, 'soma')
-        self.get_mechs(soma)
         self.species_scaling(silent=False, species=species, modelType=modelType)  # set the default type II cell parameters
         self.add_axon()  # must follow species scaling so that area parameters are available
         self.add_dendrites()   # similar for dendrites
+        self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
+        self.get_mechs(soma)
+
         if debug:
                 print "<< D-stellateEager: Eager DStellate Type I-II cell model created >>"
 

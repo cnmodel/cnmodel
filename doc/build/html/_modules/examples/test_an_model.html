@@ -1,0 +1,166 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>examples.test_an_model &#8212; CNModel 0.2 documentation</title>
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for examples.test_an_model</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Test the embedded auditory nerve model with a set of tone pips.</span>
+<span class="sd">(Zilany et al. 2014; requires MATLAB)</span>
+
+<span class="sd">This demonstrates the lowest-level access to the auditory nerve model that is</span>
+<span class="sd">available in the cnmodel API. For higher-level tools, see test_sound_stim.py</span>
+<span class="sd">(which uses an_model.get_spiketrain) and test_sgc_input.py (which uses </span>
+<span class="sd">cells.DummySGC).</span>
+
+<span class="sd">Usage:</span>
+<span class="sd">python test_an_model.py </span>
+<span class="sd">(no arguments)</span>
+
+<span class="sd">(Adapted from makeANF_CF_RI.m)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pyqtgraph</span> <span class="k">as</span> <span class="nn">pg</span>
+<span class="kn">from</span> <span class="nn">cnmodel</span> <span class="k">import</span> <span class="n">an_model</span>
+<span class="kn">from</span> <span class="nn">cnmodel.util</span> <span class="k">import</span> <span class="n">sound</span>
+
+<div class="viewcode-block" id="test_an_model"><a class="viewcode-back" href="../../examples/test_an_model.html#examples.test_an_model.test_an_model">[docs]</a><span class="k">def</span> <span class="nf">test_an_model</span><span class="p">():</span>
+    <span class="c1"># model fiber parameters</span>
+    <span class="n">CF</span>    <span class="o">=</span> <span class="mf">1.5e3</span>   <span class="c1"># CF in Hz   </span>
+    <span class="n">cohc</span>  <span class="o">=</span> <span class="mf">1.0</span>    <span class="c1"># normal ohc function</span>
+    <span class="n">cihc</span>  <span class="o">=</span> <span class="mf">1.0</span>    <span class="c1"># normal ihc function</span>
+    <span class="n">species</span> <span class="o">=</span> <span class="mi">1</span>    <span class="c1"># 1 for cat (2 for human with Shera et al. tuning 3 for human with Glasberg &amp; Moore tuning)</span>
+    <span class="n">noiseType</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># 1 for variable fGn (0 for fixed fGn)</span>
+    <span class="n">fiberType</span> <span class="o">=</span> <span class="mi">3</span>  <span class="c1"># spontaneous rate (in spikes/s) of the fiber BEFORE refractory effects &quot;1&quot; = Low &quot;2&quot; = Medium &quot;3&quot; = High</span>
+    <span class="n">implnt</span> <span class="o">=</span> <span class="mi">0</span>     <span class="c1"># &quot;0&quot; for approximate or &quot;1&quot; for actual implementation of the power-law functions in the Synapse</span>
+
+    <span class="c1"># stimulus parameters</span>
+    <span class="n">F0</span> <span class="o">=</span> <span class="n">CF</span>     <span class="c1"># stimulus frequency in Hz</span>
+    <span class="n">Fs</span> <span class="o">=</span> <span class="mf">100e3</span>  <span class="c1"># sampling rate in Hz (must be 100, 200 or 500 kHz)</span>
+    <span class="n">T</span>  <span class="o">=</span> <span class="mf">150e-3</span>  <span class="c1"># stimulus duration in seconds</span>
+    <span class="n">pdur</span> <span class="o">=</span> <span class="mf">0.02</span>  <span class="c1"># pip duration</span>
+    <span class="n">pstart</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.035</span><span class="p">]</span>  <span class="c1"># pip start times</span>
+    <span class="n">rt</span> <span class="o">=</span> <span class="mf">2.5e-3</span> <span class="c1"># rise/fall time in seconds</span>
+    <span class="n">stimdb</span> <span class="o">=</span> <span class="mi">65</span> <span class="c1"># stimulus intensity in dB SPL</span>
+
+    <span class="c1"># PSTH parameters</span>
+    <span class="n">nrep</span> <span class="o">=</span> <span class="mi">1000</span>            <span class="c1"># number of stimulus repetitions (e.g., 50)</span>
+    <span class="n">psthbinwidth</span> <span class="o">=</span> <span class="mf">0.5e-3</span> <span class="c1"># binwidth in seconds</span>
+
+    <span class="n">stim</span> <span class="o">=</span> <span class="n">sound</span><span class="o">.</span><span class="n">TonePip</span><span class="p">(</span><span class="n">rate</span><span class="o">=</span><span class="n">Fs</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="n">T</span><span class="p">,</span> <span class="n">f0</span><span class="o">=</span><span class="n">F0</span><span class="p">,</span> <span class="n">dbspl</span><span class="o">=</span><span class="n">stimdb</span><span class="p">,</span> 
+                         <span class="n">pip_duration</span><span class="o">=</span><span class="n">pdur</span><span class="p">,</span> <span class="n">pip_start</span><span class="o">=</span><span class="n">pstart</span><span class="p">,</span> <span class="n">ramp_duration</span><span class="o">=</span><span class="n">rt</span><span class="p">)</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">stim</span><span class="o">.</span><span class="n">time</span>
+    <span class="n">pin</span> <span class="o">=</span> <span class="n">stim</span><span class="o">.</span><span class="n">sound</span>
+    <span class="n">db</span> <span class="o">=</span> <span class="n">stim</span><span class="o">.</span><span class="n">measure_dbspl</span><span class="p">(</span><span class="n">rt</span><span class="p">,</span> <span class="n">T</span><span class="o">-</span><span class="n">rt</span><span class="p">)</span>
+
+
+    <span class="n">an_model</span><span class="o">.</span><span class="n">seed_rng</span><span class="p">(</span><span class="mi">34978</span><span class="p">)</span>
+
+    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">vihc</span> <span class="o">=</span> <span class="n">an_model</span><span class="o">.</span><span class="n">model_ihc</span><span class="p">(</span><span class="n">pin</span><span class="p">,</span> <span class="n">CF</span><span class="p">,</span> <span class="n">nrep</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="n">Fs</span><span class="p">,</span> <span class="n">T</span><span class="o">+</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">cohc</span><span class="p">,</span> <span class="n">cihc</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">_transfer</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> 
+    <span class="nb">print</span> <span class="s2">&quot;IHC time:&quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+
+    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">m</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">psth</span> <span class="o">=</span> <span class="n">an_model</span><span class="o">.</span><span class="n">model_synapse</span><span class="p">(</span><span class="n">vihc</span><span class="p">,</span> <span class="n">CF</span><span class="p">,</span> <span class="n">nrep</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="n">Fs</span><span class="p">,</span> <span class="n">fiberType</span><span class="p">,</span> <span class="n">noiseType</span><span class="p">,</span> <span class="n">implnt</span><span class="p">)</span>
+    <span class="nb">print</span> <span class="s2">&quot;Syn time:&quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+
+    <span class="n">win</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">GraphicsWindow</span><span class="p">()</span>
+    <span class="n">p1</span> <span class="o">=</span> <span class="n">win</span><span class="o">.</span><span class="n">addPlot</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Input Stimulus (</span><span class="si">%0.1f</span><span class="s1"> dBSPL)&#39;</span> <span class="o">%</span> <span class="n">db</span><span class="p">)</span>
+    <span class="n">p1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">pin</span><span class="p">)</span>
+
+    <span class="n">p2</span> <span class="o">=</span> <span class="n">win</span><span class="o">.</span><span class="n">addPlot</span><span class="p">(</span><span class="n">col</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">row</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;IHC voltage&#39;</span><span class="p">)</span>
+    <span class="n">p2</span><span class="o">.</span><span class="n">setXLink</span><span class="p">(</span><span class="n">p1</span><span class="p">)</span>
+    <span class="n">vihc</span> <span class="o">=</span> <span class="n">vihc</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">vihc</span> <span class="o">=</span> <span class="n">vihc</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">vihc</span><span class="p">)</span> <span class="o">//</span> <span class="n">nrep</span><span class="p">]</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">vihc</span><span class="p">))</span> <span class="o">*</span> <span class="mf">1e-5</span>
+    <span class="n">p2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">vihc</span><span class="p">)</span>
+
+    <span class="n">p3</span> <span class="o">=</span> <span class="n">win</span><span class="o">.</span><span class="n">addPlot</span><span class="p">(</span><span class="n">col</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">row</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;ANF PSTH&#39;</span><span class="p">)</span>
+    <span class="n">p3</span><span class="o">.</span><span class="n">setXLink</span><span class="p">(</span><span class="n">p2</span><span class="p">)</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="n">psth</span><span class="o">.</span><span class="n">size</span> <span class="o">//</span> <span class="n">ds</span>
+    <span class="n">psth</span> <span class="o">=</span> <span class="n">psth</span><span class="p">[:</span><span class="n">size</span><span class="o">*</span><span class="n">ds</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">ds</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">psth</span><span class="p">))</span> <span class="o">*</span> <span class="mf">1e-5</span> <span class="o">*</span> <span class="n">ds</span>
+    <span class="n">p3</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">psth</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">stepMode</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fillLevel</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">fillBrush</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">flags</span><span class="o">.</span><span class="n">interactive</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">pg</span><span class="o">.</span><span class="n">QtGui</span><span class="o">.</span><span class="n">QApplication</span><span class="o">.</span><span class="n">exec_</span><span class="p">()</span></div>
+    
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">sys</span>
+    <span class="n">test_an_model</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, 2018, Paul B. Manis and Luke Campagnola.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.2.
+    </div>
+  </body>
+</html>

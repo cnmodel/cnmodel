@@ -103,8 +103,6 @@ class ManageANSpikes():
 
     def getANatFandSPL(self, spontclass='MS', freq=10000., CF=None, SPL=0):
         """
-        getANatFandSPL:
-        ---------------
         Get the AN data at a particular frequency and SPL. Note that the tone freq is specified,
         but the CF of the fiber might be different. If CF is None, we try to get the closest
         fiber data to the tone Freq.
@@ -117,6 +115,7 @@ class ManageANSpikes():
         :param SPL: The sound pressure level, in dB SPL for the stimulus
         :return: an array of nReps of spike times.
         """
+        
         if CF is None:
             closest = np.argmin(np.abs(self.CF_map-freq))  # find closest to the stim freq
         else:
@@ -128,14 +127,13 @@ class ManageANSpikes():
 
     def get_AN_at_SPL(self, spl=None):
         """
-        get_AN_at_SPL:
-        --------------
         grabs the AN data for the requested SPL for the data set currently loaded
         The data must exist, or we epically fail.
 
         :param spl: sound pressure level, in dB SPL
         :return: spike trains (times) as a list of nReps numpy arrays.
         """
+        
         if not self.data_read_flag:
             print 'getANatSPL: No data read yet'
             return None
@@ -156,8 +154,6 @@ class ManageANSpikes():
 
     def read_all_ANdata(self, freq=10000., CFList=None, spontclass='HS', stim='BFTone'):
         """
-        read_all_ANdata:
-        ---------------
         Reads a bank of AN data, across frequency and intensity, for a given stimulus frequency
         Assumptions: the bank of data is consistent in terms of nReps and SPLs
 
@@ -167,6 +163,7 @@ class ManageANSpikes():
         :param stim: Stimulus type - Tone/BFTone, or Noise
         :return: Nothing. The data are stored in an array accessible directly or through a selector function
         """
+        
         self.all_AN = OrderedDict([(f, None) for f in CFList])  # access through dictionary with keys as freq
         for cf in CFList:
             self.read_AN_data(freq=freq, CF=cf, spontclass=spontclass, stim=stim, setflag=False)
@@ -175,14 +172,12 @@ class ManageANSpikes():
 
     def retrieve_from_all_AN(self, cf, SPL):
         """
-        retrieve_from_all_AN:
-        ---------------------
-
         :param cf:
         :param SPL:
         :return: spike list (all nreps) at the cf and SPL requested, for the loaded stimulus set
 
         """
+
         if not self.data_read_flag or self.all_AN is None:
             print 'get_anspikes::retrieve_from_all_AN: No data read yet: '
             exit()
@@ -209,9 +204,9 @@ class ManageANSpikes():
         Request response to stimulus at Freq, for fiber with CF
         and specified spont rate
         This version is for rate-intensity runs March 2014.
-        Returns:
-
+        Returns: Nothing
         """
+                     
         if not ignoreflag:
             assert self.data_read_flag == False
             # print 'Each instance of ManageANSPikes is allowed ONE data set to manage'
@@ -274,10 +269,9 @@ class ManageANSpikes():
 
     def get_AN_info(self):
         """
-        get_AN_info:
-        -----------
         :return: Dictionary of nReps and SPLs that are in the current data set (instance).
         """
+        
         if not self.data_read_flag:
             print 'getANatSPL: No data read yet'
             return None
@@ -288,15 +282,18 @@ class ManageANSpikes():
         read responses of auditory nerve model of Zilany et al. (2009).
         The required parameters are passed via the class P.
         This includes:
+        
             the SN (s2m) is the signal-to-masker ratio to select
             the mode is 'CMR', 'CMD' (deviant) or 'REF' (reference, no flanking bands),
             'Tone', or 'Noise'
             the Spont rate group
+        
         signal is either 'S0' (signal present) or 'NS' (no signal)
         display = True plots the psth's for all ANF channels in the dataset
         Returns:
         tuple of (spikelist and frequency list for modulated tones)
         """
+        
         if P.modF == 10:
             datablock = '%s_F4000.0' % (P.mode)
         else:
@@ -332,12 +329,12 @@ class ManageANSpikes():
 
     def combine_reps(self, spkl):
         """
-        combine_reps:
-        -------------
+
         Just turns the spike list into one big linear sequence.
         :param spkl: a spike train (nreps of numpy arrays)
         :return: all the spikes in one long array.
         """
+        
          #print spkl
         allsp = np.array(self.flatten(spkl))
         #print allsp.shape
@@ -381,20 +378,21 @@ class ManageANSpikes():
         return result
 
 if __name__ == '__main__':
-    import pylibrary.Params as Params
-
+    from cnmodel.util import Params
+    
     modes = ['CMR', 'CMD', 'REF']
     sr_types = ['H', 'M', 'L']
     sr_type = sr_types[0]
     sr_names = {'H': 'HS', 'M': 'MS', 'L': 'LS'} # spontaneous rate groups (AN fiber input selection)
     # define params for reading/testing. This is a subset of params...
-    P = Params.Params(mode = modes[0], s2m = 0, n_rep=0, start_rep=0,
+    P = Params(mode = modes[0], s2m = 0, n_rep=0, start_rep=0,
                       sr = sr_names['L'],
                       modulation_freq = 10, DS_phase = 0, dataset='test',
                       sr_types=sr_types, sr_names=sr_names, fileVersion=1.5,
                      )
 
     manager = ManageANSpikes()  # create instance of the manager
+    print dir(manager)
     test='RI'
 
     if test == 'all':
@@ -405,7 +403,7 @@ if __name__ == '__main__':
         MP.show()
 
     if test == manager.dataType:
-        spikes = manager.get_AN_at_F_and_SPL(spontclass = 'MS', freq=10000., CF=None, SPL=50)
+        spikes = manager.getANatFandSPL(spontclass = 'MS', freq=10000., CF=None, SPL=50)
         spks = manager.combine_reps(spikes)
         if spks != []:
             print 'spikes.'

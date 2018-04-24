@@ -2,7 +2,7 @@ import os
 import os.path
 from neuron import h
 import pylibrary.Utility as U
-import pylibrary.PlotHelpers as PH
+from ..util import PlotHelpers as PH
 import numpy as np
 import scipy
 import scipy.integrate

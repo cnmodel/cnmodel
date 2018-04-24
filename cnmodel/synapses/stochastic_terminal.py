@@ -1,7 +1,7 @@
 from neuron import h
 
 from .terminal import Terminal
-from ..util import random
+from ..util import random_seed
 
 # utility class to create parameter lists... 
 # create like: p = Params(abc=2.0, defg = 3.0, lunch='sandwich')
@@ -116,13 +116,13 @@ class StochasticTerminal(Terminal):
         relsite.nZones = nzones
         if multisite:
             relsite.multisite = 1
-            relsite.rseed = random.current_seed()  # use global random seed
+            relsite.rseed = random_seed.current_seed()  # use global random seed
             relsite.latency = stochastic_pars.latency
             relsite.latstd = stochastic_pars.LN_std
             self.n_rzones = nzones
         else:
             relsite.multisite = 0
-            self.release_rng = h.Random(random.current_seed())
+            self.release_rng = h.Random(random_seed.current_seed())
             self.release_rng.uniform(0, 1)
             relsite.setUniformRNG(self.release_rng)
             self.n_rzones = 1

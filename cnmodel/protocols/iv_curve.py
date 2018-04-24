@@ -29,9 +29,10 @@ class IVCurve(Protocol):
         self.current_traces = []
         self.time_values = None
         self.dt = None
+        self.initdelay = 0.
         
     def run(self, ivrange, cell, durs=None, sites=None, reppulse=None, temp=22,
-            dt=0.025):
+            dt=0.025, initdelay=0.):
         """
         Run a current-clamp I/V curve on *cell*.
         
@@ -65,7 +66,9 @@ class IVCurve(Protocol):
         """
         self.reset()
         self.cell = cell
-
+        self.initdelay = initdelay
+        self.dt = dt
+        self.temp = temp
         # Calculate current pulse levels
         icur = []
         precur = [0.]
@@ -115,7 +118,7 @@ class IVCurve(Protocol):
                 'dur': 2,
                 'amp': 1.0,
                 'PT': 0.0,
-                'dt': dt,
+                'dt': self.dt,
                 }
         elif 'prepulse' in ivrange.keys():
             stim = {
@@ -125,7 +128,7 @@ class IVCurve(Protocol):
                 'dur': durs[2],
                 'amp': 1.0,
                 'preamp': 0.0,
-                'dt': dt,
+                'dt': self.dt,
                 }
             self.p_start = durs[0]+durs[1]
             self.p_end = self.p_start + durs[2]
@@ -136,29 +139,22 @@ class IVCurve(Protocol):
                 'delay': durs[0],
                 'dur': durs[1],
                 'amp': 1.0,
-                'dt': dt,
+                'dt': self.dt,
                 }
             self.p_start = durs[0]
             self.p_end = self.p_start + durs[1]
             self.p_dur = durs[1]
-        
+        # print stim
+        # print('p_: ', self.p_start, self.p_end, self.p_dur)
         istim = h.iStim(0.5, sec=cell.soma)
         istim.delay = 5.
         istim.dur = 1e9 # these actually do not matter...
         istim.iMax = 0.0
-        (secmd, maxt, tstims) = make_pulse(stim)
+        self.tend = np.sum(durs) # maxt + len(iextend)*stim['dt']
 
-        iextend = []
-        if self.durs[-1] > 50.:
-            iextend = np.ones(int((self.durs[-1]-50)/stim['dt']))
-            secmd = np.append(secmd, secmd[-1]*iextend)
-        self.tend = maxt + len(iextend)*stim['dt']
-    
-        self.dt = dt
-        self.temp = temp
         self.cell = cell
         for i in range(nsteps):
-            # Generate current command for this level 
+            # Generate current command for this level
             stim['amp'] = self.current_cmd[i]
             if npresteps > 0:
                 for j in range(npresteps):
@@ -181,29 +177,32 @@ class IVCurve(Protocol):
             point Rin, tau and Vm
         """
         (secmd, maxt, tstims) = make_pulse(stim)
+        # print('maxt, dt*lencmd: ', maxt, len(secmd)*self.dt)# secmd = np.append(secmd, [0.])
+        # print('stim: ', stim, self.tend)
+
+        # connect current command vector
         playvector = h.Vector(secmd)
+        playvector.play(istim._ref_i, h.dt, 0, sec=self.cell.soma)
+
         # Connect recording vectors
         self['v_soma'] = self.cell.soma(0.5)._ref_v
         self['i_inj'] = istim._ref_i
         self['time'] = h._ref_t
-        # connect current command vector
-        playvector.play(istim._ref_i, h.dt, 0, sec=self.cell.soma)
 
         # h('secondorder=0')  # direct call fails; let hoc do the work
         h.celsius = self.cell.status['temperature']
         self.cell.cell_initialize()
         h.dt = self.dt
         custom_init(v_init=self.cell.vm0)
+
         h.t = 0.
         h.tstop = self.tend
         while h.t < h.tstop:
             h.fadvance()
 
-        k1 = int(stim['delay']/h.dt - 1)
-#            print ('   V before step: {0:9.5f}'.format(self['v_soma'][k1]))
         self.voltage_traces.append(self['v_soma'])
         self.current_traces.append(self['i_inj'])
-        self.time_values = np.array(self['time'])
+        self.time_values = np.array(self['time']-self.initdelay)
 
     def peak_vm(self, window=0.5):
         """

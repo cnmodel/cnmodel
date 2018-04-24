@@ -26,7 +26,7 @@ NMDAR_vshift -15.0 [12]        -15.0 [12]         -15.0 [12]        -15.0 [12]  
 EPSC_cv      0.12 [8]          0.499759 [9]       0.886406 [9]      1.393382 [9]    0.499 [8]      0.499 [8]
 Pr           1.000 [11]        1.000 [11]         1.000 [11]        1.000 [11]      1.000 [8]      1.000 [8]
 n_rsites     100 [5]           4 [6]              1 [4]             1 [4]           2 [8]          2 [8]
-
+weight       0.027 [13]        0.006 [13]         0.00064 [13]      0.0011 [13]     0.0023 [13]    0.0029 [13]
 -----------------------------------------------------------------------------------------------------------------------------------
 
 [1] Derived from Cao, X. & Oertel, D. (2010). Single-terminal conductance was
@@ -66,7 +66,7 @@ n_rsites     100 [5]           4 [6]              1 [4]             1 [4]       
     A value of 4 is included here to correspond to measures in Cao and Oertel (2010)
     (see note [2])
 
-[7] (Xie and Manis, unpublished, 2017):
+[7] (Xie and Manis, Frontiers in Neural Circuits, 2017):
     Measurements from CBA/CaJ mouse "radiate" multipolar cells in the AVCN.
     Single terminal conductance = (1.2 ± 0.70 nA/70 mV)/ 35 inputs = 0.490 ± 0.286 nS
     (see connections.py) 
@@ -143,6 +143,10 @@ n_rsites     100 [5]           4 [6]              1 [4]             1 [4]       
       mouse bushy cells. An exact fit was not obtained, but no other parameters
       of the NMDA_Kampa model were changed. 
    
+[13]  weight is the weight to use in a netcon object (NEURON) for "simple"
+      synapses based on the exp2syn mechanism. These are ~ AMPAR_gmax * 
+      0.065*2e-2, to approximate the current injected by the multisite
+      synapse.
 """)
 
 
@@ -160,16 +164,16 @@ These parameters were selected to fit the model output to known EPSC shapes.
 PA is a polyamine block parameter ued in the AMPAR mechanism (concentration in micromolar).
 
 ------------------------------------------------------------------------------------------------
-             bushy              tstellate        dstellate        pyramidal    octopus         tuberculoventral
-                                                                                                               
-Ro1          107.85 [4]         39.25 [4]        39.25 [7]        39.25 [4]    107.85 [5]      39.25 [7]
-Ro2          0.6193 [4]         4.40 [4]         4.40 [7]         4.40 [4]     0.6193 [5]      4.40 [7] 
-Rc1          3.678 [4]          0.667 [4]        0.667 [7]        0.667 [4]    3.678 [5]       0.667 [7]
-Rc2          0.3212 [4]         0.237 [4]        0.237 [7]        0.237 [4]    0.3212 [5]      0.237 [7]
-tau_g        0.10 [4]           0.25 [4]         0.25 [7]         0.25 [4]     0.10 [5]        0.25 [4]   
-amp_g        0.770 [4]          1.56625 [4]      1.56625 [7]      1.56625 [4]  0.770 [5]       1.56625 [4]
-                                                                                                           
-PA           45 [12]            0.1 [12]         0.1 [7]          0.1 [12]     45 [5]          0.1 [7]
+             bushy              tstellate        dstellate        pyramidal    octopus         tuberculoventral       mso     
+                                                                                                                                
+Ro1          107.85 [4]         39.25 [4]        39.25 [7]        39.25 [4]    107.85 [5]      39.25 [7]              107.85 [4]
+Ro2          0.6193 [4]         4.40 [4]         4.40 [7]         4.40 [4]     0.6193 [5]      4.40 [7]               0.6193 [4]
+Rc1          3.678 [4]          0.667 [4]        0.667 [7]        0.667 [4]    3.678 [5]       0.667 [7]              3.678 [4] 
+Rc2          0.3212 [4]         0.237 [4]        0.237 [7]        0.237 [4]    0.3212 [5]      0.237 [7]              0.3212 [4]
+tau_g        0.10 [4]           0.25 [4]         0.25 [7]         0.25 [4]     0.10 [5]        0.25 [4]               0.10 [4]  
+amp_g        0.770 [4]          1.56625 [4]      1.56625 [7]      1.56625 [4]  0.770 [5]       1.56625 [4]            0.770 [4] 
+                                                                                                                                
+PA           45 [12]            0.1 [12]         0.1 [7]          0.1 [12]     45 [5]          0.1 [7]                45 [12]   
 
 ------------------------------------------------------------------------------------------------
 
@@ -184,7 +188,6 @@ PA           45 [12]            0.1 [12]         0.1 [7]          0.1 [12]     4
 [12] Wang & Manis (unpublished)
 
 """)
-
 
 
 add_table_data('sgc_epsp_kinetics', row_key='field', col_key='post_type', 
@@ -206,7 +209,6 @@ F            0.984 [11]    0.917 [11]                                     0.984 
 [13] Copied from bushy cells; no direct data
 
 """)
-
 
 
 add_table_data('sgc_release_dynamics', row_key='field', col_key='post_type', 
@@ -279,4 +281,46 @@ XMax         0.733 [1]    0.731 [1]        0.731 [1]     0.731 [2]         0.731
 # TV conductance onto pyr cells: 2.1 nS SD 2.9 nS (Kuo et al., 2012)
 # TV conductance onto TV cells: 1.8 ns SD 2.3 nS.
 #
+
+add_table_data('bushy_synapse', row_key='field', col_key='post_type', 
+               species='mouse', data=u"""
+
+AMPA_gmax and NMDA_gmax are the estimated average peak conductances (in nS) 
+resulting from an action potential in a single presynaptic terminal under 
+conditions that minimize the effects of short-term plasticity.
+AMPA_gmax are from values measured at -65 mV (or -70mV), and represent SINGLE TERMINAL 
+conductances
+AMPAR_gmax are the individual synapse postsynaptic conductance
+NMDA_gmax values are taken as the fraction of the current that is NMDAR dependent
+at +40 mV (see below)
+
+n_rsites is the number of release sites per terminal.
+
+-----------------------------------------------------------------------------------------------------------------------------------
+             mso           
+                          
+AMPA_gmax    21.05±15.4 [1]
+AMPAR_gmax   4.6516398 [2]
+NMDA_gmax    0 [3]  
+NMDAR_gmax   0 [3]
+EPSC_cv      0.12 [4]      
+Pr           1.000 [5]    
+n_rsites     36 [6]         
+
+-----------------------------------------------------------------------------------------------------------------------------------
+
+[1] Taken from the mouse bushy cell model.
+    Units are nS.
+    
+[2] See note [10] for the SGC-bushy synapse
+
+[3] Assume no NMDA receptors at this synapse
+
+[4] See SGC-bushy synapse
+
+[5] Just to scale with the multisite synapse model
+
+[6] This is a guess.
+
+""")
 

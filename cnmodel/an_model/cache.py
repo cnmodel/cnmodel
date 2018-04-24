@@ -60,7 +60,7 @@ def get_spiketrain(cf, sr, stim, seed, **kwds):
                 create = True
                 sys.excepthook(*sys.exc_info())
                 logging.error("Error reading AN spike train cache file; will "
-                    "re-generate. File: %s", data_file)
+                    "re-generate. File: %s", filename)
 
         if create:
             logging.info("Generate new AN spike train: %s", filename)
@@ -112,12 +112,13 @@ def generate_spiketrain(cf, sr, stim, seed, simulator=None, **kwds):
     simulator : 'cochlea' | 'matlab' | None
         Specifies the auditory periphery simulator to use. If None, then a
         simulator will be automatically chosen based on availability.
-        
-    All other keyword arguments are given to model_ihc() and model_synapse()
-    based on their names. These include 'species', 'nrep', 'reptime', 'cohc', 
-    'cihc', and 'implnt'. 
-    'simulator' is used to set the simulator ('matlab' or 'cochlea')
+    **kwds : 
+        All other keyword arguments are given to model_ihc() and model_synapse()
+        based on their names. These include 'species', 'nrep', 'reptime', 'cohc', 
+        'cihc', and 'implnt'. 
+        'simulator' is used to set the simulator ('matlab' or 'cochlea')
     """
+    
     for k in ['pin', 'CF', 'fiberType', 'noiseType']:
         if k in kwds:
             raise TypeError("Argument '%s' is not allowed here." % k)

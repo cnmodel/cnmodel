@@ -1,0 +1,170 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>cnmodel.util.stim &#8212; CNModel 0.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cnmodel.util.stim</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<div class="viewcode-block" id="make_pulse"><a class="viewcode-back" href="../../../util.html#cnmodel.util.stim.make_pulse">[docs]</a><span class="k">def</span> <span class="nf">make_pulse</span><span class="p">(</span><span class="n">stim</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a pulse train for current / voltage command. Returns a tuple.</span>
+<span class="sd">    </span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    stim : dict</span>
+<span class="sd">        Holds parameters that determine stimulus shape:</span>
+<span class="sd">        </span>
+<span class="sd">        * delay : time before first pulse</span>
+<span class="sd">        * Sfreq : frequency of pulses</span>
+<span class="sd">        * dur : duration of one pulse or main pulse</span>
+<span class="sd">        * predur : duration of prepulse (default should be 0 for no prepulse)</span>
+<span class="sd">        * amp : pulse amplitude</span>
+<span class="sd">        * preamp : amplitude of prepulse</span>
+<span class="sd">        * PT : delay between end of train and test pulse (0 for no test)</span>
+<span class="sd">        * NP : number of pulses</span>
+<span class="sd">        * hold : holding level (optional)</span>
+<span class="sd">        * dt : timestep</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    w : stimulus waveform</span>
+<span class="sd">    maxt : duration of waveform</span>
+<span class="sd">    tstims : index of each pulse in the train</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">defaults</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;delay&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="s1">&#39;Sfreq&#39;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+        <span class="s1">&#39;dur&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="s1">&#39;predur&#39;</span><span class="p">:</span> <span class="mf">0.</span><span class="p">,</span>
+        <span class="s1">&#39;post&#39;</span><span class="p">:</span> <span class="mf">50.</span><span class="p">,</span>
+        <span class="s1">&#39;amp&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;preamp&#39;</span><span class="p">:</span> <span class="mf">0.</span><span class="p">,</span>
+        <span class="s1">&#39;PT&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;NP&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s1">&#39;hold&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="s1">&#39;dt&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">stim</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">defaults</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Stim parameter &#39;</span><span class="si">%s</span><span class="s2">&#39; not accepted.&quot;</span> <span class="o">%</span> <span class="n">k</span><span class="p">)</span>
+    <span class="n">defaults</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">stim</span><span class="p">)</span>
+    <span class="n">stim</span> <span class="o">=</span> <span class="n">defaults</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">stim</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Must specify stim parameter &#39;</span><span class="si">%s</span><span class="s2">&#39;.&quot;</span> <span class="o">%</span> <span class="n">k</span><span class="p">)</span>
+    
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">stim</span><span class="p">[</span><span class="s1">&#39;dt&#39;</span><span class="p">]</span>
+    <span class="n">delay</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">stim</span><span class="p">[</span><span class="s1">&#39;delay&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">dt</span><span class="p">))</span>
+    <span class="n">ipi</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">((</span><span class="mf">1000.0</span> <span class="o">/</span> <span class="n">stim</span><span class="p">[</span><span class="s1">&#39;Sfreq&#39;</span><span class="p">])</span> <span class="o">/</span> <span class="n">dt</span><span class="p">))</span>
+    <span class="n">pdur</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">stim</span><span class="p">[</span><span class="s1">&#39;dur&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">dt</span><span class="p">))</span>
+    <span class="n">posttest</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">stim</span><span class="p">[</span><span class="s1">&#39;PT&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">dt</span><span class="p">))</span>
+    <span class="n">ndur</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="k">if</span> <span class="n">stim</span><span class="p">[</span><span class="s1">&#39;predur&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.</span><span class="p">:</span>
+        <span class="n">predur</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">stim</span><span class="p">[</span><span class="s1">&#39;predur&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">dt</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">predur</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="k">if</span> <span class="n">stim</span><span class="p">[</span><span class="s1">&#39;PT&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">ndur</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="n">maxt</span> <span class="o">=</span> <span class="n">dt</span> <span class="o">*</span> <span class="p">(</span><span class="n">delay</span> <span class="o">+</span> <span class="n">predur</span> <span class="o">+</span> <span class="p">(</span><span class="n">ipi</span> <span class="o">*</span> <span class="p">(</span><span class="n">stim</span><span class="p">[</span><span class="s1">&#39;NP&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">3</span><span class="p">))</span> <span class="o">+</span>
+        <span class="n">posttest</span> <span class="o">+</span> <span class="n">pdur</span> <span class="o">*</span> <span class="n">ndur</span><span class="p">)</span>
+    <span class="n">hold</span> <span class="o">=</span> <span class="n">stim</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hold&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    
+    <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">maxt</span> <span class="o">/</span> <span class="n">dt</span><span class="p">)))</span>
+    <span class="k">if</span> <span class="n">hold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">w</span> <span class="o">+=</span> <span class="n">hold</span>
+    
+    <span class="c1">#   make pulse</span>
+    <span class="n">tstims</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">stim</span><span class="p">[</span><span class="s1">&#39;NP&#39;</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">stim</span><span class="p">[</span><span class="s1">&#39;NP&#39;</span><span class="p">])):</span>
+        <span class="n">prestart</span> <span class="o">=</span> <span class="n">delay</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">prestart</span> <span class="o">+</span> <span class="n">predur</span> <span class="o">+</span> <span class="n">j</span><span class="o">*</span><span class="n">ipi</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">predur</span> <span class="o">&gt;</span> <span class="mf">0.</span><span class="p">:</span>
+            <span class="n">w</span><span class="p">[</span><span class="n">prestart</span><span class="p">:</span><span class="n">prestart</span><span class="o">+</span><span class="n">predur</span><span class="p">]</span> <span class="o">=</span> <span class="n">stim</span><span class="p">[</span><span class="s1">&#39;preamp&#39;</span><span class="p">]</span>
+        <span class="n">w</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span> <span class="o">+</span> <span class="n">pdur</span><span class="p">]</span> <span class="o">=</span> <span class="n">stim</span><span class="p">[</span><span class="s1">&#39;amp&#39;</span><span class="p">]</span>
+        <span class="n">tstims</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">start</span>
+    <span class="k">if</span> <span class="n">stim</span><span class="p">[</span><span class="s1">&#39;PT&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span> <span class="o">+</span> <span class="n">posttest</span><span class="p">,</span> <span class="n">start</span> <span class="o">+</span> <span class="n">posttest</span> <span class="o">+</span> <span class="n">pdur</span><span class="p">):</span>
+            <span class="n">w</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">stim</span><span class="p">[</span><span class="s1">&#39;amp&#39;</span><span class="p">]</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
+    <span class="n">maxt</span> <span class="o">=</span> <span class="n">maxt</span> <span class="o">+</span> <span class="n">dt</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">maxt</span><span class="p">,</span> <span class="n">tstims</span><span class="p">)</span></div>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, 2018, Paul B. Manis and Luke Campagnola.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.2.
+    </div>
+  </body>
+</html>

@@ -1,6 +1,5 @@
 from neuron import h
 import numpy as np
-import neuron as nrn
 
 from .cell import Cell
 #from .. import synapses
@@ -183,12 +182,25 @@ class TStellateRothman(TStellate):
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
             self.decorate()
-#        print 'Mechanisms inserted: ', self.mechanisms
-        
+
+        self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
         self.get_mechs(self.soma)
-#        self.cell_initialize(vrange=self.vrange)
         if debug:
                 print "<< T-stellate: JSR Stellate Type 1 cell model created >>"
+
+    def get_cellpars(self, dataset, species='guineapig', celltype='I-c'):
+        cellcap = data.get(dataset, species=species, cell_type=celltype,
+            field='soma_Cap')
+        chtype = data.get(dataset, species=species, cell_type=celltype,
+            field='soma_na_type')
+        pars = Params(cap=cellcap, natype=chtype)
+        for g in ['soma_na_gbar', 'soma_kht_gbar', 'soma_ka_gbar',
+                  'soma_ih_gbar', 'soma_ih_eh',
+                  'soma_leak_gbar', 'soma_leak_erev',
+                  'soma_e_k', 'soma_e_na']:
+            pars.additem(g,  data.get(dataset, species=species, cell_type=celltype,
+            field=g))
+        return pars
 
     def species_scaling(self, species='guineapig', modelType='I-c', silent=True):
         """
@@ -213,38 +225,51 @@ class TStellateRothman(TStellate):
             run silently (True) or verbosely (False)
         """
         soma = self.soma
-        if species == 'mouse' and modelType == 'I-c':
+        if modelType == 'I-c':
+            celltype = 'tstellate'
+        elif modelType == 'I-t':
+            celltype = 'tstellate-t'
+        else:
+            raise ValueError('model type not recognized')
+                    
+        if species == 'mouse': #  and modelType == 'I-c':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
             # model description in Xie and Manis 2013. Note that
             # conductances were not scaled for temperature (rates were)
             # so here we reset the default Q10's for conductance (g) to 1.0
             print '  Setting Conductances for mouse I-c Tstellate cell, Xie and Manis, 2013'
             self.c_m = 0.9  # default in units of F/cm^2
+            dataset = 'XM13_channels'
             self.vrange = [-75., -55.]
             self.set_soma_size_from_Cm(25.0)
             self._valid_temperatures = (34.,)
             if self.status['temperature'] is None:
                 self.set_temperature(34.)
-            self.adjust_na_chans(soma, gbar=3000.)
-            self.e_k = -84.
-            self.e_na = 50.
-            # soma().nav11.gbar = nstomho(1800., self.somaarea)
-            # soma().nav11.vsna = 4.3
+
+            pars = self.get_cellpars(dataset, species=species, celltype=celltype)
+            # pars.show()
+            self.set_soma_size_from_Cm(pars.cap)
+            self.status['na'] = pars.natype
+            self.adjust_na_chans(soma, gbar=pars.soma_na_gbar, sf=1.0)
+            soma().kht.gbar = nstomho(pars.soma_kht_gbar, self.somaarea)
+            soma().ka.gbar = nstomho(pars.soma_ka_gbar, self.somaarea)
+            soma().ihvcn.gbar = nstomho(pars.soma_ih_gbar, self.somaarea)
+            soma().ihvcn.eh = pars.soma_ih_eh # Rodrigues and Oertel, 2006
+            soma().leak.gbar = nstomho(pars.soma_leak_gbar, self.somaarea)
+            soma().leak.erev = pars.soma_leak_erev
+            self.e_k = pars.soma_e_k
+            self.e_na = pars.soma_e_na
             soma.ena = self.e_na
             soma.ek = self.e_k
-            soma().kht.gbar = nstomho(500.0, self.somaarea)
-            soma().ka.gbar = nstomho(0.0, self.somaarea)
-            soma().ihvcn.gbar = nstomho(18.0, self.somaarea)
-            soma().ihvcn.eh = -43 # Rodrigues and Oertel, 2006
-            soma().leak.gbar = nstomho(8.0, self.somaarea)
-            soma().leak.erev = -65.0
+            self.adjust_na_chans(soma, gbar=pars.soma_na_gbar)
             self.axonsf = 0.5
             
-        elif species == 'guineapig' and modelType == 'I-c':  # values from R&M 2003, Type I
+        elif species == 'guineapig':
+            # and modelType == 'I-c':  # values from R&M 2003, Type I
             print '  Setting Conductances for Guinea Pig I-c, Rothman and Manis, 2003'
+            dataset = 'RM03_channels'
             self.c_m = 0.9  # default in units of F/cm^2
             self.vrange = [-75., -55.]
-            self.set_soma_size_from_Cm(12.0)
             self._valid_temperatures = (22., 38.)
             if self.status['temperature'] is None:
                 self.set_temperature(22.)
@@ -252,32 +277,16 @@ class TStellateRothman(TStellate):
             if self.status['temperature'] == 38.:  # adjust for 2003 model conductance levels at 38
                 sf = 3.03  # Q10 of 2, 22->38C. (p3106, R&M2003c)
                 # note that kinetics are scaled in the mod file.
-            self.adjust_na_chans(soma, sf=sf)
-            soma().kht.gbar = nstomho(150.0, self.somaarea)*sf
-            soma().ka.gbar = nstomho(0.0, self.somaarea)*sf
-            soma().ihvcn.gbar = nstomho(0.5, self.somaarea)*sf
-            soma().leak.gbar = nstomho(2.0, self.somaarea)*sf
-            soma().leak.erev = -65.0
-            self.axonsf = 0.5
-            
-        elif species == 'guineapig' and modelType =='I-t':
-            print '  Setting Conductances for Guinea Pig, I-t, Rothman and Manis, 2003'
-            # guinea pig data from Rothman and Manis, 2003, type It
-            self.c_m = 0.9  # default in units of F/cm^2
-            self.set_soma_size_from_Cm(12.0)
-            self._valid_temperatures = (22., 38.)
-            if self.status['temperature'] is None:
-                self.set_temperature(22.)
-            sf = 1.0
-            if self.status['temperature'] == 38.:  # adjust for 2003 model conductance levels at 38
-                sf = 3.03  # Q10 of 2, 22->38C. (p3106, R&M2003c)
-                # note that kinetics are scaled in the mod file.
-            self.adjust_na_chans(soma, sf)
-            soma().kht.gbar = nstomho(80.0, self.somaarea)*sf
-            soma().ka.gbar = nstomho(65.0, self.somaarea)*sf
-            soma().ihvcn.gbar = nstomho(0.5, self.somaarea)*sf
-            soma().leak.gbar = nstomho(2.0, self.somaarea)*sf
-            soma().leak.erev = -65.0
+            pars = self.get_cellpars(dataset, species=species, celltype=celltype)
+            self.set_soma_size_from_Cm(pars.cap)
+            self.status['na'] = pars.natype
+            # pars.show()
+            self.adjust_na_chans(soma, gbar=pars.soma_na_gbar, sf=sf)
+            soma().kht.gbar = nstomho(pars.soma_kht_gbar, self.somaarea)
+            soma().ka.gbar = nstomho(pars.soma_ka_gbar, self.somaarea)
+            soma().ihvcn.gbar = nstomho(pars.soma_ih_gbar, self.somaarea)
+            soma().leak.gbar = nstomho(pars.soma_leak_gbar, self.somaarea)
+            soma().leak.erev = pars.soma_leak_erev
             self.axonsf = 0.5
 
         else:
@@ -536,12 +545,12 @@ class TStellateNav11(TStellate):
         mouse from Xie and Manis, 2013. 
         Modifications to the cell can be made by calling methods below.
         Changing "species": This routine only supports "mouse"
-        Note: in the original model, the temperature scaling applied only to the rate constants, and not
-                to the conductance. Therefore, the conductances here need to be adjusted to compensate for the
-                way the mechanisms are currently implemented (so that they scale correctly to the values
-                used in Xie and Manis, 2013). This is done by setting q10g (the q10 for conductances) to 1
-                before setting up the rest of the model parameters. For those conducantances in which a Q10 for 
-                conductance is implemented, the value is typically 2.
+        *Note:* in the original model, the temperature scaling applied only to the rate constants, and not
+        to the conductance. Therefore, the conductances here need to be adjusted to compensate for the
+        way the mechanisms are currently implemented (so that they scale correctly to the values
+        used in Xie and Manis, 2013). This is done by setting q10g (the q10 for conductances) to 1
+        before setting up the rest of the model parameters. For those conducantances in which a Q10 for 
+        conductance is implemented, the value is typically 2.
                 
         Parameters
         ----------

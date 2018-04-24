@@ -1,0 +1,266 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>an_model &#8212; CNModel 0.2 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Cell classes" href="cells.html" />
+    <link rel="prev" title="API Reference" href="modules.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cells.html" title="Cell classes"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="modules.html" title="API Reference"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" accesskey="U">API Reference</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-cnmodel.an_model">
+<span id="an-model"></span><h1>an_model<a class="headerlink" href="#module-cnmodel.an_model" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="cnmodel-an-model-cache">
+<h2>cnmodel.an_model.cache<a class="headerlink" href="#cnmodel-an-model-cache" title="Permalink to this headline">¶</a></h2>
+<p>Utilities for generating and caching spike trains from AN model.</p>
+<dl class="function">
+<dt>
+<code class="descclassname">cnmodel.an_model.cache.</code><code class="descname">detect_simulator</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/an_model/cache.html#detect_simulator"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Return the name of any available auditory periphery model.</p>
+<p>Return ‘cochlea’ if the Rudnicki cochlea model can be imported.
+If not, return ‘matlab’ if the Zilany model can be accessed via MATLAB.
+If not, raise an exception.</p>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="descclassname">cnmodel.an_model.cache.</code><code class="descname">generate_spiketrain</code><span class="sig-paren">(</span><em>cf</em>, <em>sr</em>, <em>stim</em>, <em>seed</em>, <em>simulator=None</em>, <em>**kwds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/an_model/cache.html#generate_spiketrain"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Generate a new spike train from the auditory nerve model. Returns an
+array of spike times in seconds.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>cf</strong> (<em>float</em>) – Center frequency of the fiber to simulate</li>
+<li><strong>sr</strong> (<em>int</em>) – Spontaneous rate group of the fiber:
+0=low, 1=mid, 2=high.</li>
+<li><strong>stim</strong> (<em>Sound instance</em>) – Stimulus sound to be presented on each repetition</li>
+<li><strong>seed</strong> (<em>int &gt;= 0</em>) – Random seed</li>
+<li><strong>simulator</strong> (<em>'cochlea' | 'matlab' | None</em>) – Specifies the auditory periphery simulator to use. If None, then a
+simulator will be automatically chosen based on availability.</li>
+<li><strong>**kwds</strong> – All other keyword arguments are given to model_ihc() and model_synapse()
+based on their names. These include ‘species’, ‘nrep’, ‘reptime’, ‘cohc’,
+‘cihc’, and ‘implnt’.
+‘simulator’ is used to set the simulator (‘matlab’ or ‘cochlea’)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="descclassname">cnmodel.an_model.cache.</code><code class="descname">get_cache_filename</code><span class="sig-paren">(</span><em>cf</em>, <em>sr</em>, <em>seed</em>, <em>stim</em>, <em>**kwds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/an_model/cache.html#get_cache_filename"><span class="viewcode-link">[source]</span></a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt>
+<code class="descclassname">cnmodel.an_model.cache.</code><code class="descname">get_spiketrain</code><span class="sig-paren">(</span><em>cf</em>, <em>sr</em>, <em>stim</em>, <em>seed</em>, <em>**kwds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/an_model/cache.html#get_spiketrain"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Return an array of spike times in response to the given stimulus.</p>
+<p>Arrays are automatically cached and may be returned from disk if
+available. See generate_spiketrain() for a description of arguments.</p>
+<p>If the flag –ignore-an-cache was given on the command line, then spike
+times will be regenerated and cached, regardless of the current cache
+state.</p>
+<p>If the flag –no-an-cache was given on the command line, then the cache
+will not be read or written. This can improve overall performance if there
+is little chance the cache would be re-used.</p>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="descclassname">cnmodel.an_model.cache.</code><code class="descname">make_key</code><span class="sig-paren">(</span><em>**kwds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/an_model/cache.html#make_key"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Make a unique key used for caching spike time arrays.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="cnmodel-an-model-wrapper">
+<h2>cnmodel.an_model.wrapper<a class="headerlink" href="#cnmodel-an-model-wrapper" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt>
+<code class="descclassname">cnmodel.an_model.wrapper.</code><code class="descname">get_matlab</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/an_model/wrapper.html#get_matlab"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Return a running MatlabProcess instance.</p>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="descclassname">cnmodel.an_model.wrapper.</code><code class="descname">model_ihc</code><span class="sig-paren">(</span><em>pin</em>, <em>CF</em>, <em>nrep=1</em>, <em>tdres=1e-05</em>, <em>reptime=1</em>, <em>cohc=1</em>, <em>cihc=1</em>, <em>species=1</em>, <em>**kwds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/an_model/wrapper.html#model_ihc"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Return the output of model_IHC() from the AN model
+(Zilany, Bruce, Ibrahim and Carney, 2014; requires MATLAB)</p>
+<p>This function takes a sound waveform as input and models a single inner
+hair cell (IHC). The return values is the IHC potential in volts.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pin</strong> (<em>array</em>) – The input sound wave in Pa sampled at the rate specified by <em>tdres</em></li>
+<li><strong>CF</strong> (<em>float</em>) – The characteristic frequency of the IHC in Hz</li>
+<li><strong>nrep</strong> (<em>int</em>) – The number of times to repeat the stimulus</li>
+<li><strong>tdres</strong> (<em>float</em>) – The binsize in seconds, i.e., the reciprocal of the sampling rate</li>
+<li><strong>reptime</strong> (<em>float</em>) – The time between stimulus repetitions in seconds.
+NOTE should be equal to or longer than the duration of pin</li>
+<li><strong>cohc</strong> (<em>float</em>) – The OHC scaling factor: 1 is normal OHC function;
+0 is complete OHC dysfunction</li>
+<li><strong>cihc</strong> (<em>float</em>) – The IHC scaling factor: 1 is normal IHC function;
+0 is complete IHC dysfunction</li>
+<li><strong>species</strong> (<em>int</em>) – The model species: “1” for cat, “2” for human with BM tuning from
+Shera et al. (PNAS 2002), or “3” for human BM tuning from
+Glasberg &amp; Moore (Hear. Res. 1990)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="descclassname">cnmodel.an_model.wrapper.</code><code class="descname">model_synapse</code><span class="sig-paren">(</span><em>vihc</em>, <em>CF</em>, <em>nrep=1</em>, <em>tdres=1e-05</em>, <em>fiberType=0</em>, <em>noiseType=1</em>, <em>implnt=1</em>, <em>**kwds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/an_model/wrapper.html#model_synapse"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Return the output of model_Synapse() from the AN model
+(Zilany, Bruce, Ibrahim and Carney, 2014; requires MATLAB)</p>
+<p>This function takes an IHC voltage waveform as input (see model_ihc) and
+models a synapse and spiral ganglion cell. The return values are:</p>
+<ul class="simple">
+<li>meanrate: The estimated instantaneous mean rate (incl. refractoriness)</li>
+<li>varrate: The estimated instantaneous variance in the discharge rate (incl. refractoriness)</li>
+<li>psth: The peri-stimulus time histogram</li>
+</ul>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>vihc</strong> (<em>array</em>) – IHC voltage as generated by model_ihc()</li>
+<li><strong>CF</strong> (<em>float</em>) – The characteristic frequency of the IHC in Hz</li>
+<li><strong>nrep</strong> (<em>int</em>) – The number of times to repeat the stimulus</li>
+<li><strong>tdres</strong> (<em>float</em>) – The binsize in seconds, i.e., the reciprocal of the sampling rate</li>
+<li><strong>fiberType</strong> (<em>int</em>) – The type of the fiber based on spontaneous rate (SR) in spikes/s:
+1 for Low SR; 2 for Medium SR; 3 for High SR</li>
+<li><strong>noiseType</strong> (<em>0</em><em> or </em><em>1</em>) – Fixed fGn (noise will be same in every simulation) or variable fGn:
+“0” for fixed fGn and “1” for variable fGn</li>
+<li><strong>implnt</strong> (<em>0</em><em> or </em><em>1</em>) – “Approxiate” or “actual” implementation of the power-law functions:
+“0” for approx. and “1” for actual implementation</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="descclassname">cnmodel.an_model.wrapper.</code><code class="descname">seed_rng</code><span class="sig-paren">(</span><em>seed</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/an_model/wrapper.html#seed_rng"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Seed the random number generator used by model_ihc and model_synapse.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">an_model</a><ul>
+<li><a class="reference internal" href="#cnmodel-an-model-cache">cnmodel.an_model.cache</a></li>
+<li><a class="reference internal" href="#cnmodel-an-model-wrapper">cnmodel.an_model.wrapper</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="modules.html"
+                        title="previous chapter">API Reference</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cells.html"
+                        title="next chapter">Cell classes</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/an_model.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cells.html" title="Cell classes"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="modules.html" title="API Reference"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >API Reference</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, 2018, Paul B. Manis and Luke Campagnola.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.2.
+    </div>
+  </body>
+</html>

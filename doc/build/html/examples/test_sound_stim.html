@@ -1,0 +1,144 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>examples.test_sound_stim &#8212; CNModel 0.2 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="examples.test_sgc_input_PSTH" href="test_sgc_input_PSTH.html" />
+    <link rel="prev" title="examples.toy_model" href="toy_model.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="test_sgc_input_PSTH.html" title="examples.test_sgc_input_PSTH"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="toy_model.html" title="examples.toy_model"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../examples.html" accesskey="U">Examples</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="examples-test-sound-stim">
+<h1>examples.test_sound_stim<a class="headerlink" href="#examples-test-sound-stim" title="Permalink to this headline">¶</a></h1>
+<p>Test using sound stimulation to generate SGC spike trains.</p>
+<p>This script uses an_model.get_spiketrain(), which internally calls MATLAB to
+generate spike trains and caches the output. A higher-level approach is to use
+DummySGC, which will automatically feed the spike train into a synapse for
+input to downstream neurons (see test_sgc_input.py). Lower-level access to the
+auditory nerve model is demonstrated in test_an_model.py.</p>
+<p>This script also can measure the time required to generate the spike trains, or
+to retrieve them from the cache. In addition, it can access a second interface
+to the Zilany et al. mode that is in pure python (“cochlea”) for comparison.
+In general the speed to compute the spike trains for the same sets of stimuli
+is faster with the pure Python interface than with the Matlab interface, and
+fastest for retrieval of pre-computed trains. Note that changing the value
+of “seed” will force a recomputation of the spike trains.</p>
+<dl class="function">
+<dt>
+<code class="descclassname">examples.test_sound_stim.</code><code class="descname">runtest</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/examples/test_sound_stim.html#runtest"><span class="viewcode-link">[source]</span></a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt>
+<code class="descclassname">examples.test_sound_stim.</code><code class="descname">set_dbspl</code><span class="sig-paren">(</span><em>signal</em>, <em>dbspl</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/examples/test_sound_stim.html#set_dbspl"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Scale the level of <cite>signal</cite> to the given dB_SPL.</p>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="descclassname">examples.test_sound_stim.</code><code class="descname">sound_stim</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/examples/test_sound_stim.html#sound_stim"><span class="viewcode-link">[source]</span></a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt>
+<code class="descclassname">examples.test_sound_stim.</code><code class="descname">time_usage</code><span class="sig-paren">(</span><em>func</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/examples/test_sound_stim.html#time_usage"><span class="viewcode-link">[source]</span></a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="toy_model.html"
+                        title="previous chapter">examples.toy_model</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="test_sgc_input_PSTH.html"
+                        title="next chapter">examples.test_sgc_input_PSTH</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/examples/test_sound_stim.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="test_sgc_input_PSTH.html" title="examples.test_sgc_input_PSTH"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="toy_model.html" title="examples.toy_model"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../examples.html" >Examples</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, 2018, Paul B. Manis and Luke Campagnola.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.2.
+    </div>
+  </body>
+</html>

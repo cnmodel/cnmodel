@@ -1,0 +1,214 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>cnmodel.synapses.glu_psd &#8212; CNModel 0.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cnmodel.synapses.glu_psd</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">neuron</span> <span class="k">import</span> <span class="n">h</span>
+
+<span class="kn">from</span> <span class="nn">.psd</span> <span class="k">import</span> <span class="n">PSD</span>
+
+
+<div class="viewcode-block" id="GluPSD"><a class="viewcode-back" href="../../../synapses.html#cnmodel.synapses.glu_psd.GluPSD">[docs]</a><span class="k">class</span> <span class="nc">GluPSD</span><span class="p">(</span><span class="n">PSD</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Glutamatergic PSD with ionotropic AMPA / NMDA receptors</span>
+
+<span class="sd">    This creates a set of postsynaptoc NMDA and AMPA receptors, one pair</span>
+<span class="sd">    per terminal release site. Receptors are connected to the XMTR range</span>
+<span class="sd">    variable of the terminal release mechanisms.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    section : Section instance</span>
+<span class="sd">        The postsynaptic section into which the receptor mechanisms should be</span>
+<span class="sd">        attached</span>
+<span class="sd">    terminal : Terminal instance</span>
+<span class="sd">        The presynaptic terminal that provides input to the receptor XMTR</span>
+<span class="sd">        variables. </span>
+<span class="sd">    ampa_gmax : float</span>
+<span class="sd">        Maximum conductance of AMPARs</span>
+<span class="sd">    nmda_gmax : float</span>
+<span class="sd">        Maximum conductance of NMDARs</span>
+<span class="sd">    gvar : float</span>
+<span class="sd">        Coefficient of variation for randomly adjusting ampa_gmax and nmda_gmax.</span>
+<span class="sd">        Note that ampa and nmda maximum conductances will be scaled together,</span>
+<span class="sd">        but the scale values will be selected randomly for each pair of </span>
+<span class="sd">        receptor mechanisms.</span>
+<span class="sd">    eRev : float</span>
+<span class="sd">        Reversal potential to use for both receptor types.</span>
+<span class="sd">    ampa_params : dict</span>
+<span class="sd">        Dictionary containing kinetic parameters for AMPA mechanism. Suggested</span>
+<span class="sd">        keys are Ro1, Ro2, Rc1, Rc2, and PA.</span>
+<span class="sd">        </span>
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    </span>
+<span class="sd">    *ampa_gmax* and *nmda_gmax* should be provided as the maximum *measured*</span>
+<span class="sd">    conductances; these will be automatically corrected for the maximum open</span>
+<span class="sd">    probability of the receptor mechanisms.</span>
+<span class="sd">    </span>
+<span class="sd">    GluPSD does not include a cleft mechanism because AMPATRUSSELL implements</span>
+<span class="sd">    its own cleft and NMDA_Kampa is slow enough that a cleft would have </span>
+<span class="sd">    insignificant effect.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">terminal</span><span class="p">,</span> <span class="n">ampa_gmax</span><span class="p">,</span> <span class="n">nmda_gmax</span><span class="p">,</span>
+                 <span class="n">gvar</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">eRev</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nmda_vshift</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ampa_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="n">PSD</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">terminal</span><span class="p">)</span>
+        <span class="c1"># print(&#39;\033[0;33;40m  ^^^^^ GVAR = %.4f ^^^^^\033[0;37;40m &#39; % gvar)</span>
+        <span class="n">ampa_params</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">ampa_params</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">ampa_params</span>
+        
+        <span class="c1"># and then make a set of postsynaptic receptor mechanisms</span>
+        <span class="n">ampa_psd</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">nmda_psd</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">relsite</span> <span class="o">=</span> <span class="n">terminal</span><span class="o">.</span><span class="n">relsite</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">section</span><span class="o">.</span><span class="n">push</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">terminal</span><span class="o">.</span><span class="n">n_rzones</span><span class="p">):</span>
+            <span class="c1"># create mechanisms</span>
+            <span class="n">ampa</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">AMPATRUSSELL</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">section</span><span class="p">)</span> <span class="c1"># raman/trussell AMPA with rectification</span>
+            <span class="n">nmda</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">NMDA_Kampa</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">section</span><span class="p">)</span> <span class="c1"># Kampa state model NMDA receptors</span>
+
+            <span class="c1"># Connect terminal to psd</span>
+            <span class="n">relsite</span><span class="o">.</span><span class="n">setpointer</span><span class="p">(</span><span class="n">relsite</span><span class="o">.</span><span class="n">_ref_XMTR</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s1">&#39;XMTR&#39;</span><span class="p">,</span> <span class="n">ampa</span><span class="p">)</span>
+            <span class="n">relsite</span><span class="o">.</span><span class="n">setpointer</span><span class="p">(</span><span class="n">relsite</span><span class="o">.</span><span class="n">_ref_XMTR</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s1">&#39;XMTR&#39;</span><span class="p">,</span> <span class="n">nmda</span><span class="p">)</span>
+            
+            <span class="c1"># Set any extra ampa parameters provided by the caller</span>
+            <span class="c1"># (Ro1, Ro2, Rc1, Rc2, PA, ...)</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">ampa_params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">ampa</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+            
+            <span class="c1"># add a little variability - gvar is CV of amplitudes</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="n">gvar</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">()</span>
+            
+            <span class="c1"># set gmax and eRev for each postsynaptic receptor mechanism</span>
+            <span class="n">ampa</span><span class="o">.</span><span class="n">gmax</span> <span class="o">=</span> <span class="n">ampa_gmax</span> <span class="o">*</span> <span class="n">v</span>
+            <span class="n">ampa</span><span class="o">.</span><span class="n">Erev</span> <span class="o">=</span> <span class="n">eRev</span>
+            <span class="n">nmda</span><span class="o">.</span><span class="n">gmax</span> <span class="o">=</span> <span class="n">nmda_gmax</span> <span class="o">*</span> <span class="n">v</span>
+            <span class="n">nmda</span><span class="o">.</span><span class="n">Erev</span> <span class="o">=</span> <span class="n">eRev</span>
+            <span class="n">nmda</span><span class="o">.</span><span class="n">vshift</span> <span class="o">=</span> <span class="n">nmda_vshift</span>
+            
+            <span class="n">ampa_psd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ampa</span><span class="p">)</span>
+            <span class="n">nmda_psd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nmda</span><span class="p">)</span>
+        
+        <span class="n">h</span><span class="o">.</span><span class="n">pop_section</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">ampa_psd</span> <span class="o">=</span> <span class="n">ampa_psd</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nmda_psd</span> <span class="o">=</span> <span class="n">nmda_psd</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_psd</span> <span class="o">=</span> <span class="n">nmda_psd</span> <span class="o">+</span> <span class="n">ampa_psd</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">n_psd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The number of postsynaptic densities represented by this object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ampa_psd</span><span class="p">)</span>
+
+<div class="viewcode-block" id="GluPSD.record"><a class="viewcode-back" href="../../../synapses.html#cnmodel.synapses.glu_psd.GluPSD.record">[docs]</a>    <span class="k">def</span> <span class="nf">record</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create a new set of vectors to record parameters for each release</span>
+<span class="sd">        site.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        \*args : </span>
+<span class="sd">            Allowed parameters are &#39;i&#39; (current), &#39;g&#39; (conductance), and &#39;Open&#39; (open probability).</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vectors</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;ampa&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;nmda&#39;</span><span class="p">:</span> <span class="p">[]}</span>
+        <span class="k">for</span> <span class="n">receptor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vectors</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">mech</span> <span class="ow">in</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">receptor</span><span class="o">+</span><span class="s1">&#39;_psd&#39;</span><span class="p">):</span>
+                <span class="n">vec</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+                    <span class="n">vec</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">Vector</span><span class="p">()</span>
+                    <span class="n">vec</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">mech</span><span class="p">,</span> <span class="s1">&#39;_ref_&#39;</span><span class="o">+</span><span class="n">var</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">vectors</span><span class="p">[</span><span class="n">receptor</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span></div>
+        
+<div class="viewcode-block" id="GluPSD.get_vector"><a class="viewcode-back" href="../../../synapses.html#cnmodel.synapses.glu_psd.GluPSD.get_vector">[docs]</a>    <span class="k">def</span> <span class="nf">get_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">receptor</span><span class="p">,</span> <span class="n">var</span><span class="p">,</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return an array from a previously recorded vector. </span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        receptor : str</span>
+<span class="sd">             May be &#39;ampa&#39; or &#39;nmda&#39;</span>
+<span class="sd">        var : str</span>
+<span class="sd">            Allowed parameters are &#39;i&#39; (current), &#39;g&#39; (conductance), and &#39;Open&#39; (open probability).</span>
+<span class="sd">        i : int, default=0</span>
+<span class="sd">             The integer index of the psd (if this is a multi-site synapse)</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vectors</span><span class="p">[</span><span class="n">receptor</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="n">var</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">v</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, 2018, Paul B. Manis and Luke Campagnola.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.2.
+    </div>
+  </body>
+</html>

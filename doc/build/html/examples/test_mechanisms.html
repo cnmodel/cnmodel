@@ -1,0 +1,147 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>examples.test_mechanisms &#8212; CNModel 0.2 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="examples.test_an_model" href="test_an_model.html" />
+    <link rel="prev" title="examples.test_circuit" href="test_circuit.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="test_an_model.html" title="examples.test_an_model"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="test_circuit.html" title="examples.test_circuit"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../examples.html" accesskey="U">Examples</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="examples-test-mechanisms">
+<h1>examples.test_mechanisms<a class="headerlink" href="#examples-test-mechanisms" title="Permalink to this headline">¶</a></h1>
+<p>test_mechanisms.py</p>
+<p>This program displays the results of inserting NEURON mechaanisms from .mod files
+into a point cell to voltage steps in voltage clamp.
+This code is primarily for visual verification of model function.</p>
+<p>Usage: python test_mechanisms.py &lt;mechname&gt;</p>
+<p>Available mechanisms:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">CaPCalyx</span>                <span class="n">bkpkj</span>                 <span class="n">hcno</span>               <span class="n">hcnobo</span>                 <span class="n">hpkj</span>
+   <span class="n">ihpyr</span>          <span class="n">ihsgcApical</span>     <span class="n">ihsgcBasalMiddle</span>                <span class="n">ihvcn</span>                <span class="n">jsrna</span>
+      <span class="n">ka</span>                 <span class="n">kcnq</span>                <span class="n">kdpyr</span>                  <span class="n">kht</span>                  <span class="n">kif</span>
+     <span class="n">kis</span>                  <span class="n">klt</span>                 <span class="n">kpkj</span>                <span class="n">kpkj2</span>             <span class="n">kpkjslow</span>
+   <span class="n">kpksk</span>                 <span class="n">leak</span>                <span class="n">lkpkj</span>                   <span class="n">na</span>                <span class="n">naRsg</span>
+    <span class="n">nacn</span>             <span class="n">nacncoop</span>                  <span class="n">nap</span>                <span class="n">napyr</span>                <span class="n">nav11</span>
+</pre></div>
+</div>
+<p>Note: only modfiles that implement voltage-dependent ion channel models make sense to run
+with this routine. the list “nottestablemechs” in the file defines mechanisms provided
+with cnmodel that cannot be run with this program.</p>
+<dl class="class">
+<dt>
+<em class="property">class </em><code class="descclassname">examples.test_mechanisms.</code><code class="descname">ChannelKinetics</code><span class="sig-paren">(</span><em>args</em>, <em>export=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/examples/test_mechanisms.html#ChannelKinetics"><span class="viewcode-link">[source]</span></a></dt>
+<dd><dl class="method">
+<dt>
+<code class="descname">computeKinetics</code><span class="sig-paren">(</span><em>ch</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/examples/test_mechanisms.html#ChannelKinetics.computeKinetics"><span class="viewcode-link">[source]</span></a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">run</code><span class="sig-paren">(</span><em>modfile='CaPCalyx'</em>, <em>color='r'</em>, <em>export=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/examples/test_mechanisms.html#ChannelKinetics.run"><span class="viewcode-link">[source]</span></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="descclassname">examples.test_mechanisms.</code><code class="descname">getmechs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/examples/test_mechanisms.html#getmechs"><span class="viewcode-link">[source]</span></a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="test_circuit.html"
+                        title="previous chapter">examples.test_circuit</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="test_an_model.html"
+                        title="next chapter">examples.test_an_model</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/examples/test_mechanisms.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="test_an_model.html" title="examples.test_an_model"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="test_circuit.html" title="examples.test_circuit"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../examples.html" >Examples</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, 2018, Paul B. Manis and Luke Campagnola.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.2.
+    </div>
+  </body>
+</html>

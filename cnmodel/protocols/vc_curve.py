@@ -52,7 +52,8 @@ class VCCurve(Protocol):
         """
         Run voltage-clamp I/V curve.
 
-        Parameters:
+        Parameters
+        ----------
         vmin : float
             Minimum voltage step value
         vmax :
@@ -63,6 +64,7 @@ class VCCurve(Protocol):
             The Cell instance to test.
         """
         self.reset()
+        self.cell = cell
         try:
             (vmin, vmax, vstep) = vcrange  # unpack the tuple...
         except:
@@ -98,6 +100,7 @@ class VCCurve(Protocol):
             vstim.amp2 = self.voltage_cmd[i]
             custom_init(v_init=-60.)
             h.tstop = tend
+            self.cell.check_all_mechs()
             while h.t < h.tstop:
                     h.fadvance()
             self.voltage_traces.append(self['v_soma'])
@@ -107,27 +110,37 @@ class VCCurve(Protocol):
 
     def steady_im(self, window=0.1):
         """
-        :param window: fraction of window to use for steady-state measurement, taken
-        immediately before the end of the step
-        Return steady-state membrane current for each trace.
+        Parameters
+        ----------
+        window : float (default: 0.1)
+            fraction of window to use for steady-state measurement, taken
+            immediately before the end of the step
+        Returns
+        -------
+            steady-state membrane current for each trace.
         """
         Im = self.current_traces
         steps = len(Im)
-        steadyStop = (self.durs[0] + self.durs[1]) / self.dt
-        steadyStart = steadyStop - (self.durs[1]*window) / self.dt
+        steadyStop = int((self.durs[0] + self.durs[1]) / self.dt)
+        steadyStart = int(steadyStop - (self.durs[1]*window) / self.dt)
         Isteady = [Im[i][steadyStart:steadyStop].mean() for i in range(steps)]
         return np.array(Isteady)
 
     def peak_im(self, window=0.4):
         """
-        :param window: fraction of window to use for peak measurement, taken
-        immediately following the beginning of the step
-        Return steady-state membrane current for each trace.
+        Parameters
+        ----------
+        window: float (default=0.4)
+            fraction of window to use for peak measurement, taken
+            immediately following the beginning of the step
+        Returns
+        ------
+            steady-state membrane current for each trace.
         """
         Im = self.current_traces
         steps = len(Im)
-        peakStop = (self.durs[0] + window*self.durs[1]) / self.dt
-        peakStart = self.durs[0] / self.dt
+        peakStop = int((self.durs[0] + window*self.durs[1]) / self.dt)
+        peakStart = int(self.durs[0] / self.dt)
         Vhold = self.amps[0] # np.mean([self.voltage_traces[i][:peakStart].mean() for i in range(steps)])
         Ipeak = []
         for i in range(steps):

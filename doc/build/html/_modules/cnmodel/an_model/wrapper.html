@@ -1,0 +1,218 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>cnmodel.an_model.wrapper &#8212; CNModel 0.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cnmodel.an_model.wrapper</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">..util</span> <span class="k">import</span> <span class="n">matlab_proc</span>
+
+<span class="n">_proc</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="get_matlab"><a class="viewcode-back" href="../../../an_model.html#cnmodel.an_model.wrapper.get_matlab">[docs]</a><span class="k">def</span> <span class="nf">get_matlab</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot; Return a running MatlabProcess instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">_proc</span>
+    <span class="k">if</span> <span class="n">_proc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
+        <span class="n">model_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;model&#39;</span><span class="p">)</span>
+        <span class="n">_proc</span> <span class="o">=</span> <span class="n">matlab_proc</span><span class="o">.</span><span class="n">MatlabProcess</span><span class="p">(</span><span class="n">cwd</span><span class="o">=</span><span class="n">model_path</span><span class="p">)</span>
+        <span class="c1"># Try building the model mex files </span>
+        <span class="k">if</span> <span class="n">_proc</span><span class="o">.</span><span class="n">exist</span><span class="p">(</span><span class="s1">&#39;model_IHC&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Compiling MEX for auditory periphery model...&quot;</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_proc</span><span class="p">(</span><span class="s1">&#39;mexANmodel;&#39;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="n">err</span><span class="o">.</span><span class="n">output</span>
+                <span class="nb">print</span> <span class="s2">&quot;&quot;</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                    <span class="s2">&quot;An error occurred while compiling the auditory periphery model.</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span>
+                    <span class="s2">&quot;The complete output is printed above. &quot;</span> <span class="o">+</span>
+                    <span class="s2">&quot;See cnmodel/an_model/model/readme.txt for more information.&quot;</span><span class="p">)</span>
+            <span class="nb">print</span> <span class="s2">&quot;Done.&quot;</span>
+    <span class="k">return</span> <span class="n">_proc</span></div>
+
+
+<div class="viewcode-block" id="model_ihc"><a class="viewcode-back" href="../../../an_model.html#cnmodel.an_model.wrapper.model_ihc">[docs]</a><span class="k">def</span> <span class="nf">model_ihc</span><span class="p">(</span><span class="n">pin</span><span class="p">,</span> <span class="n">CF</span><span class="p">,</span> <span class="n">nrep</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">tdres</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span> <span class="n">reptime</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cohc</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cihc</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">species</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return the output of model_IHC() from the AN model</span>
+<span class="sd">    (Zilany, Bruce, Ibrahim and Carney, 2014; requires MATLAB)</span>
+<span class="sd">    </span>
+<span class="sd">    This function takes a sound waveform as input and models a single inner </span>
+<span class="sd">    hair cell (IHC). The return values is the IHC potential in volts.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pin : array</span>
+<span class="sd">        The input sound wave in Pa sampled at the rate specified by *tdres*</span>
+<span class="sd">    CF : float</span>
+<span class="sd">        The characteristic frequency of the IHC in Hz</span>
+<span class="sd">    nrep : int</span>
+<span class="sd">        The number of times to repeat the stimulus</span>
+<span class="sd">    tdres : float</span>
+<span class="sd">        The binsize in seconds, i.e., the reciprocal of the sampling rate</span>
+<span class="sd">    reptime : float</span>
+<span class="sd">        The time between stimulus repetitions in seconds. </span>
+<span class="sd">        NOTE should be equal to or longer than the duration of pin</span>
+<span class="sd">    cohc : float</span>
+<span class="sd">        The OHC scaling factor: 1 is normal OHC function; </span>
+<span class="sd">        0 is complete OHC dysfunction</span>
+<span class="sd">    cihc : float</span>
+<span class="sd">        The IHC scaling factor: 1 is normal IHC function; </span>
+<span class="sd">        0 is complete IHC dysfunction</span>
+<span class="sd">    species : int</span>
+<span class="sd">        The model species: &quot;1&quot; for cat, &quot;2&quot; for human with BM tuning from </span>
+<span class="sd">        Shera et al. (PNAS 2002), or &quot;3&quot; for human BM tuning from </span>
+<span class="sd">        Glasberg &amp; Moore (Hear. Res. 1990)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># make sure pin is a row vector</span>
+    <span class="n">pin</span> <span class="o">=</span> <span class="n">pin</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">pin</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+    
+    <span class="c1"># convert all args to double, as required by model_IHC</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="n">pin</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="p">(</span><span class="n">CF</span><span class="p">,</span> <span class="n">nrep</span><span class="p">,</span> <span class="n">tdres</span><span class="p">,</span> <span class="n">reptime</span><span class="p">,</span> <span class="n">cohc</span><span class="p">,</span> <span class="n">cihc</span><span class="p">,</span> <span class="n">species</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">matlab_proc</span><span class="o">.</span><span class="n">MatlabReference</span><span class="p">):</span>
+            <span class="n">arg</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+        
+    <span class="k">assert</span> <span class="n">reptime</span> <span class="o">&gt;=</span> <span class="n">pin</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">tdres</span>
+    
+    <span class="n">ml</span> <span class="o">=</span> <span class="n">get_matlab</span><span class="p">()</span>
+    <span class="n">fn</span> <span class="o">=</span> <span class="n">ml</span><span class="o">.</span><span class="n">model_IHC</span>
+    <span class="n">fn</span><span class="o">.</span><span class="n">nargout</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># necessary because nargout(model_IHC) fails</span>
+    <span class="k">return</span> <span class="n">fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="model_synapse"><a class="viewcode-back" href="../../../an_model.html#cnmodel.an_model.wrapper.model_synapse">[docs]</a><span class="k">def</span> <span class="nf">model_synapse</span><span class="p">(</span><span class="n">vihc</span><span class="p">,</span> <span class="n">CF</span><span class="p">,</span> <span class="n">nrep</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">tdres</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span> <span class="n">fiberType</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">noiseType</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">implnt</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return the output of model_Synapse() from the AN model</span>
+<span class="sd">    (Zilany, Bruce, Ibrahim and Carney, 2014; requires MATLAB)</span>
+<span class="sd">    </span>
+<span class="sd">    This function takes an IHC voltage waveform as input (see model_ihc) and </span>
+<span class="sd">    models a synapse and spiral ganglion cell. The return values are:</span>
+<span class="sd">    </span>
+<span class="sd">    * meanrate: The estimated instantaneous mean rate (incl. refractoriness)</span>
+<span class="sd">    * varrate: The estimated instantaneous variance in the discharge rate (incl. refractoriness)</span>
+<span class="sd">    * psth: The peri-stimulus time histogram </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    vihc : array</span>
+<span class="sd">        IHC voltage as generated by model_ihc()</span>
+<span class="sd">    CF : float</span>
+<span class="sd">        The characteristic frequency of the IHC in Hz</span>
+<span class="sd">    nrep : int</span>
+<span class="sd">        The number of times to repeat the stimulus</span>
+<span class="sd">    tdres : float</span>
+<span class="sd">        The binsize in seconds, i.e., the reciprocal of the sampling rate</span>
+<span class="sd">    fiberType : int</span>
+<span class="sd">        The type of the fiber based on spontaneous rate (SR) in spikes/s:</span>
+<span class="sd">        1 for Low SR; 2 for Medium SR; 3 for High SR</span>
+<span class="sd">    noiseType : 0 or 1</span>
+<span class="sd">        Fixed fGn (noise will be same in every simulation) or variable fGn: </span>
+<span class="sd">        &quot;0&quot; for fixed fGn and &quot;1&quot; for variable fGn</span>
+<span class="sd">    implnt : 0 or 1</span>
+<span class="sd">        &quot;Approxiate&quot; or &quot;actual&quot; implementation of the power-law functions: </span>
+<span class="sd">        &quot;0&quot; for approx. and &quot;1&quot; for actual implementation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># make sure vihc is a row vector (unless it is a reference to a matlab variable)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vihc</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">vihc</span> <span class="o">=</span> <span class="n">vihc</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">vihc</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+
+    <span class="c1"># convert all args to double, as required by model_Synapse</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="n">vihc</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="p">(</span><span class="n">CF</span><span class="p">,</span> <span class="n">nrep</span><span class="p">,</span> <span class="n">tdres</span><span class="p">,</span> <span class="n">fiberType</span><span class="p">,</span> <span class="n">noiseType</span><span class="p">,</span> <span class="n">implnt</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">matlab_proc</span><span class="o">.</span><span class="n">MatlabReference</span><span class="p">):</span>
+            <span class="n">arg</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+    
+    <span class="n">ml</span> <span class="o">=</span> <span class="n">get_matlab</span><span class="p">()</span>
+    <span class="n">fn</span> <span class="o">=</span> <span class="n">ml</span><span class="o">.</span><span class="n">model_Synapse</span>
+    <span class="n">fn</span><span class="o">.</span><span class="n">nargout</span> <span class="o">=</span> <span class="mi">3</span>  <span class="c1"># necessary because nargout(model_IHC) fails</span>
+    <span class="k">return</span> <span class="n">fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span></div>
+    
+
+<div class="viewcode-block" id="seed_rng"><a class="viewcode-back" href="../../../an_model.html#cnmodel.an_model.wrapper.seed_rng">[docs]</a><span class="k">def</span> <span class="nf">seed_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Seed the random number generator used by model_ihc and model_synapse. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">seed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="s2">&quot;RandStream.setGlobalStream(RandStream(&#39;mcg16807&#39;,&#39;seed&#39;,</span><span class="si">%d</span><span class="s2">));&quot;</span> <span class="o">%</span> <span class="n">seed</span>
+    <span class="n">ml</span> <span class="o">=</span> <span class="n">get_matlab</span><span class="p">()</span>
+    <span class="n">ml</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, 2018, Paul B. Manis and Luke Campagnola.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.2.
+    </div>
+  </body>
+</html>

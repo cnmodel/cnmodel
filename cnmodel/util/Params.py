@@ -1,9 +1,4 @@
 # encoding: utf-8
-"""
-Params.py
-
-Created by Paul Manis on 2014-01-31.
-"""
 
 import sys
 import os
@@ -11,15 +6,20 @@ import unittest
 
 
 class Params(object):
-    """
-    utility class to create parameter lists...
-    create like: p = Params(abc=2.0, defg = 3.0, lunch='sandwich')
-    reference like p.abc, p.defg, etc.
-    Supports getting the keys, finding whether a key exists, returning the strucure as a simple dictionary,
-    and printing (show) the parameter structure.
-    """
     def __init__(self, **kwds):
+        """
+        Utility class to create parameter lists
+        create using:
+        p = Params(abc=2.0, defg = 3.0, lunch='sandwich')
+        reference using:
+        p.abc, p.defg, etc.
+        Supports getting the keys, finding whether a key exists, returning the strucure as a simple dictionary,
+        and printing (show) the parameter structure.
+        """
         self.__dict__.update(kwds)
+
+    def additem(self, key, value):
+        self.__dict__[key] = value
 
     def getkeys(self):
         """

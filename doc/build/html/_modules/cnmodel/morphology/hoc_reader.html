@@ -1,0 +1,667 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>cnmodel.morphology.hoc_reader &#8212; CNModel 0.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cnmodel.morphology.hoc_reader</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">neuron</span> <span class="k">import</span> <span class="n">h</span>
+<span class="kn">import</span> <span class="nn">neuron</span>
+<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pyqtgraph</span> <span class="k">as</span> <span class="nn">pg</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">os.path</span>
+
+<div class="viewcode-block" id="HocReader"><a class="viewcode-back" href="../../../morphology.html#cnmodel.morphology.hoc_reader.HocReader">[docs]</a><span class="k">class</span> <span class="nc">HocReader</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hoc</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Provides useful methods for reading hoc structures.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        hoc : :obj: `hoc` or str</span>
+<span class="sd">            Either a hoc object that hs been already created, or a string that defines a hoc file name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_loaded</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hoc</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+            <span class="n">fullfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="n">hoc</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fullfile</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;File not found: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fullfile</span><span class="p">))</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="n">neuron</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">fullfile</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">success</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># indicates failure to read the file</span>
+                <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;Found file, but NEURON load failed: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fullfile</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">file_loaded</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">h</span> <span class="c1"># save a copy of the hoc object itself.</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">hoc</span> <span class="c1"># just use the passed argument</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">file_loaded</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># geometry containers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">edges</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vertexes</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="c1"># all sections in the hoc  {sec_name: hoc Section}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sections</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="c1"># {sec_name: index} indicates index into self.sections.values() where</span>
+        <span class="c1"># Section can be found. </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sec_index</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># {sec_name: [mechanism, ...]}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mechanisms</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="c1"># {sec_group_name: set(sec_name, ...)}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sec_groups</span> <span class="o">=</span> <span class="p">{}</span> 
+        
+        <span class="c1"># topology  {section: (parent, [children,...])}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">topology</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="c1"># populate self.sections, self.sec_index, and self.mechanisms</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_section_info</span><span class="p">()</span>
+        
+        <span class="c1"># auto-generate section groups based on either hoc section lists, or</span>
+        <span class="c1"># on section name prefixes.</span>
+        <span class="n">sec_lists</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_section_lists</span><span class="p">()</span>
+        <span class="n">sec_prefixes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_section_prefixes</span><span class="p">()</span>
+
+        
+        <span class="c1"># Add groupings by section list if possible:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sec_lists</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_groups_by_section_list</span><span class="p">(</span><span class="n">sec_lists</span><span class="p">)</span>
+            
+        <span class="c1"># Otherwise, try section prefixes</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">sec_prefixes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">group</span><span class="p">,</span> <span class="n">sections</span> <span class="ow">in</span> <span class="n">sec_prefixes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_section_group</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">sections</span><span class="p">)</span>
+
+        <span class="c1"># generate topology</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_generate_topology</span><span class="p">()</span>
+
+<div class="viewcode-block" id="HocReader.get_section"><a class="viewcode-back" href="../../../morphology.html#cnmodel.morphology.hoc_reader.HocReader.get_section">[docs]</a>    <span class="k">def</span> <span class="nf">get_section</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sec_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the section associated with the section name</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        sec_name : str</span>
+<span class="sd">            The name of the section object.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        The hoc Section object with the given name.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sections</span><span class="p">[</span><span class="n">sec_name</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;No section named &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="n">sec_name</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="HocReader.get_section_prefixes"><a class="viewcode-back" href="../../../morphology.html#cnmodel.morphology.hoc_reader.HocReader.get_section_prefixes">[docs]</a>    <span class="k">def</span> <span class="nf">get_section_prefixes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Go through all the sections and generate a dictionary mapping their</span>
+<span class="sd">        name prefixes to the list of sections with that prefix. </span>
+<span class="sd">        </span>
+<span class="sd">        For example, with sections names axon[0], axon[1], ais[0], and soma[0],</span>
+<span class="sd">        we would generate the following structure:</span>
+<span class="sd">        </span>
+<span class="sd">            {&#39;axon&#39;: [&#39;axon[0]&#39;, &#39;axon[1]&#39;],</span>
+<span class="sd">             &#39;ais&#39;:  [&#39;ais[0]&#39;],</span>
+<span class="sd">             &#39;soma&#39;: [&#39;soma[0]&#39;]}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">prefixes</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">regex</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s1">&#39;(?P&lt;prefix&gt;\w+)\[(\d*)\]&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">sec_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sections</span><span class="p">:</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="n">regex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">sec_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">g</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;prefix&#39;</span><span class="p">)</span>
+            <span class="n">prefixes</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sec_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">prefixes</span></div>
+
+<div class="viewcode-block" id="HocReader.get_mechanisms"><a class="viewcode-back" href="../../../morphology.html#cnmodel.morphology.hoc_reader.HocReader.get_mechanisms">[docs]</a>    <span class="k">def</span> <span class="nf">get_mechanisms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a set of all of the mechanisms inserted into a given section</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        section : :obj: `NEURON section`</span>
+<span class="sd">            The NEURON section object.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        A list of mechanism names</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mechanisms</span><span class="p">[</span><span class="n">section</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="HocReader.get_density"><a class="viewcode-back" href="../../../morphology.html#cnmodel.morphology.hoc_reader.HocReader.get_density">[docs]</a>    <span class="k">def</span> <span class="nf">get_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">mechanism</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get density mechanism that may be found the section.</span>
+<span class="sd">        mechanism is a list [&#39;name&#39;, &#39;gbarname&#39;]. This is needed because</span>
+<span class="sd">        some mechanisms do not adhere to any convention and may have a different</span>
+<span class="sd">        kind of &#39;gbarname&#39; than &#39;gbar&lt;name&gt;_mechname&#39;</span>
+<span class="sd">        returns the average of the conductance density, as that may range across different</span>
+<span class="sd">        values in a section (e.g., can vary by segments)</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        section : :obj: `NEURON section`</span>
+<span class="sd">            The NEURON section object.</span>
+<span class="sd">        mechanism : list</span>
+<span class="sd">            mechanism is a list [&#39;name&#39;, &#39;gbarname&#39;]. It is used to </span>
+<span class="sd">            retrieve the mechanism density from HOC as </span>
+<span class="sd">            `segment.name.gbarname`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            Mean conductance of the selected mechanism in the section, averaged across all segments of the section.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">gmech</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">section</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">x</span> <span class="o">=</span>  <span class="nb">getattr</span><span class="p">(</span><span class="n">seg</span><span class="p">,</span>  <span class="n">mechanism</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">mecbar</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">mechanism</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">mechanism</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">mecbar</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+                    <span class="n">gmech</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mechanism</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="nb">print</span> <span class="s1">&#39;hoc_reader:get_density did not find the mechanism in dir x&#39;</span><span class="p">,</span> <span class="nb">dir</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
+                <span class="k">return</span><span class="p">(</span><span class="mf">0.</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="s1">&#39;hoc_reader:get_density failed to evaluate the mechanisms... &#39;</span>
+                <span class="k">raise</span>
+
+<span class="c1">#        print gmech</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">gmech</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">gmech</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">gmech</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="HocReader.get_sec_info"><a class="viewcode-back" href="../../../morphology.html#cnmodel.morphology.hoc_reader.HocReader.get_sec_info">[docs]</a>    <span class="k">def</span> <span class="nf">get_sec_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the info of the given section</span>
+<span class="sd">        modified from: neuronvisio</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        section : :obj: `NEURON section`</span>
+<span class="sd">            The NEURON section object.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            containing the information, with html formatting.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">info</span> <span class="o">=</span> <span class="s2">&quot;&lt;b&gt;Section Name:&lt;/b&gt; </span><span class="si">%s</span><span class="s2">&lt;br/&gt;&quot;</span> <span class="o">%</span><span class="n">section</span><span class="o">.</span><span class="n">name</span><span class="p">()</span>
+        <span class="n">info</span> <span class="o">+=</span> <span class="s2">&quot;&lt;b&gt;Length [um]:&lt;/b&gt; </span><span class="si">%f</span><span class="s2">&lt;br/&gt;&quot;</span> <span class="o">%</span> <span class="n">section</span><span class="o">.</span><span class="n">L</span>
+        <span class="n">info</span> <span class="o">+=</span> <span class="s2">&quot;&lt;b&gt;Diameter [um]:&lt;/b&gt; </span><span class="si">%f</span><span class="s2">&lt;br/&gt;&quot;</span> <span class="o">%</span> <span class="n">section</span><span class="o">.</span><span class="n">diam</span>
+        <span class="n">info</span> <span class="o">+=</span> <span class="s2">&quot;&lt;b&gt;Membrane Capacitance:&lt;/b&gt; </span><span class="si">%f</span><span class="s2">&lt;br/&gt;&quot;</span> <span class="o">%</span> <span class="n">section</span><span class="o">.</span><span class="n">cm</span>
+        <span class="n">info</span> <span class="o">+=</span> <span class="s2">&quot;&lt;b&gt;Axial Resistance :&lt;/b&gt; </span><span class="si">%f</span><span class="s2">&lt;br/&gt;&quot;</span> <span class="o">%</span> <span class="n">section</span><span class="o">.</span><span class="n">Ra</span>
+        <span class="n">info</span> <span class="o">+=</span> <span class="s2">&quot;&lt;b&gt;Number of Segments:&lt;/b&gt; </span><span class="si">%f</span><span class="s2">&lt;br/&gt;&quot;</span> <span class="o">%</span> <span class="n">section</span><span class="o">.</span><span class="n">nseg</span>
+        <span class="n">mechs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">section</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">mech</span> <span class="ow">in</span> <span class="n">seg</span><span class="p">:</span>
+                <span class="n">mechs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mech</span><span class="o">.</span><span class="n">name</span><span class="p">())</span>
+        <span class="n">mechs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">mechs</span><span class="p">)</span> <span class="c1"># Excluding the repeating ones</span>
+
+        <span class="n">mech_info</span> <span class="o">=</span> <span class="s2">&quot;&lt;b&gt;Mechanisms in the section&lt;/b&gt;&lt;ul&gt;&quot;</span>
+        <span class="k">for</span> <span class="n">mech_name</span> <span class="ow">in</span> <span class="n">mechs</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="s2">&quot;&lt;li&gt; </span><span class="si">%s</span><span class="s2"> &lt;/li&gt;&quot;</span> <span class="o">%</span> <span class="n">mech_name</span>
+            <span class="n">mech_info</span> <span class="o">+=</span> <span class="n">s</span>
+        <span class="n">mech_info</span> <span class="o">+=</span> <span class="s2">&quot;&lt;/ul&gt;&quot;</span>
+        <span class="n">info</span> <span class="o">+=</span> <span class="n">mech_info</span>
+        <span class="k">return</span> <span class="n">info</span></div>
+
+<div class="viewcode-block" id="HocReader.read_section_info"><a class="viewcode-back" href="../../../morphology.html#cnmodel.morphology.hoc_reader.HocReader.read_section_info">[docs]</a>    <span class="k">def</span> <span class="nf">read_section_info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read all the information about the sections in the current hoc file</span>
+<span class="sd">        Stores the result in the mechanisms class variable.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Collect list of all sections and their mechanism names.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sections</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mechanisms</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sec</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">allsec</span><span class="p">()):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sections</span><span class="p">[</span><span class="n">sec</span><span class="o">.</span><span class="n">name</span><span class="p">()]</span> <span class="o">=</span> <span class="n">sec</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sec_index</span><span class="p">[</span><span class="n">sec</span><span class="o">.</span><span class="n">name</span><span class="p">()]</span> <span class="o">=</span> <span class="n">i</span>
+            <span class="n">mechs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">sec</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">mech</span> <span class="ow">in</span> <span class="n">seg</span><span class="p">:</span>
+                    <span class="n">mechs</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">mech</span><span class="o">.</span><span class="n">name</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mechanisms</span><span class="p">[</span><span class="n">sec</span><span class="o">.</span><span class="n">name</span><span class="p">()]</span> <span class="o">=</span> <span class="n">mechs</span></div>
+
+<div class="viewcode-block" id="HocReader.hoc_namespace"><a class="viewcode-back" href="../../../morphology.html#cnmodel.morphology.hoc_reader.HocReader.hoc_namespace">[docs]</a>    <span class="k">def</span> <span class="nf">hoc_namespace</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a dict of the HOC namespace {&#39;variable_name&#39;: hoc_object}.</span>
+<span class="sd">        NOTE: this method requires NEURON &gt;= 7.3</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">hvar</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="p">):</span> <span class="c1"># look through the whole list, no other way</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># some variables can&#39;t be pointed to...</span>
+                <span class="k">if</span> <span class="n">hvar</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;nseg&#39;</span><span class="p">,</span> <span class="s1">&#39;diam_changed&#39;</span><span class="p">,</span> <span class="s1">&#39;nrn_shape_changed_&#39;</span><span class="p">,</span> 
+                            <span class="s1">&#39;secondorder&#39;</span><span class="p">,</span> <span class="s1">&#39;stoprun&#39;</span><span class="p">]:</span> 
+                    <span class="k">continue</span>
+                <span class="n">u</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="p">,</span> <span class="n">hvar</span><span class="p">)</span>
+                <span class="n">names</span><span class="p">[</span><span class="n">hvar</span><span class="p">]</span> <span class="o">=</span> <span class="n">u</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">continue</span>
+        <span class="k">return</span> <span class="n">names</span></div>
+    
+<div class="viewcode-block" id="HocReader.find_hoc_hname"><a class="viewcode-back" href="../../../morphology.html#cnmodel.morphology.hoc_reader.HocReader.find_hoc_hname">[docs]</a>    <span class="k">def</span> <span class="nf">find_hoc_hname</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">regex</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find hoc names matching a pattern</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        regex : str</span>
+<span class="sd">            Regular expression (Python Re module) to search for.</span>
+<span class="sd">         </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list </span>
+<span class="sd">            The names of HOC objects whose *hname* matches regex.        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">objs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">ns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hoc_namespace</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ns</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">hname</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">hname</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="n">hname</span><span class="p">):</span>
+                    <span class="n">objs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">continue</span>
+        <span class="k">return</span> <span class="n">objs</span></div>
+
+<div class="viewcode-block" id="HocReader.add_section_group"><a class="viewcode-back" href="../../../morphology.html#cnmodel.morphology.hoc_reader.HocReader.add_section_group">[docs]</a>    <span class="k">def</span> <span class="nf">add_section_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">sections</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Declare a grouping of sections (or section names). Sections may be</span>
+<span class="sd">        grouped by any arbitrary criteria (cell, anatomical type, etc).</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">                name of the section group</span>
+<span class="sd">        sections: list</span>
+<span class="sd">            section names or hoc Section objects.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sec_groups</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">overwrite</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Group name </span><span class="si">%s</span><span class="s2"> is already used (use overwrite=True).&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+        
+        <span class="n">group</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">sections</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sec</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+                <span class="n">sec</span> <span class="o">=</span> <span class="n">sec</span><span class="o">.</span><span class="n">name</span><span class="p">()</span>
+            <span class="n">group</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">sec</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sec_groups</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">group</span></div>
+
+<div class="viewcode-block" id="HocReader.get_section_group"><a class="viewcode-back" href="../../../morphology.html#cnmodel.morphology.hoc_reader.HocReader.get_section_group">[docs]</a>    <span class="k">def</span> <span class="nf">get_section_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a section group by name</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            name of the group (dendrite, for example)</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        The set of section names in the group *name*.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sec_groups</span><span class="p">[</span><span class="n">name</span><span class="p">]</span></div>
+    
+<div class="viewcode-block" id="HocReader.get_section_lists"><a class="viewcode-back" href="../../../morphology.html#cnmodel.morphology.hoc_reader.HocReader.get_section_lists">[docs]</a>    <span class="k">def</span> <span class="nf">get_section_lists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Search through all of the hoc variables to find those that are &quot;SectionLists&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_hoc_hname</span><span class="p">(</span><span class="n">regex</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;SectionList\[&#39;</span><span class="p">)</span></div>
+        <span class="c1">#ns = self.hoc_namespace()</span>
+        <span class="c1">#return [name for name in ns if ns[name].hname().startswith(&#39;SectionList[&#39;)]</span>
+        
+<div class="viewcode-block" id="HocReader.add_groups_by_section_list"><a class="viewcode-back" href="../../../morphology.html#cnmodel.morphology.hoc_reader.HocReader.add_groups_by_section_list">[docs]</a>    <span class="k">def</span> <span class="nf">add_groups_by_section_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">names</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a new section groups from the hoc variables indicated in *names*.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        names : list </span>
+<span class="sd">            List containing variable names as strings. Each name must refer to a list of </span>
+<span class="sd">                   Sections in hoc. If a dict is supplied instead, then it</span>
+<span class="sd">                   maps {hoc_list_name: section_group_name}.</span>
+<span class="sd">        </span>
+<span class="sd">        Side effects (modifies)</span>
+<span class="sd">        -----------------------</span>
+<span class="sd">           calls add_section_group</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># if a list is supplied, then the names of groups to create are </span>
+        <span class="c1"># exactly the same as the names of hoc lists.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">names</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">hoc_name</span><span class="p">,</span> <span class="n">group_name</span> <span class="ow">in</span> <span class="n">names</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="p">,</span> <span class="n">hoc_name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_section_group</span><span class="p">(</span><span class="n">group_name</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">var</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="HocReader.get_geometry"><a class="viewcode-back" href="../../../morphology.html#cnmodel.morphology.hoc_reader.HocReader.get_geometry">[docs]</a>    <span class="k">def</span> <span class="nf">get_geometry</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        modified from:neuronvisio</span>
+<span class="sd">        Generate structures that describe the geometry of the sections and their segments (all segments are returned)</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        vertexes : record array containing {pos: (x,y,z), dia, sec_id}</span>
+<span class="sd">                           for each segment.</span>
+<span class="sd">        edges :    array of pairs indicating the indexes of connected</span>
+<span class="sd">                           vertexes.</span>
+<span class="sd">        Side effects</span>
+<span class="sd">        ------------</span>
+<span class="sd">            Modifies vertexes and edges.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="c1"># return cached geometry if this method has already run.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vertexes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">vertexes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">define_shape</span><span class="p">()</span>
+
+        <span class="c1"># map segments (lines) to the section that contains them</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">segment_to_section</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="n">vertexes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">connections</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">secid</span><span class="p">,</span> <span class="n">sec</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sections</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+            <span class="n">x_sec</span><span class="p">,</span> <span class="n">y_sec</span><span class="p">,</span> <span class="n">z_sec</span><span class="p">,</span> <span class="n">d_sec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">retrieve_coordinate</span><span class="p">(</span><span class="n">sec</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">xi</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">x_sec</span><span class="p">):</span>
+                <span class="n">vertexes</span><span class="o">.</span><span class="n">append</span><span class="p">(((</span><span class="n">x_sec</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">y_sec</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">z_sec</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="n">d_sec</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">secid</span><span class="p">))</span>
+                <span class="n">indx_geom_seg</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">vertexes</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">vertexes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">connections</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">indx_geom_seg</span><span class="p">,</span> <span class="n">indx_geom_seg</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">connections</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vertexes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">vertexes</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="p">[</span>
+            <span class="p">(</span><span class="s1">&#39;pos&#39;</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="p">(</span><span class="s1">&#39;dia&#39;</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span>
+            <span class="p">(</span><span class="s1">&#39;sec_index&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vertexes</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">vertexes</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">vertexes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span></div>
+
+<div class="viewcode-block" id="HocReader.retrieve_coordinate"><a class="viewcode-back" href="../../../morphology.html#cnmodel.morphology.hoc_reader.HocReader.retrieve_coordinate">[docs]</a>    <span class="k">def</span> <span class="nf">retrieve_coordinate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieve the coordinates of a section avoiding duplicates</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        section : :obj: `NEURON section`</span>
+<span class="sd">            The NEURON section object.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        array</span>
+<span class="sd">            arrays of x, y, z, d for all the segments of the specified section.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">section</span><span class="o">.</span><span class="n">push</span><span class="p">()</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="p">[],[],[],[]</span>
+
+        <span class="n">tot_points</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">connect_next</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">n3d</span><span class="p">())):</span>
+            <span class="n">present</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">x_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">x3d</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">y_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">y3d</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">z_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">z3d</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">d_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">diam3d</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="c1"># Avoiding duplicates in the sec</span>
+            <span class="k">if</span> <span class="n">x_i</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+                <span class="n">ind</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">x</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">x_i</span><span class="p">)</span> <span class="c1"># Getting the index of last value</span>
+                <span class="k">if</span> <span class="n">y_i</span> <span class="o">==</span> <span class="n">y</span><span class="p">[</span><span class="n">ind</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="n">z_i</span> <span class="o">==</span> <span class="n">z</span><span class="p">[</span><span class="n">ind</span><span class="p">]:</span>
+                        <span class="n">present</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">present</span><span class="p">:</span>
+                <span class="n">k</span> <span class="o">=</span><span class="p">(</span><span class="n">x_i</span><span class="p">,</span> <span class="n">y_i</span><span class="p">,</span> <span class="n">z_i</span><span class="p">)</span>
+                <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_i</span><span class="p">)</span>
+                <span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y_i</span><span class="p">)</span>
+                <span class="n">z</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">z_i</span><span class="p">)</span>
+                <span class="n">d</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d_i</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">pop_section</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">y</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">z</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">d</span><span class="p">))</span></div>
+
+    <span class="k">def</span> <span class="nf">_generate_topology</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">sec</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sections</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">sref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">h</span><span class="o">.</span><span class="n">SectionRef</span><span class="p">(</span><span class="n">sec</span><span class="o">=</span><span class="n">sec</span><span class="p">)</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="n">sref</span><span class="o">.</span><span class="n">parent</span><span class="p">()</span><span class="o">.</span><span class="n">sec</span><span class="o">.</span><span class="n">name</span><span class="p">()</span> <span class="k">if</span> <span class="n">sref</span><span class="o">.</span><span class="n">has_parent</span><span class="p">()</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">topology</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">topology</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">[]]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">topology</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">parent</span>
+            <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">parent</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">topology</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">topology</span><span class="p">[</span><span class="n">parent</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">[]]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">topology</span><span class="p">[</span><span class="n">parent</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            
+<div class="viewcode-block" id="HocReader.get_branch"><a class="viewcode-back" href="../../../morphology.html#cnmodel.morphology.hoc_reader.HocReader.get_branch">[docs]</a>    <span class="k">def</span> <span class="nf">get_branch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return all sections in a branch, starting with root.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        root : :obj: `NEURON section`</span>
+<span class="sd">            The NEURON section object.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">branch</span> <span class="o">=</span> <span class="p">[</span><span class="n">root</span><span class="p">]</span>
+        <span class="n">childs</span> <span class="o">=</span> <span class="p">[</span><span class="n">root</span><span class="p">]</span>
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">childs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">new_childs</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">childs</span><span class="p">:</span>
+                <span class="n">new_childs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">topology</span><span class="p">[</span><span class="n">ch</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">childs</span> <span class="o">=</span> <span class="n">new_childs</span>
+            <span class="n">branch</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">childs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">branch</span></div>
+
+<div class="viewcode-block" id="HocReader.translate_branch"><a class="viewcode-back" href="../../../morphology.html#cnmodel.morphology.hoc_reader.HocReader.translate_branch">[docs]</a>    <span class="k">def</span> <span class="nf">translate_branch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">dx</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Move the branch beginning at *root* by *dx*.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        root : :obj: `NEURON section`</span>
+<span class="sd">            The NEURON section object.</span>
+<span class="sd">        dx : array</span>
+<span class="sd">           Which must be an array of length 3 defining the translation.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_geometry</span><span class="p">()</span>
+        <span class="n">dx</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_branch</span><span class="p">(</span><span class="n">root</span><span class="p">):</span>
+            <span class="n">sid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sec_index</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vertexes</span><span class="p">[</span><span class="s1">&#39;sec_index&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">sid</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">vertexes</span><span class="p">[</span><span class="s1">&#39;pos&#39;</span><span class="p">][</span><span class="n">mask</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dx</span></div>
+
+<div class="viewcode-block" id="HocReader.make_volume_data"><a class="viewcode-back" href="../../../morphology.html#cnmodel.morphology.hoc_reader.HocReader.make_volume_data">[docs]</a>    <span class="k">def</span> <span class="nf">make_volume_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resolution</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="mf">500e6</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Using the current state of vertexes, edges, generates a scalar field</span>
+<span class="sd">        useful for building isosurface or volumetric renderings.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        resolution: float, default=1.0 microns</span>
+<span class="sd">            width (um) of a single voxel in the scalar field.</span>
+<span class="sd">        max_size: int</span>
+<span class="sd">            maximum allowed scalar field size (bytes).</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            * 3D scalar field indicating distance from nearest membrane,</span>
+<span class="sd">            * 3D field indicating section IDs of nearest membrane,</span>
+<span class="sd">            * QTransform that maps from 3D array indexes to original vertex </span>
+<span class="sd">                coordinates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">vertexes</span><span class="p">,</span> <span class="n">lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_geometry</span><span class="p">()</span>
+        
+        <span class="n">maxdia</span> <span class="o">=</span> <span class="n">vertexes</span><span class="p">[</span><span class="s1">&#39;dia&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="c1"># maximum diameter (defines shape of kernel)</span>
+        <span class="n">kernel_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">maxdia</span><span class="o">/</span><span class="n">resolution</span><span class="p">)</span> <span class="o">+</span> <span class="mi">3</span> <span class="c1"># width of kernel</span>
+        
+        
+        <span class="c1"># read vertex data</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">vertexes</span><span class="p">[</span><span class="s1">&#39;pos&#39;</span><span class="p">]</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">vertexes</span><span class="p">[</span><span class="s1">&#39;dia&#39;</span><span class="p">]</span>
+        <span class="n">sec_id</span> <span class="o">=</span> <span class="n">vertexes</span><span class="p">[</span><span class="s1">&#39;sec_index&#39;</span><span class="p">]</span>
+        
+        <span class="c1"># decide on dimensions of scalar field</span>
+        <span class="n">mx</span> <span class="o">=</span> <span class="n">pos</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">mn</span> <span class="o">=</span> <span class="n">pos</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="n">mx</span> <span class="o">-</span> <span class="n">mn</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">((</span><span class="n">diff</span> <span class="o">/</span> <span class="n">resolution</span> <span class="o">+</span> <span class="n">kernel_size</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">))</span>
+
+        <span class="c1"># prepare blank scalar field for drawing</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">itemsize</span> <span class="o">*</span> <span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">size</span> <span class="o">&gt;</span> <span class="n">max_size</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Scalar field would be larger than max_size (</span><span class="si">%d</span><span class="s2">MB &gt; </span><span class="si">%d</span><span class="s2">MB), resolution is</span><span class="si">%f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">size</span><span class="o">/</span><span class="mf">1e6</span><span class="p">,</span> <span class="n">max_size</span><span class="o">/</span><span class="mf">1e6</span><span class="p">,</span> <span class="n">resolution</span><span class="p">))</span>
+        <span class="n">scfield</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">scfield</span><span class="p">[:]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1000</span>
+        
+        <span class="c1"># array for holding IDs of sections that contribute to each area</span>
+        <span class="n">idfield</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">idfield</span><span class="p">[:]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        
+        <span class="c1"># map vertex locations to voxels</span>
+        <span class="n">vox_pos</span> <span class="o">=</span> <span class="n">pos</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">vox_pos</span> <span class="o">-=</span> <span class="n">mn</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+        <span class="n">vox_pos</span> <span class="o">*=</span> <span class="mf">1.</span><span class="o">/</span><span class="n">resolution</span>
+
+        <span class="c1"># Define kernel used to draw scalar field along dendrites</span>
+        <span class="k">def</span> <span class="nf">cone</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">,</span><span class="n">k</span><span class="p">):</span>
+            <span class="c1"># value decreases linearly with distance from center of kernel.</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="n">kernel_size</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="k">return</span> <span class="n">w</span> <span class="o">-</span> <span class="p">((</span><span class="n">i</span><span class="o">-</span><span class="n">w</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">w</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">k</span><span class="o">-</span><span class="n">w</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span>
+        <span class="n">kernel</span> <span class="o">=</span> <span class="n">resolution</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfunction</span><span class="p">(</span><span class="n">cone</span><span class="p">,</span> <span class="p">(</span><span class="n">kernel_size</span><span class="p">,)</span><span class="o">*</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">kernel</span> <span class="o">-=</span> <span class="n">kernel</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+
+        <span class="k">def</span> <span class="nf">array_intersection</span><span class="p">(</span><span class="n">arr1</span><span class="p">,</span> <span class="n">arr2</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Return slices used to access the overlapping area between two </span>
+<span class="sd">            arrays that are offset such that the origin of *arr2* is a *pos* </span>
+<span class="sd">            relative to *arr1*.            </span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">s1</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="mi">3</span>
+            <span class="n">s2</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="mi">3</span>
+            <span class="n">t1</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="mi">3</span>
+            <span class="n">t2</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="mi">3</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">pos</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="n">s1</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">pos</span><span class="p">[</span><span class="n">axis</span><span class="p">])</span>
+                <span class="n">s2</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">arr2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">],</span> <span class="n">arr1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span><span class="o">-</span><span class="n">pos</span><span class="p">[</span><span class="n">axis</span><span class="p">])</span>
+                <span class="n">t1</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">pos</span><span class="p">[</span><span class="n">axis</span><span class="p">])</span>
+                <span class="n">t2</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">arr1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">],</span> <span class="n">pos</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span><span class="o">+</span><span class="n">arr2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">])</span>
+            <span class="n">slice1</span> <span class="o">=</span> <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="n">t1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">t2</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">slice</span><span class="p">(</span><span class="n">t1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">t2</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="nb">slice</span><span class="p">(</span><span class="n">t1</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="n">t2</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+            <span class="n">slice2</span> <span class="o">=</span> <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="n">s1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">s2</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">slice</span><span class="p">(</span><span class="n">s1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">s2</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="nb">slice</span><span class="p">(</span><span class="n">s1</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="n">s2</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+            <span class="k">return</span> <span class="n">slice1</span><span class="p">,</span> <span class="n">slice2</span>            
+
+        <span class="c1"># Draw lines into volume using *kernel* as the brush</span>
+        <span class="n">vox_pos</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">vox_pos</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="n">scfield</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">vox_pos</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">vox_pos</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="n">scfield</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">vox_pos</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">vox_pos</span><span class="p">[:,</span><span class="mi">2</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="n">scfield</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lines</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">p1</span> <span class="o">=</span> <span class="n">vox_pos</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">p2</span> <span class="o">=</span> <span class="n">vox_pos</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">diff</span> <span class="o">=</span> <span class="n">p2</span><span class="o">-</span><span class="n">p1</span>
+            <span class="n">axis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">diff</span><span class="p">))</span>
+            <span class="n">dia</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">nvoxels</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">diff</span><span class="p">[</span><span class="n">axis</span><span class="p">]))</span><span class="o">+</span><span class="mi">1</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nvoxels</span><span class="p">):</span>
+                <span class="n">kern</span> <span class="o">=</span> <span class="n">kernel</span> <span class="o">+</span> <span class="p">(</span><span class="n">dia</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span>
+                <span class="n">sl1</span><span class="p">,</span> <span class="n">sl2</span> <span class="o">=</span> <span class="n">array_intersection</span><span class="p">(</span><span class="n">scfield</span><span class="p">,</span> <span class="n">kern</span><span class="p">,</span> <span class="n">p1</span><span class="p">)</span> <span class="c1"># find the overlapping area between the field and the kernel</span>
+                <span class="n">idfield</span><span class="p">[</span><span class="n">sl1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">scfield</span><span class="p">[</span><span class="n">sl1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">kern</span><span class="p">[</span><span class="n">sl2</span><span class="p">],</span> <span class="n">idfield</span><span class="p">[</span><span class="n">sl1</span><span class="p">],</span> <span class="n">sec_id</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="n">scfield</span><span class="p">[</span><span class="n">sl1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">scfield</span><span class="p">[</span><span class="n">sl1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">kern</span><span class="p">[</span><span class="n">sl2</span><span class="p">],</span> <span class="n">scfield</span><span class="p">[</span><span class="n">sl1</span><span class="p">],</span> <span class="n">kern</span><span class="p">[</span><span class="n">sl2</span><span class="p">])</span>
+                <span class="n">dia</span> <span class="o">+=</span> <span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">-</span><span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">/</span> <span class="n">nvoxels</span>
+                <span class="n">p1</span> <span class="o">+=</span> <span class="n">diff</span> <span class="o">/</span> <span class="n">nvoxels</span>
+                
+        <span class="c1"># return transform relating volume data to original vertex data</span>
+        <span class="n">transform</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">Transform3D</span><span class="p">()</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">resolution</span> <span class="o">*</span> <span class="n">kernel_size</span> <span class="o">/</span> <span class="mi">2</span> <span class="c1"># offset introduced due to kernel</span>
+        <span class="n">transform</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">mn</span><span class="o">-</span><span class="n">w</span><span class="p">))</span>
+        <span class="n">transform</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">resolution</span><span class="p">,</span> <span class="n">resolution</span><span class="p">,</span> <span class="n">resolution</span><span class="p">)</span>
+        <span class="n">transform</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">scfield</span><span class="p">,</span> <span class="n">idfield</span><span class="p">,</span> <span class="n">transform</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, 2018, Paul B. Manis and Luke Campagnola.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.2.
+    </div>
+  </body>
+</html>

@@ -84,8 +84,8 @@ class PyramidalKanold(Pyramidal, Cell):
                 species='rat', modelType=None, debug=False):
         """
         initialize a pyramidal cell, based on the Kanold-Manis (2001) pyramidal cell model.
-        Modifications to the cell can be made by calling methods below. These include:
-            Converting to a model with modified size and conductances (experimental).
+        Modifications to the cell can be made by calling methods below. These include
+        converting to a model with modified size and conductances (experimental).
         
         Parameters
         ----------
@@ -162,8 +162,8 @@ class PyramidalKanold(Pyramidal, Cell):
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type I-c  cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
             self.decorate()
+        self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
         self.get_mechs(self.soma)
-#        self.cell_initialize(vrange=self.vrange)
         if debug:
             print "<< PYR: POK Pyramidal Cell created >>"
 
@@ -171,12 +171,11 @@ class PyramidalKanold(Pyramidal, Cell):
         cellcap = data.get(dataset, species=species, cell_type=celltype,
             field='soma_Cap')
         chtype = data.get(dataset, species=species, cell_type=celltype,
-            field='soma_na_type')
+            field='soma_natype')
         pars = Params(cap=cellcap, natype=chtype)
         for g in ['soma_napyr_gbar', 'soma_kdpyr_gbar', 'soma_kif_gbar', 'soma_kis_gbar',
-                  'soma_kcnq_gbar', 'soma_nap_gbar', 'soma_leak_gbar',
-                  'soma_e_h','soma_leak_erev', 'soma_e_k', 'soma_e_na',
-                  'soma_natype']:
+                  'soma_kcnq_gbar', 'soma_nap_gbar', 'soma_ihpyr_gbar', 'soma_leak_gbar',
+                  'soma_e_h','soma_leak_erev', 'soma_e_k', 'soma_e_na']:
             pars.additem(g,  data.get(dataset, species=species, cell_type=celltype,
             field=g))
         return pars
@@ -229,7 +228,6 @@ class PyramidalKanold(Pyramidal, Cell):
             soma().ena = pars.soma_e_na
             soma().ek = pars.soma_e_k
             soma().ihpyr.eh = pars.soma_e_h
-            print ('Set up')
 
         # elif species in 'rat' and modelType == 'II':
         #     """

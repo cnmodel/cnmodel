@@ -1,0 +1,495 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>cnmodel.util.get_anspikes &#8212; CNModel 0.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cnmodel.util.get_anspikes</h1><div class="highlight"><pre>
+<span></span><span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;pbmanis&#39;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">ManageANSpikes is a class to read the output of the Zilany et al. 2009 AN model into</span>
+<span class="sd">python, and provides services to access that data.</span>
+
+<span class="sd">Basic usage is to create an instance of the class, and specify the data directory</span>
+<span class="sd">if necessary.</span>
+
+<span class="sd">You may then get the data in the format of a list using one of the &quot;get&quot; routines.</span>
+<span class="sd">The data is pulled from the nearest CF or the specified CF.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">OrderedDict</span>
+<span class="kn">import</span> <span class="nn">scipy.io</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">MP</span>
+
+
+<div class="viewcode-block" id="ManageANSpikes"><a class="viewcode-back" href="../../../util.html#cnmodel.util.get_anspikes.ManageANSpikes">[docs]</a><span class="k">class</span> <span class="nc">ManageANSpikes</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ManageANSpikes is a class to read the output of the Zilany et al. 2009 AN model into</span>
+<span class="sd">    python, and provides services to access that data.</span>
+
+<span class="sd">    Basic usage is to create an instance of the class, and specify the data directory</span>
+<span class="sd">    if necessary.</span>
+
+<span class="sd">    You may then get the data in the format of a list using one of the &quot;get&quot; routines.</span>
+<span class="sd">    The data is pulled from the nearest CF or the specified CF.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># self.datadir = environment[&#39;HOME&#39;] + &#39;/Desktop/Matlab/ZilanyCarney-JASAcode-2009/&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;HOME&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;/Desktop/Matlab/ANData/&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_read_flag</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataType</span> <span class="o">=</span> <span class="s1">&#39;RI&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_CF_map</span><span class="p">(</span><span class="mi">4000</span><span class="p">,</span> <span class="mi">38000</span><span class="p">,</span> <span class="mi">25</span><span class="p">)</span> <span class="c1"># the default list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_AN</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="ManageANSpikes.get_data_dir"><a class="viewcode-back" href="../../../util.html#cnmodel.util.get_anspikes.ManageANSpikes.get_data_dir">[docs]</a>    <span class="k">def</span> <span class="nf">get_data_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_dir</span></div>
+
+<div class="viewcode-block" id="ManageANSpikes.set_data_dir"><a class="viewcode-back" href="../../../util.html#cnmodel.util.get_anspikes.ManageANSpikes.set_data_dir">[docs]</a>    <span class="k">def</span> <span class="nf">set_data_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directory</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">directory</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_dir</span> <span class="o">=</span> <span class="n">directory</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;ManageANSpikes.set_data_dir: Path </span><span class="si">%d</span><span class="s1"> is not a directory&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ManageANSpikes.get_data_read"><a class="viewcode-back" href="../../../util.html#cnmodel.util.get_anspikes.ManageANSpikes.get_data_read">[docs]</a>    <span class="k">def</span> <span class="nf">get_data_read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_read_flag</span></div>
+
+<div class="viewcode-block" id="ManageANSpikes.get_CF_map"><a class="viewcode-back" href="../../../util.html#cnmodel.util.get_anspikes.ManageANSpikes.get_CF_map">[docs]</a>    <span class="k">def</span> <span class="nf">get_CF_map</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">CF_map</span></div>
+
+<div class="viewcode-block" id="ManageANSpikes.set_CF_map"><a class="viewcode-back" href="../../../util.html#cnmodel.util.get_anspikes.ManageANSpikes.set_CF_map">[docs]</a>    <span class="k">def</span> <span class="nf">set_CF_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">low</span><span class="p">,</span> <span class="n">high</span><span class="p">,</span> <span class="n">nfreq</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">CF_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">low</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">high</span><span class="p">),</span> <span class="n">nfreq</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="ManageANSpikes.get_dataType"><a class="viewcode-back" href="../../../util.html#cnmodel.util.get_anspikes.ManageANSpikes.get_dataType">[docs]</a>    <span class="k">def</span> <span class="nf">get_dataType</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataType</span></div>
+
+<div class="viewcode-block" id="ManageANSpikes.set_dataType"><a class="viewcode-back" href="../../../util.html#cnmodel.util.get_anspikes.ManageANSpikes.set_dataType">[docs]</a>    <span class="k">def</span> <span class="nf">set_dataType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datatype</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">datatype</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;RI&#39;</span><span class="p">,</span> <span class="s1">&#39;PL&#39;</span><span class="p">]:</span>  <span class="c1"># only for recognized data types</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dataType</span> <span class="o">=</span> <span class="n">datatype</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span> <span class="p">(</span><span class="s1">&#39;get_anspikes.set_dataType: unrecognized type </span><span class="si">%s</span><span class="s1"> &#39;</span> <span class="o">%</span> <span class="n">datatype</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ManageANSpikes.plot_RI_vs_F"><a class="viewcode-back" href="../../../util.html#cnmodel.util.get_anspikes.ManageANSpikes.plot_RI_vs_F">[docs]</a>    <span class="k">def</span> <span class="nf">plot_RI_vs_F</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mf">10000.</span><span class="p">,</span> <span class="n">spontclass</span><span class="o">=</span><span class="s1">&#39;HS&#39;</span><span class="p">,</span> <span class="n">display</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">cfd</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">display</span><span class="p">:</span>
+            <span class="n">MP</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">fr</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">CF_map</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">read_AN_data</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="n">freq</span><span class="p">,</span> <span class="n">CF</span><span class="o">=</span><span class="n">fr</span><span class="p">,</span> <span class="n">spontclass</span><span class="o">=</span><span class="n">spontclass</span><span class="p">,</span> <span class="n">ignoreflag</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">nsp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SPLs</span><span class="p">))</span>  <span class="c1"># this is the same regardless</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">db</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SPLs</span><span class="p">):</span>
+                <span class="n">spkl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">combine_reps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spikelist</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="n">nsp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">spkl</span><span class="p">)</span><span class="c1">#/self.SPLs[i]</span>
+            <span class="k">if</span> <span class="n">display</span><span class="p">:</span>
+                <span class="n">MP</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SPLs</span><span class="p">,</span> <span class="n">nsp</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ManageANSpikes.plot_Rate_vs_F"><a class="viewcode-back" href="../../../util.html#cnmodel.util.get_anspikes.ManageANSpikes.plot_Rate_vs_F">[docs]</a>    <span class="k">def</span> <span class="nf">plot_Rate_vs_F</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mf">10000.</span><span class="p">,</span> <span class="n">spontclass</span><span class="o">=</span><span class="s1">&#39;HS&#39;</span><span class="p">,</span> <span class="n">display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">SPL</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        assumes we have done a &quot;read all&quot;</span>
+
+<span class="sd">        :param freq:</span>
+<span class="sd">        :param spontclass:</span>
+<span class="sd">        :param display:</span>
+<span class="sd">        :param SPL:</span>
+<span class="sd">        :return:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cfd</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">display</span><span class="p">:</span>
+            <span class="n">MP</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">db</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SPLs</span><span class="p">):</span>  <span class="c1"># plot will have lines at each SPL</span>
+           <span class="c1"># retrieve_from_all_AN(self, cf, SPL)   # self.read_AN_data(freq=freq, CF=fr, spontclass=spontclass)</span>
+            <span class="n">nsp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">CF_map</span><span class="p">))</span>  <span class="c1"># this is the same regardless</span>
+            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">fr</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">CF_map</span><span class="p">):</span>
+                <span class="n">spikelist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">retrieve_from_all_AN</span><span class="p">(</span><span class="n">fr</span><span class="p">,</span> <span class="n">db</span><span class="p">)</span>
+                <span class="n">spkl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">combine_reps</span><span class="p">(</span><span class="n">spikelist</span><span class="p">)</span>
+                <span class="n">nsp</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">spkl</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">spikelist</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">display</span><span class="p">:</span>
+                <span class="n">MP</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">CF_map</span><span class="p">,</span> <span class="n">nsp</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ManageANSpikes.getANatFandSPL"><a class="viewcode-back" href="../../../util.html#cnmodel.util.get_anspikes.ManageANSpikes.getANatFandSPL">[docs]</a>    <span class="k">def</span> <span class="nf">getANatFandSPL</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spontclass</span><span class="o">=</span><span class="s1">&#39;MS&#39;</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mf">10000.</span><span class="p">,</span> <span class="n">CF</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">SPL</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the AN data at a particular frequency and SPL. Note that the tone freq is specified,</span>
+<span class="sd">        but the CF of the fiber might be different. If CF is None, we try to get the closest</span>
+<span class="sd">        fiber data to the tone Freq.</span>
+<span class="sd">        Other arguments are the spontaneous rate and the SPL level.</span>
+<span class="sd">        The data must exist, or we epically fail.</span>
+
+<span class="sd">        :param spontclass: &#39;HS&#39;, &#39;MS&#39;, or &#39;LS&#39; for high, middle or low spont groups (1,2,3 in Zilany et al model)</span>
+<span class="sd">        :param freq: The stimulus frequency, in Hz</span>
+<span class="sd">        :param CF:  The &#39;characteristic frequency&#39; of the desired AN fiber, in Hz</span>
+<span class="sd">        :param SPL: The sound pressure level, in dB SPL for the stimulus</span>
+<span class="sd">        :return: an array of nReps of spike times.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="n">CF</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">closest</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">CF_map</span><span class="o">-</span><span class="n">freq</span><span class="p">))</span>  <span class="c1"># find closest to the stim freq</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">closest</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">CF_map</span><span class="o">-</span><span class="n">CF</span><span class="p">))</span>  <span class="c1"># find closest to the stim freq</span>
+        <span class="n">CF</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">CF_map</span><span class="p">[</span><span class="n">closest</span><span class="p">]</span>
+        <span class="nb">print</span> <span class="s1">&#39;closest f: &#39;</span><span class="p">,</span> <span class="n">CF</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_AN_data</span><span class="p">(</span><span class="n">spontclass</span><span class="o">=</span><span class="n">spontclass</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mf">10000.</span><span class="p">,</span> <span class="n">CF</span><span class="o">=</span><span class="n">CF</span><span class="p">)</span>
+        <span class="k">return</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_AN_at_SPL</span><span class="p">(</span><span class="n">SPL</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="ManageANSpikes.get_AN_at_SPL"><a class="viewcode-back" href="../../../util.html#cnmodel.util.get_anspikes.ManageANSpikes.get_AN_at_SPL">[docs]</a>    <span class="k">def</span> <span class="nf">get_AN_at_SPL</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spl</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        grabs the AN data for the requested SPL for the data set currently loaded</span>
+<span class="sd">        The data must exist, or we epically fail.</span>
+
+<span class="sd">        :param spl: sound pressure level, in dB SPL</span>
+<span class="sd">        :return: spike trains (times) as a list of nReps numpy arrays.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_read_flag</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s1">&#39;getANatSPL: No data read yet&#39;</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SPLs</span> <span class="o">==</span> <span class="n">spl</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s1">&#39;get_anspikes::getANatSPL: spl=</span><span class="si">%6.1f</span><span class="s1"> not in list of spls:&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">spl</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">SPLs</span>
+            <span class="n">exit</span><span class="p">()</span>  <span class="c1"># no match</span>
+        <span class="c1"># now clean up array to keep it iterable upon return</span>
+        <span class="n">spkl</span> <span class="o">=</span> <span class="p">[[]]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spikelist</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spikelist</span><span class="p">[</span><span class="n">k</span><span class="p">])):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spikelist</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+                <span class="n">spkl</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spikelist</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">spkl</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spikelist</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">])]</span>
+        <span class="k">return</span> <span class="n">spkl</span>  <span class="c1"># returns all the trials in the list</span></div>
+
+<div class="viewcode-block" id="ManageANSpikes.read_all_ANdata"><a class="viewcode-back" href="../../../util.html#cnmodel.util.get_anspikes.ManageANSpikes.read_all_ANdata">[docs]</a>    <span class="k">def</span> <span class="nf">read_all_ANdata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mf">10000.</span><span class="p">,</span> <span class="n">CFList</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">spontclass</span><span class="o">=</span><span class="s1">&#39;HS&#39;</span><span class="p">,</span> <span class="n">stim</span><span class="o">=</span><span class="s1">&#39;BFTone&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reads a bank of AN data, across frequency and intensity, for a given stimulus frequency</span>
+<span class="sd">        Assumptions: the bank of data is consistent in terms of nReps and SPLs</span>
+
+<span class="sd">        :param freq: Tone stimulus frequency (if stim is Tone or BFTone)</span>
+<span class="sd">        :param CFList: A list of the CFs to read</span>
+<span class="sd">        :param spontclass: &#39;HS&#39;, &#39;MS&#39;, or &#39;LS&#39;, corresponding to spont rate groups</span>
+<span class="sd">        :param stim: Stimulus type - Tone/BFTone, or Noise</span>
+<span class="sd">        :return: Nothing. The data are stored in an array accessible directly or through a selector function</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_AN</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="n">f</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">CFList</span><span class="p">])</span>  <span class="c1"># access through dictionary with keys as freq</span>
+        <span class="k">for</span> <span class="n">cf</span> <span class="ow">in</span> <span class="n">CFList</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">read_AN_data</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="n">freq</span><span class="p">,</span> <span class="n">CF</span><span class="o">=</span><span class="n">cf</span><span class="p">,</span> <span class="n">spontclass</span><span class="o">=</span><span class="n">spontclass</span><span class="p">,</span> <span class="n">stim</span><span class="o">=</span><span class="n">stim</span><span class="p">,</span> <span class="n">setflag</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">all_AN</span><span class="p">[</span><span class="n">cf</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spikelist</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_read_flag</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># inform and block</span></div>
+
+<div class="viewcode-block" id="ManageANSpikes.retrieve_from_all_AN"><a class="viewcode-back" href="../../../util.html#cnmodel.util.get_anspikes.ManageANSpikes.retrieve_from_all_AN">[docs]</a>    <span class="k">def</span> <span class="nf">retrieve_from_all_AN</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cf</span><span class="p">,</span> <span class="n">SPL</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param cf:</span>
+<span class="sd">        :param SPL:</span>
+<span class="sd">        :return: spike list (all nreps) at the cf and SPL requested, for the loaded stimulus set</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_read_flag</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_AN</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s1">&#39;get_anspikes::retrieve_from_all_AN: No data read yet: &#39;</span>
+            <span class="n">exit</span><span class="p">()</span>
+
+        <span class="n">ispl</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SPLs</span> <span class="o">==</span> <span class="nb">float</span><span class="p">(</span><span class="n">SPL</span><span class="p">))[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">icf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_AN</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">cf</span><span class="p">)</span>
+        <span class="n">spikelist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_AN</span><span class="p">[</span><span class="n">cf</span><span class="p">][</span><span class="n">ispl</span><span class="p">]</span>
+        <span class="n">spkl</span> <span class="o">=</span> <span class="p">[[]]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">spikelist</span><span class="p">)</span>
+        <span class="c1">#print len(spikelist)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">spikelist</span><span class="p">)):</span> <span class="c1"># across trials</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">spikelist</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="n">spkl</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">spikelist</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">spkl</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">spikelist</span><span class="p">[</span><span class="n">i</span><span class="p">])]</span>
+        <span class="c1">#print &#39;cf: %f  spl: %d  nspk: %f&#39; % (cf, SPL, len(spkl[i]))</span>
+        <span class="k">return</span><span class="p">(</span><span class="n">spikelist</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ManageANSpikes.read_AN_data"><a class="viewcode-back" href="../../../util.html#cnmodel.util.get_anspikes.ManageANSpikes.read_AN_data">[docs]</a>    <span class="k">def</span> <span class="nf">read_AN_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">CF</span><span class="o">=</span><span class="mi">5300</span><span class="p">,</span> <span class="n">spontclass</span> <span class="o">=</span> <span class="s1">&#39;HS&#39;</span><span class="p">,</span> <span class="n">display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                     <span class="n">stim</span><span class="o">=</span><span class="s1">&#39;BFTone&#39;</span><span class="p">,</span> <span class="n">setflag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ignoreflag</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        read responses of auditory nerve model of Zilany et al. (2009).</span>
+<span class="sd">        display = True plots the psth&#39;s for all ANF channels in the dataset</span>
+<span class="sd">        Request response to stimulus at Freq, for fiber with CF</span>
+<span class="sd">        and specified spont rate</span>
+<span class="sd">        This version is for rate-intensity runs March 2014.</span>
+<span class="sd">        Returns: Nothing</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+                     
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ignoreflag</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_read_flag</span> <span class="o">==</span> <span class="kc">False</span>
+            <span class="c1"># print &#39;Each instance of ManageANSPikes is allowed ONE data set to manage&#39;</span>
+            <span class="c1"># print &#39;This is a design decision to avoid confusion about which data is in the instance&#39;</span>
+            <span class="c1"># exit()</span>
+        <span class="k">if</span> <span class="n">stim</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;BFTone&#39;</span><span class="p">,</span> <span class="s1">&#39;Tone&#39;</span><span class="p">]:</span>
+            <span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_F</span><span class="si">%06.3f</span><span class="s1">_CF</span><span class="si">%06.3f</span><span class="s1">_</span><span class="si">%2s</span><span class="s1">.mat&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataType</span><span class="p">,</span> <span class="n">freq</span><span class="o">/</span><span class="mf">1000.0</span><span class="p">,</span> <span class="n">CF</span><span class="o">/</span><span class="mf">1000.</span><span class="p">,</span> <span class="n">spontclass</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">stim</span><span class="o">==</span><span class="s1">&#39;Noise&#39;</span><span class="p">:</span>
+            <span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_Noise_CF</span><span class="si">%06.3f</span><span class="s1">_</span><span class="si">%2s</span><span class="s1">.mat&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataType</span><span class="p">,</span> <span class="n">CF</span><span class="o">/</span><span class="mf">1000.</span><span class="p">,</span> <span class="n">spontclass</span><span class="p">)</span>
+
+        <span class="c1">#print &#39;Reading: %s&#39; % (fname)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">mfile</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">loadmat</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">fname</span><span class="p">),</span> <span class="n">squeeze_me</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s1">&#39;get_anspikes::read_AN_data: Failed to find data file </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+            <span class="nb">print</span> <span class="s1">&#39;Corresponding to Freq: </span><span class="si">%f</span><span class="s1">  CF: </span><span class="si">%f</span><span class="s1">  spontaneous rate class: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">freq</span><span class="p">,</span> <span class="n">CF</span><span class="p">,</span> <span class="n">spontclass</span><span class="p">)</span>
+            <span class="n">exit</span><span class="p">()</span>
+
+        <span class="n">n_spl</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mfile</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dataType</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">display</span><span class="p">:</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n_spl</span><span class="p">))</span><span class="o">+</span><span class="mi">1</span>
+            <span class="n">mg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+            <span class="n">mg</span> <span class="o">=</span> <span class="p">[</span><span class="n">mg</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">mg</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()]</span>
+        <span class="n">spkl</span> <span class="o">=</span> <span class="p">[[]]</span><span class="o">*</span><span class="n">n_spl</span>
+        <span class="n">spl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_spl</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_spl</span><span class="p">):</span>
+            <span class="n">spkl</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">mfile</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dataType</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="c1"># get data for one SPL</span>
+            <span class="n">spl</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">mfile</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dataType</span><span class="p">][</span><span class="s1">&#39;SPL&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span>  <span class="c1"># get SPL for this set of runs</span>
+            <span class="c1">#print spkl[k].shape</span>
+            <span class="k">if</span> <span class="n">display</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">spkl</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">k</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span>  <span class="n">mg</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">display</span><span class="p">:</span>
+            <span class="n">MP</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spikelist</span> <span class="o">=</span> <span class="n">spkl</span>  <span class="c1"># save these so we can have a single point to parse them</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SPLs</span> <span class="o">=</span> <span class="n">spl</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_reps</span> <span class="o">=</span> <span class="n">mfile</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dataType</span><span class="p">][</span><span class="s1">&#39;nrep&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">setflag</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_read_flag</span> <span class="o">=</span> <span class="kc">True</span></div>
+        <span class="c1">#return spkl, spl, mfile[&#39;RI&#39;][&#39;nrep&#39;]</span>
+
+<div class="viewcode-block" id="ManageANSpikes.getANatSPL"><a class="viewcode-back" href="../../../util.html#cnmodel.util.get_anspikes.ManageANSpikes.getANatSPL">[docs]</a>    <span class="k">def</span> <span class="nf">getANatSPL</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spl</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataRead</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s1">&#39;getANatSPL: No data read yet&#39;</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SPLs</span> <span class="o">==</span> <span class="n">spl</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s1">&#39;get_anspikes::getANatSPL: spl=</span><span class="si">%6.1f</span><span class="s1"> not in list of spls:&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">spl</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">SPLs</span>
+            <span class="n">exit</span><span class="p">()</span>  <span class="c1"># no match</span>
+        <span class="c1"># now clean up array to keep it iterable upon return</span>
+        <span class="n">spkl</span> <span class="o">=</span> <span class="p">[[]]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spikelist</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spikelist</span><span class="p">[</span><span class="n">k</span><span class="p">])):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spikelist</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+                <span class="n">spkl</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spikelist</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">spkl</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spikelist</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">])]</span>
+        <span class="k">return</span> <span class="n">spkl</span>  <span class="c1"># returns all the trials in the list</span></div>
+
+<div class="viewcode-block" id="ManageANSpikes.get_AN_info"><a class="viewcode-back" href="../../../util.html#cnmodel.util.get_anspikes.ManageANSpikes.get_AN_info">[docs]</a>    <span class="k">def</span> <span class="nf">get_AN_info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :return: Dictionary of nReps and SPLs that are in the current data set (instance).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_read_flag</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s1">&#39;getANatSPL: No data read yet&#39;</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;nReps&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_reps</span><span class="p">,</span> <span class="s1">&#39;SPLs&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">SPLs</span><span class="p">}</span></div>
+
+<div class="viewcode-block" id="ManageANSpikes.read_cmrr_data"><a class="viewcode-back" href="../../../util.html#cnmodel.util.get_anspikes.ManageANSpikes.read_cmrr_data">[docs]</a>    <span class="k">def</span> <span class="nf">read_cmrr_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">signal</span> <span class="o">=</span> <span class="s1">&#39;S0&#39;</span><span class="p">,</span> <span class="n">display</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        read responses of auditory nerve model of Zilany et al. (2009).</span>
+<span class="sd">        The required parameters are passed via the class P.</span>
+<span class="sd">        This includes:</span>
+<span class="sd">        </span>
+<span class="sd">            the SN (s2m) is the signal-to-masker ratio to select</span>
+<span class="sd">            the mode is &#39;CMR&#39;, &#39;CMD&#39; (deviant) or &#39;REF&#39; (reference, no flanking bands),</span>
+<span class="sd">            &#39;Tone&#39;, or &#39;Noise&#39;</span>
+<span class="sd">            the Spont rate group</span>
+<span class="sd">        </span>
+<span class="sd">        signal is either &#39;S0&#39; (signal present) or &#39;NS&#39; (no signal)</span>
+<span class="sd">        display = True plots the psth&#39;s for all ANF channels in the dataset</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        tuple of (spikelist and frequency list for modulated tones)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="n">P</span><span class="o">.</span><span class="n">modF</span> <span class="o">==</span> <span class="mi">10</span><span class="p">:</span>
+            <span class="n">datablock</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_F4000.0&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">P</span><span class="o">.</span><span class="n">mode</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">datablock</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_F4000.0_M</span><span class="si">%06.1f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">P</span><span class="o">.</span><span class="n">mode</span><span class="p">,</span> <span class="n">P</span><span class="o">.</span><span class="n">modF</span><span class="p">)</span> <span class="c1"># 100 Hz modulation directory</span>
+        <span class="c1">#print P.mode</span>
+        <span class="n">fs</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datadir</span><span class="o">+</span><span class="n">datablock</span><span class="p">)</span>
+        <span class="n">s_sn</span> <span class="o">=</span> <span class="s2">&quot;SN</span><span class="si">%03d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">P</span><span class="o">.</span><span class="n">s2m</span><span class="p">)</span>
+        <span class="n">fntemplate</span> <span class="o">=</span> <span class="s1">&#39;(\S+)_</span><span class="si">%s</span><span class="s1">_</span><span class="si">%s</span><span class="s1">_</span><span class="si">%s</span><span class="s1">_</span><span class="si">%s</span><span class="s1">.mat&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">s_sn</span><span class="p">,</span> <span class="n">P</span><span class="o">.</span><span class="n">mode</span><span class="p">,</span> <span class="n">signal</span><span class="p">,</span> <span class="n">P</span><span class="o">.</span><span class="n">SR</span><span class="p">)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">fntemplate</span><span class="p">)</span>
+        <span class="n">fl</span> <span class="o">=</span> <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">fs</span><span class="p">]</span>
+        <span class="n">fl</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fl</span> <span class="k">if</span> <span class="n">f</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">]</span> <span class="c1"># returns list of files matching...</span>
+        <span class="n">fr</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">7</span><span class="p">])</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fl</span><span class="p">]</span> <span class="c1"># frequency list</span>
+        <span class="k">if</span> <span class="n">display</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">makeFig</span><span class="p">()</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">spkl</span> <span class="o">=</span> <span class="p">[[]]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">fl</span><span class="p">)</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fl</span><span class="p">)))</span>
+        <span class="n">mg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+        <span class="n">mg</span> <span class="o">=</span> <span class="p">[</span><span class="n">mg</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">mg</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()]</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">fi</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">fl</span><span class="p">):</span>
+            <span class="n">mfile</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">loadmat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datadir</span> <span class="o">+</span> <span class="n">datablock</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">fi</span><span class="p">,</span> <span class="n">squeeze_me</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="n">spkl</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">mfile</span><span class="p">[</span><span class="s1">&#39;Cpsth&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">display</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">spkl</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">k</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span>  <span class="n">mg</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">display</span><span class="p">:</span>
+            <span class="n">MP</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="k">return</span><span class="p">(</span><span class="n">spkl</span><span class="p">,</span> <span class="n">fr</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ManageANSpikes.make_fig"><a class="viewcode-back" href="../../../util.html#cnmodel.util.get_anspikes.ManageANSpikes.make_fig">[docs]</a>    <span class="k">def</span> <span class="nf">make_fig</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fig</span> <span class="o">=</span> <span class="n">MP</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ManageANSpikes.combine_reps"><a class="viewcode-back" href="../../../util.html#cnmodel.util.get_anspikes.ManageANSpikes.combine_reps">[docs]</a>    <span class="k">def</span> <span class="nf">combine_reps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spkl</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Just turns the spike list into one big linear sequence.</span>
+<span class="sd">        :param spkl: a spike train (nreps of numpy arrays)</span>
+<span class="sd">        :return: all the spikes in one long array.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+         <span class="c1">#print spkl</span>
+        <span class="n">allsp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">spkl</span><span class="p">))</span>
+        <span class="c1">#print allsp.shape</span>
+        <span class="k">if</span> <span class="n">allsp</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">():</span> <span class="c1"># nothing to show</span>
+            <span class="k">return</span>
+        <span class="c1">#print allsp</span>
+        <span class="n">spks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">allsp</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">allsp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="p">():</span>
+               <span class="k">continue</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">allsp</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="nb">float</span><span class="p">):</span>
+                <span class="n">spks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">allsp</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">spks</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">allsp</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="n">spks</span></div>
+
+<div class="viewcode-block" id="ManageANSpikes.display"><a class="viewcode-back" href="../../../util.html#cnmodel.util.get_anspikes.ManageANSpikes.display">[docs]</a>    <span class="k">def</span> <span class="nf">display</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spkl</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">mg</span><span class="p">):</span>
+        <span class="c1">#print spkl</span>
+        <span class="n">spks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">combine_reps</span><span class="p">(</span><span class="n">spkl</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">spks</span> <span class="o">!=</span> <span class="p">[]:</span>
+            <span class="n">spks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">spks</span><span class="p">)</span>
+            <span class="n">MP</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">spks</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="ManageANSpikes.flatten"><a class="viewcode-back" href="../../../util.html#cnmodel.util.get_anspikes.ManageANSpikes.flatten">[docs]</a>    <span class="k">def</span> <span class="nf">flatten</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        flatten(sequence) -&gt; list</span>
+
+<span class="sd">        Returns a single, flat list which contains all elements retrieved</span>
+<span class="sd">        from the sequence and all recursively contained sub-sequences</span>
+<span class="sd">        (iterables).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">([</span><span class="n">x</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">x</span>
+        <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">el</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">el</span><span class="p">,</span> <span class="n">basestring</span><span class="p">):</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">el</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">el</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div></div>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">cnmodel.util</span> <span class="k">import</span> <span class="n">Params</span>
+    
+    <span class="n">modes</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;CMR&#39;</span><span class="p">,</span> <span class="s1">&#39;CMD&#39;</span><span class="p">,</span> <span class="s1">&#39;REF&#39;</span><span class="p">]</span>
+    <span class="n">sr_types</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="s1">&#39;L&#39;</span><span class="p">]</span>
+    <span class="n">sr_type</span> <span class="o">=</span> <span class="n">sr_types</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">sr_names</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;H&#39;</span><span class="p">:</span> <span class="s1">&#39;HS&#39;</span><span class="p">,</span> <span class="s1">&#39;M&#39;</span><span class="p">:</span> <span class="s1">&#39;MS&#39;</span><span class="p">,</span> <span class="s1">&#39;L&#39;</span><span class="p">:</span> <span class="s1">&#39;LS&#39;</span><span class="p">}</span> <span class="c1"># spontaneous rate groups (AN fiber input selection)</span>
+    <span class="c1"># define params for reading/testing. This is a subset of params...</span>
+    <span class="n">P</span> <span class="o">=</span> <span class="n">Params</span><span class="p">(</span><span class="n">mode</span> <span class="o">=</span> <span class="n">modes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">s2m</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">n_rep</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">start_rep</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                      <span class="n">sr</span> <span class="o">=</span> <span class="n">sr_names</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">],</span>
+                      <span class="n">modulation_freq</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">DS_phase</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">dataset</span><span class="o">=</span><span class="s1">&#39;test&#39;</span><span class="p">,</span>
+                      <span class="n">sr_types</span><span class="o">=</span><span class="n">sr_types</span><span class="p">,</span> <span class="n">sr_names</span><span class="o">=</span><span class="n">sr_names</span><span class="p">,</span> <span class="n">fileVersion</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span>
+                     <span class="p">)</span>
+
+    <span class="n">manager</span> <span class="o">=</span> <span class="n">ManageANSpikes</span><span class="p">()</span>  <span class="c1"># create instance of the manager</span>
+    <span class="nb">print</span> <span class="nb">dir</span><span class="p">(</span><span class="n">manager</span><span class="p">)</span>
+    <span class="n">test</span><span class="o">=</span><span class="s1">&#39;RI&#39;</span>
+
+    <span class="k">if</span> <span class="n">test</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
+        <span class="n">manager</span><span class="o">.</span><span class="n">read_all_ANdata</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="mf">10000.</span><span class="p">,</span> <span class="n">CFList</span><span class="o">=</span><span class="n">manager</span><span class="o">.</span><span class="n">CF_map</span><span class="p">,</span> <span class="n">spontclass</span><span class="o">=</span><span class="s1">&#39;HS&#39;</span><span class="p">,</span> <span class="n">stim</span><span class="o">=</span><span class="s1">&#39;BFTone&#39;</span><span class="p">)</span>
+        <span class="c1">#spkl = manager.retrieve_from_all_AN(manager.CF_map[0], 40.)</span>
+        <span class="c1">#spks = manager.combine_reps(spkl)</span>
+        <span class="n">manager</span><span class="o">.</span><span class="n">plot_Rate_vs_F</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="n">manager</span><span class="o">.</span><span class="n">CF_map</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">display</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">spontclass</span><span class="o">=</span><span class="s1">&#39;HS&#39;</span><span class="p">)</span>
+        <span class="n">MP</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">test</span> <span class="o">==</span> <span class="n">manager</span><span class="o">.</span><span class="n">dataType</span><span class="p">:</span>
+        <span class="n">spikes</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">getANatFandSPL</span><span class="p">(</span><span class="n">spontclass</span> <span class="o">=</span> <span class="s1">&#39;MS&#39;</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mf">10000.</span><span class="p">,</span> <span class="n">CF</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">SPL</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+        <span class="n">spks</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">combine_reps</span><span class="p">(</span><span class="n">spikes</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">spks</span> <span class="o">!=</span> <span class="p">[]:</span>
+            <span class="nb">print</span> <span class="s1">&#39;spikes.&#39;</span>
+            <span class="n">manager</span><span class="o">.</span><span class="n">plot_RI_vs_F</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="mf">10000.</span><span class="p">,</span> <span class="n">display</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">spontclass</span><span class="o">=</span><span class="s1">&#39;MS&#39;</span><span class="p">)</span>
+            <span class="n">MP</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
+            <span class="n">spks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">spks</span><span class="p">)</span>
+            <span class="n">MP</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">spks</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+            <span class="n">MP</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, 2018, Paul B. Manis and Luke Campagnola.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.2.
+    </div>
+  </body>
+</html>

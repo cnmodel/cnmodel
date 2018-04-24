@@ -1,0 +1,434 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>cnmodel.synapses.gly_psd &#8212; CNModel 0.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for cnmodel.synapses.gly_psd</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">neuron</span> <span class="k">import</span> <span class="n">h</span>
+
+<span class="kn">from</span> <span class="nn">.psd</span> <span class="k">import</span> <span class="n">PSD</span>
+
+
+<div class="viewcode-block" id="GlyPSD"><a class="viewcode-back" href="../../../synapses.html#cnmodel.synapses.gly_psd.GlyPSD">[docs]</a><span class="k">class</span> <span class="nc">GlyPSD</span><span class="p">(</span><span class="n">PSD</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Glycinergic PSD</span>
+<span class="sd">    </span>
+<span class="sd">    This creates postsynaptoc glycinergic receptors. Receptors are connected to the XMTR range</span>
+<span class="sd">    variable of the terminal release mechanisms.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    section : Section</span>
+<span class="sd">        The postsynaptic section in which to insert the receptor mechanism.</span>
+<span class="sd">    terminal : Terminal</span>
+<span class="sd">        The presynaptic Terminal instance</span>
+<span class="sd">    params : dict, default=None</span>
+<span class="sd">        Dictionary of kinetic parameters to override {&#39;KV&#39;, &#39;KU&#39;, &#39;XMax&#39;}</span>
+<span class="sd">    gmax : float, default=1000.</span>
+<span class="sd">        maximal conductance unless overridden by values used in psdType</span>
+<span class="sd">    psdType : str, default=&#39;glyfast&#39;</span>
+<span class="sd">        Kinetic model of receptors: possiblities are:</span>
+<span class="sd">        glyfast, glyslow, glyGC, glya5, or glyexp, as defined in the mechanisms.</span>
+<span class="sd">    message : str, default: None</span>
+<span class="sd">        placeholder for a message to be printed out when testing.</span>
+<span class="sd">    debug: bool, default=False</span>
+<span class="sd">        enable printing of internal debugging messages.</span>
+<span class="sd">    gvar : float, default=0</span>
+<span class="sd">        coefficient of variation of the amplitudes for each of the release zones.</span>
+<span class="sd">    eRev : float, default=-70</span>
+<span class="sd">        &quot;Reversal&quot; potential, or Nernst potential for ions through the receptor channel.</span>
+<span class="sd">    loc : float, default=0.5</span>
+<span class="sd">        Position on the postsynaptic section to insert the mechanism, from [0..1]. </span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">terminal</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">gmax</span><span class="o">=</span><span class="mf">1000.</span><span class="p">,</span> <span class="n">psdType</span><span class="o">=</span><span class="s1">&#39;glyfast&#39;</span><span class="p">,</span>
+                 <span class="n">message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">gvar</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">eRev</span><span class="o">=-</span><span class="mi">70</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+
+        <span class="n">PSD</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">terminal</span><span class="p">)</span>
+        <span class="n">pre_sec</span> <span class="o">=</span> <span class="n">terminal</span><span class="o">.</span><span class="n">section</span>
+        <span class="n">post_sec</span> <span class="o">=</span> <span class="n">section</span>
+        
+        <span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">cells</span>
+        
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">params</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">pre_cell</span> <span class="o">=</span> <span class="n">cells</span><span class="o">.</span><span class="n">cell_from_section</span><span class="p">(</span><span class="n">pre_sec</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">post_cell</span> <span class="o">=</span> <span class="n">cells</span><span class="o">.</span><span class="n">cell_from_section</span><span class="p">(</span><span class="n">post_sec</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">psdType</span> <span class="o">=</span> <span class="n">psdType</span>
+        
+        <span class="n">glyslowPoMax</span> <span class="o">=</span> <span class="mf">0.162297</span>  <span class="c1"># thse were measured from the kinetic models in Synapses.py, as peak open P for the glycine receptors</span>
+        <span class="n">glyfastPoMax</span> <span class="o">=</span> <span class="mf">0.038475</span>  <span class="c1"># also later verified, same numbers...</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">psdType</span> <span class="o">==</span> <span class="s1">&#39;glyfast&#39;</span><span class="p">:</span>
+            <span class="n">gmax</span> <span class="o">/=</span> <span class="n">glyfastPoMax</span>  <span class="c1"># normalized to maximum open probability for this receptor</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">psdType</span> <span class="o">==</span> <span class="s1">&#39;glyslow&#39;</span><span class="p">:</span>
+            <span class="n">gmax</span> <span class="o">/=</span> <span class="n">glyslowPoMax</span>  <span class="c1"># normalized to max open prob for the slow receptor.</span>
+        
+        <span class="c1">#        print &quot;Stochastic syn: j = %d of n_fibers = %d n_rzones = %d\n&quot; % (j, n_fibers, n_rzones)</span>
+        <span class="n">relzone</span> <span class="o">=</span> <span class="n">terminal</span><span class="o">.</span><span class="n">relsite</span>
+        <span class="n">n_rzones</span> <span class="o">=</span> <span class="n">terminal</span><span class="o">.</span><span class="n">n_rzones</span>
+        
+        <span class="c1">#</span>
+        <span class="c1"># Create cleft mechanisms</span>
+        <span class="c1"># </span>
+        <span class="n">clefts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_rzones</span><span class="p">):</span>
+            <span class="n">cl</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">cleftXmtr</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">sec</span><span class="o">=</span><span class="n">post_sec</span><span class="p">)</span>
+            <span class="n">clefts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cl</span><span class="p">)</span>
+        
+        <span class="c1"># and then make a set of postsynaptic receptor mechanisms</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">psdType</span> <span class="o">==</span> <span class="s1">&#39;glyslow&#39;</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">psd</span><span class="p">,</span> <span class="n">par</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">template_Gly_PSD_State_Gly6S</span><span class="p">(</span><span class="n">nReceptors</span><span class="o">=</span><span class="n">n_rzones</span><span class="p">,</span>
+                                                        <span class="n">psdtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">psdType</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">psdType</span> <span class="o">==</span> <span class="s1">&#39;glyfast&#39;</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">psd</span><span class="p">,</span> <span class="n">par</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">template_Gly_PSD_State_PL</span><span class="p">(</span><span class="n">nReceptors</span><span class="o">=</span><span class="n">n_rzones</span><span class="p">,</span>
+                                                    <span class="n">psdtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">psdType</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">psdType</span> <span class="o">==</span> <span class="s1">&#39;glyGC&#39;</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">psd</span><span class="p">,</span> <span class="n">par</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">template_Gly_PSD_State_GC</span><span class="p">(</span><span class="n">nReceptors</span><span class="o">=</span><span class="n">n_rzones</span><span class="p">,</span>
+                                                    <span class="n">psdtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">psdType</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">psdType</span> <span class="o">==</span> <span class="s1">&#39;glya5&#39;</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">psd</span><span class="p">,</span> <span class="n">par</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">template_Gly_PSD_State_Glya5</span><span class="p">(</span><span class="n">nReceptors</span><span class="o">=</span><span class="n">n_rzones</span><span class="p">,</span>
+                                                        <span class="n">psdtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">psdType</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">psdType</span> <span class="o">==</span> <span class="s1">&#39;glyexp&#39;</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">psd</span><span class="p">,</span> <span class="n">par</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">template_Gly_PSD_exp</span><span class="p">(</span><span class="n">nReceptors</span><span class="o">=</span><span class="n">n_rzones</span><span class="p">,</span>
+                                                <span class="n">psdtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">psdType</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;**PSDTYPE IS NOT RECOGNIZED: [</span><span class="si">%s</span><span class="s2">]</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">psdType</span><span class="p">)</span>
+            <span class="n">exit</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">debug</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s1">&#39;pre_sec: &#39;</span><span class="p">,</span> <span class="n">pre_sec</span>
+        
+        
+        <span class="c1"># Connect terminal to psd (or cleft)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cleft_netcons</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_rzones</span><span class="p">):</span>
+            <span class="n">pre_sec</span><span class="o">.</span><span class="n">push</span><span class="p">()</span>
+            <span class="n">netcon</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">NetCon</span><span class="p">(</span><span class="n">relzone</span><span class="o">.</span><span class="n">_ref_XMTR</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">clefts</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cleft_netcons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">netcon</span><span class="p">)</span>
+            <span class="n">h</span><span class="o">.</span><span class="n">pop_section</span><span class="p">()</span>
+            
+            <span class="c1"># set cleft transmitter kinetic parameters</span>
+            <span class="k">for</span> <span class="n">pname</span><span class="p">,</span> <span class="n">pval</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">clefts</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">pname</span><span class="p">,</span> <span class="n">pval</span><span class="p">)</span>
+
+            <span class="n">clefts</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">setpointer</span><span class="p">(</span><span class="n">clefts</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">_ref_CXmtr</span><span class="p">,</span> <span class="s1">&#39;XMTR&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="c1">#connect transmitter release to the PSD</span>
+            
+            <span class="n">v</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="n">gvar</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">()</span>
+            <span class="n">psd</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">gmax</span> <span class="o">=</span> <span class="n">gmax</span> <span class="o">*</span> <span class="n">v</span> <span class="c1"># add a little variability - gvar is CV of amplitudes</span>
+            <span class="c1">#print &#39;GLY psd %s %d gmax=%f&#39; % (self.psdType, k, gmax)</span>
+            <span class="n">psd</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">Erev</span> <span class="o">=</span> <span class="n">eRev</span> <span class="c1"># set the reversal potential</span>
+        
+        <span class="n">par</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">par</span><span class="p">)</span>
+        <span class="c1">#if self.psdType == &#39;ampa&#39;: # include nmda receptors in psd</span>
+            <span class="c1">#psd.extend(psdn)</span>
+            <span class="c1">#par.extend(parn)</span>
+        <span class="k">if</span> <span class="n">message</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="n">message</span>
+                
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_psd</span> <span class="o">=</span> <span class="n">psd</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clefts</span> <span class="o">=</span> <span class="n">clefts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">par</span> <span class="o">=</span> <span class="n">par</span>
+
+
+    <span class="c1"># the following templates are a bit more complicated.</span>
+    <span class="c1"># The parameter names as defined in the model are returned</span>
+    <span class="c1"># but also those that are involved in the forward binding reactions are</span>
+    <span class="c1"># listed separately - this is to allow us to run curve fits that adjust</span>
+    <span class="c1"># only a subset of the parameters a  time - e.g., the rising phase, then</span>
+    <span class="c1"># the falling phase with the rising phase fixed.</span>
+    <span class="c1"># the dictionary selection is made by selectpars in glycine_fit.py.</span>
+    <span class="c1">#</span>
+
+<div class="viewcode-block" id="GlyPSD.template_Gly_PSD_exp"><a class="viewcode-back" href="../../../synapses.html#cnmodel.synapses.gly_psd.GlyPSD.template_Gly_PSD_exp">[docs]</a>    <span class="k">def</span> <span class="nf">template_Gly_PSD_exp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">nReceptors</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">cellname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Template to build simple glycinergic exp-style PSD</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nReceptors : int, default=2</span>
+<span class="sd">            number of sites to implement</span>
+<span class="sd">        loc : float, default=0.5</span>
+<span class="sd">            Position on the postsynaptic section to insert the mechanism, from [0..1]. </span>
+<span class="sd">    </span>
+<span class="sd">        Unused parameters:</span>
+<span class="sd">            cellname, debug, message.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">sec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">section</span>
+        <span class="n">psd</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">sec</span><span class="o">.</span><span class="n">push</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nReceptors</span><span class="p">):</span>
+            <span class="n">psd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">GLY2</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">sec</span><span class="p">))</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">pop_section</span><span class="p">()</span>
+        <span class="n">par</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;alpha&#39;</span><span class="p">,</span> <span class="s1">&#39;beta&#39;</span><span class="p">]</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">par</span><span class="p">:</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">eval</span><span class="p">(</span><span class="s1">&#39;psd[0].&#39;</span> <span class="o">+</span> <span class="n">n</span><span class="p">))</span> <span class="c1"># get default values from the mod file</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">psd</span><span class="p">,</span> <span class="n">par</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="GlyPSD.template_Gly_PSD_State_Glya5"><a class="viewcode-back" href="../../../synapses.html#cnmodel.synapses.gly_psd.GlyPSD.template_Gly_PSD_State_Glya5">[docs]</a>    <span class="k">def</span> <span class="nf">template_Gly_PSD_State_Glya5</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">nReceptors</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">psdtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Template to build PSD using state model of glycine receptors, model glya5.mod</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nReceptors : int, default=2</span>
+<span class="sd">            number of sites to implement</span>
+<span class="sd">        loc : float, default=0.5</span>
+<span class="sd">            Position on the postsynaptic section to insert the mechanism, from [0..1]. </span>
+<span class="sd">    </span>
+<span class="sd">        Unused parameters:</span>
+<span class="sd">            cellname, debug, message, psdtype.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">section</span>
+        <span class="n">psd</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">sec</span><span class="o">.</span><span class="n">push</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nReceptors</span><span class="p">):</span>
+            <span class="n">psd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">GLYa5</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">sec</span><span class="p">))</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">pop_section</span><span class="p">()</span>
+        <span class="n">par</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;kf1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">kf1</span><span class="p">),</span> <span class="c1"># retreive values in the MOD file</span>
+            <span class="s1">&#39;kf2&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">kf2</span><span class="p">),</span>
+            <span class="s1">&#39;kb1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">kb1</span><span class="p">),</span>
+            <span class="s1">&#39;kb2&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">kb2</span><span class="p">),</span>
+            <span class="s1">&#39;a1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">a1</span><span class="p">),</span>
+            <span class="s1">&#39;b1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">b1</span><span class="p">),</span>
+            <span class="s1">&#39;a2&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">a2</span><span class="p">),</span>
+            <span class="s1">&#39;b2&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">b2</span><span class="p">)}</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">psd</span><span class="p">,</span> <span class="n">par</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="GlyPSD.template_Gly_PSD_State_Gly6S"><a class="viewcode-back" href="../../../synapses.html#cnmodel.synapses.gly_psd.GlyPSD.template_Gly_PSD_State_Gly6S">[docs]</a>    <span class="k">def</span> <span class="nf">template_Gly_PSD_State_Gly6S</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">nReceptors</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">psdtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Template to build PSD using state model of glycine receptors, model gly6s.mod</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nReceptors : int, default=2</span>
+<span class="sd">            number of sites to implement</span>
+<span class="sd">        loc : float, default=0.5</span>
+<span class="sd">            Position on the postsynaptic section to insert the mechanism, from [0..1].</span>
+<span class="sd">        psdtype : str, default=None</span>
+<span class="sd">            resets the psd type to have slow kinetics if &#39;glyslow&#39;. Any other string</span>
+<span class="sd">            defaults to kinetics in the mod file.</span>
+<span class="sd">    </span>
+<span class="sd">        Unused parameters:</span>
+<span class="sd">            cellname, debug, message.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">section</span>
+        <span class="n">psd</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">sec</span><span class="o">.</span><span class="n">push</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nReceptors</span><span class="p">):</span>
+            <span class="n">psd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">Gly6S</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">sec</span><span class="p">))</span> <span class="c1"># simple using Trussell model 6 states with desens</span>
+            <span class="k">if</span> <span class="n">debug</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="s1">&#39;Gly6S psdtype: &#39;</span><span class="p">,</span> <span class="n">psdtype</span>
+            <span class="k">if</span> <span class="n">psdtype</span> <span class="o">==</span> <span class="s1">&#39;glyslow&#39;</span><span class="p">:</span> <span class="c1"># fit on 8 March 2010, error =  0.164, max open: 0.155</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">Rd</span> <span class="o">=</span> <span class="mf">1.177999</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">Rr</span> <span class="o">=</span> <span class="mf">0.000005</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">Rb</span> <span class="o">=</span> <span class="mf">0.009403</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">Ru2</span> <span class="o">=</span> <span class="mf">0.000086</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">Ro1</span> <span class="o">=</span> <span class="mf">0.187858</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">Ro2</span> <span class="o">=</span> <span class="mf">1.064426</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">Ru1</span> <span class="o">=</span> <span class="mf">0.028696</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">Rc1</span> <span class="o">=</span> <span class="mf">0.103625</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">Rc2</span> <span class="o">=</span> <span class="mf">1.730578</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">pop_section</span><span class="p">()</span>
+        <span class="n">par</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Rb&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;n&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">Rb</span><span class="p">),</span> <span class="c1"># retrive values in the MOD file</span>
+            <span class="s1">&#39;Ru1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">Ru1</span><span class="p">),</span>
+            <span class="s1">&#39;Ru2&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">Ru2</span><span class="p">),</span>
+            <span class="s1">&#39;Rd&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">Rd</span><span class="p">),</span>
+            <span class="s1">&#39;Rr&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">Rr</span><span class="p">),</span>
+            <span class="s1">&#39;Ro1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">Ro1</span><span class="p">),</span>
+            <span class="s1">&#39;Ro2&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">Ro2</span><span class="p">),</span>
+            <span class="s1">&#39;Rc1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">Rc1</span><span class="p">),</span>
+            <span class="s1">&#39;Rc2&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">Rc2</span><span class="p">)}</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">psd</span><span class="p">,</span> <span class="n">par</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="GlyPSD.template_Gly_PSD_State_PL"><a class="viewcode-back" href="../../../synapses.html#cnmodel.synapses.gly_psd.GlyPSD.template_Gly_PSD_State_PL">[docs]</a>    <span class="k">def</span> <span class="nf">template_Gly_PSD_State_PL</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">nReceptors</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">cellname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                <span class="n">psdtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Template to build PSD using state model of glycine receptors, model glypl.mod</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nReceptors : int, default=2</span>
+<span class="sd">            number of sites to implement</span>
+<span class="sd">        loc : float, default=0.5</span>
+<span class="sd">            Position on the postsynaptic section to insert the mechanism, from [0..1]. </span>
+<span class="sd">        psdtype : str, default=None</span>
+<span class="sd">            resets the psd type to have slow kinetics if &#39;glyslow&#39;. </span>
+<span class="sd">            &#39;glyfast&#39; forces fast kinetics.</span>
+<span class="sd">            Any other string defaults to the default kinetics in the mod file.</span>
+<span class="sd">    </span>
+<span class="sd">        Unused parameters:</span>
+<span class="sd">            cellname, debug, message,.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">section</span>
+        <span class="n">psd</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">sec</span><span class="o">.</span><span class="n">push</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nReceptors</span><span class="p">):</span>
+            <span class="n">psd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">GLYaPL</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">sec</span><span class="p">))</span> <span class="c1"># simple dextesche glycine receptors</span>
+            <span class="k">if</span> <span class="n">debug</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="s1">&#39;PL psdtype: &#39;</span><span class="p">,</span> <span class="n">psdtype</span>
+            <span class="k">if</span> <span class="n">psdtype</span> <span class="o">==</span> <span class="s1">&#39;glyslow&#39;</span><span class="p">:</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">a1</span> <span class="o">=</span> <span class="mf">0.000451</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">a2</span> <span class="o">=</span> <span class="mf">0.220</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">b1</span> <span class="o">=</span> <span class="mf">13.27</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">b2</span> <span class="o">=</span> <span class="mf">6.845</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">kon</span> <span class="o">=</span> <span class="mf">0.00555</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">koff</span> <span class="o">=</span> <span class="mf">2.256</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">r</span> <span class="o">=</span> <span class="mf">1.060</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">d</span> <span class="o">=</span> <span class="mf">55.03</span>
+            <span class="k">if</span> <span class="n">psdtype</span> <span class="o">==</span> <span class="s1">&#39;glyfast&#39;</span><span class="p">:</span> <span class="c1"># fit from 3/5/2010. error =  0.174 maxopen = 0.0385</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">a1</span> <span class="o">=</span> <span class="mf">1.000476</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">a2</span> <span class="o">=</span> <span class="mf">0.137903</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">b1</span> <span class="o">=</span> <span class="mf">1.700306</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">koff</span> <span class="o">=</span> <span class="mf">13.143132</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">kon</span> <span class="o">=</span> <span class="mf">0.038634</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">r</span> <span class="o">=</span> <span class="mf">0.842504</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">b2</span> <span class="o">=</span> <span class="mf">8.051435</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">d</span> <span class="o">=</span> <span class="mf">12.821820</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">pop_section</span><span class="p">()</span>
+        <span class="n">par</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;kon&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">kon</span><span class="p">),</span> <span class="c1"># retrive values in the MOD file</span>
+            <span class="s1">&#39;koff&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">koff</span><span class="p">),</span>
+            <span class="s1">&#39;a1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">a1</span><span class="p">),</span>
+            <span class="s1">&#39;b1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">b1</span><span class="p">),</span>
+            <span class="s1">&#39;a2&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">a2</span><span class="p">),</span>
+            <span class="s1">&#39;b2&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">b2</span><span class="p">),</span>
+            <span class="s1">&#39;r&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">r</span><span class="p">),</span>
+            <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">d</span><span class="p">)}</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">psd</span><span class="p">,</span> <span class="n">par</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="GlyPSD.template_Gly_PSD_State_GC"><a class="viewcode-back" href="../../../synapses.html#cnmodel.synapses.gly_psd.GlyPSD.template_Gly_PSD_State_GC">[docs]</a>    <span class="k">def</span> <span class="nf">template_Gly_PSD_State_GC</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">nReceptors</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">psdtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Template to build PSD using state model of glycine receptors, model glyaGC.mod</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nReceptors : int, default=2</span>
+<span class="sd">            number of sites to implement</span>
+<span class="sd">        loc : float, default=0.5</span>
+<span class="sd">            Position on the postsynaptic section to insert the mechanism, from [0..1]. </span>
+<span class="sd">        psdtype : str, default=None</span>
+<span class="sd">            resets the psd type to have slow kinetics if &#39;glyslow&#39;. Any other string</span>
+<span class="sd">            defaults to predefined kinetics in the mod file.</span>
+<span class="sd">    </span>
+<span class="sd">        Unused parameters:</span>
+<span class="sd">            cellname, debug, message, psdtype.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">section</span>
+        <span class="n">psd</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">sec</span><span class="o">.</span><span class="n">push</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nReceptors</span><span class="p">):</span>
+            <span class="n">psd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">GLYaGC</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">sec</span><span class="p">))</span> <span class="c1"># simple Dextesche glycine receptors</span>
+            <span class="k">if</span> <span class="n">psdtype</span> <span class="o">==</span> <span class="s1">&#39;glyslow&#39;</span><span class="p">:</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">k1</span> <span class="o">=</span> <span class="mf">12.81</span>    <span class="c1"># (/uM /ms)   : binding</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">km1</span> <span class="o">=</span> <span class="mf">0.0087</span><span class="c1">#   (/ms)   : unbinding</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">a1</span> <span class="o">=</span> <span class="mf">0.0195</span><span class="c1">#    (/ms)   : opening</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">b1</span> <span class="o">=</span> <span class="mf">1.138</span>    <span class="c1">#(/ms)    : closing</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">r1</span> <span class="o">=</span> <span class="mf">6.13</span>    <span class="c1">#(/ms) : desense 1</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">d1</span> <span class="o">=</span> <span class="mf">0.000462</span> <span class="c1"># (/ms)   : return from d1</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">r2</span> <span class="o">=</span> <span class="mf">0.731</span><span class="c1"># (/ms)     : return from deep state</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">d2</span> <span class="o">=</span> <span class="mf">1.65</span> <span class="c1">#(/ms)     : going to deep state</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">r3</span> <span class="o">=</span> <span class="mf">3.83</span> <span class="c1">#(/ms)     : return from deep state</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">d3</span> <span class="o">=</span> <span class="mf">1.806</span> <span class="c1">#(/ms)     : going to deep state</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">rd</span> <span class="o">=</span> <span class="mf">1.04</span> <span class="c1">#(/ms)</span>
+                <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">dd</span> <span class="o">=</span> <span class="mf">1.004</span> <span class="c1"># (/ms)</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">pop_section</span><span class="p">()</span>
+        <span class="n">par</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;k1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">k1</span><span class="p">),</span> <span class="c1"># retrive values in the MOD file</span>
+            <span class="s1">&#39;km1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">km1</span><span class="p">),</span>
+            <span class="s1">&#39;a1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">a1</span><span class="p">),</span>
+            <span class="s1">&#39;b1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">b1</span><span class="p">),</span>
+            <span class="s1">&#39;r1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">r1</span><span class="p">),</span>
+            <span class="s1">&#39;d1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">d1</span><span class="p">),</span>
+            <span class="s1">&#39;r2&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">r2</span><span class="p">),</span>
+            <span class="s1">&#39;d2&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">d2</span><span class="p">),</span>
+            <span class="s1">&#39;r3&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">r3</span><span class="p">),</span>
+            <span class="s1">&#39;d3&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">d3</span><span class="p">),</span>
+            <span class="s1">&#39;rd&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">rd</span><span class="p">),</span>
+            <span class="s1">&#39;dd&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dd</span><span class="p">)}</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">psd</span><span class="p">,</span> <span class="n">par</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, 2018, Paul B. Manis and Luke Campagnola.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.2.
+    </div>
+  </body>
+</html>

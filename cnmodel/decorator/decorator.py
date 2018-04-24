@@ -23,7 +23,11 @@ class Decorator():
         print 'cell type: ', cell.type
         cellType = cell.type.lower().capitalize()
         self.channelInfo = Params(newCm=1.0,
+<<<<<<< HEAD
                               newRa=150.0,  # standard Ra
+=======
+                              newRa=150.0,  # standard value
+>>>>>>> 68315d4ec220444069252893e75bdea07fff11a9
                               newg_leak=0.000004935,
                               eK_def=-85, eNa_def=50,
                               ca_init=70e-6,  # free calcium in molar
@@ -122,9 +126,16 @@ class Decorator():
                     gbar = gbar * parMap[mech]
                     if verify:
                         print '  new gbar: ', gbar
+<<<<<<< HEAD
                 for sec in cell.hr.sec_groups[s]:  # set conductances ///
                     setattr(cell.hr.get_section(sec), setup, gbar)  # set conductance magnitude
                     cell.hr.get_section(sec).Ra = self.channelInfo.newRa
+=======
+                cell.hr.h.Ra = self.channelInfo.newRa
+                for sec in cell.hr.sec_groups[s]:  # set cpmdictamces///
+                    setattr(cell.hr.get_section(sec), setup, gbar)  # set conductance magnitude
+                    cell.hr.get_section(sec).Ra = self.channelInfo.newRa  # set Ra here
+>>>>>>> 68315d4ec220444069252893e75bdea07fff11a9
                     if hasattr(cell, 'channelErevMap'):  # may not always have this mapping
                         secobj = cell.hr.get_section(sec)  # get the NEURON section object
                         mechsinsec = cell.get_mechs(secobj)  # get list of mechanisms in this section
@@ -176,7 +187,11 @@ class Decorator():
             gbar = (gbar - gminf) * np.exp(-dist/rate) + gminf
         if gbar < 0.:
             gbar = 0.
+<<<<<<< HEAD
 #        print 'gbaradjust: orig/adj: ', gbar_orig, gbar, method, dist, sectype
+=======
+        #print 'gbaradjust: orig/adj: ', gbar_orig, gbar, method, dist, sectype
+>>>>>>> 68315d4ec220444069252893e75bdea07fff11a9
         return gbar
 
     def channelValidate(self, cell, verify=False):
@@ -198,8 +213,12 @@ class Decorator():
                     continue
                 print '\033[1;31;40m Validation: encountered unknown section group type: %s  Cannot Validate' % sectype
                 print 'Cell morphology file: %s \033[0m' % cell.morphology_file
+<<<<<<< HEAD
                 raise ValueError('Unknown section group, decoration is incomplete')
 #                continue
+=======
+                continue
+>>>>>>> 68315d4ec220444069252893e75bdea07fff11a9
 #            print 'Validating Section: %s' % s
             for mech in cell.channelMap[sectype].keys():
                 if mech not in self.gmapper.keys():

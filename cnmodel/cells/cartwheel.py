@@ -1,7 +1,10 @@
 from neuron import h
 from ..util import nstomho
+from ..util import Params
 import numpy as np
 from .cell import Cell
+from .. import data
+from .. import synapses
 
 __all__ = ['Cartwheel', 'CartwheelDefault']
 
@@ -31,20 +34,36 @@ class Cartwheel(Cell):
         AMPAScale : float to scale the ampa currents
         
         """
-        if 'postsite' in kwds:  # use a defined location instead of the default (soma(0.5)
-            postsite = kwds['postsite']
-            loc = postsite[1]  # where on the section?
-            uname = 'sections[%d]' % postsite[0]  # make a name to look up the neuron section object
-            post_sec = self.hr.get_section(uname)  # Tell us where to put the synapse.
-        else:
-            loc = 0.5
-            post_sec = self.soma
+        self.pre_sec = terminal.section
+        pre_cell = terminal.cell
+        post_sec = self.soma
+
         
         if psd_type == 'simple':
             return self.make_exp2_psd(post_sec, terminal, loc=loc)
         else:
             raise ValueError("Unsupported psd type %s for cartwheel cell (inputs not implemented yet)" % psd_type)
 
+    def make_terminal(self, post_cell, term_type, **kwds):
+        if term_type == 'simple':
+            return synapses.SimpleTerminal(self.pre_sec, post_cell, 
+                                            **kwds)
+        elif term_type == 'multisite':
+            if post_cell.type == 'pyramidal':
+                nzones, delay = 5, 0
+            elif post_cell.type == 'cartwheel':
+                nzones, delay = 5, 0
+            elif post_cell.type == 'MLStellate':
+                nzones, delay = 5, 0
+            else:
+                raise NotImplementedError("No knowledge as to how to connect Cartwheel cell to cell type %s" %
+                                        type(post_cell))
+            
+            self.pre_sec = self.soma
+            return synapses.StochasticTerminal(self.pre_sec, post_cell, nzones=nzones, 
+                                            delay=delay, **kwds)
+        else:
+            raise ValueError("Unsupported terminal type %s" % term_type)
 
 class CartwheelDefault(Cartwheel, Cell):
     """
@@ -114,6 +133,7 @@ class CartwheelDefault(Cartwheel, Cell):
             instantiate a basic soma-only ("point") model
             """
             soma = h.Section(name="Cartwheel_Soma_%x" % id(self)) # one compartment of about 29000 um2
+#            cm = 1
             soma.nseg = 1
             self.add_section(soma, 'soma')
         else:
@@ -136,21 +156,22 @@ class CartwheelDefault(Cartwheel, Cell):
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
             self.decorate()
+        self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
         self.get_mechs(self.soma)
         
         if debug:
             print "<< Cartwheel: Modified version of Raman Purkinje cell model created >>"
 
     def get_cellpars(self, dataset, species='guineapig', celltype='II'):
-        cellDia = data.get(dataset, species=species, cell_type=celltype,
+        somaDia = data.get(dataset, species=species, cell_type=celltype,
             field='soma_Dia')
         chtype = data.get(dataset, species=species, cell_type=celltype,
             field='soma_na_type')
         pcabar = data.get(dataset, species=species, cell_type=celltype,
             field='soma_pcabar')
-        pars = Params(cap=cellDia, natype=chtype, pcabar=pcabar)
+        pars = Params(soma_Dia=somaDia, soma_natype=chtype, soma_pcabar=pcabar)
         for g in ['soma_narsg_gbar', 'soma_kpkj_gbar', 'soma_kpkj2_gbar', 'soma_kpkjslow_gbar',
-                  'soma_kpsk_gbar', 'soma_lkpkj_gbar', 'soma_bkpkj_gbar', 'soma_hpkj_gbar',
+                  'soma_kpksk_gbar', 'soma_lkpkj_gbar', 'soma_bkpkj_gbar', 'soma_hpkj_gbar',
                   'soma_hpkj_eh','soma_lkpkj_e', 'soma_e_k', 'soma_e_na', 'soma_e_ca',
                   ]:
             pars.additem(g,  data.get(dataset, species=species, cell_type=celltype,
@@ -183,29 +204,28 @@ class CartwheelDefault(Cartwheel, Cell):
             raise ValueError ('Cartwheel species: only "mouse" is recognized')
         if modelType is not 'I':
             raise ValueError ('Cartwheel modelType: only "I" is recognized')
-        soma = self.soma
-#        dia = 18.
         self._valid_temperatures = (34.,)
         if self.status['temperature'] is None:
             self.set_temperature(34.)
         
-        pars = get_cellpars('CW_channels', species=species, celltype=celltype)
-        self.set_soma_size_from_Diam(pars.dia)
-        self.soma().bkpkj.gbar = nstomho(soma_bkpkj_gbar, self.somaarea)
-        self.soma().hpkj.gbar = nstomho(soma_hpkj_gbar, self.somaarea)
-        self.soma().kpkj.gbar = nstomho(soma_kpkj_gbar, self.somaarea)
-        self.soma().kpkj2.gbar = nstomho(soma_kpkj_gbar, self.somaarea)
-        self.soma().kpkjslow.gbar = nstomho(soma_kpkjslow_gbar, self.somaarea)
-        self.soma().kpksk.gbar = nstomho(soma_kpsk_gbar, self.somaarea)
-        self.soma().lkpkj.gbar = nstomho(soma_lkpkj_gbar, self.somaarea)
-        self.soma().naRsg.gbar = nstomho(soma_narsg_gbar, self.somaarea)
-        self.soma().cap.pcabar = soma_pcabar
-        self.soma().ena = soma_e_na # 50
-        self.soma().ek = soma_e_k # -80
-        self.soma().lkpkj.e = soma_lkpkj_e  #-65
-        self.soma().hpkj.eh = soma_hpkj_eh  #-43
-        self.soma().eca = soma_e_ca # 50
-
+        pars = self.get_cellpars('CW_channels', species=species, celltype='cartwheel')
+        self.set_soma_size_from_Diam(pars.soma_Dia)
+        self.soma().bkpkj.gbar = nstomho(pars.soma_bkpkj_gbar, self.somaarea)
+        self.soma().hpkj.gbar = nstomho(pars.soma_hpkj_gbar, self.somaarea)
+        self.soma().kpkj.gbar = nstomho(pars.soma_kpkj_gbar, self.somaarea)
+        self.soma().kpkj2.gbar = nstomho(pars.soma_kpkj2_gbar, self.somaarea)
+        self.soma().kpkjslow.gbar = nstomho(pars.soma_kpkjslow_gbar, self.somaarea)
+        self.soma().kpksk.gbar = nstomho(pars.soma_kpksk_gbar, self.somaarea)
+        self.soma().lkpkj.gbar = nstomho(pars.soma_lkpkj_gbar, self.somaarea)
+        self.soma().naRsg.gbar = nstomho(pars.soma_narsg_gbar, self.somaarea)
+        self.soma().cap.pcabar = pars.soma_pcabar
+        self.soma().ena = pars.soma_e_na # 50
+        self.soma().ek = pars.soma_e_k # -80
+        self.soma().lkpkj.e = pars.soma_lkpkj_e  #-65
+        self.soma().hpkj.eh = pars.soma_hpkj_eh  #-43
+        self.soma().eca = pars.soma_e_ca # 50
+        
+        self.status['na'] = pars.soma_natype
         self.status['species'] = species
         self.status['modelType'] = modelType
         self.check_temperature()

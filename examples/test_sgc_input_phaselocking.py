@@ -1,3 +1,17 @@
+"""
+test_sgc_input_phaselocking.py
+
+Test phase locking from an input sgc to a target cell type. Runs simulations
+with AN input, and plots the results, including PSTH and phase histogram.
+
+Usage: python test_sgc_input_phaselocking.py celltype stimulus species
+   where:
+      celltype is one of [bushy, tstellate, octopus, dstellate] (default: bushy)
+      stimulus is one of [tone, SAM, clicks] (default: tone)
+      species is one of [guineapig, mouse] (default: guineapig)
+
+"""
+
 import sys
 import numpy as np
 import pyqtgraph as pg
@@ -13,16 +27,16 @@ class SGCInputTestPL(Protocol):
     def set_cell(self, cell='bushy'):
         self.cell = cell
     
-    def run(self, temp=34.0, dt=0.025, seed=575982035, stimulus='tone'):
+    def run(self, temp=34.0, dt=0.025, seed=575982035, stimulus='tone', species='mouse'):
         assert stimulus in ['tone', 'SAM', 'clicks']  # cases available
         if self.cell == 'bushy':
-            postCell = cells.Bushy.create(species='mouse')
+            postCell = cells.Bushy.create(species=species)
         elif self.cell == 'tstellate':
-            postCell = cells.TStellate.create(species='mouse')
+            postCell = cells.TStellate.create(species=species)
         elif self.cell == 'octopus':
-            postCell = cells.Octopus.create(species='mouse')
+            postCell = cells.Octopus.create(species=species)
         elif self.cell == 'dstellate':
-            postCell = cells.DStellate.create(species='mouse')
+            postCell = cells.DStellate.create(species=species)
         else:
             raise ValueError('cell %s is not yet implemented for phaselocking' % self.cell)
         self.post_cell = postCell
@@ -55,7 +69,7 @@ class SGCInputTestPL(Protocol):
                         click_interval=self.click_rate, nclicks=int((self.run_duration-0.01)/self.click_rate),
                         ramp_duration=2.5e-3)
         
-        n_sgc = data.get('convergence', species='mouse', post_type=postCell.type, pre_type='sgc')[0]
+        n_sgc = data.get('convergence', species=species, post_type=postCell.type, pre_type='sgc')[0]
         self.n_sgc = int(np.round(n_sgc))
 
         self.pre_cells = []
@@ -86,7 +100,6 @@ class SGCInputTestPL(Protocol):
 
     def show(self):
         self.win = pg.GraphicsWindow()
-        Fs = self.Fs
         p1 = self.win.addPlot(title='stim', row=0, col=0)
         p1.plot(self.stim.time * 1000, self.stim.sound)
         p1.setXLink(p1)
@@ -136,9 +149,9 @@ class SGCInputTestPL(Protocol):
             print "Clicks: interval %.3f at %3.1f dbSPL, cell CF=%.3f " % (self.click_rate, self.dbspl, self.cf)
         vs = PU.vector_strength(spikesinwin, f0)
         
-        print 'AN Vector Strength: %7.3f, d=%.2f (us) Rayleigh: %7.3f  p = %.3e  n = %d' % (vs['r'], vs['d']*1e6, vs['R'], vs['p'], vs['n'])
+        print 'AN Vector Strength at %.1f: %7.3f, d=%.2f (us) Rayleigh: %7.3f  p = %.3e  n = %d' % (f0, vs['r'], vs['d']*1e6, vs['R'], vs['p'], vs['n'])
         (hist, binedges) = np.histogram(vs['ph'])
-        curve = p6.plot(binedges, hist, stepMode=True, fillBrush=(100, 100, 255, 150), fillLevel=0)
+        p6.plot(binedges, hist, stepMode=True, fillBrush=(100, 100, 255, 150), fillLevel=0)
         p6.setXRange(0., 2*np.pi)
 
         p7 = self.win.addPlot(title='%s phase' % self.cell, row=2, col=1)
@@ -147,7 +160,7 @@ class SGCInputTestPL(Protocol):
         vs = PU.vector_strength(spikesinwin, f0)
         print '%s Vector Strength: %7.3f, d=%.2f (us) Rayleigh: %7.3f  p = %.3e  n = %d' % (self.cell, vs['r'], vs['d']*1e6, vs['R'], vs['p'], vs['n'])
         (hist, binedges) = np.histogram(vs['ph'])
-        curve = p7.plot(binedges, hist, stepMode=True, fillBrush=(100, 100, 255, 150), fillLevel=0)
+        p7.plot(binedges, hist, stepMode=True, fillBrush=(100, 100, 255, 150), fillLevel=0)
         p7.setXRange(0., 2*np.pi)
         p7.setXLink(p6)
 
@@ -155,6 +168,11 @@ class SGCInputTestPL(Protocol):
 
 
 if __name__ == '__main__':
+    if len(sys.argv) > 1 and sys.argv[1] in ['help', '-h', '--help']:
+        print "\nUsage: python test_sgc_input_phaselocking.py\n    celltype [bushy, tstellate, octopus, dstellate] (default: bushy)"
+        print "    stimulus [tone, SAM, clicks] (default: tone)"
+        print "    species [guineapig mouse] (default: guineapig)\n"
+        exit(0)
     if len(sys.argv) > 1:
         cell = sys.argv[1]
     else:
@@ -163,10 +181,14 @@ if __name__ == '__main__':
         stimulus = sys.argv[2]
     else:
         stimulus = 'tone'
+    if len(sys.argv) > 3:
+        species = sys.argv[3]
+    else:
+        species = 'guineapig'
     print 'cell type: ', cell
     prot = SGCInputTestPL()
     prot.set_cell(cell)
-    prot.run(stimulus=stimulus)
+    prot.run(stimulus=stimulus, species=species)
     prot.show()
 
     import sys

@@ -68,10 +68,12 @@ def runtest():
         niter = 5
     else:
         niter = 20
-    
-
+    syntype = 'multisite'
+    if len(sys.argv) > 3:
+        syntype = sys.argv[3]
+    assert(syntype in ['simple', 'multisite'])
     st = SynapseTest()
-    st.run(preCell.soma, postCell.soma, nTerminals, vclamp=-65., iterations=niter)
+    st.run(preCell.soma, postCell.soma, nTerminals, vclamp=-65., iterations=niter, synapsetype=syntype)
     st.show_result()
     st.plots['VPre'].setYRange(-70., 10.)
     st.plots['EPSC'].setYRange(-2.0, 0.5)

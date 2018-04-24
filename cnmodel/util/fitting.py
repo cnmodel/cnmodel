@@ -9,22 +9,25 @@ class FitModel(lmfit.Model):
     
     Example uses:
         
-        # single exponential fit
+    # single exponential fit::
+    
         fit = expfitting.Exp1.fit(data, 
-                x=time_vals,
-                xoffset=(0, 'fixed'),
-                yoffset=(yoff_guess, -120, 0),
-                amp=(amp_guess, 0, 50),
-                tau=(tau_guess, 0.1, 50))
+            x=time_vals,
+            xoffset=(0, 'fixed'),
+            yoffset=(yoff_guess, -120, 0),
+            amp=(amp_guess, 0, 50),
+            tau=(tau_guess, 0.1, 50))
         
-        # plot the fit
+    # plot the fit::
+    
         fit_curve = fit.eval()
         plot(time_vals, fit_curve)
-        
     
-        # double exponential fit with tau ratio constraint
-        # note that 'tau_ratio' does not appear in the exp2 model; 
-        # we can define new parameters here.
+    
+    # double exponential fit with tau ratio constraint
+    # note that 'tau_ratio' does not appear in the exp2 model; 
+    # we can define new parameters here.::
+
         fit = expfitting.Exp2.fit(data, 
                 x=time_vals,
                 xoffset=(0, 'fixed'),
@@ -37,6 +40,7 @@ class FitModel(lmfit.Model):
                 )
         
     """
+    
     def fit(self, data, interactive=False, **params):
         """ Return a fit of data to this model.
         
@@ -50,7 +54,12 @@ class FitModel(lmfit.Model):
         Extra keyword arguments are passed to make_params() if they are model
         parameter names, or passed directly to Model.fit() for independent
         variable names.
+        
+        Returns
+        -------
+        fit of data to model as an lmfit object
         """
+        
         fit_params = {}
         model_params = {}
         for k,v in params.items():

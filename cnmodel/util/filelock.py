@@ -68,6 +68,13 @@ class FileLock(object):
         start_time = time.time()
         while True:
             try:
+                # create the cache directory if it does not exist (new installations will not have a cache directory)
+                stimdir = os.path.dirname(self.lockfile)
+                cachedir = os.path.dirname(stimdir)
+                if not os.path.isdir(cachedir):  # make sure the cache exists
+                    os.mkdir(cachedir)
+                if not os.path.isdir(stimdir):  # and the specific stimulus dir
+                    os.mkdir(stimdir)
                 self.fd = os.open(self.lockfile, os.O_CREAT|os.O_EXCL|os.O_RDWR)
                 open(self.lockfile, 'w').write(str(os.getpid()))
                 break;

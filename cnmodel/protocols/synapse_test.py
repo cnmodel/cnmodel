@@ -6,15 +6,16 @@ from neuron import h
 import cnmodel.util as util
 from .protocol import Protocol
 from .. import cells
-from ..synapses import GluPSD, GlyPSD
+from ..synapses import GluPSD, GlyPSD, Exp2PSD
 from ..util.find_point import find_crossing
+import timeit
 
 class SynapseTest(Protocol):
     def reset(self):
         super(SynapseTest, self).reset()
 
     def run(self, pre_sec, post_sec, n_synapses, temp=34.0, dt=0.025, 
-            vclamp=40.0, iterations=1, tstop=240.0, stim_params=None, **kwds):
+            vclamp=40.0, iterations=1, tstop=240.0, stim_params=None, synapsetype='multisite', **kwds):
         """ 
         Basic synapse test. Connects sections of two cells with *n_synapses*.
         The cells are allowed to negotiate the details of the connecting 
@@ -35,7 +36,7 @@ class SynapseTest(Protocol):
         post_cell = cells.cell_from_section(post_sec)
         synapses = []
         for i in range(n_synapses):
-            synapses.append(pre_cell.connect(post_cell))
+            synapses.append(pre_cell.connect(post_cell, type=synapsetype))
         
         self.synapses = synapses
         self.pre_sec = synapses[0].terminal.section
@@ -87,12 +88,14 @@ class SynapseTest(Protocol):
 
         # create hoc vectors for each parameter we wish to monitor and display
         synapse = synapses[0]
-
         self.all_psd = []
-        for syn in synapses:
-            # collect all PSDs across all synapses
-            self.all_psd.extend(syn.psd.all_psd)
-            
+        if isinstance(synapses[0].psd, GlyPSD) or isinstance(synapses[0].psd, GluPSD):
+            for syn in synapses:
+                self.all_psd.extend(syn.psd.all_psd)
+        elif isinstance(synapses[0].psd, Exp2PSD):
+            for syn in synapses:
+                self.all_psd.append(syn)
+
         #for i, cleft in enumerate(synapse.psd.clefts):
             #self['cleft_xmtr%d' % i] = cleft._ref_CXmtr
             #self['cleft_pre%d' % i] = cleft._ref_pre
@@ -112,12 +115,14 @@ class SynapseTest(Protocol):
         self.currents = {'ampa': [], 'nmda': []}
         self.all_releases = []
         self.all_release_events = []
+        start_time = timeit.default_timer()
         for nrep in xrange(iterations): # could do multiple runs.... 
             self.reset()
             self['v_pre'] = pre_cell.soma(0.5)._ref_v
             self['t'] = h._ref_t
             self['v_soma'] = pre_cell.soma(0.5)._ref_v
-            self['relsite_xmtr'] = synapse.terminal.relsite._ref_XMTR[0]
+            if not isinstance(synapse.psd, Exp2PSD):
+                self['relsite_xmtr'] = synapse.terminal.relsite._ref_XMTR[0]
 
             if isinstance(synapse.psd, GluPSD):
                 # make a synapse monitor for each release zone
@@ -163,9 +168,12 @@ class SynapseTest(Protocol):
                     self['C3'] = psd[0]._ref_C3
                     self['O1'] = psd[0]._ref_O1
                     self['O2'] = psd[0]._ref_O2
+            elif isinstance(synapse.psd, Exp2PSD):
+                self['iPSD'] = self.all_psd[0].psd.syn._ref_i
 
-            for i, s in enumerate(synapses):
-                s.terminal.relsite.rseed = util.random.current_seed() + nrep
+            if not isinstance(synapse.psd, Exp2PSD):
+                for i, s in enumerate(synapses):
+                    s.terminal.relsite.rseed = util.random_seed.current_seed() + nrep
             util.custom_init()
             h.run()
 
@@ -184,12 +192,14 @@ class SynapseTest(Protocol):
                 isoma = np.zeros_like(self['iGLY000'])
                 for k in range(len(self.all_psd)):
                     isoma += self['iGLY%03d'%k]
+            elif isinstance(synapse.psd, Exp2PSD):
+                 isoma = self['iPSD']
             self.isoma.append(isoma)
             self.all_releases.append(self.release_timings())
             self.all_release_events.append(self.release_events())
-            # if nrep > 0:
-            #     assert (np.all(self.isoma[0] != self.isoma[1]))
-#        print np.all(self.isoma[0] == self.isoma[1])
+
+        elapsed = timeit.default_timer() - start_time
+        print 'Elapsed time for %d Repetions: %f' % (iterations, elapsed)
         
     def release_events(self, syn_no=0):
         """
@@ -219,27 +229,29 @@ class SynapseTest(Protocol):
         """
         synapse = self.synapses[syn_no]
         
-        ret = {}
+        ret = {'n_zones': [0], 'n_spikes': [0], 'n_requests': [0], 'n_releases': [0],
+                'tot_requests': 0, 'tot_releases': 0, 'release_p': 0.}
         #
         # Count spikes and releases for each terminal
         #
-        ret['n_zones'] = np.array([syn.terminal.n_rzones for syn in self.synapses])
-        ret['n_spikes'] = np.array([syn.terminal.relsite.nRequests for syn in self.synapses])
-        ret['n_requests'] = ret['n_spikes'] * ret['n_zones']
-        ret['n_releases'] = np.array([syn.terminal.relsite.nReleases for syn in self.synapses])
+        if not isinstance(self.synapses[0].psd, Exp2PSD):
+            ret['n_zones'] = np.array([syn.terminal.n_rzones for syn in self.synapses])
+            ret['n_spikes'] = np.array([syn.terminal.relsite.nRequests for syn in self.synapses])
+            ret['n_requests'] = ret['n_spikes'] * ret['n_zones']
+            ret['n_releases'] = np.array([syn.terminal.relsite.nReleases for syn in self.synapses])
 
-        #
-        # Compute release probability
-        #
-        # total number of release requests
-        ret['tot_requests'] = ret['n_requests'].sum()
-        # total number of actual release events        
-        ret['tot_releases'] = ret['n_releases'].sum() 
-        
-        if ret['tot_requests'] > 0:
-            ret['release_p'] = float(ret['tot_releases']) / ret['tot_requests']
-        else:
-            ret['release_p'] = np.nan
+            #
+            # Compute release probability
+            #
+            # total number of release requests
+            ret['tot_requests'] = ret['n_requests'].sum()
+            # total number of actual release events
+            ret['tot_releases'] = ret['n_releases'].sum()
+
+            if ret['tot_requests'] > 0:
+                ret['release_p'] = float(ret['tot_releases']) / ret['tot_requests']
+            else:
+                ret['release_p'] = np.nan
         
         return ret
 
@@ -249,6 +261,9 @@ class SynapseTest(Protocol):
         and latency of release events. 
         """
         data = []
+        if isinstance(self.synapses[0].psd, Exp2PSD):
+            return data
+
         for j in range(0, len(self.synapses)):
             relsite = self.synapses[j].terminal.relsite
             nev = int(relsite.ev_index)
@@ -310,6 +325,9 @@ class SynapseTest(Protocol):
                 omax = np.abs(self['opGLY%03d'%i]).max()
             
             return {'gly': (glyImax, glyOmax)}
+        
+        elif isinstance(synapse.psd, Exp2PSD):
+            return {'Exp2PSD': (0., 0.)}
 
     def analyze_events(self):
         events = []
@@ -366,7 +384,7 @@ class SynapseTest(Protocol):
             istart = int(tstart / self.dt)   # pulse start index
             tp[i] = tstart - stim['delay']
             iend = istart + pscpts
-            print 'istart: %d iend: %d, len(isoma): %d\n' % (istart, iend, len(self.isoma[runno]))
+            #print 'istart: %d iend: %d, len(isoma): %d\n' % (istart, iend, len(self.isoma[runno]))
             ipsc[i, :] = np.abs(self.isoma[runno][istart:iend])
             psc_pk = minStart + np.argmax(ipsc[i, minStart:-(extend_pts+1)]) # position of the peak
             
@@ -424,14 +442,16 @@ class SynapseTest(Protocol):
         events = self.release_events()
         ns = len(self.synapses)
         for i in range(ns):
-            v = (i, events['n_spikes'][i], events['n_zones'][i], events['n_releases'][i])
-            print 'Synapse %d:  spikes: %d  zones: %d  releases: %d' % v
+            if i < len(events['n_spikes']) and events['n_spikes'][i] > 0:
+                v = (i, events['n_spikes'][i], events['n_zones'][i], events['n_releases'][i])
+                print 'Synapse %d:  spikes: %d  zones: %d  releases: %d' % v
         print ""
         print 'Total release requests: %d' % events['tot_requests']
         print 'Total release events:   %d' % events['tot_releases']
         print 'Release probability: %8.3f' % events['release_p']
-        prel_final = synapse.terminal.relsite.Dn * synapse.terminal.relsite.Fn
-        print 'Final release probability (Dn * Fn): %8.3f' % prel_final
+        if not isinstance(synapse.psd, Exp2PSD):
+            prel_final = synapse.terminal.relsite.Dn * synapse.terminal.relsite.Fn
+            print 'Final release probability (Dn * Fn): %8.3f' % prel_final
 
 
         #
@@ -443,7 +463,7 @@ class SynapseTest(Protocol):
             glyImax, glyOPmax = oprob['gly']
             print 'Max GLYR Open Prob: %f' % (glyOPmax,)
             print 'Max GLYR I: %f' % (glyImax,)
-        else:
+        elif 'ampa' in oprob or 'nmda' in oprob:
             nmImax, nmOPmax = oprob['nmda'].values()
             amImax, amOPmax = oprob['ampa'].values()
             print 'Max NMDAR Open Prob: %f   AMPA Open Prob: %f' % (nmOPmax, amOPmax)
@@ -529,8 +549,7 @@ class SynapseTest(Protocol):
         #
         nst = range(self.stim['NP'])
         analysisWindow = [nst[0:2], nst[-5:]]
-        print analysisWindow
-        print events[eventno]['rise time']
+
         RT_mean2080_early = np.nanmean(events[eventno]['rise time'][analysisWindow[0]])
         RT_mean2080_late = np.nanmean(events[eventno]['rise time'][analysisWindow[1]])
         Lat_mean20_early = np.nanmean(events[eventno]['20% latency'][analysisWindow[0]])
@@ -575,19 +594,20 @@ class SynapseTest(Protocol):
             p7.setYLink(p6)
             self.plots['latency_distribution'] = p7
             self.win.ci.layout.setColumnFixedWidth(1, 200)
+            if not isinstance(self.synapses[0].psd, Exp2PSD):
             
-            rel_events = self.all_releases
-            all_latencies = []
-            for i, trial in enumerate(rel_events):
-                for syn in trial:
-                    p6.plot(syn['time'], syn['latency'], pen=None, symbolBrush=(i, len(rel_events)), 
-                        symbolPen=(i, len(rel_events)), symbolSize=4, symbol='o')
-                    all_latencies.append(syn['latency'])
-            all_latencies = np.concatenate(all_latencies)
-            (hist, binedges) = np.histogram(all_latencies)
-            curve = p7.plot(binedges, hist, stepMode=True, fillBrush=(100, 100, 255, 150), fillLevel=0)
-            curve.rotate(-90)
-            curve.scale(-1, 1)
+                rel_events = self.all_releases
+                all_latencies = []
+                for i, trial in enumerate(rel_events):
+                    for syn in trial:
+                        p6.plot(syn['time'], syn['latency'], pen=None, symbolBrush=(i, len(rel_events)), 
+                            symbolPen=(i, len(rel_events)), symbolSize=4, symbol='o')
+                        all_latencies.append(syn['latency'])
+                all_latencies = np.concatenate(all_latencies)
+                (hist, binedges) = np.histogram(all_latencies)
+                curve = p7.plot(binedges, hist, stepMode=True, fillBrush=(100, 100, 255, 150), fillLevel=0)
+                curve.rotate(-90)
+                curve.scale(-1, 1)
 
         # if probabilityPlot:
         #     self.win.nextRow()

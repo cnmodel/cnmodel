@@ -1,0 +1,718 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>cnmodel.synapses package &#8212; CNModel 0.2 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="cnmodel.populations package" href="populations.html" />
+    <link rel="prev" title="cnmodel.morphology package" href="morphology.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="populations.html" title="cnmodel.populations package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="morphology.html" title="cnmodel.morphology package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" accesskey="U">API Reference</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-cnmodel.synapses">
+<span id="cnmodel-synapses-package"></span><h1>cnmodel.synapses package<a class="headerlink" href="#module-cnmodel.synapses" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="cnmodel-synapses-exp2-psd">
+<h2>cnmodel.synapses.exp2_psd<a class="headerlink" href="#cnmodel-synapses-exp2-psd" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt>
+<em class="property">class </em><code class="descclassname">cnmodel.synapses.exp2_psd.</code><code class="descname">Exp2PSD</code><span class="sig-paren">(</span><em>section</em>, <em>terminal</em>, <em>weight=0.01</em>, <em>loc=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/exp2_psd.html#Exp2PSD"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">cnmodel.synapses.psd.PSD</span></code></p>
+<p>Simple double-exponential PSD from Neuron (fast).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>section</strong> (<em>Section</em>) – The postsynaptic section in which to insert the receptor mechanism.</li>
+<li><strong>terminal</strong> (<em>Terminal</em>) – The presynaptic Terminal instance</li>
+<li><strong>weight</strong> – </li>
+<li><strong>loc</strong> (<em>float</em><em>, </em><em>default=0.5</em>) – Position on the postsynaptic section to insert the mechanism, from [0..1].</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt>
+<code class="descname">get_vector</code><span class="sig-paren">(</span><em>var</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/exp2_psd.html#Exp2PSD.get_vector"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Return an array from a previously recorded vector.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>receptor</strong> (<em>str</em>) – May be ‘ampa’ or ‘nmda’</li>
+<li><strong>var</strong> (<em>str</em>) – Allowed parameters are ‘i’ (current), ‘g’ (conductance), and ‘Open’ (open probability).</li>
+<li><strong>i</strong> (<em>int</em><em>, </em><em>default=0</em>) – The integer index of the psd (if this is a multi-site synapse)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">n_psd</code></dt>
+<dd><p>The number of postsynaptic densities represented by this object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">record</code><span class="sig-paren">(</span><em>*args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/exp2_psd.html#Exp2PSD.record"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Create a new set of vectors to record parameters for each release
+site.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>*args</strong> – Allowed parameters are ‘i’ (current), ‘g’ (conductnace), and ‘Open’ (open probability).</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="cnmodel-synapses-glu-psd">
+<h2>cnmodel.synapses.glu_psd<a class="headerlink" href="#cnmodel-synapses-glu-psd" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt>
+<em class="property">class </em><code class="descclassname">cnmodel.synapses.glu_psd.</code><code class="descname">GluPSD</code><span class="sig-paren">(</span><em>section</em>, <em>terminal</em>, <em>ampa_gmax</em>, <em>nmda_gmax</em>, <em>gvar=0</em>, <em>eRev=0</em>, <em>nmda_vshift=0</em>, <em>ampa_params=None</em>, <em>loc=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/glu_psd.html#GluPSD"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">cnmodel.synapses.psd.PSD</span></code></p>
+<p>Glutamatergic PSD with ionotropic AMPA / NMDA receptors</p>
+<p>This creates a set of postsynaptoc NMDA and AMPA receptors, one pair
+per terminal release site. Receptors are connected to the XMTR range
+variable of the terminal release mechanisms.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>section</strong> (<em>Section instance</em>) – The postsynaptic section into which the receptor mechanisms should be
+attached</li>
+<li><strong>terminal</strong> (<em>Terminal instance</em>) – The presynaptic terminal that provides input to the receptor XMTR
+variables.</li>
+<li><strong>ampa_gmax</strong> (<em>float</em>) – Maximum conductance of AMPARs</li>
+<li><strong>nmda_gmax</strong> (<em>float</em>) – Maximum conductance of NMDARs</li>
+<li><strong>gvar</strong> (<em>float</em>) – Coefficient of variation for randomly adjusting ampa_gmax and nmda_gmax.
+Note that ampa and nmda maximum conductances will be scaled together,
+but the scale values will be selected randomly for each pair of
+receptor mechanisms.</li>
+<li><strong>eRev</strong> (<em>float</em>) – Reversal potential to use for both receptor types.</li>
+<li><strong>ampa_params</strong> (<em>dict</em>) – Dictionary containing kinetic parameters for AMPA mechanism. Suggested
+keys are Ro1, Ro2, Rc1, Rc2, and PA.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p><em>ampa_gmax</em> and <em>nmda_gmax</em> should be provided as the maximum <em>measured</em>
+conductances; these will be automatically corrected for the maximum open
+probability of the receptor mechanisms.</p>
+<p>GluPSD does not include a cleft mechanism because AMPATRUSSELL implements
+its own cleft and NMDA_Kampa is slow enough that a cleft would have
+insignificant effect.</p>
+<dl class="method">
+<dt>
+<code class="descname">get_vector</code><span class="sig-paren">(</span><em>receptor</em>, <em>var</em>, <em>i=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/glu_psd.html#GluPSD.get_vector"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Return an array from a previously recorded vector.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>receptor</strong> (<em>str</em>) – May be ‘ampa’ or ‘nmda’</li>
+<li><strong>var</strong> (<em>str</em>) – Allowed parameters are ‘i’ (current), ‘g’ (conductance), and ‘Open’ (open probability).</li>
+<li><strong>i</strong> (<em>int</em><em>, </em><em>default=0</em>) – The integer index of the psd (if this is a multi-site synapse)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">n_psd</code></dt>
+<dd><p>The number of postsynaptic densities represented by this object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">record</code><span class="sig-paren">(</span><em>*args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/glu_psd.html#GluPSD.record"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Create a new set of vectors to record parameters for each release
+site.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>*args</strong> – Allowed parameters are ‘i’ (current), ‘g’ (conductance), and ‘Open’ (open probability).</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="cnmodel-synapses-gly-psd">
+<h2>cnmodel.synapses.gly_psd<a class="headerlink" href="#cnmodel-synapses-gly-psd" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt>
+<em class="property">class </em><code class="descclassname">cnmodel.synapses.gly_psd.</code><code class="descname">GlyPSD</code><span class="sig-paren">(</span><em>section</em>, <em>terminal</em>, <em>params=None</em>, <em>gmax=1000.0</em>, <em>psdType='glyfast'</em>, <em>message=None</em>, <em>debug=False</em>, <em>gvar=0</em>, <em>eRev=-70</em>, <em>loc=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/gly_psd.html#GlyPSD"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">cnmodel.synapses.psd.PSD</span></code></p>
+<p>Glycinergic PSD</p>
+<p>This creates postsynaptoc glycinergic receptors. Receptors are connected to the XMTR range
+variable of the terminal release mechanisms.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>section</strong> (<em>Section</em>) – The postsynaptic section in which to insert the receptor mechanism.</li>
+<li><strong>terminal</strong> (<em>Terminal</em>) – The presynaptic Terminal instance</li>
+<li><strong>params</strong> (<em>dict</em><em>, </em><em>default=None</em>) – Dictionary of kinetic parameters to override {‘KV’, ‘KU’, ‘XMax’}</li>
+<li><strong>gmax</strong> (<em>float</em><em>, </em><em>default=1000.</em>) – maximal conductance unless overridden by values used in psdType</li>
+<li><strong>psdType</strong> (<em>str</em><em>, </em><em>default='glyfast'</em>) – Kinetic model of receptors: possiblities are:
+glyfast, glyslow, glyGC, glya5, or glyexp, as defined in the mechanisms.</li>
+<li><strong>message</strong> (<em>str</em><em>, </em><em>default: None</em>) – placeholder for a message to be printed out when testing.</li>
+<li><strong>debug</strong> (<em>bool</em><em>, </em><em>default=False</em>) – enable printing of internal debugging messages.</li>
+<li><strong>gvar</strong> (<em>float</em><em>, </em><em>default=0</em>) – coefficient of variation of the amplitudes for each of the release zones.</li>
+<li><strong>eRev</strong> (<em>float</em><em>, </em><em>default=-70</em>) – “Reversal” potential, or Nernst potential for ions through the receptor channel.</li>
+<li><strong>loc</strong> (<em>float</em><em>, </em><em>default=0.5</em>) – Position on the postsynaptic section to insert the mechanism, from [0..1].</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt>
+<code class="descname">template_Gly_PSD_State_GC</code><span class="sig-paren">(</span><em>debug=False</em>, <em>nReceptors=2</em>, <em>psdtype=None</em>, <em>message=None</em>, <em>loc=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/gly_psd.html#GlyPSD.template_Gly_PSD_State_GC"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Template to build PSD using state model of glycine receptors, model glyaGC.mod</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>nReceptors</strong> (<em>int</em><em>, </em><em>default=2</em>) – number of sites to implement</li>
+<li><strong>loc</strong> (<em>float</em><em>, </em><em>default=0.5</em>) – Position on the postsynaptic section to insert the mechanism, from [0..1].</li>
+<li><strong>psdtype</strong> (<em>str</em><em>, </em><em>default=None</em>) – resets the psd type to have slow kinetics if ‘glyslow’. Any other string
+defaults to predefined kinetics in the mod file.</li>
+<li><strong>parameters</strong> (<em>Unused</em>) – cellname, debug, message, psdtype.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">template_Gly_PSD_State_Gly6S</code><span class="sig-paren">(</span><em>debug=False</em>, <em>nReceptors=2</em>, <em>psdtype=None</em>, <em>message=None</em>, <em>loc=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/gly_psd.html#GlyPSD.template_Gly_PSD_State_Gly6S"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Template to build PSD using state model of glycine receptors, model gly6s.mod</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>nReceptors</strong> (<em>int</em><em>, </em><em>default=2</em>) – number of sites to implement</li>
+<li><strong>loc</strong> (<em>float</em><em>, </em><em>default=0.5</em>) – Position on the postsynaptic section to insert the mechanism, from [0..1].</li>
+<li><strong>psdtype</strong> (<em>str</em><em>, </em><em>default=None</em>) – resets the psd type to have slow kinetics if ‘glyslow’. Any other string
+defaults to kinetics in the mod file.</li>
+<li><strong>parameters</strong> (<em>Unused</em>) – cellname, debug, message.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">template_Gly_PSD_State_Glya5</code><span class="sig-paren">(</span><em>debug=False</em>, <em>nReceptors=2</em>, <em>psdtype=None</em>, <em>message=None</em>, <em>loc=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/gly_psd.html#GlyPSD.template_Gly_PSD_State_Glya5"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Template to build PSD using state model of glycine receptors, model glya5.mod</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>nReceptors</strong> (<em>int</em><em>, </em><em>default=2</em>) – number of sites to implement</li>
+<li><strong>loc</strong> (<em>float</em><em>, </em><em>default=0.5</em>) – Position on the postsynaptic section to insert the mechanism, from [0..1].</li>
+<li><strong>parameters</strong> (<em>Unused</em>) – cellname, debug, message, psdtype.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">template_Gly_PSD_State_PL</code><span class="sig-paren">(</span><em>debug=False</em>, <em>nReceptors=2</em>, <em>cellname=None</em>, <em>psdtype=None</em>, <em>message=None</em>, <em>loc=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/gly_psd.html#GlyPSD.template_Gly_PSD_State_PL"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Template to build PSD using state model of glycine receptors, model glypl.mod</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>nReceptors</strong> (<em>int</em><em>, </em><em>default=2</em>) – number of sites to implement</li>
+<li><strong>loc</strong> (<em>float</em><em>, </em><em>default=0.5</em>) – Position on the postsynaptic section to insert the mechanism, from [0..1].</li>
+<li><strong>psdtype</strong> (<em>str</em><em>, </em><em>default=None</em>) – resets the psd type to have slow kinetics if ‘glyslow’.
+‘glyfast’ forces fast kinetics.
+Any other string defaults to the default kinetics in the mod file.</li>
+<li><strong>parameters</strong> (<em>Unused</em>) – cellname, debug, message,.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">template_Gly_PSD_exp</code><span class="sig-paren">(</span><em>debug=False</em>, <em>nReceptors=2</em>, <em>cellname=None</em>, <em>message=None</em>, <em>loc=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/gly_psd.html#GlyPSD.template_Gly_PSD_exp"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Template to build simple glycinergic exp-style PSD</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>nReceptors</strong> (<em>int</em><em>, </em><em>default=2</em>) – number of sites to implement</li>
+<li><strong>loc</strong> (<em>float</em><em>, </em><em>default=0.5</em>) – Position on the postsynaptic section to insert the mechanism, from [0..1].</li>
+<li><strong>parameters</strong> (<em>Unused</em>) – cellname, debug, message.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="cnmodel-synapses-psd">
+<h2>cnmodel.synapses.psd<a class="headerlink" href="#cnmodel-synapses-psd" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt>
+<em class="property">class </em><code class="descclassname">cnmodel.synapses.psd.</code><code class="descname">PSD</code><span class="sig-paren">(</span><em>section</em>, <em>terminal</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/psd.html#PSD"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Base class for postsynaptic density mechanisms, possibly including cleft.
+May accept either NetCon or pointer inputs from a Terminal, and directly
+modifies the membrane potential and/or ion concentrations of the
+postsynaptic cell.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>section</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">NEURON</span> <span class="pre">section</span></code>) – Set the section in the postsynaptic cell that the terminal is attached to.</li>
+<li><strong>terminal</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Synapse</span></code>) – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt>
+<code class="descname">cell</code></dt>
+<dd><p>The cell this PSD is attached to.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">section</code></dt>
+<dd><p>The cell section this PSD is attached to.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">terminal</code></dt>
+<dd><p>The presynaptic terminal connected to this PSD.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="cnmodel-synapses-simple-terminal">
+<h2>cnmodel.synapses.simple_terminal<a class="headerlink" href="#cnmodel-synapses-simple-terminal" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt>
+<em class="property">class </em><code class="descclassname">cnmodel.synapses.simple_terminal.</code><code class="descname">SimpleTerminal</code><span class="sig-paren">(</span><em>pre_sec</em>, <em>target_cell</em>, <em>spike_source=None</em>, <em>loc=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/simple_terminal.html#SimpleTerminal"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">cnmodel.synapses.terminal.Terminal</span></code></p>
+<p>Simple terminal using netcon.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pre_sec</strong> – The presynaptic section that is monitored for spikes. The voltage
+in this section is monitored to trigger the postsynaptic conductance
+as the spike source</li>
+<li><strong>spike_source</strong> – Overrides the pre_sec as the spike source for this terminal.</li>
+<li><strong>terminal</strong> – The presynaptic Terminal instance</li>
+<li><strong>loc</strong> (<em>float</em><em>, </em><em>default=0.5</em>) – Position on the postsynaptic section to insert the mechanism, from [0..1].</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt>
+<code class="descname">connect</code><span class="sig-paren">(</span><em>post</em>, <em>weight</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/simple_terminal.html#SimpleTerminal.connect"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Connect this terminal to a postsynaptic cell section
+The synaptic delay is 0.5 msec, and the presynaptic
+action potential threshold is -20 mV.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>post</strong> – </li>
+<li><strong>weight</strong> (<em>float</em>) – Strength of the connection</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="cnmodel-synapses-stochastic-terminal">
+<h2>cnmodel.synapses.stochastic_terminal<a class="headerlink" href="#cnmodel-synapses-stochastic-terminal" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt>
+<em class="property">class </em><code class="descclassname">cnmodel.synapses.stochastic_terminal.</code><code class="descname">Params</code><span class="sig-paren">(</span><em>**kwds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/stochastic_terminal.html#Params"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="class">
+<dt>
+<em class="property">class </em><code class="descclassname">cnmodel.synapses.stochastic_terminal.</code><code class="descname">StochasticTerminal</code><span class="sig-paren">(</span><em>pre_sec</em>, <em>target_cell</em>, <em>nzones=1</em>, <em>multisite=True</em>, <em>message=None</em>, <em>type='lognormal'</em>, <em>identifier=0</em>, <em>stochastic_pars=None</em>, <em>calcium_pars=None</em>, <em>delay=0</em>, <em>debug=False</em>, <em>select=None</em>, <em>spike_source=None</em>, <em>dep_flag=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/stochastic_terminal.html#StochasticTerminal"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">cnmodel.synapses.terminal.Terminal</span></code></p>
+<p>Axon terminal with multi-site sctochastic release mechanism.</p>
+<dl class="docutils">
+<dt>This routine creates a (potentially) multisite synapse using a NEURON mod file with:</dt>
+<dd><ul class="first last simple">
+<li>A MultiSiteSynapse release mechanism that includes stochastic release, with a lognormal
+release latency distribution. The Facilitation and Depression of release are governed
+by parameters obtaine from fitting the Dittman-Kreitzer-Regher (DKR) model (J Neurosci. 2000 Feb 15;20(4):1374-85.)
+to experimental data at various
+frequencies.</li>
+<li>A “cleft” mechanism (models diffusion of transmitter). Note that the cleft is inserted as part of the
+presynaptic section, but is not connected to the postsynaptic side yet.</li>
+</ul>
+</dd>
+</dl>
+<p>Each release site is stochastically independent, but all sites within a terminal are drive by the
+same presynaptic action potentials.</p>
+<p>Turning off the depression and facilitation in the kinetic portion of the model substantially decreases
+the time the terminal mechanism takes to run.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pre_sec</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">section</span></code>) – The NEURON section where the synaptic mechanisms should be inserted.</li>
+<li><strong>target_cell</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Cell</span></code>) – The target cell object that the synapse will innervate.</li>
+<li><strong>nzones</strong> (<em>int</em>) – The number of activate zones to insert into the section.</li>
+<li><strong>multisite</strong> (<em>bool</em><em>, </em><em>default: True</em>) – A flag that determines whether the terminal actually creates multiple
+release zones (True) or just creates a single release zone that
+varies its amplitude based on the depression/facilitation state.</li>
+<li><strong>message</strong> (<em>str</em>) – A message to print when instantiating (mostly for verification of code flow).</li>
+<li><strong>type</strong> (<em>str</em><em> (</em><em>default: 'lognormal'</em><em>)</em>) – ‘lognormal’ sets the release event latency distribution to use a lognormal function. Currently,
+no other function is supported.</li>
+<li><strong>identifier</strong> (<em>int</em><em> (</em><em>default: 0</em><em>)</em>) – An identifier to associate with these release sites so we can find them later.</li>
+<li><strong>stochastic_pars</strong> (<em>dict</em><em> (</em><em>default: None</em><em>)</em>) – A dictionary of parameters (Param class) used to specifiy the stochastic behavior of this site,
+including release latency, stdev, and lognormal distribution paramaters</li>
+<li><strong>calcium_pars</strong> (<em>dict</em><em> (</em><em>default: None</em><em>)</em>) – A dictionary of parameters (Param class) to determine the calcium channels in this section.
+If None, then no calcium channels are inserted; otherwise, a P-type calcium conductance and a dynamic
+mechanism are inserted, and their conductance is set.</li>
+<li><strong>delay</strong> (<em>float</em><em> (</em><em>default: 0</em><em>)</em>) – Delay time in msec from action potential until transmitter release for this terminal.</li>
+<li><strong>debug</strong> (<em>bool</em><em> (</em><em>default: False</em><em>)</em>) – Flag to print stuff out while debugging.</li>
+<li><strong>spike_source</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">section</span></code> (default: None)) – The input spike source to use in net con - default is to use pre_sec when set to None.</li>
+<li><strong>dep_flag</strong> (<em>int</em><em> (</em><em>default: 1</em><em>)</em>) – Set to 1 for depression mechanism (slows computation), 0 to turn off the depression calculations</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>the list contains the terminal, the relsites, and the list of cleft mechanisms:</p>
+<ul class="simple">
+<li>terminal: this is the pointer to the terminal section that was inserted (same as pre_sec if it was
+specified)</li>
+<li>relsite: a list of the nzones release sites that were created</li>
+<li>cleft: a list of the nzones cleft mechanisms that were created.</li>
+</ul>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list</p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt>
+<code class="descname">bushy_ipsc_average</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/stochastic_terminal.html#StochasticTerminal.bushy_ipsc_average"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Facilitation/Depression parameters for DKR model for IPSCs onto bushy cells.
+IPSCs were derived from stimulation of the dorsal cochlear nucleus, and so represent
+the glycinergic synapses from tuberculoventral neurons.
+Data for the kinetcs are the average of 16 bushy cells.
+The individual fits were compiled, and an average computed for just the 100 Hz data
+across the individual fits. This average was then fit to the DKR model
+(also see Matthew Xu-Friedman’s papers).
+The individual cells show a great deal of variability, from straight depression, to
+mixed depression/facilitaiton, to facilation alone. This set of parameters generates
+a weak facilitation followed by depression back to baseline.</p>
+<p>There are other data sets in the source that are commented out.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">bushy_ipsc_single</code><span class="sig-paren">(</span><em>select=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/stochastic_terminal.html#StochasticTerminal.bushy_ipsc_single"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Facilitation/Depression parameters for DKR model for IPSCs onto 3 individual bushy cells.
+IPSCs were derived from stimulation of the dorsal cochlear nucleus, and so represent
+the glycinergic synapses from tuberculoventral neurons.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>select</strong> (<em>int</em><em>, </em><em>default=None</em>) – <p>select which cell’s measured kinetics will be used:</p>
+<p>0: Use average
+1: use data from 30aug08f
+2: select = 2, use data from 30aug08h
+3: select = 3, use data from 31aug08b (single cell, clean dataset)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">setDF</code><span class="sig-paren">(</span><em>target_cell</em>, <em>synapsetype</em>, <em>select=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/stochastic_terminal.html#StochasticTerminal.setDF"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Set the facilitation/depression parameters for the multisite release model.
+The parameters used here were obtained from an optimized fit of the DKR
+model to stimulus and recovery data for the auditory nerve synapses onto bushy
+and T-stellate cells at 100, 200 and 300 Hz (simultaneous fitting), for times out to about
+0.5 - 1.0 second. Data were collected by Dr. Ruili Xie and Dr. Yong Wang.
+Fitting by Paul Manis.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>target_cell</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">NEURON</span> <span class="pre">section</span></code>) – Define the target cell so that the correct release kinetics are used</li>
+<li><strong>synapsetype</strong> (<em>str</em>) – String defining the type of synapse: ‘ipsc’ or ‘epsc’</li>
+<li><strong>select</strong> (<em>str</em><em> (</em><em>default: None</em><em>)</em>) – Select kinetcs from a particular example cell.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">setPsdType</code><span class="sig-paren">(</span><em>target_cell</em>, <em>select=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/stochastic_terminal.html#StochasticTerminal.setPsdType"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Assign a postsynpatic density type - selection of receptors to be
+associated with the presynaptic terminal.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>target_cell</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">NEURON</span> <span class="pre">section</span></code>) – Define the target cell so that the correct PSD is inserted</li>
+<li><strong>select</strong> (<em>str</em>) – Not used in current implementation.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">set_params</code><span class="sig-paren">(</span><em>**params</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/stochastic_terminal.html#StochasticTerminal.set_params"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Set arbitrary parameters on the release mechanism.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**params</strong> (<em>dict</em>) – dictionary of parameters to set on the release mechanism.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">stellate_ipsc</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/stochastic_terminal.html#StochasticTerminal.stellate_ipsc"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Facilitation/Depression parameters for DKR model for IPSCs onto stellate cells.
+IPSCs were derived from stimulation of the dorsal cochlear nucleus, and so represent
+the glycinergic synapses from tuberculoventral neurons.
+Data is average of 3 cells studied with recovery curves and individually fit, at 100 Hz.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="cnmodel-synapses-synapse">
+<h2>cnmodel.synapses.synapse<a class="headerlink" href="#cnmodel-synapses-synapse" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt>
+<em class="property">class </em><code class="descclassname">cnmodel.synapses.synapse.</code><code class="descname">Synapse</code><span class="sig-paren">(</span><em>pre_cell</em>, <em>pre_opts</em>, <em>post_cell</em>, <em>post_opts</em>, <em>type='multisite'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/synapse.html#Synapse"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Encapsulates a synaptic connection between two cells.</p>
+<p>Instances of this class are created by calling <cite>Cell.connect()</cite>.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="cnmodel-synapses-terminal">
+<h2>cnmodel.synapses.terminal<a class="headerlink" href="#cnmodel-synapses-terminal" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt>
+<em class="property">class </em><code class="descclassname">cnmodel.synapses.terminal.</code><code class="descname">Terminal</code><span class="sig-paren">(</span><em>section</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/cnmodel/synapses/terminal.html#Terminal"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Base class for axon terminals. A terminal has a single postsynaptic
+neuron, but may have multiple release zones. It defines a release mechanism
+with a NetCon input (triggering from presynaptic voltage or calcium level)
+and either NetCon or pointer output for driving a PSD.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>section</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">NEURON</span> <span class="pre">section</span></code>) – Set the section in the postsynaptic cell that the terminal is attached to.</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt>
+<code class="descname">cell</code></dt>
+<dd><p>The cell this terminal is attached to.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">section</code></dt>
+<dd><p>The cell section this terminal is attached to.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">cnmodel.synapses package</a><ul>
+<li><a class="reference internal" href="#cnmodel-synapses-exp2-psd">cnmodel.synapses.exp2_psd</a></li>
+<li><a class="reference internal" href="#cnmodel-synapses-glu-psd">cnmodel.synapses.glu_psd</a></li>
+<li><a class="reference internal" href="#cnmodel-synapses-gly-psd">cnmodel.synapses.gly_psd</a></li>
+<li><a class="reference internal" href="#cnmodel-synapses-psd">cnmodel.synapses.psd</a></li>
+<li><a class="reference internal" href="#cnmodel-synapses-simple-terminal">cnmodel.synapses.simple_terminal</a></li>
+<li><a class="reference internal" href="#cnmodel-synapses-stochastic-terminal">cnmodel.synapses.stochastic_terminal</a></li>
+<li><a class="reference internal" href="#cnmodel-synapses-synapse">cnmodel.synapses.synapse</a></li>
+<li><a class="reference internal" href="#cnmodel-synapses-terminal">cnmodel.synapses.terminal</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="morphology.html"
+                        title="previous chapter">cnmodel.morphology package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="populations.html"
+                        title="next chapter">cnmodel.populations package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/synapses.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="populations.html" title="cnmodel.populations package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="morphology.html" title="cnmodel.morphology package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">CNModel 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >API Reference</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, 2018, Paul B. Manis and Luke Campagnola.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.2.
+    </div>
+  </body>
+</html>
