@@ -497,6 +497,7 @@ class Cell(object):
         return a string with all the mechanisms
         """
         res = '\nAll mechanisms in all sections: \n'
+<<<<<<< HEAD
         for part in self.all_sections.keys():
             res += ('Cell part: %s\n' % part )
             for sec in self.all_sections[part]:
@@ -551,6 +552,62 @@ class Cell(object):
                 check[part][sec] = sec
                 for m in self.get_mechs(sec):
                     gx = eval('sec().'+m+'.gbar')
+=======
+        for part in self.all_sections.keys():
+            res += ('Cell part: %s\n' % part )
+            for sec in self.all_sections[part]:
+                res += ('   Section:\n', sec)
+                res += ('        ', self.get_mechs(sec)) + '\n'
+                for m in self.get_mechs(sec):
+                    gx = eval('sec().'+m+'.gbar')
+                    res += ('            %s: %f\n' % (m, gx))
+        return res
+
+    def save_all_mechs(self):
+        """
+        get and save all of the initial mechanisms and their
+        maximal conductances when the cell is created.
+        We use this to get and check values later when the run
+        is actually done.
+        Note: some cell constructions may require that save_all_mechs
+        be done again after the initial "build". In this case,
+        setting the cell's initial_mechanisms property to None must
+        be done to allow a new configuration of mechanisms to be saved.
+        
+        """
+        if self.initial_mechanisms is not None:
+            raise ValueError('Cells: Attempting to save initial mechanisms more than once')
+        self.initial_mechanisms = {}
+        for part in self.all_sections.keys():
+            self.initial_mechanisms[part] = {}
+#            print('Cell part: %s' % part )
+            for sec in self.all_sections[part]:
+#                print('   Section: ', sec)
+#                print('        ', self.get_mechs(sec))
+                self.initial_mechanisms[part][sec] = {}
+                for m in self.get_mechs(sec):
+                    gx = eval('sec().'+m+'.gbar')
+#                    print('            %s: %f' % (m, gx))
+                    self.initial_mechanisms[part][sec][m] = gx
+
+    def check_all_mechs(self):
+        """
+        Check that all mechanisms are the same as when we initially created the cell
+        """
+        check = {}
+        for part in self.all_sections.keys():
+            if part not in self.initial_mechanisms.keys():
+                raise ValueError('Cell part %s was not in the original cell')
+            check[part] = {}
+            for sec in self.all_sections[part]:
+                #print('   Section: ', sec)
+                #print('        ', self.get_mechs(sec))
+                if sec not in self.initial_mechanisms[part].keys():
+                    raise ValueError('Cell section was not in the original cell: ', sec)
+                check[part][sec] = sec
+                for m in self.get_mechs(sec):
+                    gx = eval('sec().'+m+'.gbar')
+>>>>>>> a56d877d8a2f95efedc5862c00424fe3d451a94e
                     #print('            %s: %f' % (m, gx))
                     if m not in self.initial_mechanisms[part][sec].keys():
                         raise ValueError('Mechanism %s was not in cell part %s, section = ' % (m, part), sec)
