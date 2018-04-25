@@ -56,12 +56,7 @@ class Decorator():
                         'ihvcn': None, 'jsrna': None, 'nav11': 'vsna', 'nacncoop': None,
                         'hcnobo': None}
         self._biophys(cell, verify=verify)
-<<<<<<< HEAD
         print ('\033[1;31;40m Decorator: Model Decorated with channels (if this appears more than once per cell, there is a problem)\033[0m')
-=======
-        print 'Decorator: Model Decorated with channels (if this appears more than once per cell, there is a problem)'
-        
->>>>>>> cnmodel/decorators
 
 
     def _biophys(self, cell, verify=False):
@@ -277,15 +272,10 @@ class Decorator():
     def remapSectionType(self, sectype):
         if sectype in ['AXON_0']:
             sectype = 'axon'
-<<<<<<< HEAD
-        if sectype in ['initseg']: # , 'initialsegment']:
-            sectype = 'initialsegment'
-        if sectype in ['dendscaled_0', 'dendscaled_1', 'dendscaled_2', 'dendrite', 'dend']:
-=======
+
         if sectype in ['initseg', 'initialsegment']:
             sectype = 'initialsegment'
         if sectype in ['dendscaled_0', 'dendscaled_1', 'dendscaled_2', 'dendrite']:
->>>>>>> cnmodel/decorators
             sectype = 'dendrite'
         if sectype in ['apical_dendrite']:
             sectype = 'secondarydendrite'
