@@ -116,7 +116,7 @@ class DStellateRothman(DStellate):
     as a type I-II from Rothman and Manis, 2003
     """
     def __init__(self, morphology=None, decorator=None,  nach=None, ttx=False,
-                species='guineapig', modelType=None, debug=False):
+                species='guineapig', modelType=None, modelName=None, debug=False):
         """
         initialize a radial stellate (D-stellate) cell, using the default parameters for guinea pig from
         R&M2003, as a type I-II cell.
@@ -167,12 +167,27 @@ class DStellateRothman(DStellate):
         """
         
         super(DStellateRothman, self).__init__()
-        if modelType == None:  # allow us to pass None to get the default
+        if modelType == None:
             modelType = 'I-II'
-        if nach == None:
-            nach = 'na'
+        if species == 'guineapig':
+            modelName = 'RM03'
+            temp = 22.
+            if nach == None:
+                nach = 'na'
+        if species == 'mouse':
+            temp = 34.
+            if modelName is None:
+                modelName = 'XM13'
+            if nach is None:
+                nach = 'nav11'
+
+        # if modelType == None:  # allow us to pass None to get the default
+        #     modelType = 'I-II'
+        # if nach == None:
+        #     nach = 'na'
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'DStellate',
+                       'na': nach, 'species': species, 'modelType': modelType, 'modelName': modelName,
+                       'ttx': ttx, 'name': 'DStellate',
                        'morphology': morphology, 'decorator': decorator, 'temperature': None}
         self.i_test_range = {'pulse': [(-0.3, 0.3, 0.03), (-0.05, 0., 0.005)]}  # set range for ic command test
         self.vrange = [-75., -55.]
@@ -209,18 +224,36 @@ class DStellateRothman(DStellate):
         if debug:
             print "<< D-stellate: JSR Stellate Type I-II cell model created >>"
 
-    def get_cellpars(self, dataset, species='guineapig', celltype='I-II'):
-        cellcap = data.get(dataset, species=species, cell_type=celltype,
+    def get_cellpars(self, dataset, species='guineapig', modelType='I-II'):
+        cellcap = data.get(dataset, species=species, model_type=modelType,
             field='soma_Cap')
-        chtype = data.get(dataset, species=species, cell_type=celltype,
-            field='soma_na_type')
+        chtype = data.get(dataset, species=species, model_type=modelType,
+            field='na_type')
+        if chtype == 'nacn':
+            chtype = 'na'
         pars = Params(cap=cellcap, natype=chtype)
-        for g in ['soma_na_gbar', 'soma_kht_gbar', 'soma_ka_gbar',
-                  'soma_ih_gbar', 'soma_ih_eh',
-                  'soma_leak_gbar', 'soma_leak_erev',
-                  'soma_e_k', 'soma_e_na']:
-            pars.additem(g,  data.get(dataset, species=species, cell_type=celltype,
-            field=g))
+        print('pars cell/chtype: ')
+        pars.show()
+
+        if self.status['modelName'] == 'RM03':
+            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ka_gbar', 'ih_gbar', 'leak_gbar']:
+                pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
+                    field=g))
+        if self.status['modelName'] == 'XM13':
+            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ka_gbar', 'ihvcn_gbar', 'leak_gbar']:
+                pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
+                    field=g))
+        if self.status['modelName'] == 'mGBC':
+            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ka_gbar', 'ihvcn_gbar', 'leak_gbar']:
+                pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
+                    field=g))
+
+        # for g in ['na_gbar', 'kht_gbar', 'ka_gbar',
+        #           'ih_gbar', 'ih_eh',
+        #           'leak_gbar', 'leak_erev',
+        #           'e_k', 'e_na']:
+        #     pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
+        #     field=g))
         return pars
 
     def species_scaling(self, species='guineapig', modelType='I-II', silent=True):
@@ -250,16 +283,17 @@ class DStellateRothman(DStellate):
             if self.status['temperature'] is None:
                 self.set_temperature(34.)
             self.c_m = 0.9
-            pars = self.get_cellpars(dataset, species=species, celltype=celltype)
+            pars = self.get_cellpars(dataset, species=species, modelType=modelType)
             self.set_soma_size_from_Cm(pars.cap)
             self.status['na'] = pars.natype
-#            pars.show()
-            self.adjust_na_chans(soma, gbar=pars.soma_na_gbar, sf=1.0)
-            soma().kht.gbar = nstomho(pars.soma_kht_gbar, self.somaarea)
-            soma().ka.gbar = nstomho(pars.soma_ka_gbar, self.somaarea)
-            soma().ihvcn.gbar = nstomho(pars.soma_ih_gbar, self.somaarea)
-            soma().leak.gbar = nstomho(pars.soma_leak_gbar, self.somaarea)
-            soma().leak.erev = pars.soma_leak_erev
+            pars.show()
+            self.adjust_na_chans(soma, gbar=pars.nav11_gbar, sf=1.0)
+            soma().kht.gbar = nstomho(pars.kht_gbar, self.somaarea)
+            soma().klt.gbar = nstomho(pars.klt_gbar, self.somaarea)
+            soma().ka.gbar = nstomho(pars.ka_gbar, self.somaarea)
+            soma().ihvcn.gbar = nstomho(pars.ihvcn_gbar, self.somaarea)
+            soma().leak.gbar = nstomho(pars.leak_gbar, self.somaarea)
+           # soma().leak.erev = pars.leak_erev
             self.axonsf = 0.5
             
         elif species == 'guineapig':  # values from R&M 2003, Type II-I
@@ -273,16 +307,17 @@ class DStellateRothman(DStellate):
                 sf = 3.03  # Q10 of 2, 22->38C. (p3106, R&M2003c)
                 self.i_test_range={'pulse': (-0.3, 0.3, 0.03)}
             self.vrange = [-75., -55.]
-            pars = self.get_cellpars(dataset, species=species, celltype=celltype)
+            pars = self.get_cellpars(dataset, species=species, modelType=modelType)
             self.set_soma_size_from_Cm(pars.cap)
             self.status['na'] = pars.natype
 #            pars.show()
-            self.adjust_na_chans(soma, gbar=pars.soma_na_gbar, sf=sf)
-            soma().kht.gbar = nstomho(pars.soma_kht_gbar, self.somaarea)
-            soma().ka.gbar = nstomho(pars.soma_ka_gbar, self.somaarea)
-            soma().ihvcn.gbar = nstomho(pars.soma_ih_gbar, self.somaarea)
-            soma().leak.gbar = nstomho(pars.soma_leak_gbar, self.somaarea)
-            soma().leak.erev = pars.soma_leak_erev
+            self.adjust_na_chans(soma, gbar=pars.na_gbar, sf=sf)
+            soma().kht.gbar = nstomho(pars.kht_gbar, self.somaarea)
+            soma().klt.gbar = nstomho(pars.klt_gbar, self.somaarea)
+            soma().ka.gbar = nstomho(pars.ka_gbar, self.somaarea)
+            soma().ihvcn.gbar = nstomho(pars.ih_gbar, self.somaarea)
+            soma().leak.gbar = nstomho(pars.leak_gbar, self.somaarea)
+            soma().leak.erev = pars.leak_erev
             self.axonsf = 0.5
 
         else:

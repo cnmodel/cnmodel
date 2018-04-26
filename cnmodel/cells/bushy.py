@@ -243,7 +243,7 @@ class BushyRothman(Bushy):
         """
         #cell_type = self.map_celltype(cell_type)
         print('getcellpars: dataset, species, mmodeltype: ', dataset, species, modelType)
-        print ('model name: ', self.status['modelName'])
+        print('model name: ', self.status['modelName'])
         cellcap = data.get(dataset, species=species, model_type=modelType,
             field='soma_Cap')
         chtype = data.get(dataset, species=species, model_type=modelType,
