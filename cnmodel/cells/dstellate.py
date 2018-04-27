@@ -236,15 +236,15 @@ class DStellateRothman(DStellate):
         pars.show()
 
         if self.status['modelName'] == 'RM03':
-            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ka_gbar', 'ih_gbar', 'leak_gbar']:
+            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ka_gbar', 'ih_gbar', 'leak_gbar', 'leak_erev']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
         if self.status['modelName'] == 'XM13':
-            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ka_gbar', 'ihvcn_gbar', 'leak_gbar']:
+            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ka_gbar', 'ihvcn_gbar', 'leak_gbar', 'leak_erev']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
         if self.status['modelName'] == 'mGBC':
-            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ka_gbar', 'ihvcn_gbar', 'leak_gbar']:
+            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ka_gbar', 'ihvcn_gbar', 'leak_gbar', 'leak_erev']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
 
@@ -290,7 +290,7 @@ class DStellateRothman(DStellate):
             self.adjust_na_chans(soma, gbar=pars.nav11_gbar, sf=1.0)
             soma().kht.gbar = nstomho(pars.kht_gbar, self.somaarea)
             soma().klt.gbar = nstomho(pars.klt_gbar, self.somaarea)
-            soma().ka.gbar = nstomho(pars.ka_gbar, self.somaarea)
+            # soma().ka.gbar = nstomho(pars.ka_gbar, self.somaarea)
             soma().ihvcn.gbar = nstomho(pars.ihvcn_gbar, self.somaarea)
             soma().leak.gbar = nstomho(pars.leak_gbar, self.somaarea)
            # soma().leak.erev = pars.leak_erev
@@ -314,7 +314,7 @@ class DStellateRothman(DStellate):
             self.adjust_na_chans(soma, gbar=pars.na_gbar, sf=sf)
             soma().kht.gbar = nstomho(pars.kht_gbar, self.somaarea)
             soma().klt.gbar = nstomho(pars.klt_gbar, self.somaarea)
-            soma().ka.gbar = nstomho(pars.ka_gbar, self.somaarea)
+            #soma().ka.gbar = nstomho(pars.ka_gbar, self.somaarea)
             soma().ihvcn.gbar = nstomho(pars.ih_gbar, self.somaarea)
             soma().leak.gbar = nstomho(pars.leak_gbar, self.somaarea)
             soma().leak.erev = pars.leak_erev

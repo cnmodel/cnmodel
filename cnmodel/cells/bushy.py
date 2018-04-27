@@ -185,7 +185,7 @@ class BushyRothman(Bushy):
             if modelName is None:
                 modelName = 'XM13'
             if nach is None:
-                nach = 'na'
+                nach = 'nav11'
         
         self.status = {'species': species, 'cellClass': self.type, 'modelType': modelType, 'modelName': modelName,
                         'soma': True, 'axon': False, 'dendrites': False, 'pumps': False, 'hillock': False, 

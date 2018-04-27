@@ -150,13 +150,13 @@ class TStellateRothman(TStellate):
             modelName = 'RM03'
             temp = 22.
             if nach == None:
-                nach = 'nacn'
+                nach = 'na'
         if species == 'mouse':
             temp = 34.
             if modelName is None:
                 modelName = 'XM13'
             if nach == None:
-                nach = 'nacn'
+                nach = 'nav11'
             self.i_test_range={'pulse': (-1.0, 1.0, 0.05)}
         self.status = {'species': species, 'cellClass': self.type, 'modelType': modelType, 'modelName': modelName,
                         'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
@@ -187,6 +187,7 @@ class TStellateRothman(TStellate):
 
         # decorate the morphology with ion channels
         if decorator is None:   # basic model, only on the soma
+            print('nach: ', nach)
             self.mechanisms = ['kht', 'ka', 'ihvcn', 'leak', nach]
             for mech in self.mechanisms:
                 self.soma.insert(mech)
@@ -203,19 +204,51 @@ class TStellateRothman(TStellate):
         if debug:
                 print "<< T-stellate: JSR Stellate Type 1 cell model created >>"
 
+    # def get_cellpars(self, dataset, species='guineapig', modelType='I-c'):
+    #     cellcap = data.get(dataset, species=species, model_type=modelType,
+    #         field='soma_Cap')
+    #     chtype = data.get(dataset, species=species, model_type=modelType,
+    #         field='na_type')
+    #     pars = Params(cap=cellcap, natype=chtype)
+    #     for g in ['na_gbar', 'kht_gbar', 'ka_gbar',
+    #               'ih_gbar', 'ih_eh',
+    #               'leak_gbar', 'leak_erev',
+    #               'e_k', 'e_na']:
+    #         pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
+    #         field=g))
+    #     return pars
     def get_cellpars(self, dataset, species='guineapig', modelType='I-c'):
         cellcap = data.get(dataset, species=species, model_type=modelType,
             field='soma_Cap')
         chtype = data.get(dataset, species=species, model_type=modelType,
             field='na_type')
+        if chtype == 'nacn':
+            chtype = 'na'
         pars = Params(cap=cellcap, natype=chtype)
-        for g in ['na_gbar', 'kht_gbar', 'ka_gbar',
-                  'ih_gbar', 'ih_eh',
-                  'leak_gbar', 'leak_erev',
-                  'e_k', 'e_na']:
-            pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
-            field=g))
+        print('pars cell/chtype: ')
+        pars.show()
+
+        if self.status['modelName'] == 'RM03':
+            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'ka_gbar', 'ih_gbar', 'leak_gbar', 'leak_erev', 'ih_eh', 'e_k', 'e_na']:
+                pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
+                    field=g))
+        if self.status['modelName'] == 'XM13':
+            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'ka_gbar', 'ihvcn_gbar', 'leak_gbar', 'leak_erev', 'ih_eh', 'e_k', 'e_na']:
+                pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
+                    field=g))
+        if self.status['modelName'] == 'mGBC':
+            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'ka_gbar', 'ihvcn_gbar', 'leak_gbar', 'leak_erev', 'ih_eh', 'e_k', 'e_na']:
+                pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
+                    field=g))
+
+        # for g in ['na_gbar', 'kht_gbar', 'ka_gbar',
+        #           'ih_gbar', 'ih_eh',
+        #           'leak_gbar', 'leak_erev',
+        #           'e_k', 'e_na']:
+        #     pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
+        #     field=g))
         return pars
+    
 
     def species_scaling(self, species='guineapig', modelType='I-c', silent=True):
         """
@@ -265,18 +298,18 @@ class TStellateRothman(TStellate):
             # pars.show()
             self.set_soma_size_from_Cm(pars.cap)
             self.status['na'] = pars.natype
-            self.adjust_na_chans(soma, gbar=pars.soma_na_gbar, sf=1.0)
-            soma().kht.gbar = nstomho(pars.soma_kht_gbar, self.somaarea)
-            soma().ka.gbar = nstomho(pars.soma_ka_gbar, self.somaarea)
-            soma().ihvcn.gbar = nstomho(pars.soma_ih_gbar, self.somaarea)
-            soma().ihvcn.eh = pars.soma_ih_eh # Rodrigues and Oertel, 2006
-            soma().leak.gbar = nstomho(pars.soma_leak_gbar, self.somaarea)
-            soma().leak.erev = pars.soma_leak_erev
-            self.e_k = pars.soma_e_k
-            self.e_na = pars.soma_e_na
+            self.adjust_na_chans(soma, gbar=pars.nav11_gbar, sf=1.0)
+            soma().kht.gbar = nstomho(pars.kht_gbar, self.somaarea)
+            soma().ka.gbar = nstomho(pars.ka_gbar, self.somaarea)
+            soma().ihvcn.gbar = nstomho(pars.ihvcn_gbar, self.somaarea)
+            soma().ihvcn.eh = pars.ih_eh # Rodrigues and Oertel, 2006
+            soma().leak.gbar = nstomho(pars.leak_gbar, self.somaarea)
+            soma().leak.erev = pars.leak_erev
+            self.e_k = pars.e_k
+            self.e_na = pars.e_na
             soma.ena = self.e_na
             soma.ek = self.e_k
-            self.adjust_na_chans(soma, gbar=pars.soma_na_gbar)
+            self.adjust_na_chans(soma, gbar=pars.nav11_gbar)
             self.axonsf = 0.5
             
         elif species == 'guineapig':
@@ -488,6 +521,7 @@ class TStellateRothman(TStellate):
         else:
             gnabar = nstomho(gbar, self.somaarea)*sf
         nach = self.status['na']
+        print('NCH: ', nach)
         if nach == 'jsrna':
             soma().jsrna.gbar = gnabar*sf
             soma.ena = self.e_na
