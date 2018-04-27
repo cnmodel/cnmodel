@@ -173,13 +173,13 @@ class DStellateRothman(DStellate):
             modelName = 'RM03'
             temp = 22.
             if nach == None:
-                nach = 'na'
+                nach = 'nacn'
         if species == 'mouse':
             temp = 34.
             if modelName is None:
                 modelName = 'XM13'
             if nach is None:
-                nach = 'nav11'
+                nach = 'na'
 
         # if modelType == None:  # allow us to pass None to get the default
         #     modelType = 'I-II'
@@ -191,6 +191,8 @@ class DStellateRothman(DStellate):
                        'morphology': morphology, 'decorator': decorator, 'temperature': None}
         self.i_test_range = {'pulse': [(-0.3, 0.3, 0.03), (-0.05, 0., 0.005)]}  # set range for ic command test
         self.vrange = [-75., -55.]
+        self.spike_threshold = -40.  # matches threshold in released CNModel (set in base cell class)
+        
         if morphology is None:
             """
             instantiate a basic soma-only ("point") model
@@ -229,31 +231,21 @@ class DStellateRothman(DStellate):
             field='soma_Cap')
         chtype = data.get(dataset, species=species, model_type=modelType,
             field='na_type')
-        if chtype == 'nacn':
-            chtype = 'na'
         pars = Params(cap=cellcap, natype=chtype)
-        print('pars cell/chtype: ')
         pars.show()
 
         if self.status['modelName'] == 'RM03':
-            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ka_gbar', 'ih_gbar', 'leak_gbar', 'leak_erev']:
+            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ka_gbar', 'ih_gbar', 'leak_gbar', 'leak_erev', 'ih_eh', 'e_k', 'e_na']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
         if self.status['modelName'] == 'XM13':
-            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ka_gbar', 'ihvcn_gbar', 'leak_gbar', 'leak_erev']:
+            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ka_gbar', 'ihvcn_gbar', 'leak_gbar', 'leak_erev', 'ih_eh', 'e_k', 'e_na']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
         if self.status['modelName'] == 'mGBC':
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ka_gbar', 'ihvcn_gbar', 'leak_gbar', 'leak_erev']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
-
-        # for g in ['na_gbar', 'kht_gbar', 'ka_gbar',
-        #           'ih_gbar', 'ih_eh',
-        #           'leak_gbar', 'leak_erev',
-        #           'e_k', 'e_na']:
-        #     pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
-        #     field=g))
         return pars
 
     def species_scaling(self, species='guineapig', modelType='I-II', silent=True):
@@ -287,12 +279,18 @@ class DStellateRothman(DStellate):
             self.set_soma_size_from_Cm(pars.cap)
             self.status['na'] = pars.natype
             pars.show()
-            self.adjust_na_chans(soma, gbar=pars.nav11_gbar, sf=1.0)
+            self.adjust_na_chans(soma, gbar=pars.na_gbar, sf=1.0)
             soma().kht.gbar = nstomho(pars.kht_gbar, self.somaarea)
             soma().klt.gbar = nstomho(pars.klt_gbar, self.somaarea)
             # soma().ka.gbar = nstomho(pars.ka_gbar, self.somaarea)
             soma().ihvcn.gbar = nstomho(pars.ihvcn_gbar, self.somaarea)
+            soma().ihvcn.eh = pars.ih_eh # Rodrigues and Oertel, 2006
             soma().leak.gbar = nstomho(pars.leak_gbar, self.somaarea)
+            soma().leak.erev = pars.leak_erev
+            self.e_k = pars.e_k
+            self.e_na = pars.e_na
+            soma.ena = self.e_na
+            soma.ek = self.e_k
            # soma().leak.erev = pars.leak_erev
             self.axonsf = 0.5
             
@@ -311,7 +309,7 @@ class DStellateRothman(DStellate):
             self.set_soma_size_from_Cm(pars.cap)
             self.status['na'] = pars.natype
 #            pars.show()
-            self.adjust_na_chans(soma, gbar=pars.na_gbar, sf=sf)
+            self.adjust_na_chans(soma, gbar=pars.nacn_gbar, sf=sf)
             soma().kht.gbar = nstomho(pars.kht_gbar, self.somaarea)
             soma().klt.gbar = nstomho(pars.klt_gbar, self.somaarea)
             #soma().ka.gbar = nstomho(pars.ka_gbar, self.somaarea)
@@ -373,8 +371,8 @@ class DStellateRothman(DStellate):
             soma.ena = self.e_na
             if debug:
                 print 'na gbar: ', soma().na.gbar
-        elif nach == 'nach':
-            soma().nach.gbar = gnabar
+        elif nach == 'nacn':
+            soma().nacn.gbar = gnabar
             soma.ena = self.e_na
             if debug:
                 print 'nacn gbar: ', soma().nacn.gbar

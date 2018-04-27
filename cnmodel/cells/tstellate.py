@@ -150,20 +150,20 @@ class TStellateRothman(TStellate):
             modelName = 'RM03'
             temp = 22.
             if nach == None:
-                nach = 'na'
+                nach = 'nacn'
         if species == 'mouse':
             temp = 34.
             if modelName is None:
                 modelName = 'XM13'
             if nach == None:
-                nach = 'nav11'
+                nach = 'nacn'
             self.i_test_range={'pulse': (-1.0, 1.0, 0.05)}
         self.status = {'species': species, 'cellClass': self.type, 'modelType': modelType, 'modelName': modelName,
                         'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'ttx': ttx, 'name': self.type,
                        'morphology': morphology, 'decorator': decorator, 'temperature': None}
         self.c_m = 0.9E-6  # default in units of F/cm^2
-        self.spike_threshold = -10.
+        self.spike_threshold = -40.  # matches threshold in released CNModel (set in base cell class)
         self.vrange = [-70., -55.]
         self._valid_temperatures = (temp, )
         if self.status['temperature'] == None:
@@ -187,7 +187,6 @@ class TStellateRothman(TStellate):
 
         # decorate the morphology with ion channels
         if decorator is None:   # basic model, only on the soma
-            print('nach: ', nach)
             self.mechanisms = ['kht', 'ka', 'ihvcn', 'leak', nach]
             for mech in self.mechanisms:
                 self.soma.insert(mech)
@@ -204,28 +203,12 @@ class TStellateRothman(TStellate):
         if debug:
                 print "<< T-stellate: JSR Stellate Type 1 cell model created >>"
 
-    # def get_cellpars(self, dataset, species='guineapig', modelType='I-c'):
-    #     cellcap = data.get(dataset, species=species, model_type=modelType,
-    #         field='soma_Cap')
-    #     chtype = data.get(dataset, species=species, model_type=modelType,
-    #         field='na_type')
-    #     pars = Params(cap=cellcap, natype=chtype)
-    #     for g in ['na_gbar', 'kht_gbar', 'ka_gbar',
-    #               'ih_gbar', 'ih_eh',
-    #               'leak_gbar', 'leak_erev',
-    #               'e_k', 'e_na']:
-    #         pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
-    #         field=g))
-    #     return pars
     def get_cellpars(self, dataset, species='guineapig', modelType='I-c'):
         cellcap = data.get(dataset, species=species, model_type=modelType,
             field='soma_Cap')
         chtype = data.get(dataset, species=species, model_type=modelType,
             field='na_type')
-        if chtype == 'nacn':
-            chtype = 'na'
         pars = Params(cap=cellcap, natype=chtype)
-        print('pars cell/chtype: ')
         pars.show()
 
         if self.status['modelName'] == 'RM03':
@@ -240,13 +223,6 @@ class TStellateRothman(TStellate):
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'ka_gbar', 'ihvcn_gbar', 'leak_gbar', 'leak_erev', 'ih_eh', 'e_k', 'e_na']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
-
-        # for g in ['na_gbar', 'kht_gbar', 'ka_gbar',
-        #           'ih_gbar', 'ih_eh',
-        #           'leak_gbar', 'leak_erev',
-        #           'e_k', 'e_na']:
-        #     pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
-        #     field=g))
         return pars
     
 
@@ -285,7 +261,7 @@ class TStellateRothman(TStellate):
             # model description in Xie and Manis 2013. Note that
             # conductances were not scaled for temperature (rates were)
             # so here we reset the default Q10's for conductance (g) to 1.0
-            print '  Setting Conductances for mouse I-c Tstellate cell, Xie and Manis, 2013'
+            print '  Setting Conductances for mouse I-c Tstellate cell, (modified from Xie and Manis, 2013)'
             self.c_m = 0.9  # default in units of F/cm^2
             dataset = 'XM13_channels'
             self.vrange = [-75., -55.]
@@ -298,7 +274,7 @@ class TStellateRothman(TStellate):
             # pars.show()
             self.set_soma_size_from_Cm(pars.cap)
             self.status['na'] = pars.natype
-            self.adjust_na_chans(soma, gbar=pars.nav11_gbar, sf=1.0)
+            self.adjust_na_chans(soma, gbar=pars.nacn_gbar, sf=1.0)
             soma().kht.gbar = nstomho(pars.kht_gbar, self.somaarea)
             soma().ka.gbar = nstomho(pars.ka_gbar, self.somaarea)
             soma().ihvcn.gbar = nstomho(pars.ihvcn_gbar, self.somaarea)
@@ -309,7 +285,6 @@ class TStellateRothman(TStellate):
             self.e_na = pars.e_na
             soma.ena = self.e_na
             soma.ek = self.e_k
-            self.adjust_na_chans(soma, gbar=pars.nav11_gbar)
             self.axonsf = 0.5
             
         elif species == 'guineapig':
@@ -329,7 +304,7 @@ class TStellateRothman(TStellate):
             self.set_soma_size_from_Cm(pars.cap)
             self.status['na'] = pars.natype
             # pars.show()
-            self.adjust_na_chans(soma, gbar=pars.na_gbar, sf=sf)
+            self.adjust_na_chans(soma, gbar=pars.nacn_gbar, sf=sf)
             soma().kht.gbar = nstomho(pars.kht_gbar, self.somaarea)
             soma().ka.gbar = nstomho(pars.ka_gbar, self.somaarea)
             soma().ihvcn.gbar = nstomho(pars.ih_gbar, self.somaarea)
@@ -521,7 +496,6 @@ class TStellateRothman(TStellate):
         else:
             gnabar = nstomho(gbar, self.somaarea)*sf
         nach = self.status['na']
-        print('NCH: ', nach)
         if nach == 'jsrna':
             soma().jsrna.gbar = gnabar*sf
             soma.ena = self.e_na
@@ -536,7 +510,7 @@ class TStellateRothman(TStellate):
             print 'nav11 gbar: ', soma().nav11.gbar
             print 'nav11 vsna: ', soma().nav11.vsna
         elif nach == 'na':
-            soma().na.gbar = gnabar
+            soma().nacn.gbar = gnabar
             soma.ena = self.e_na
             if debug:
                 print 'na gbar: ', soma().na.gbar

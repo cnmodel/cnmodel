@@ -185,7 +185,7 @@ class BushyRothman(Bushy):
             if modelName is None:
                 modelName = 'XM13'
             if nach is None:
-                nach = 'nav11'
+                nach = 'na'
         
         self.status = {'species': species, 'cellClass': self.type, 'modelType': modelType, 'modelName': modelName,
                         'soma': True, 'axon': False, 'dendrites': False, 'pumps': False, 'hillock': False, 
@@ -248,8 +248,6 @@ class BushyRothman(Bushy):
             field='soma_Cap')
         chtype = data.get(dataset, species=species, model_type=modelType,
             field='na_type')
-        if chtype == 'nacn':
-            chtype = 'na'
         pars = Params(cap=cellcap, natype=chtype)
         print('pars cell/chtype: ')
         pars.show()

@@ -73,6 +73,7 @@ def sgc_psd_test(cell_class, seed, plot=False, tstop=5.0, n_syn=20):
     if not nmda_correct:
         NMDAR_gmax = data.get('sgc_synapse', species='mouse', post_type=celltyp, field='NMDAR_gmax')
         ratio = exp_nmda_gmax/nmda_gmax
+        print('ratio: ', ratio, exp_nmda_gmax, nmda_gmax)
         print('NMDA Receptor conductance in model should be %.16f (table is %.16f)'
                 % (NMDAR_gmax * ratio, NMDAR_gmax))
     cv_correct = (abs(exp_epsc_cv / epsc_cv - 1.0) < 0.1)
