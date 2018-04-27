@@ -30,6 +30,7 @@ class UserTester(object):
         self.audit = AUDIT_TESTS
         self.key = key
         self.rtol = 1e-3
+        self.args = args
         self.assert_test_info(*args, **kwds)
     
     def run_test(self, *args, **kwds):
@@ -39,7 +40,7 @@ class UserTester(object):
         """
         raise NotImplementedError()
 
-    def compare_results(self, info, expect):
+    def compare_results(self, key, info, expect):
         """
         Compare *result* of the current test against the previously stored 
         result *expect*. If *expect* is None, then no previous result was 
@@ -57,12 +58,14 @@ class UserTester(object):
                 assert k in expect
             for k in expect:
                 assert k in info
-                self.compare_results(info[k], expect[k])
+                self.compare_results(k, info[k], expect[k])
         elif isinstance(info, list):
             for i in range(len(info)):
-                self.compare_results(info[i], expect[i])
+                self.compare_results(key, info[i], expect[i])
         elif isinstance(info, np.ndarray):
             assert info.shape == expect.shape
+            if len(info) == 0:
+                return
             #assert info.dtype == expect.dtype
             if info.dtype.fields is None:
                 intnan = -9223372036854775808  # happens when np.nan is cast to int
@@ -70,16 +73,26 @@ class UserTester(object):
                 enans = np.isnan(expect) | (expect == intnan)
                 assert np.all(inans == enans)
                 mask = ~inans
-                # print 'user_tester: info dtype fields is none'
-                # print 'info: '  , info[mask]
-                # print 'expect: ', expect[mask]
+                if not np.allclose(info[mask], expect[mask], rtol=self.rtol):
+                    print '\nComparing data array, shapes match: ', info.shape == expect.shape
+                    print 'Model tested: %s, measure: %s' % (self.key, key)
+                    #print 'args: ', dir(self.args[0])
+                    print 'Array expected: ', expect[mask]
+                    print 'Array received: '  , info[mask]
+                    self.args[0].print_all_mechs()
                 assert np.allclose(info[mask], expect[mask], rtol=self.rtol)
             else:
                 for k in info.dtype.fields.keys():
-                    self.compare_results(info[k], expect[k])
+                    self.compare_results(k, info[k], expect[k])
         elif np.isscalar(info):
-#            print 'isscalar(info)'
-#            print 'info:   ', info, 'expected: ', expect
+            if not np.allclose(info, expect, rtol=self.rtol):
+                print 'Comparing Scalar data, model: %s, measure: %s' % (self.key, key)
+                #print 'args: ', dir(self.args[0])
+                print 'Expected: ', expect, ',  received: ', info, '  relative tolerance: ', self.rtol
+                if isinstance(self.args[0], str):
+                    print 'args0: ', str
+                else:
+                    self.args[0].print_all_mechs()
             assert np.allclose(info, expect, rtol=self.rtol)
         else:
             try:
@@ -124,7 +137,7 @@ class UserTester(object):
         expect = self.load_test_result()
         try:
             assert expect is not None
-            self.compare_results(result, expect)
+            self.compare_results(None, result, expect)
         except:
             if not self.audit:
                 if expect is None:
