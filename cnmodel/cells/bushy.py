@@ -69,7 +69,7 @@ class Bushy(Cell):
                         post_type=self.type, field='NMDAR_vshift')
                 # adjust gmax to correct for initial Pr
                 self.AMPAR_gmax = self.AMPAR_gmax/self.Pr
-                self.NMDAR_gmax = 0. #self.NMDAR_gmax/self.Pr
+                self.NMDAR_gmax = self.NMDAR_gmax/self.Pr
 
 #               original values (now in synapses.py):
 #                self.AMPA_gmax = 3.314707700918133*1e3  # factor of 1e3 scales to pS (.mod mechanisms) from nS.
