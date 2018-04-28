@@ -512,13 +512,16 @@ class Cell(object):
         """
         res = '\nAll mechanisms in all sections: \n'
         for part in self.all_sections.keys():
-            res += ('Cell part: %s\n' % part )
+            if len(self.all_sections[part]) == 0:
+                #res += 'Cell part: %s hs not sections' % part
+                continue
+            res += 'Cell part: %s\n' % part
             for sec in self.all_sections[part]:
-                res += ('   Section:\n', sec)
-                res += ('        ', self.get_mechs(sec)) + '\n'
+                res += '   Section: %s\n' % sec.name()
+                res += '        %s' % self.get_mechs(sec) + '\n'
                 for m in self.get_mechs(sec):
                     gx = eval('sec().'+m+'.gbar')
-                    res += ('            %s: %f\n' % (m, gx))
+                    res += '            %s: %f\n' % (m, gx)
         return res
 
     def save_all_mechs(self):
@@ -571,8 +574,8 @@ class Cell(object):
                     if self.initial_mechanisms[part][sec][m] != gx:
                         raise ValueError('Conductance for mechanism %s in cell part %s has changed (%f, %f), section = ' %
                             (m, part, self.initial_mechanisms[part][sec][m], gx), sec)
-    
         return True
+        
     def get_cellpars(self, dataset, species='guineapig', cell_type='II'):
         raise NotImplementedError('get_cellpars should be reimplemented in the individual cell modules')
     
