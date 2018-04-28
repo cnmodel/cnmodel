@@ -66,7 +66,7 @@ that can be accessed.
 -----------------------------------------------------------------------------------------------------------------------------------
                II             II-I           I-c           I-II          I-t       
                                                                                    
-nav11_gbar     0000.  [1]     0000.  [1]     000.   [1]    0.     [2]    3000.  [1] 
+nav11_gbar     0000.  [4]     0000.  [4]     000.   [4]    0.     [4]    3000.  [4] 
 nacn_gbar      1000.  [1]     1000.  [1]     3000.  [1]    0000.  [2]    0000.  [1] 
 na_gbar        1000.  [1]     1000.  [1]     3000.  [1]    1800.  [2]    0000.  [1] 
 kht_gbar       58.0   [1]     58.0   [1]     500.0  [1]    150.0  [2]    500.0  [1] 
@@ -98,6 +98,10 @@ ih_eh          -43    [1]     -43    [1]     -43    [1]    -43    [2]    -43    
 
 [3] These values for the I-II (dstellate) are from the original checkpoint test
     for cnmodel 12/2017. 
+
+[4] nav11 channels were used in original Xie and Manis (2013) ms, but are not
+    used for mice in the master distribution of cnmodel, which used only the nacn
+    channels.  
 
 """)
 

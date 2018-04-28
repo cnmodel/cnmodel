@@ -90,7 +90,8 @@ class UserTester(object):
                 #print 'args: ', dir(self.args[0])
                 print 'Expected: ', expect, ',  received: ', info, '  relative tolerance: ', self.rtol
                 if isinstance(self.args[0], str):
-                    print 'args0: ', str
+                    pass
+                    # print ': ', str
                 else:
                     self.args[0].print_all_mechs()
             assert np.allclose(info, expect, rtol=self.rtol)
