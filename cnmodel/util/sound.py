@@ -470,6 +470,8 @@ class ReadWavefile(Sound):
         name of the .wav file to read
     rate : float
         Sample rate in Hz (waveform will be resampled to this rate)
+    channel: int (default: 0)
+        If wavefile has 2 channels, select 0 or 1 for the channel to read
     dbspl : float or None
         If specified, the wave file is scaled such that its overall dBSPL
         (measured from RMS of the entire waveform) is equal to this value.
@@ -478,12 +480,11 @@ class ReadWavefile(Sound):
         If specified, the wave data is multiplied by this value to yield values in dBSPL. 
         Either ``dbspl`` or ``scale`` must be specified.
     delay: float (default: 0.)
-        delay time to start sound, in s. Allows anmodel and cells to run to steady-state
+        Silent delay time to start sound, in s. Allows anmodel and cells to run to steady-state
     maxdur : float or None (default: None)
-        If not None, then sets maximum duration of waveform to return (in seconds).
-        Otherwise, if None, sets the duration of the waveform from the wavefile.
-    channel: int (default: 0)
-        If wavefile has 2 channels, select 0 or 1 for the channel to read
+        If specified, maxdur defines the total duration of generated waveform to return (in seconds).
+        If None, the generated waveform duration will be the sum of any delay value and
+        the duration of the waveform from the wavefile.
     
     Returns
     -------
@@ -491,13 +492,18 @@ class ReadWavefile(Sound):
         waveform
     
     """
-    def __init__(self, wavefile, rate, dbspl=None, scale=None, maxdur=None, channel=0, delay=0.):
+    def __init__(self, wavefile, rate, channel=0, dbspl=None, scale=None, delay=0., maxdur=None):
         if dbspl is not None and scale is not None:
             raise ValueError('Only one of "dbspl" or "scale" can be set')
         duration = 0.  # forced because of the way num_samples has to be calculated first
-        Sound.__init__(self, duration, rate, dbspl=dbspl, scale=scale, wavefile=wavefile,
-                maxdur=maxdur, channel=channel, delay=delay)
-        
+        if delay < 0.:
+            raise ValueError('ReadWavefile: delay must be > 0., got: %f' % delay)
+        if maxdur is not None and maxdur < 0:
+            raise ValueError('ReadWavefile: maxdur must be None or > 0., got: %f' % maxdur)
+        Sound.__init__(self, duration, rate, wavefile=wavefile, channel=channel,
+                        dbspl=dbspl, scale=scale,
+                        maxdur=maxdur, delay=delay)
+
     def generate(self):
         """
         Read the wave file from disk, clip duration, resample if necessary, and scale
@@ -509,14 +515,15 @@ class ReadWavefile(Sound):
         [fs_wav, stimulus] = scipy.io.wavfile.read(self.opts['wavefile']) # raw is a numpy array of integer, representing the samples
         if len(stimulus.shape) > 1 and stimulus.shape[1] > 0:
             stimulus = stimulus[:,self.opts['channel']]  # just use selected channel
-
         fs_wav = float(fs_wav)
-        wavedur = len(stimulus)/fs_wav 
         maxdur = self.opts['maxdur']
-        if maxdur is not None and wavedur > maxdur:  # clip waveform to specified
-            st = np.zeros(int(maxdur*fs_wav))
-            st[int(self.opts['delay']*fs_wav):int(maxdur*fs_wav)] = stimulus[0:int((maxdur-self.opts['delay'])*fs_wav)]  # prepend a silent startup delay
-            stimulus = st
+        delay = self.opts['delay']
+        delay_array = np.zeros(int(delay*fs_wav))  # build delay array (may have 0 length)
+        if maxdur is None:
+            maxdur = delay + len(stimulus)/fs_wav  # true total length
+        maxpts = int(maxdur * fs_wav)
+        stimulus = np.hstack((delay_array, stimulus))[:maxpts]
+
         if self.opts['rate'] != fs_wav:
             stimulus = resampy.resample(stimulus, fs_wav, self.opts['rate'])
         self.opts['duration'] = (stimulus.shape[0]-1)/self.opts['rate'] # compute the duration, match for linspace calculation used in time.
@@ -532,7 +539,7 @@ class ReadWavefile(Sound):
 
 def sinusoidal_modulation(t, basestim, tstart, fmod, dmod, phaseshift):
     """
-    Generate a sinusoidally amplitude-modulation of the input stimulus.
+    Impose a sinusoidal amplitude-modulation on the input waveform.
     For dmod=100%, the envelope max is 2, the min is 0; for dmod = 0, the max and min are 1
     maintains equal energy for all modulation depths.
     Equation from Rhode and Greenberg, J. Neurophys, 1994 (adding missing parenthesis) and
