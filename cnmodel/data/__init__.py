@@ -14,4 +14,3 @@ from . import connectivity
 from . import synapses
 from . import populations
 from . import ionchannels
-
