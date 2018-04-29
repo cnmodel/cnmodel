@@ -55,14 +55,19 @@ def bet2(v):# (mV)) {
     bet2 = np.exp(gm2*(v-vhalf2)*ct) 
     return bet2
 
-v = np.linspace(-120., 0., 120)
+def plots():
+    v = np.linspace(-120., 0., 120)
 
-t1, t2, hi = rates(v)
+    t1, t2, hi = rates(v)
 
-print v
-plt.figure(1)
-plt.plot(v, t1)
-plt.plot(v, t2)
-plt.figure(2)
-plt.plot(v, hi)
-plt.show()
+    print v
+    plt.figure(1)
+    plt.plot(v, t1)
+    plt.plot(v, t2)
+    plt.figure(2)
+    plt.plot(v, hi)
+    plt.show()
+
+# prevent sphinx from running this script at first build
+if __name__ == '__main__':
+    plots()

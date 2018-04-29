@@ -7,7 +7,11 @@ available in the cnmodel API. For higher-level tools, see test_sound_stim.py
 (which uses an_model.get_spiketrain) and test_sgc_input.py (which uses 
 cells.DummySGC).
 
-Adapted from Manis (makeANF_CF_RI.m)
+Usage:
+python test_an_model.py 
+(no arguments)
+
+(Adapted from makeANF_CF_RI.m)
 """
 import time
 import numpy as np

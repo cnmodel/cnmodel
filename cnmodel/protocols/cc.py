@@ -21,7 +21,8 @@ class CurrentClamp(Protocol):
         """
         Run a single current-clamp recording on *section*.
         
-        Parameters:
+        Parameters
+        ----------
         cell : Cell
             The Cell instance to test. IClamp will be attached to 
             cell.soma(0.5).

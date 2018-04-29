@@ -84,8 +84,8 @@ class PyramidalKanold(Pyramidal, Cell):
                 species='rat', modelType=None, debug=False):
         """
         initialize a pyramidal cell, based on the Kanold-Manis (2001) pyramidal cell model.
-        Modifications to the cell can be made by calling methods below. These include:
-            Converting to a model with modified size and conductances (experimental).
+        Modifications to the cell can be made by calling methods below. These include
+        converting to a model with modified size and conductances (experimental).
         
         Parameters
         ----------

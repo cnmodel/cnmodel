@@ -8,22 +8,17 @@ import re
 import os.path
 
 class HocReader(object):
-    """
-    Provides useful methods for reading hoc structures.
-    
-    Parameters
-    -----------
-        hoc: a hoc object or a "xxx.hoc" file name.
-    """
     
     def __init__(self, hoc):
         """
+        Provides useful methods for reading hoc structures.
+        
         Parameters
         ----------
         hoc : :obj: `hoc` or str
             Either a hoc object that hs been already created, or a string that defines a hoc file name.
-        
         """
+        
         self.file_loaded = False
         if isinstance(hoc, basestring):
             fullfile = os.path.join(os.getcwd(), hoc)
@@ -141,6 +136,7 @@ class HocReader(object):
         kind of 'gbarname' than 'gbar<name>_mechname'
         returns the average of the conductance density, as that may range across different
         values in a section (e.g., can vary by segments)
+        
         Parameters
         ----------
         section : :obj: `NEURON section`
@@ -189,8 +185,8 @@ class HocReader(object):
         -------
         str
             containing the information, with html formatting.
-        
         """
+
         info = "<b>Section Name:</b> %s<br/>" %section.name()
         info += "<b>Length [um]:</b> %f<br/>" % section.L
         info += "<b>Diameter [um]:</b> %f<br/>" % section.diam

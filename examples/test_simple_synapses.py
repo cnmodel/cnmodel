@@ -1,3 +1,12 @@
+"""
+test_simple_synapses
+
+Test synapses between cell types.
+
+Usage:
+    python test_synapses.py <pre_celltype> <post_celltype>
+    Supported cell types: sgc, bushy, tstellate, dstellate, tuberculoventral, pyramidal
+"""
 import sys
 import pyqtgraph as pg
 from cnmodel.protocols.simple_synapse_test import SimpleSynapseTest

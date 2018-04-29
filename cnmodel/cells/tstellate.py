@@ -545,12 +545,12 @@ class TStellateNav11(TStellate):
         mouse from Xie and Manis, 2013. 
         Modifications to the cell can be made by calling methods below.
         Changing "species": This routine only supports "mouse"
-        Note: in the original model, the temperature scaling applied only to the rate constants, and not
-                to the conductance. Therefore, the conductances here need to be adjusted to compensate for the
-                way the mechanisms are currently implemented (so that they scale correctly to the values
-                used in Xie and Manis, 2013). This is done by setting q10g (the q10 for conductances) to 1
-                before setting up the rest of the model parameters. For those conducantances in which a Q10 for 
-                conductance is implemented, the value is typically 2.
+        *Note:* in the original model, the temperature scaling applied only to the rate constants, and not
+        to the conductance. Therefore, the conductances here need to be adjusted to compensate for the
+        way the mechanisms are currently implemented (so that they scale correctly to the values
+        used in Xie and Manis, 2013). This is done by setting q10g (the q10 for conductances) to 1
+        before setting up the rest of the model parameters. For those conducantances in which a Q10 for 
+        conductance is implemented, the value is typically 2.
                 
         Parameters
         ----------

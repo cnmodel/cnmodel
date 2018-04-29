@@ -1,11 +1,18 @@
 #!/usr/bin/python
+"""
+Basic test of initialization of multiple cells in the model, and running multiple cells at one time.
+Plots the resposnes to a series of current injections for most implemented baseic cell types in
+in cnmodel.
+
+Usage:
+    python examples/toy_model.py  (no arguments)
+
+"""
+
 from __future__ import print_function
 __author__ = 'pbmanis'
 
-"""
-Basic test of initialization of multiple cells in the model, and running multiple cells at one time.
 
-"""
 
 import sys
 from neuron import h

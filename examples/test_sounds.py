@@ -4,6 +4,7 @@ Test sounds and plot waveforms.
 This script tests the sound waveform generator for a variety of sounds
 
 """
+import sys
 import numpy as np
 import pyqtgraph as pg
 from cnmodel.util import sound
@@ -62,6 +63,5 @@ for stim in stims:
     specs[stim][0].plot(f, np.sqrt(Pxx_spec))
     
 
-import sys
-if sys.flags.interactive == 0:
-    pg.QtGui.QApplication.exec_()
+if __name__ == '__main__':
+    test_sounds()

@@ -1,7 +1,18 @@
-cnmodel
-=======
+API Reference
+=============
+
+Contents:
 
 .. toctree::
-   :maxdepth: 4
+    :maxdepth: 0
 
-   cnmodel
+    an_model
+    cells
+    data
+    decorator
+    morphology
+    synapses
+    populations
+    protocols
+    util
+

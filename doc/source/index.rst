@@ -7,20 +7,26 @@ Welcome to CNModel's documentation!
 ===================================
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
    :caption: Contents:
 
    readme
    architecture
-   api_ref/index
 
+.. toctree::
+   :maxdepth: 1
+   
+   examples
+   modules
 
 Indices and tables
 ==================
 
-* :ref:`genindex`
 * :ref:`modindex`
+* :ref:`genindex`
 * :ref:`search`
 
 .. automodule:: cnmodel
-   :members:
+    :members:
+    :show-inheritance:
+    :undoc-members:

@@ -1,3 +1,17 @@
+"""
+test_bushy_variation.py
+
+Test inputs to bushy cells as we co-vary the KLT and IH conductances
+Two tests: IV and spikes.
+Simulation results are first written to disk (.p files); plotting is done separately
+
+Usage:
+python test_bushy_variation.py [a, b]
+a runs IV curvers with variations of gKlt/gh
+b runs PSTHs to AN input (CF tones) across the same variations.
+
+"""
+
 import sys
 import numpy as np
 import pyqtgraph as pg
@@ -18,12 +32,7 @@ import matplotlib.pyplot as mpl
 import cnmodel.util.PlotHelpers as PH
 import timeit
 
-"""
-Test inputs to bushy cells as we co-vary the KLT and IH conductances
-Two tests: IV and spikes.
-Simulation results are first written to disk (.p files); plotting later
 
-"""
 
 synapseType = 'multisite' # 'simple'
 species = 'mouse'  # tables for other species do not yet exist
