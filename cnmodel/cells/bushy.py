@@ -242,14 +242,14 @@ class BushyRothman(Bushy):
         Read data for ion channels and cell parameters from the tables
         """
         #cell_type = self.map_celltype(cell_type)
-        print('getcellpars: dataset, species, mmodeltype: ', dataset, species, modelType)
-        print('model name: ', self.status['modelName'])
+        # print('getcellpars: dataset, species, mmodeltype: ', dataset, species, modelType)
+        # print('model name: ', self.status['modelName'])
         cellcap = data.get(dataset, species=species, model_type=modelType,
             field='soma_Cap')
         chtype = data.get(dataset, species=species, model_type=modelType,
             field='na_type')
         pars = Params(cap=cellcap, natype=chtype)
-        print('pars cell/chtype: ')
+        # print('pars cell/chtype: ')
         pars.show()
         if self.status['modelName'] == 'RM03':
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ih_gbar', 'leak_gbar']:
@@ -264,8 +264,8 @@ class BushyRothman(Bushy):
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
         #print dir(pars)
-        print('pars after checking self.status: ')
-        pars.show()
+        # print('pars after checking self.status: ')
+        # pars.show()
         return pars
         
     def species_scaling(self, species='guineapig', modelType='II', silent=True):

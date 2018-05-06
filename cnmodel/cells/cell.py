@@ -619,10 +619,10 @@ class Cell(object):
         # print('dataset: {0:s}   decorationmap: {1:s}'.format(dataset, decorationmap))
         cellpars = self.get_cellpars(dataset, species=self.status['species'], modelType=modelType)
         refarea = 1e-3*cellpars.cap / self.c_m
-        print ('cellpars: ' )
+# ?       print ('cellpars: ' )
         cellpars.show()
-        print(' species: ', self.status['species'])
-        print('m# odelType: ', modelType)
+        # print(' species: ', self.status['species'])
+        # print('m# odelType: ', modelType)
 #         print('dataset: ', dataset)
         table = data._db.get_table_info(dataset)
 #         table = data.get_table_info('mGBC_channels')

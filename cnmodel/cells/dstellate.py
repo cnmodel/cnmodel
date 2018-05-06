@@ -232,7 +232,7 @@ class DStellateRothman(DStellate):
         chtype = data.get(dataset, species=species, model_type=modelType,
             field='na_type')
         pars = Params(cap=cellcap, natype=chtype)
-        pars.show()
+        # pars.show()
 
         if self.status['modelName'] == 'RM03':
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ka_gbar', 'ih_gbar', 'leak_gbar', 'leak_erev', 'ih_eh', 'e_k', 'e_na']:
@@ -278,7 +278,7 @@ class DStellateRothman(DStellate):
             pars = self.get_cellpars(dataset, species=species, modelType=modelType)
             self.set_soma_size_from_Cm(pars.cap)
             self.status['na'] = pars.natype
-            pars.show()
+            # pars.show()
             self.adjust_na_chans(soma, gbar=pars.na_gbar, sf=1.0)
             soma().kht.gbar = nstomho(pars.kht_gbar, self.somaarea)
             soma().klt.gbar = nstomho(pars.klt_gbar, self.somaarea)
