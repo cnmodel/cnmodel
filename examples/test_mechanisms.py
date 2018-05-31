@@ -23,7 +23,6 @@ with cnmodel that cannot be run with this program.
 """
 
 import neuron as h
-from neuron import *
 import gc
 import numpy as np
 #import scipy as sp
