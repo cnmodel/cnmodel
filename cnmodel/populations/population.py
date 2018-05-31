@@ -343,9 +343,11 @@ class Population(object):
         """
         state = self.__dict__.copy()
         state['_cells'] = state['_cells'].copy()
-        mask = state['_cells']['cell'] != 0
-        state['_cells'][mask] = [str(cell) for cell in state['_cells'][mask]]
-        
+
+        for cell in state['_cells']:
+            if cell['cell'] != 0:
+                cell['cell'] = cell['cell'].type  # replace neuron object with just the cell type
+                cell = str(cell) # make a string
         return state
         
         
