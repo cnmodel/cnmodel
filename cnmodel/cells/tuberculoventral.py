@@ -16,11 +16,17 @@ class Tuberculoventral(Cell):
     type = 'tuberculoventral'
 
     @classmethod
-    def create(cls, modelType='TVmouse', **kwds):
-        if modelType in ['TVmouse', 'I']:
+    def create(cls, model='TVmouse', **kwds):
+        if model in ['TVmouse', 'I']:
             return Tuberculoventral(**kwds)
+        elif model == 'dummy':
+            return DummyTuberculoventral(**kwds)
         else:
-            raise ValueError ('Tuberculoventral type %s is unknown', modelType)
+            raise ValueError ('Tuberculoventral type %s is unknown', model)
+
+    def __init__(self):
+        Cell.__init__(self)
+        self.spike_source = None  # used by DummyTuberculoventral to connect VecStim to terminal
 
     def make_psd(self, terminal, psd_type, **kwds):
         """
@@ -85,7 +91,7 @@ class Tuberculoventral(Cell):
     def make_terminal(self, post_cell, term_type, **kwds):
         pre_sec = self.soma
         if term_type == 'simple':
-            return synapses.SimpleTerminal(pre_sec, post_cell, 
+            return synapses.SimpleTerminal(pre_sec, post_cell, spike_source=self.spike_source, 
                                             **kwds)
         elif term_type == 'multisite':
             if post_cell.type == 'bushy':
@@ -101,7 +107,7 @@ class Tuberculoventral(Cell):
                                         type(post_cell))
             
             pre_sec = self.soma
-            return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, 
+            return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, spike_source=self.spike_source, 
                                             delay=delay, **kwds)
         else:
             raise ValueError("Unsupported terminal type %s" % term_type)
@@ -436,5 +442,41 @@ class Tuberculoventral(Tuberculoventral):
     #     self.status['dendrites'] = True
     #     self.add_section(self.maindend, 'maindend')
 
+class DummyTuberculoventral(Tuberculoventral):
+    """ Tuberculoventral cell class with no cell body; this cell only replays a predetermined
+    spike train. Useful for testing, or replacing spike trains to determine
+    the importance of spike structures within a network.
+    """
+    def __init__(self, cf=None):
+        """
+        Parameters
+        ----------
+        cf : float (default: None)
+            Required: the characteristic frequency for the TV cell
+            Really just for reference.
+
+        """
+
+        Tuberculoventral.__init__(self)
+        self.vecstim = h.VecStim()
+        
+        # this causes the terminal to receive events from the VecStim:
+        self.spike_source = self.vecstim
+        
+        # just an empty section for holding the terminal
+        self.add_section(h.Section(), 'soma')
+        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+                       'na': None, 'species': None, 'modelType': 'Dummy', 'modelName': 'DummyTuberculoventral',
+                       'ttx': None, 'name': 'DummyTuberculoventral',
+                       'morphology': None, 'decorator': None, 'temperature': None}
+        print "<< Tuberculoventral: Dummy Tuberculoventral Cell created >>"
+        
+
+    def set_spiketrain(self, times):
+        """ Set the times of spikes (in seconds) to be replayed by the cell.
+        """
+        self._spiketrain = times
+        self._stvec = h.Vector(times)
+        self.vecstim.play(self._stvec)
 
 

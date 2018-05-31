@@ -70,7 +70,7 @@ class SGC(Cell):
             return term
         else:
             raise ValueError("Unsupported terminal type %s" % term_type)
-    
+
 
 class DummySGC(SGC):
     """ SGC class with no cell body; this cell only replays a predetermined
@@ -105,6 +105,9 @@ class DummySGC(SGC):
         
         # just an empty section for holding the terminal
         self.add_section(h.Section(), 'soma')
+        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+                       'na': None, 'species': None, 'modelType': 'dummy', 'ttx': False, 'name': 'DummysGC',
+                        'morphology': None, 'decorator': None, 'temperature': None}
 
     def set_spiketrain(self, times):
         """ Set the times of spikes (in seconds) to be replayed by the cell.
@@ -112,6 +115,7 @@ class DummySGC(SGC):
         self._spiketrain = times
         self._stvec = h.Vector(times)
         self.vecstim.play(self._stvec)
+        print('times: ', times)
 
     def set_sound_stim(self, stim, seed, simulator=None):
         """ Set the sound stimulus used to generate this cell's spike train.

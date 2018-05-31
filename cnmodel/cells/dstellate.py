@@ -18,8 +18,14 @@ class DStellate(Cell):
             return DStellateRothman(**kwds)
         elif model == 'Eager':
             return DStellateEager(**kwds)
+        elif model == 'dummy':
+            return DummyDStellate(**kwds)
         else:
             raise ValueError ('DStellate type %s is unknown', type)
+
+    def __init__(self):
+        Cell.__init__(self)
+        self.spike_source = None  # used by DummyDStellate to connect VecStim to terminal
 
     def make_psd(self, terminal, psd_type, **kwds):
         """
@@ -86,7 +92,8 @@ class DStellate(Cell):
 
     def make_terminal(self, post_cell, term_type, **kwds):
         if term_type == 'simple':
-            return synapses.SimpleTerminal(self.soma, post_cell, **kwds)
+            return synapses.SimpleTerminal(self.soma, post_cell, spike_source=self.spike_source,
+                     **kwds)
 
         elif term_type == 'multisite':
             if post_cell.type == 'bushy':
@@ -104,7 +111,7 @@ class DStellate(Cell):
                                         type(post_cell))
             
             pre_sec = self.soma
-            return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, 
+            return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, spike_source=self.spike_source, 
                                             delay=delay, **kwds)
         else:
             raise ValueError("Unsupported terminal type %s" % term_type)
@@ -414,6 +421,44 @@ class DStellateRothman(DStellate):
         self.maindend = dendrites
         self.status['dendrites'] = True
         self.add_section(self.maindend, 'maindend')
+
+
+class DummyDStellate(DStellate):
+    """ DStellate class with no cell body; this cell only replays a predetermined
+    spike train. Useful for testing, or replacing spike trains to determine
+    the importance of spike structures within a network.
+    """
+    def __init__(self, cf=None):
+        """
+        Parameters
+        ----------
+        cf : float (default: None)
+            Required: the characteristic frequency for the DStellate
+            Really just for reference.
+
+        """
+
+        DStellate.__init__(self)
+        self.vecstim = h.VecStim()
+        
+        # this causes the terminal to receive events from the VecStim:
+        self.spike_source = self.vecstim
+        
+        # just an empty section for holding the terminal
+        self.add_section(h.Section(), 'soma')
+        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+                       'na': None, 'species': None, 'modelType': 'Dummy', 'modelName': 'DummyDStellate',
+                       'ttx': None, 'name': 'DummyDStellate',
+                       'morphology': None, 'decorator': None, 'temperature': None}
+        print "<< DStellate: Dummy DStellate Cell created >>"
+        
+
+    def set_spiketrain(self, times):
+        """ Set the times of spikes (in seconds) to be replayed by the cell.
+        """
+        self._spiketrain = times
+        self._stvec = h.Vector(times)
+        self.vecstim.play(self._stvec)
 
 
 class DStellateEager(DStellate):
