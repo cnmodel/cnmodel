@@ -115,7 +115,6 @@ class DummySGC(SGC):
         self._spiketrain = times
         self._stvec = h.Vector(times)
         self.vecstim.play(self._stvec)
-        print('times: ', times)
 
     def set_sound_stim(self, stim, seed, simulator=None):
         """ Set the sound stimulus used to generate this cell's spike train.

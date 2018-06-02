@@ -406,48 +406,13 @@ class Tuberculoventral(Tuberculoventral):
         else:
             raise ValueError("Tuberculoventral setting Na channels: channel %s not known" % nach)
 
-    # def add_axon(self):
-    #     Cell.add_axon(self, self.soma, self.somaarea, self.c_m, self.R_a, self.axonsf)
-    #
-    # def add_dendrites(self):
-    #     """
-    #     Add 2 simple unbranched dendrites the basic model.
-    #     The dendrites have some kht and ih current
-    #     """
-    #     print 'adding dendrites'
-    #     cs = False  # not implemented outside here - internal Cesium.
-    #     nDend = range(2) # these will be simple, unbranced, N=2 dendrites
-    #     dendrites=[]
-    #     for i in nDend:
-    #         dendrites.append(h.Section(cell=self.soma))
-    #     for i in nDend:
-    #         dendrites[i].connect(self.soma)
-    #         dendrites[i].L = 200. # length of the dendrite (not tapered)
-    #         dendrites[i].diam = 1.0 # dendrite diameter
-    #         dendrites[i].nseg = 21 # # segments in dendrites
-    #         dendrites[i].Ra = 150 # ohm.cm
-    #         dendrites[i].insert('kht')
-    #         if cs is False:
-    #             dendrites[i]().kht.gbar = 0.000 # a little Ht
-    #         else:
-    #             dendrites[i]().kht.gbar = 0.0
-    #         dendrites[i].insert('leak') # leak
-    #         dendrites[i]().leak.gbar = 0.001
-    #         dendrites[i]().leak.erev = -78.0
-    #         dendrites[i].insert('ihvcn') # some H current
-    #         dendrites[i]().ihvcn.gbar = 0.0000
-    #         dendrites[i]().ihvcn.eh = -43.0
-    #         dendrites[i].ek = self.e_k
-    #     self.maindend = dendrites
-    #     self.status['dendrites'] = True
-    #     self.add_section(self.maindend, 'maindend')
 
 class DummyTuberculoventral(Tuberculoventral):
     """ Tuberculoventral cell class with no cell body; this cell only replays a predetermined
     spike train. Useful for testing, or replacing spike trains to determine
     the importance of spike structures within a network.
     """
-    def __init__(self, cf=None):
+    def __init__(self, cf=None, species='mouse'):
         """
         Parameters
         ----------
@@ -466,7 +431,7 @@ class DummyTuberculoventral(Tuberculoventral):
         # just an empty section for holding the terminal
         self.add_section(h.Section(), 'soma')
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': None, 'species': None, 'modelType': 'Dummy', 'modelName': 'DummyTuberculoventral',
+                       'na': None, 'species': species, 'modelType': 'Dummy', 'modelName': 'DummyTuberculoventral',
                        'ttx': None, 'name': 'DummyTuberculoventral',
                        'morphology': None, 'decorator': None, 'temperature': None}
         print "<< Tuberculoventral: Dummy Tuberculoventral Cell created >>"

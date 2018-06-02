@@ -103,7 +103,7 @@ class DStellate(Cell):
             elif post_cell.type == 'dstellate':
                 nzones, delay = 5, 0
             elif post_cell.type == 'tuberculoventral':
-                nzones, delay = 5, 0
+                nzones, delay = 25, 0
             elif post_cell.type == 'pyramidal':
                 nzones, delay = 5, 0
             else:
@@ -428,7 +428,7 @@ class DummyDStellate(DStellate):
     spike train. Useful for testing, or replacing spike trains to determine
     the importance of spike structures within a network.
     """
-    def __init__(self, cf=None):
+    def __init__(self, cf=None, species='mouse'):
         """
         Parameters
         ----------
@@ -447,7 +447,7 @@ class DummyDStellate(DStellate):
         # just an empty section for holding the terminal
         self.add_section(h.Section(), 'soma')
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': None, 'species': None, 'modelType': 'Dummy', 'modelName': 'DummyDStellate',
+                       'na': None, 'species': species, 'modelType': 'Dummy', 'modelName': 'DummyDStellate',
                        'ttx': None, 'name': 'DummyDStellate',
                        'morphology': None, 'decorator': None, 'temperature': None}
         print "<< DStellate: Dummy DStellate Cell created >>"
