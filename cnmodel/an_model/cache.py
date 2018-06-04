@@ -20,7 +20,7 @@ _index_file = os.path.join(_cache_path, 'index.pk')
 _index = None
 
 
-def get_spiketrain(cf, sr, stim, seed, **kwds):
+def get_spiketrain(cf, sr, stim, seed, verbose=False, **kwds):
     """ Return an array of spike times in response to the given stimulus.
     
     Arrays are automatically cached and may be returned from disk if 
@@ -55,7 +55,8 @@ def get_spiketrain(cf, sr, stim, seed, **kwds):
             # try loading cached data
             try:
                 data = np.load(open(filename, 'rb'))['data']
-                logging.info("Loaded AN spike train from cache: %s", filename)
+                if verbose:
+                    logging.info("Loaded AN spike train from cache: %s", filename)
             except Exception:
                 create = True
                 sys.excepthook(*sys.exc_info())
@@ -63,7 +64,8 @@ def get_spiketrain(cf, sr, stim, seed, **kwds):
                     "re-generate. File: %s", filename)
 
         if create:
-            logging.info("Generate new AN spike train: %s", filename)
+            if verbose:
+                logging.info("Generate new AN spike train: %s", filename)
             data = generate_spiketrain(cf, sr, stim, seed, **kwds)
             if '--no-an-cache' not in sys.argv:
                 np.savez_compressed(filename, data=data)
