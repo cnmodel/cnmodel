@@ -103,7 +103,7 @@ class Population(object):
         """
         return self._cells[index]['connections']
 
-    def resolve_inputs(self, depth=1):
+    def resolve_inputs(self, depth=1, showlog=False):
         """ For each _real_ cell in the population, select a set of 
         presynaptic partners from each connected population and generate a 
         synapse from each.
@@ -116,13 +116,15 @@ class Population(object):
         for i in self.unresolved_cells():
             # loop over all cells whose presynaptic inputs have not been resolved
             cell = self._cells[i]['cell']
-            logging.info("Resolving inputs for %s %d", self, i)
+            if showlog:
+                logging.info("Resolving inputs for %s %d", self, i)
             self._cells[i]['connections'] = {}
             
             # select cells from each population to connect to this cell
             for pop in self._pre_connections:
                 pre_cells = self.connect_pop_to_cell(pop, i)
-                logging.info("  connected %d cells from %s", len(pre_cells), pop)
+                if showlog:
+                    logging.info("  connected %d cells from %s", len(pre_cells), pop)
                 assert pre_cells is not None
                 self._cells[i]['connections'][pop] = pre_cells
             self._cells[i]['input_resolved'] = True
@@ -130,7 +132,7 @@ class Population(object):
         # recursively resolve inputs in connected populations
         if depth > 1:
             for pop in self.pre_connections:
-                pop.resolve_inputs(depth-1)
+                pop.resolve_inputs(depth-1, showlog=showlog)
 
     def connect_pop_to_cell(self, pop, cell_index):
         """ Connect cells in a presynaptic population to the cell in this 
