@@ -1,3 +1,4 @@
+from __future__ import print_function
 from scipy import interpolate
 import numpy as np
 
@@ -24,10 +25,10 @@ def find_point(x, y, peakindex, val, direction='left', limits=None):
         try:
             Fr = interpolate.UnivariateSpline(x[istart:peakindex], yreduced, s=0)
         except:
-            print 'find_point: insufficient time points for analysis'
-            print 'arg lengths:', len(x[istart:peakindex]), len(yreduced)
-            print 'istart, peakindex: ', istart, peakindex
-            print 'ytofine: ', yToFind
+            print ('find_point: insufficient time points for analysis')
+            print ('arg lengths:', len(x[istart:peakindex]), len(yreduced))
+            print ('istart, peakindex: ', istart, peakindex)
+            print ('ytofine: ', yToFind)
             raise
             res = float('nan')
             return (res)
@@ -39,8 +40,8 @@ def find_point(x, y, peakindex, val, direction='left', limits=None):
         try:
             Fr = interpolate.UnivariateSpline(x[peakindex:iend], yreduced, s=0)
         except:
-            print 'find_point: insufficient time points for analysis?'
-            print 'arg lengths:', len(x[peakindex:iend]), len(yreduced)
+            print ('find_point: insufficient time points for analysis?')
+            print ('arg lengths:', len(x[peakindex:iend]), len(yreduced))
             raise
             res = float('nan')
             return (res)

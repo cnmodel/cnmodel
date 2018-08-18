@@ -1,3 +1,4 @@
+from __future__ import print_function
 """
 Utility class for spawning and controlling CLI processes. 
 See: http://stackoverflow.com/questions/375427/non-blocking-read-on-a-subprocess-pipe-in-python
@@ -44,7 +45,7 @@ class PipePrinter(object):
         return getattr(self._pipe, attr)
     
     def write(self, strn):
-        print "WRITE:" + repr(strn)
+        print ("WRITE:" + repr(strn))
         return self._pipe.write(strn)
 
 

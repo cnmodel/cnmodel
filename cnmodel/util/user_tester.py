@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os, sys, pickle, pprint
 import numpy as np
 import pyqtgraph as pg
@@ -74,11 +75,11 @@ class UserTester(object):
                 assert np.all(inans == enans)
                 mask = ~inans
                 if not np.allclose(info[mask], expect[mask], rtol=self.rtol):
-                    print '\nComparing data array, shapes match: ', info.shape == expect.shape
-                    print 'Model tested: %s, measure: %s' % (self.key, key)
-                    #print 'args: ', dir(self.args[0])
-                    print 'Array expected: ', expect[mask]
-                    print 'Array received: '  , info[mask]
+                    print( '\nComparing data array, shapes match: ', info.shape == expect.shape)
+                    print( 'Model tested: %s, measure: %s' % (self.key, key))
+                    #print( 'args: ', dir(self.args[0]))
+                    print( 'Array expected: ', expect[mask])
+                    print('Array received: '  , info[mask])
                     self.args[0].print_all_mechs()
                 assert np.allclose(info[mask], expect[mask], rtol=self.rtol)
             else:
@@ -86,9 +87,9 @@ class UserTester(object):
                     self.compare_results(k, info[k], expect[k])
         elif np.isscalar(info):
             if not np.allclose(info, expect, rtol=self.rtol):
-                print 'Comparing Scalar data, model: %s, measure: %s' % (self.key, key)
+                print('Comparing Scalar data, model: %s, measure: %s' % (self.key, key))
                 #print 'args: ', dir(self.args[0])
-                print 'Expected: ', expect, ',  received: ', info, '  relative tolerance: ', self.rtol
+                print('Expected: ', expect, ',  received: ', info, '  relative tolerance: ', self.rtol)
                 if isinstance(self.args[0], str):
                     pass
                     # print ': ', str
@@ -110,7 +111,7 @@ class UserTester(object):
         If *expect* is None, then no previous test results were stored.
         """
         app = pg.mkQApp()
-        print "\n=== New test results for %s: ===\n" % self.key
+        print("\n=== New test results for %s: ===\n" % self.key)
         pprint.pprint(info)
         
         # we use DiffTreeWidget to display differences between large data structures, but
@@ -124,7 +125,7 @@ class UserTester(object):
         win.resize(800, 800)
         win.setData(expect, info)
         win.show()
-        print "Store new test results? [y/n]",
+        print("Store new test results? [y/n]",)
         yn = raw_input()
         win.hide()
         return yn.lower().startswith('y')
@@ -170,7 +171,7 @@ class UserTester(object):
         """
         fn = self.result_file()
         if os.path.isfile(fn):
-            return pickle.load(open(fn, 'rb'))
+            return pickle.load(open(fn, 'rb'),encoding='latin1')
         return None
 
     def save_test_result(self, result):

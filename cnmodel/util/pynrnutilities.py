@@ -1,3 +1,4 @@
+from __future__ import print_function
 #!/usr/bin/python
 #
 # utilities for NEURON, in Python
@@ -108,7 +109,7 @@ def reset(raiseError=True):
     # Make sure nothing is hanging around in an old exception or because of
     # reference cycles 
 
-    sys.exc_clear()
+    # sys.exc_clear()
     gc.collect(2)
     neuron.h.Vector().size()
     numsec = 0
@@ -495,7 +496,7 @@ def isi_cv2(splist, binwidth=1, t0=0, t1=300, tgrace=25):
             if isit[j] < t0 or isit[j] > t1 or isit[j+1] > t1+tgrace: # start time and interval in the window
                 continue
             if isib[j] in cvisi:
-                print "spike in bin: %d" % (isib[j])
+                print ("spike in bin: %d" % (isib[j]))
                 cvisi[isib[j]] = np.append(cvisi[isib[j]], isii[j]) # and add the isi in that bin
             else:
                 cvisi[isib[j]] = isii[j]	# create it
@@ -505,7 +506,7 @@ def isi_cv2(splist, binwidth=1, t0=0, t1=300, tgrace=25):
     for i in cvisi.keys(): # for each entry (possible bin)
         c = [cvisi[i]]
         s = c.shape
-        print c
+        #print c
         if len(s) > 1 and s[1] >= 3: # require 3 spikes in a bin for statistics
             cvm = np.append(cvm, np.mean(c))
             cvs = np.append(cvs, np.std(c))
@@ -601,19 +602,19 @@ if __name__ == "__main__":
         s = np.shape(x)
         y = np.random.randn(s[0])
         for i in range(0,4):
-            print "\ni is : %d" % (i)
+            print ("\ni is : %d" % (i))
             x0 = i*20
             x1 = x0 + 20
             (r0, r1) = measure('mean', x, y, x0, x1)
-            print 'mean: %f   std: %f [0, 20]' % (r0, r1)
+            print ('mean: %f   std: %f [0, 20]' % (r0, r1))
             (r0, r1) = measure('max', x, y, x0, x1)
-            print 'max: %f   std: %f [0, 20]' % (r0, r1)
+            print ('max: %f   std: %f [0, 20]' % (r0, r1))
             (r0, r1) = measure('min', x, y, x0, x1)
-            print 'min: %f   std: %f [0, 20]' % (r0, r1)
+            print ('min: %f   std: %f [0, 20]' % (r0, r1))
             (r0, r1) = measure('median', x, y, x0, x1)
-            print 'median: %f   std: %f [0, 20]' % (r0, r1)
+            print ('median: %f   std: %f [0, 20]' % (r0, r1))
             (r0, r1) = measure('p2p', x, y, x0, x1)
-            print 'peak to peak: %f   std: %f [0, 20]' % (r0, r1)
+            print ('peak to peak: %f   std: %f [0, 20]' % (r0, r1))
 
     if test == 'an_syn':
         (s,w,t,n) = an_syn(N=50, spont=50, driven=150, post=100, makewave=True)

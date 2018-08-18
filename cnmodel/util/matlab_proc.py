@@ -1,9 +1,10 @@
+from __future__ import print_function
 """
 Simple system for interfacing with a MATLAB process using stdin/stdout pipes.
 
 """
-from process import Process
-from StringIO import StringIO
+from .process import Process
+from io import StringIO
 import scipy.io
 import numpy as np
 import tempfile

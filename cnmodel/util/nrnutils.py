@@ -1,3 +1,4 @@
+from __future__ import print_function
 """
 Wrapper classes to make working with NEURON easier.
 
@@ -174,7 +175,7 @@ if __name__ == "__main__":
     neuron.soma.plot('v')
     neuron.apical.plot('v')
     
-    print neuron.gnabar
+    print('gNa_bar: ', neuron.gnabar)
     neuron.gnabar = 0.15
     assert neuron.soma(0.5).hh.gnabar == 0.15
 

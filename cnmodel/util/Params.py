@@ -54,10 +54,10 @@ class Params(object):
         """
         print the parameter block created in Parameter Init
         """
-        print "--------    Parameter Block    ----------"
+        print("--------    Parameter Block    ----------")
         for key in self.__dict__.keys():
-            print "%15s = " % (key), eval('self.%s' % key)
-        print "-------- ---------------------- ----------"
+            print("%15s = " % (key), eval('self.%s' % key))
+        print("-------- ---------------------- ----------")
 
 
 class ParamTests(unittest.TestCase):

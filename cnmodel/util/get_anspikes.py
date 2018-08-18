@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'pbmanis'
 """
 ManageANSpikes is a class to read the output of the Zilany et al. 2009 AN model into
@@ -121,7 +122,7 @@ class ManageANSpikes():
         else:
             closest = np.argmin(np.abs(self.CF_map-CF))  # find closest to the stim freq
         CF = self.CF_map[closest]
-        print 'closest f: ', CF
+        print('closest f: ', CF)
         self.read_AN_data(spontclass=spontclass, freq=10000., CF=CF)
         return(self.get_AN_at_SPL(SPL))
 
@@ -135,12 +136,12 @@ class ManageANSpikes():
         """
         
         if not self.data_read_flag:
-            print 'getANatSPL: No data read yet'
+            print('getANatSPL: No data read yet')
             return None
         try:
             k = int(np.where(self.SPLs == spl)[0])
         except (ValueError, TypeError) as e:
-            print 'get_anspikes::getANatSPL: spl=%6.1f not in list of spls:' % (spl), self.SPLs
+            print('get_anspikes::getANatSPL: spl=%6.1f not in list of spls:' % (spl), self.SPLs)
             exit()  # no match
         # now clean up array to keep it iterable upon return
         spkl = [[]]*len(self.spikelist[k])
@@ -179,7 +180,7 @@ class ManageANSpikes():
         """
 
         if not self.data_read_flag or self.all_AN is None:
-            print 'get_anspikes::retrieve_from_all_AN: No data read yet: '
+            print('get_anspikes::retrieve_from_all_AN: No data read yet: ')
             exit()
 
         ispl = int(np.where(self.SPLs == float(SPL))[0])
@@ -221,8 +222,8 @@ class ManageANSpikes():
         try:
             mfile = scipy.io.loadmat(os.path.join(self.data_dir, fname), squeeze_me = True)
         except IOError:
-            print 'get_anspikes::read_AN_data: Failed to find data file %s' % (fname)
-            print 'Corresponding to Freq: %f  CF: %f  spontaneous rate class: %s' % (freq, CF, spontclass)
+            print('get_anspikes::read_AN_data: Failed to find data file %s' % (fname))
+            print('Corresponding to Freq: %f  CF: %f  spontaneous rate class: %s' % (freq, CF, spontclass))
             exit()
 
         n_spl = len(mfile[self.dataType])
@@ -250,12 +251,12 @@ class ManageANSpikes():
 
     def getANatSPL(self, spl=None):
         if not self.dataRead:
-            print 'getANatSPL: No data read yet'
+            print('getANatSPL: No data read yet')
             return None
         try:
             k = int(np.where(self.SPLs == spl)[0])
         except (ValueError, TypeError) as e:
-            print 'get_anspikes::getANatSPL: spl=%6.1f not in list of spls:' % (spl), self.SPLs
+            print('get_anspikes::getANatSPL: spl=%6.1f not in list of spls:' % (spl), self.SPLs)
             exit()  # no match
         # now clean up array to keep it iterable upon return
         spkl = [[]]*len(self.spikelist[k])
@@ -273,7 +274,7 @@ class ManageANSpikes():
         """
         
         if not self.data_read_flag:
-            print 'getANatSPL: No data read yet'
+            print('getANatSPL: No data read yet')
             return None
         return {'nReps': self.n_reps, 'SPLs': self.SPLs}
 
@@ -392,7 +393,7 @@ if __name__ == '__main__':
                      )
 
     manager = ManageANSpikes()  # create instance of the manager
-    print dir(manager)
+    print(dir(manager))
     test='RI'
 
     if test == 'all':
@@ -406,7 +407,7 @@ if __name__ == '__main__':
         spikes = manager.getANatFandSPL(spontclass = 'MS', freq=10000., CF=None, SPL=50)
         spks = manager.combine_reps(spikes)
         if spks != []:
-            print 'spikes.'
+            print('spikes.')
             manager.plot_RI_vs_F(freq=10000., display=True, spontclass='MS')
             MP.figure(11)
             spks = np.sort(spks)

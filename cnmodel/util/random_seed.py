@@ -12,7 +12,7 @@ def set_seed(seed):
     current_seed()
     """
     if isinstance(seed, str):
-        seed = struct.unpack('=I', hashlib.md5(seed).digest()[:4])[0]
+        seed = struct.unpack('=I', hashlib.md5(seed.encode('utf-8')).digest()[:4])[0]
     np.random.seed(seed)
     assert seed < 2**64  # neuron RNG fails if seed is too large
     global _current_seed
