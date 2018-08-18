@@ -1,3 +1,4 @@
+from __future__ import print_function
 from neuron import h
 import numpy as np
 #import neuron as nrn
@@ -180,7 +181,7 @@ class Tuberculoventral(Tuberculoventral):
             """
             instantiate a basic soma-only ("point") model
             """
-            print "<< Tuberculoventral model: Creating point cell >>"
+            print("<< Tuberculoventral model: Creating point cell >>")
             soma = h.Section(name="Tuberculoventral_Soma_%x" % id(self))  # one compartment of about 29000 um2
             soma.nseg = 1
             self.add_section(soma, 'soma')
@@ -189,7 +190,7 @@ class Tuberculoventral(Tuberculoventral):
             instantiate a structured model with the morphology as specified by 
             the morphology file
             """
-            print "<< Tuberculoventral model: Creating structured cell >>"
+            print("<< Tuberculoventral model: Creating structured cell >>")
             self.set_morphology(morphology_file=morphology)
 
         # decorate the morphology with ion channels
@@ -203,7 +204,7 @@ class Tuberculoventral(Tuberculoventral):
         self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
         self.get_mechs(self.soma)
         if debug:
-                print "<< Tuberculoventral cell model created >>"
+                print("<< Tuberculoventral cell model created >>")
 
     def get_cellpars(self, dataset, species='mouse', celltype='TVmouse'):
         cellcap = data.get(dataset, species=species, cell_type=celltype,
@@ -237,12 +238,14 @@ class Tuberculoventral(Tuberculoventral):
             run silently (True) or verbosely (False)
         """
         soma = self.soma
-        if modelType == 'TVmouse':
-            celltype = modelType
+        print('modelType: ', modelType)
+        if modelType in ['TVmouse', 'I']:
+            celltype = 'TVmouse' # modelType
+            modelType = 'TVmouse'
         else:
-            raise ValueError('Tuberuloventral: Model type not recognized')
+            raise ValueError('Tuberuloventral: Model type %s not recognized' % modelType)
         
-        if species == 'mouse' and modelType == 'TVmouse':
+        if species == 'mouse' and modelType in ['TVmouse', 'I']:
             """#From Kuo 150 Mohm, 10 msec tau
             Firing at 600 pA about 400 Hz
             These values from brute_force runs, getting 380 Hz at 600 pA at 35C
@@ -313,7 +316,7 @@ class Tuberculoventral(Tuberculoventral):
         
         """
         if modelType == 'TVmouse':
-            print 'decorate as tvmouse'
+            print('decorate as tvmouse')
 #            totcap = 95.0E-12  # Tuberculoventral cell (type I), based on stellate, adjusted for Kuo et al. TV firing
             self.set_soma_size_from_Section(self.soma)
             totcap = self.totcap
@@ -380,29 +383,29 @@ class Tuberculoventral(Tuberculoventral):
             soma().nacncoop.p = 0.25
             soma.ena = self.e_na
             if debug:
-                print 'nacncoop gbar: ', soma().nacncoop.gbar
+                print('nacncoop gbar: ', soma().nacncoop.gbar)
         elif nach == 'jsrna':
             soma().jsrna.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'jsrna gbar: ', soma().jsrna.gbar
+                print('jsrna gbar: ', soma().jsrna.gbar)
         elif nach == 'nav11':
             soma().nav11.gbar = gnabar * 0.5
             soma.ena = self.e_na
             soma().nav11.vsna = 4.3
             if debug:
-                print "Tuberculoventral using inva11"
-            print 'nav11 gbar: ', soma().nav11.gbar
+                print("Tuberculoventral using inva11")
+            print('nav11 gbar: ', soma().nav11.gbar)
         elif nach == 'na':
             soma().na.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'na gbar: ', soma().na.gbar
+                print('na gbar: ', soma().na.gbar)
         elif  nach == 'nacn':
             soma().nacn.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'nacn gbar: ', soma().nacn.gbar
+                print('nacn gbar: ', soma().nacn.gbar)
         else:
             raise ValueError("Tuberculoventral setting Na channels: channel %s not known" % nach)
 
@@ -434,7 +437,7 @@ class DummyTuberculoventral(Tuberculoventral):
                        'na': None, 'species': species, 'modelType': 'Dummy', 'modelName': 'DummyTuberculoventral',
                        'ttx': None, 'name': 'DummyTuberculoventral',
                        'morphology': None, 'decorator': None, 'temperature': None}
-        print "<< Tuberculoventral: Dummy Tuberculoventral Cell created >>"
+        print("<< Tuberculoventral: Dummy Tuberculoventral Cell created >>")
         
 
     def set_spiketrain(self, times):

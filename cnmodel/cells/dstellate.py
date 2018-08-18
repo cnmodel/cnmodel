@@ -1,3 +1,4 @@
+from __future__ import print_function
 from neuron import h
 from ..util import nstomho
 from .cell import Cell
@@ -231,7 +232,7 @@ class DStellateRothman(DStellate):
         self.get_mechs(self.soma)
 
         if debug:
-            print "<< D-stellate: JSR Stellate Type I-II cell model created >>"
+            print("<< D-stellate: JSR Stellate Type I-II cell model created >>")
 
     def get_cellpars(self, dataset, species='guineapig', modelType='I-II'):
         cellcap = data.get(dataset, species=species, model_type=modelType,
@@ -332,8 +333,8 @@ class DStellateRothman(DStellate):
         self.check_temperature()
 #        self.cell_initialize(showinfo=False)
         if not silent:
-            print 'set cell as: ', species
-            print ' with Vm rest = %6.3f' % self.vm0
+            print('set cell as: ', species)
+            print(' with Vm rest = %6.3f' % self.vm0)
 
 
     def adjust_na_chans(self, soma, sf=1.0, gbar=1000., debug=False):
@@ -365,24 +366,24 @@ class DStellateRothman(DStellate):
             soma().jsrna.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'jsrna gbar: ', soma().jsrna.gbar
+                print('jsrna gbar: ', soma().jsrna.gbar)
         elif nach == 'nav11':
             soma().nav11.gbar = gnabar * 0.5
             soma.ena = self.e_na
             soma().nav11.vsna = 4.3
             if debug:
-                print "bushy using inva11"
-            print 'nav11 gbar: ', soma().nav11.gbar
+                print("bushy using inva11")
+            print('nav11 gbar: ', soma().nav11.gbar)
         elif nach == 'na':
             soma().na.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'na gbar: ', soma().na.gbar
+                print('na gbar: ', soma().na.gbar)
         elif nach == 'nacn':
             soma().nacn.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'nacn gbar: ', soma().nacn.gbar
+                print('nacn gbar: ', soma().nacn.gbar)
         else:
             raise ValueError("Dstellate setting Na channels: channel %s not known" % nach)
 
@@ -450,7 +451,7 @@ class DummyDStellate(DStellate):
                        'na': None, 'species': species, 'modelType': 'Dummy', 'modelName': 'DummyDStellate',
                        'ttx': None, 'name': 'DummyDStellate',
                        'morphology': None, 'decorator': None, 'temperature': None}
-        print "<< DStellate: Dummy DStellate Cell created >>"
+        print("<< DStellate: Dummy DStellate Cell created >>")
         
 
     def set_spiketrain(self, times):
@@ -532,7 +533,7 @@ class DStellateEager(DStellate):
         self.get_mechs(soma)
 
         if debug:
-                print "<< D-stellateEager: Eager DStellate Type I-II cell model created >>"
+                print("<< D-stellateEager: Eager DStellate Type I-II cell model created >>")
 
     def species_scaling(self, species='guineapig', modelType='I-II', silent=True):
         """
@@ -585,8 +586,8 @@ class DStellateEager(DStellate):
         self.status['type'] = modelType
         self.cell_initialize(showinfo=True)
         if not silent:
-            print ' set cell as: ', species
-            print ' with Vm rest = %6.3f' % self.vm0
+            print(' set cell as: ', species)
+            print(' with Vm rest = %6.3f' % self.vm0)
 
     def adjust_na_chans(self, soma, gbar=1000., debug=False):
         """
@@ -618,27 +619,27 @@ class DStellateEager(DStellate):
             soma().jsrna.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'using jsrna with gbar: ', soma().jsrna.gbar
+                print('using jsrna with gbar: ', soma().jsrna.gbar)
         elif nach == 'nav11':
             soma().nav11.gbar = gnabar * 0.5
             soma.ena = self.e_na
             soma().nav11.vsna = 4.3
             if debug:
-                print "using inva11 with gbar:", soma().na.gbar
-            print 'nav11 gbar: ', soma().nav11.gbar
+                print("using inva11 with gbar:", soma().na.gbar)
+            print('nav11 gbar: ', soma().nav11.gbar)
         elif nach == 'na':
             soma().na.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'using na with gbar: ', soma().na.gbar
+                print('using na with gbar: ', soma().na.gbar)
         elif nach == 'nach':
             soma().nach.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'uwing nacn with gbar: ', soma().nacn.gbar
+                print(('uwing nacn with gbar: ', soma().nacn.gbar))
         else:
             raise ValueError("DstellateEager setting Na channels: channel %s not known" % nach)
-        print soma().na.gbar
+        #print soma().na.gbar
 
     def add_axon(self):
         """

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from neuron import h
 from ..util import nstomho
 import numpy as np
@@ -152,12 +153,12 @@ class PyramidalKanold(Pyramidal, Cell):
 
         # decorate the morphology with ion channels
         if decorator is None:   # basic model, only on the soma
-            self.mechanisms = ['napyr', 'kdpyr', 'kif', 'kis', 'ihpyr_adj', 'leak', 'kcnq', 'nap']
+            self.mechanisms = ['napyr', 'kdpyr', 'kif', 'kis', 'ihpyr', 'leak', 'kcnq', 'nap']
             for mech in self.mechanisms:
                 try:
                     self.soma.insert(mech)
                 except ValueError:
-                    print 'WARNING: Mechanism %s not found' % mech
+                    print('WARNING: Mechanism %s not found' % mech)
             self.soma().kif.kif_ivh = -89.6
             self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type I-c  cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
@@ -165,7 +166,7 @@ class PyramidalKanold(Pyramidal, Cell):
         self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
         self.get_mechs(self.soma)
         if debug:
-            print "<< PYR: POK Pyramidal Cell created >>"
+            print("<< PYR: POK Pyramidal Cell created >>")
 
     def get_cellpars(self, dataset, species='guineapig', celltype='II'):
         cellcap = data.get(dataset, species=species, cell_type=celltype,
@@ -174,7 +175,7 @@ class PyramidalKanold(Pyramidal, Cell):
             field='soma_natype')
         pars = Params(cap=cellcap, natype=chtype)
         for g in ['soma_napyr_gbar', 'soma_kdpyr_gbar', 'soma_kif_gbar', 'soma_kis_gbar',
-                  'soma_kcnq_gbar', 'soma_nap_gbar', 'soma_ihpyr_adj_gbar', 'soma_ihpyr_adj_q10', 'soma_leak_gbar',
+                  'soma_kcnq_gbar', 'soma_nap_gbar', 'soma_ihpyr_gbar', 'soma_leak_gbar',
                   'soma_e_h','soma_leak_erev', 'soma_e_k', 'soma_e_na']:
             pars.additem(g,  data.get(dataset, species=species, cell_type=celltype,
             field=g))
@@ -222,13 +223,13 @@ class PyramidalKanold(Pyramidal, Cell):
             soma().kcnq.gbar = nstomho(pars.soma_kcnq_gbar, self.somaarea) # does not exist in canonical model.
             soma().kif.gbar = nstomho(pars.soma_kif_gbar, self.somaarea)
             soma().kis.gbar = nstomho(pars.soma_kis_gbar, self.somaarea)
-            soma().ihpyr_adj.gbar = nstomho(pars.soma_ihpyr_adj_gbar, self.somaarea)
-            soma().ihpyr_adj.q10 = 3.0  # no temp scaling to sta
+            soma().ihpyr.gbar = nstomho(pars.soma_ihpyr_gbar, self.somaarea)
+#            soma().ihpyr_adj.q10 = 3.0  # no temp scaling to sta
             soma().leak.gbar = nstomho(pars.soma_leak_gbar, self.somaarea)
             soma().leak.erev = pars.soma_leak_erev
             soma().ena = pars.soma_e_na
             soma().ek = pars.soma_e_k
-            soma().ihpyr_adj.eh = pars.soma_e_h
+            soma().ihpyr.eh = pars.soma_e_h
 
         # elif species in 'rat' and modelType == 'II':
         #     """
@@ -271,11 +272,11 @@ class PyramidalKanold(Pyramidal, Cell):
 #        self.cell_initialize(showinfo=True)
         self.check_temperature()
         if not silent:
-            print 'set cell as: ', species, modelType
-            print ' with Vm rest = %f' % self.vm0
-            print self.status
+            print('set cell as: ', species, modelType)
+            print(' with Vm rest = %f' % self.vm0)
+            print(self.status)
             for m in self.mechanisms:
-                print '%s.gbar = %f' % (m, eval('soma().%s.gbar' % m))
+                print('%s.gbar = %f' % (m, eval('soma().%s.gbar' % m)))
 
     def i_currents(self, V):
         """

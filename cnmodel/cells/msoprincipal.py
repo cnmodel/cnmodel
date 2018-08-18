@@ -1,3 +1,4 @@
+from __future__ import print_function
 from neuron import h
 
 from .cell import Cell
@@ -153,12 +154,12 @@ class MSOPrincipal(MSO):
 
         self.spike_threshold = -40
         self.vrange = [-70., -55.]  # set a default vrange for searching for rmp
-        print 'model type, species: ', modelType, species, nach
+        print('model type, species: ', modelType, species, nach)
         if morphology is None:
             """
             instantiate a basic soma-only ("point") model
             """
-            print "<< MSO model: Creating point principal cell >>"
+            print("<< MSO model: Creating point principal cell >>")
             soma = h.Section(name="MSO_Soma_%x" % id(self))  # one compartment of about 29000 um2
             soma.nseg = 1
             self.add_section(soma, 'soma')
@@ -167,7 +168,7 @@ class MSOPrincipal(MSO):
             instantiate a structured model with the morphology as specified by 
             the morphology file
             """
-            print "<< MSO principal cell model: Creating cell with morphology from %s >>" % morphology
+            print("<< MSO principal cell model: Creating cell with morphology from %s >>" % morphology)
             self.set_morphology(morphology_file=morphology)
 
         # decorate the morphology with ion channels
@@ -187,7 +188,7 @@ class MSOPrincipal(MSO):
         self.get_mechs(self.soma)
 
         if debug:
-            print "   << Created cell >>"
+            print("   << Created cell >>")
 
     def get_cellpars(self, dataset, species='guineapig', celltype='principal'):
         cellcap = data.get(dataset, species=species, cell_type=celltype,
@@ -234,7 +235,7 @@ class MSOPrincipal(MSO):
             raise ValueError('model type not recognized')
             
         if species == 'guineapig':
-            print '  Setting conductances for guinea pig %s MSO cell, based on Rothman and Manis, 2003 bushy cell' % modelType
+            print('  Setting conductances for guinea pig %s MSO cell, based on Rothman and Manis, 2003 bushy cell' % modelType)
             self._valid_temperatures = (22., 38.)
             if self.status['temperature'] is None:
                 self.status['temperature'] = 22. 
@@ -268,8 +269,8 @@ class MSOPrincipal(MSO):
         self.check_temperature()
 #        self.cell_initialize(vrange=self.vrange)  # no need to do this just yet.
         if not silent:
-           print ' set cell as: ', species
-           print ' with Vm rest = %6.3f' % self.vm0
+           print(' set cell as: ', species)
+           print(' with Vm rest = %6.3f' % self.vm0)
 
     def channel_manager(self, modelType='MSO-principal'):
         """
@@ -329,7 +330,7 @@ class MSOPrincipal(MSO):
                                ihbar=sf*20.0E-9/refarea,
                                leakbar=sf*2.0E-9/refarea,
             )
-            print 'MSO principal channels gbar:\n', self.gBar.show()
+            print('MSO principal channels gbar:\n', self.gBar.show())
             
             self.channelMap = {
                 'axon': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
@@ -390,19 +391,19 @@ class MSOPrincipal(MSO):
             soma().jsrna.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'jsrna gbar: ', soma().jsrna.gbar
+                print('jsrna gbar: ', soma().jsrna.gbar)
         elif nach == 'nav11':
             soma().nav11.gbar = gnabar
             soma.ena = 50 # self.e_na
 #            print('gnabar: ', soma().nav11.gbar, ' vs: 0.0192307692308')
             soma().nav11.vsna = 4.3
             if debug:
-                print "MSO using inva11"
+                print("MSO using inva11")
         elif nach in ['na', 'nacn']:
             soma().na.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'na gbar: ', soma().na.gbar
+                print('na gbar: ', soma().na.gbar)
         else:
             raise ValueError('Sodium channel %s is not recognized for MSO cells', nach)
 

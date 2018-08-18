@@ -1,3 +1,4 @@
+from __future__ import print_function
 from neuron import h
 from ..util import nstomho
 from ..util import Params
@@ -234,7 +235,7 @@ class SGC_TypeI(SGC):
         self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
         self.get_mechs(self.soma)
         if debug:
-            print "<< SGC: Spiral Ganglion Cell created >>"
+            print("<< SGC: Spiral Ganglion Cell created >>")
 
     def get_cellpars(self, dataset, species='guineapig', celltype='sgc-a'):
         cellcap = data.get(dataset, species=species, cell_type=celltype,
@@ -318,8 +319,8 @@ class SGC_TypeI(SGC):
         self.status['modelType'] = modelType
         self.check_temperature()
         if not silent:
-            print 'set cell as: ', species
-            print ' with Vm rest = %f' % self.vm0
+            print('set cell as: ', species)
+            print(' with Vm rest = %f' % self.vm0)
 
     def adjust_na_chans(self, soma, gbar=1000., debug=False):
         """
@@ -337,19 +338,19 @@ class SGC_TypeI(SGC):
             soma().jsrna.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'jsrna gbar: ', soma().jsrna.gbar
+                print('jsrna gbar: ', soma().jsrna.gbar)
         elif nach == 'nav11':
             soma().nav11.gbar = gnabar * 0.5
             soma.ena = self.e_na
             soma().nav11.vsna = 4.3
             if debug:
-                print "sgc using inva11"
-            print 'nav11 gbar: ', soma().nav11.gbar
+                print("sgc using inva11")
+            print('nav11 gbar: ', soma().nav11.gbar)
         elif nach in ['na', 'nacn']:
             soma().na.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'na gbar: ', soma().na.gbar
+                print('na gbar: ', soma().na.gbar)
         else:
             raise ValueError('Sodium channel %s is not recognized for SGC cells', nach)
 

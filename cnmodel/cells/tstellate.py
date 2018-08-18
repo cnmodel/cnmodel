@@ -1,3 +1,4 @@
+from __future__ import print_function
 from neuron import h
 import numpy as np
 
@@ -182,7 +183,7 @@ class TStellateRothman(TStellate):
             instantiate a structured model with the morphology as specified by 
             the morphology file
             """
-            print "<< TStellate: Creating cell with morphology = %s>>" % morphology
+            print("<< TStellate: Creating cell with morphology = %s>>" % morphology)
             self.set_morphology(morphology_file=morphology)
 
         # decorate the morphology with ion channels
@@ -201,7 +202,7 @@ class TStellateRothman(TStellate):
         self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
         self.get_mechs(self.soma)
         if debug:
-                print "<< T-stellate: JSR Stellate Type 1 cell model created >>"
+                print("<< T-stellate: JSR Stellate Type 1 cell model created >>")
 
     def get_cellpars(self, dataset, species='guineapig', modelType='I-c'):
         cellcap = data.get(dataset, species=species, model_type=modelType,
@@ -261,7 +262,7 @@ class TStellateRothman(TStellate):
             # model description in Xie and Manis 2013. Note that
             # conductances were not scaled for temperature (rates were)
             # so here we reset the default Q10's for conductance (g) to 1.0
-            print '  Setting Conductances for mouse I-c Tstellate cell, (modified from Xie and Manis, 2013)'
+            print('  Setting Conductances for mouse I-c Tstellate cell, (modified from Xie and Manis, 2013)')
             self.c_m = 0.9  # default in units of F/cm^2
             dataset = 'XM13_channels'
             self.vrange = [-75., -55.]
@@ -289,7 +290,7 @@ class TStellateRothman(TStellate):
             
         elif species == 'guineapig':
             # and modelType == 'I-c':  # values from R&M 2003, Type I
-            print '  Setting Conductances for Guinea Pig I-c, Rothman and Manis, 2003'
+            print('  Setting Conductances for Guinea Pig I-c, Rothman and Manis, 2003')
             dataset = 'RM03_channels'
             self.c_m = 0.9  # default in units of F/cm^2
             self.vrange = [-75., -55.]
@@ -500,25 +501,25 @@ class TStellateRothman(TStellate):
             soma().jsrna.gbar = gnabar*sf
             soma.ena = self.e_na
             if debug:
-                print 'jsrna gbar: ', soma().jsrna.gbar
+                print('jsrna gbar: ', soma().jsrna.gbar)
         elif nach == 'nav11':
             soma().nav11.gbar = gnabar
             soma.ena = self.e_na
             soma().nav11.vsna = 4.3
             if debug:
-                print "tstellate using inva11"
-            print 'nav11 gbar: ', soma().nav11.gbar
-            print 'nav11 vsna: ', soma().nav11.vsna
+                print("tstellate using inva11")
+            print('nav11 gbar: ', soma().nav11.gbar)
+            print('nav11 vsna: ', soma().nav11.vsna)
         elif nach == 'na':
             soma().nacn.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'na gbar: ', soma().na.gbar
+                print('na gbar: ', soma().na.gbar)
         elif  nach == 'nacn':
             soma().nacn.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'nacn gbar: ', soma().nacn.gbar
+                print('nacn gbar: ', soma().nacn.gbar)
         else:
             raise ValueError("tstellate setting Na channels: channel %s not known" % nach)
 
@@ -635,7 +636,7 @@ class TStellateNav11(TStellate):
             instantiate a structured model with the morphology as specified by 
             the morphology file
             """
-            print "<< TStellate Xie&Manis 2013 model: Creating structured cell >>"
+            print("<< TStellate Xie&Manis 2013 model: Creating structured cell >>")
             self.set_morphology(morphology_file=morphology)
 
         # decorate the morphology with ion channels
@@ -656,7 +657,7 @@ class TStellateNav11(TStellate):
         self.cell_initialize(vrange=self.vrange)
 #        self.print_mechs(self.soma)
         if debug:
-                print "<< T-stellate: Xie&Manis 2013 cell model created >>"
+                print("<< T-stellate: Xie&Manis 2013 cell model created >>")
 
     def species_scaling(self, species='mouse', modelType='I-c', silent=True):
         """
@@ -679,7 +680,7 @@ class TStellateNav11(TStellate):
         if species == 'mouse' and modelType == 'XM13':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
             # original temp for model: 32 C
-            print 'Mouse Tstellate cell, Xie and Manis, 2013'
+            print('Mouse Tstellate cell, Xie and Manis, 2013')
             self.set_soma_size_from_Cm(25.0)
             self.adjust_na_chans(soma, gbar=800.)  # inav11 does not scale conductance
             self.e_k = -84.
@@ -824,7 +825,7 @@ class TStellateNav11(TStellate):
             soma.ena = self.e_na
             soma().nav11.vsna = 4.3
             if debug:
-                print "tstellate using inva11"
+                print("tstellate using inva11")
         else:
             raise ValueError("tstellate setting Na channels only supporting nav11: channel %s not known" % nach)
 

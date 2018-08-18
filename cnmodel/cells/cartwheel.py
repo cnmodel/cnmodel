@@ -1,3 +1,4 @@
+from __future__ import print_function
 from neuron import h
 from ..util import nstomho
 from ..util import Params
@@ -160,7 +161,7 @@ class CartwheelDefault(Cartwheel, Cell):
         self.get_mechs(self.soma)
         
         if debug:
-            print "<< Cartwheel: Modified version of Raman Purkinje cell model created >>"
+            print( "<< Cartwheel: Modified version of Raman Purkinje cell model created >>")
 
     def get_cellpars(self, dataset, species='guineapig', celltype='II'):
         somaDia = data.get(dataset, species=species, cell_type=celltype,
@@ -230,9 +231,9 @@ class CartwheelDefault(Cartwheel, Cell):
         self.status['modelType'] = modelType
         self.check_temperature()
         if not silent:
-            print 'set cell as: ', species
-            print ' with Vm rest = %f' % self.vm0
-        print 'set up'
+            print( 'set cell as: ', species)
+            print( ' with Vm rest = %f' % self.vm0)
+       # print 'set up'
         
     def i_currents(self, V):
         """

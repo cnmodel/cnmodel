@@ -1,3 +1,4 @@
+from __future__ import print_function
 from neuron import h
 import neuron as nrn
 from ..util import nstomho
@@ -34,9 +35,9 @@ class HH(Cell):
         seg.insert('pas')
         if debug:
             if message is None:
-                print "<< Standard HH model created >>"
+                print ("<< Standard HH model created >>")
             else:
-                print message
+                print( message)
         
         self.add_section(soma, 'soma')
         

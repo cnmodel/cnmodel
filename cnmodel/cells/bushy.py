@@ -1,3 +1,4 @@
+from __future__ import print_function
 from neuron import h
 from collections import OrderedDict
 from .cell import Cell
@@ -195,7 +196,7 @@ class BushyRothman(Bushy):
 
         self.spike_threshold = -40
         self.vrange = [-70., -55.]  # set a default vrange for searching for rmp
-        print 'model type, model name, species: ', modelType, modelName, species, nach
+        print( 'model type, model name, species: ', modelType, modelName, species, nach)
 
         self.c_m = 0.9E-6  # default in units of F/cm^2
 
@@ -207,7 +208,7 @@ class BushyRothman(Bushy):
             """
             instantiate a basic soma-only ("point") model
             """
-            print "<< Bushy model: Creating point cell >>"
+            print ("<< Bushy model: Creating point cell >>")
             soma = h.Section(name="Bushy_Soma_%x" % id(self))  # one compartment of about 29000 um2
             soma.nseg = 1
             self.add_section(soma, 'soma')
@@ -216,7 +217,7 @@ class BushyRothman(Bushy):
             instantiate a structured model with the morphology as specified by 
             the morphology file
             """
-            print "<< Bushy model: Creating cell with morphology from %s >>" % morphology
+            print ("<< Bushy model: Creating cell with morphology from %s >>" % morphology)
             self.set_morphology(morphology_file=morphology)
 
         # decorate the morphology with ion channels
@@ -235,7 +236,7 @@ class BushyRothman(Bushy):
         self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
         self.get_mechs(self.soma)
         if debug:
-            print "   << Created cell >>"
+            print ("   << Created cell >>")
 
     def get_cellpars(self, dataset, species='guineapig', modelType='II'):
         """
@@ -306,7 +307,7 @@ class BushyRothman(Bushy):
             # so here we reset the default Q10's for conductance (g) to 1.0
             if modelType not in ['II', 'II-I']:
                 raise ValueError('\nModel type %s is not implemented for mouse bushy cells' % modelType)
-            print '  Setting conductances for mouse bushy cell (%s), Xie and Manis, 2013' % modelType
+            print ('  Setting conductances for mouse bushy cell (%s), Xie and Manis, 2013' % modelType)
             dataset = 'XM13_channels'
             self.vrange = [-68., -55.]  # set a default vrange for searching for rmp
             self.i_test_range = {'pulse': (-1., 1., 0.05)}
@@ -325,7 +326,7 @@ class BushyRothman(Bushy):
             self.axonsf = 0.57
             
         elif species == 'guineapig':
-            print '  Setting conductances for guinea pig %s bushy cell, Rothman and Manis, 2003' % modelType
+            print ('  Setting conductances for guinea pig %s bushy cell, Rothman and Manis, 2003' % modelType)
             self._valid_temperatures = (22., 38.)
             if self.status['temperature'] is None:
                 self.status['temperature'] = 22. 
@@ -359,8 +360,8 @@ class BushyRothman(Bushy):
         self.check_temperature()
 #        self.cell_initialize(vrange=self.vrange)  # no need to do this just yet.
         if not silent:
-           print ' set cell as: ', species
-           print ' with Vm rest = %6.3f' % self.vm0
+           print (' set cell as: ', species)
+           print (' with Vm rest = %6.3f' % self.vm0)
 
 
 #     def channel_manager(self, modelType='RM03', cell_type='bushy-II'):
@@ -691,19 +692,19 @@ class BushyRothman(Bushy):
             soma().jsrna.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'jsrna gbar: ', soma().jsrna.gbar
+                print ('jsrna gbar: ', soma().jsrna.gbar)
         elif nach == 'nav11':
             soma().nav11.gbar = gnabar
             soma.ena = 50 # self.e_na
 #            print('gnabar: ', soma().nav11.gbar, ' vs: 0.0192307692308')
             soma().nav11.vsna = 4.3
             if debug:
-                print "bushy using inva11"
+                print ("bushy using inva11")
         elif nach in ['na', 'nacn']:
             soma().na.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'na gbar: ', soma().na.gbar
+                print ('na gbar: ', soma().na.gbar)
         else:
             raise ValueError('Sodium channel %s is not recognized for Bushy cells', nach)
 
@@ -746,7 +747,7 @@ class BushyRothman(Bushy):
         Add a simple dendrite to the bushy cell.
         """
         if debug:
-            print 'Adding dendrite to Bushy model'
+            print ('Adding dendrite to Bushy model')
         section = h.Section
         primarydendrite = section(cell=self.soma)
         primarydendrite.connect(self.soma)
@@ -774,7 +775,7 @@ class BushyRothman(Bushy):
         self.secondarydendrite = secondarydendrite
         self.status['dendrite'] = True
         if debug:
-            print 'Bushy: added dendrites'
+            print ('Bushy: added dendrites')
             h.topology()
         self.add_section(maindend, 'primarydendrite')
         self.add_section(secdend, 'secondarydendrite')

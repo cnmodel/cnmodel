@@ -1,3 +1,4 @@
+from __future__ import print_function
 from neuron import h
 from ..util import nstomho
 from ..util import Params
@@ -199,7 +200,7 @@ class OctopusRothman(Octopus, Cell):
         self.get_mechs(self.soma)
         
         if debug:
-            print "<< octopus: octopus cell model created >>"
+            print("<< octopus: octopus cell model created >>")
         #print 'Cell created: ', self.status
 
     def species_scaling(self, species='guineapig', modelType='II-o', silent=True):
@@ -257,8 +258,8 @@ class OctopusRothman(Octopus, Cell):
 #        self.cell_initialize(showinfo=True)
         self.check_temperature()
         if not silent:
-            print 'set cell as: ', species
-            print ' with Vm rest = %6.3f' % self.vm0
+            print('set cell as: ', species)
+            print(' with Vm rest = %6.3f' % self.vm0)
 
     def adjust_na_chans(self, soma, sf=1.0, gbar=1000., debug=False):
         """
@@ -290,18 +291,18 @@ class OctopusRothman(Octopus, Cell):
             soma().jsrna.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'octopus using jsrna, gbar: ', soma().jsrna.gbar
+                print('octopus using jsrna, gbar: ', soma().jsrna.gbar)
         elif nach == 'nav11':
             soma().nav11.gbar = gnabar
             soma.ena = self.e_na
             soma().nav11.vsna = 4.3
             if debug:
-                print "octopus using inva11, gbar:", soma().nav11.gbar
+                print("octopus using inva11, gbar:", soma().nav11.gbar)
         elif nach in ['na', 'nacn']:
             soma().nacn.gbar = gnabar
             soma.ena = self.e_na
             if debug:
-                print 'octopus cell using na/nacn, gbar: ', soma().na.gbar
+                print('octopus cell using na/nacn, gbar: ', soma().na.gbar)
         else:
             raise ValueError('Sodium channel %s is not recognized for octopus cells', nach)
 
@@ -404,7 +405,7 @@ class OctopusSpencer(Octopus, Cell):
 #        self.cell_initialize(vrange=self.vrange)
         
         if debug:
-            print "<< octopus: octopus cell model created >>"
+            print("<< octopus: octopus cell model created >>")
         #print 'Cell created: ', self.status
 
     def channel_manager(self, modelType='Spencer'):
@@ -541,6 +542,6 @@ class OctopusSpencer(Octopus, Cell):
         self.status['modelType'] = modelType
         self.cell_initialize(showinfo=True)
         if not silent:
-            print 'set cell as: ', species
-            print ' with Vm rest = %6.3f' % self.vm0
+            print('set cell as: ', species)
+            print(' with Vm rest = %6.3f' % self.vm0)
 
