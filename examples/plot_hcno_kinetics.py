@@ -59,7 +59,7 @@ v = np.linspace(-120., 0., 120)
 
 t1, t2, hi = rates(v)
 
-print v
+print(v)
 plt.figure(1)
 plt.plot(v, t1)
 plt.plot(v, t2)
