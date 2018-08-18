@@ -217,30 +217,32 @@ from Kanold and Manis, 2001
 
 The table includes 2 additiona variants
 
------------------------------------------------------------------------------------------------------------------------------------
-                  pyramidal   
-                           
-soma_napyr_gbar   350.0  [1]      
-soma_nap_gbar     0.
-soma_kdpyr_gbar   80.0   [1]
-soma_kcnq_gbar    0.
-soma_kif_gbar     150.0  [1]
-soma_kis_gbar     40.0   [1]
-soma_ihpyr_gbar   2.8    [1]     
-soma_leak_gbar    2.8    [1]
-soma_leak_erev    -62.0  [1]
-soma_e_na         50.    [1]
-soma_e_k          -81.5  [1]
-soma_e_h          -43.0  [1]
-soma_natype       napyr
-soma_Cap          12     [1]
+------------------------------------------------------------------------------------------------------------------------------------------
+                          pyramidal   
+                                   
+soma_napyr_gbar           350.0  [1]      
+soma_nap_gbar             0.
+soma_kdpyr_gbar           80.0   [1]
+soma_kcnq_gbar            0.
+soma_kif_gbar             150.0  [1]
+soma_kis_gbar             40.0   [1]
+soma_ihpyr_adj_gbar       2.8    [1]     
+soma_ihpyr_adj_q10        1.0    [2]     
+soma_leak_gbar            2.8    [1]
+soma_leak_erev            -62.0  [1]
+soma_e_na                 50.    [1]
+soma_e_k                  -81.5  [1]
+soma_e_h                  -43.0  [1]
+soma_natype               napyr
+soma_Cap                  12     [1]
+                         
 
-
------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------
 
 [1] Kanold and Manis, 1999, 2001, 2005
     Age P11-14, Temperature=22C
     Units are nS.
+[2] Adjustable q10 added for fitting
 
 """)
 
