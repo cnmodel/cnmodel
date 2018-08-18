@@ -9,7 +9,7 @@ Usage:
 
 """
 
-from __future__ import print_function
+
 __author__ = 'pbmanis'
 
 
@@ -65,7 +65,7 @@ def makeLayout(cols=1, rows=1, letters=True, margins=4, spacing=4, nmax=None):
     widget.setLayout(gridLayout)
     gridLayout.setContentsMargins(margins, margins, margins, margins)
     gridLayout.setSpacing(spacing)
-    plots = [[0 for x in xrange(cols)] for x in xrange(rows)]
+    plots = [[0 for x in range(cols)] for x in range(rows)]
     i = 0
     for c in range(cols):
         for r in range(rows):
@@ -157,7 +157,7 @@ class Toy(Protocol):
         tend = stim['delay'] + stim['dur'] + 20.
 
         netcells = {}
-        for c in self.celltypes.keys():
+        for c in list(self.celltypes.keys()):
             g = sre.match(c)
             cellname = g.group('cell')
             modelType = g.group('type')
@@ -172,7 +172,7 @@ class Toy(Protocol):
         rvec = OrderedDict([])
         vec = OrderedDict([])
         istim = OrderedDict([])
-        ncells = len(self.celltypes.keys())
+        ncells = len(list(self.celltypes.keys()))
         #
         # build plotting area
         #
@@ -211,8 +211,8 @@ class Toy(Protocol):
                 pl[name].plot(self.iv.time_values, self.iv.voltage_traces[k], pen=pg.mkPen('k', width=0.75))
             pl[name].setRange(xRange=(0., 130.), yRange=(-160., 40.))
             PH.noaxes(pl[name])
-            PH.calbar(pl[self.celltypes.keys()[0]], calbar=[0, -120., 10., 20.], unitNames={'x': 'ms', 'y': 'mV'})
-            text = (u"{0:2d}\u00b0C {1:.2f}-{2:.2f} nA".format(int(temperature), np.min(self.iv.current_cmd), np.max(self.iv.current_cmd)))
+            PH.calbar(pl[list(self.celltypes.keys())[0]], calbar=[0, -120., 10., 20.], unitNames={'x': 'ms', 'y': 'mV'})
+            text = ("{0:2d}\u00b0C {1:.2f}-{2:.2f} nA".format(int(temperature), np.min(self.iv.current_cmd), np.max(self.iv.current_cmd)))
             ti = pg.TextItem(text, anchor=(1, 0))
             ti.setFont(pg.QtGui.QFont('Arial', 9))
             ti.setPos(120., -120.)
@@ -223,7 +223,7 @@ class Toy(Protocol):
             nrn_cell = netcells[name]
             nrn_cell.vm0 = nrn_cell.soma.v
             pars = nrn_cell.compute_rmrintau(auto_initialize=False)
-            print(u'{0:>14s} [{1:>24s}]   *** Rin = {2:6.1f} M\ohm  Tau = {3:6.1f} ms   Vm = {4:6.1f} mV'.
+            print('{0:>14s} [{1:>24s}]   *** Rin = {2:6.1f} M\ohm  Tau = {3:6.1f} ms   Vm = {4:6.1f} mV'.
                 format(nrn_cell.status['name'], name, pars['Rin'], pars['tau'], pars['v']))
 
 
