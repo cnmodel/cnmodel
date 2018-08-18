@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from neuron import h
 
@@ -89,10 +90,10 @@ class GlyPSD(PSD):
             (psd, par) = self.template_Gly_PSD_exp(nReceptors=n_rzones,
                                                 psdtype=self.psdType)
         else:
-            print "**PSDTYPE IS NOT RECOGNIZED: [%s]\n" % (self.psdType)
+            print("**PSDTYPE IS NOT RECOGNIZED: [%s]\n" % (self.psdType))
             exit()
         if debug:
-            print 'pre_sec: ', pre_sec
+            print('pre_sec: ', pre_sec)
         
         
         # Connect terminal to psd (or cleft)
@@ -119,7 +120,7 @@ class GlyPSD(PSD):
             #psd.extend(psdn)
             #par.extend(parn)
         if message is not None:
-            print message
+            print(message)
                 
         self.all_psd = psd
         self.clefts = clefts
@@ -220,7 +221,7 @@ class GlyPSD(PSD):
         for k in range(0, nReceptors):
             psd.append(h.Gly6S(loc, sec)) # simple using Trussell model 6 states with desens
             if debug:
-                print 'Gly6S psdtype: ', psdtype
+                print('Gly6S psdtype: ', psdtype)
             if psdtype == 'glyslow': # fit on 8 March 2010, error =  0.164, max open: 0.155
                 psd[-1].Rd = 1.177999
                 psd[-1].Rr = 0.000005
@@ -270,7 +271,7 @@ class GlyPSD(PSD):
         for k in range(0, nReceptors):
             psd.append(h.GLYaPL(loc, sec)) # simple dextesche glycine receptors
             if debug:
-                print 'PL psdtype: ', psdtype
+                print('PL psdtype: ', psdtype)
             if psdtype == 'glyslow':
                 psd[-1].a1 = 0.000451
                 psd[-1].a2 = 0.220
