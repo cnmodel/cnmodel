@@ -1,3 +1,4 @@
+
 """
 Test the embedded auditory nerve model with a set of tone pips.
 (Zilany et al. 2014; requires MATLAB)
@@ -53,11 +54,11 @@ def test_an_model():
 
     start = time.time()
     vihc = an_model.model_ihc(pin, CF, nrep, 1/Fs, T+1e-3, cohc, cihc, species, _transfer=False) 
-    print "IHC time:", time.time() - start
+    print("IHC time:", time.time() - start)
 
     start = time.time()
     m, v, psth = an_model.model_synapse(vihc, CF, nrep, 1/Fs, fiberType, noiseType, implnt)
-    print "Syn time:", time.time() - start
+    print("Syn time:", time.time() - start)
 
     win = pg.GraphicsWindow()
     p1 = win.addPlot(title='Input Stimulus (%0.1f dBSPL)' % db)

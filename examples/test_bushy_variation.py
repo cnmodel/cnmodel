@@ -135,25 +135,25 @@ class SGCInputTestPSTH(Protocol):
                 # res contains: {'time': time, 'vm': Vm, 'xmtr': xmtr, 'pre_cells': pre_cells, 'post_cell': post_cell}
                 self.pre_cells[nr] = res['pre_cells']
                 self.time[nr] = res['time']
-                self.xmtr = {k: v.to_python() for k, v in res['xmtr'].items()}
+                self.xmtr = {k: v.to_python() for k, v in list(res['xmtr'].items())}
                 self.vms[nr] = res['vm']
                 self.synapses[nr] = res['synapses']
                 self.xmtrs[nr] =self.xmtr
 
         if self.parallelize:
             ### Use parallelize with multiple workers
-            tasks = range(len(self.nrep))
+            tasks = list(range(len(self.nrep)))
             results3 = results[:]
             start = time.time()
 #            with mp.Parallelize(enumerate(tasks), results=results, progressDialog='processing in parallel..') as tasker:
             with mp.Parallelize(enumerate(tasks), results=results) as tasker:
                 for i, x in tasker:
                     tot = 0
-                    for j in xrange(size):
+                    for j in range(size):
                         tot += j * x
                     tasker.results[i] = tot
-            print( "\nParallel time, %d workers: %0.2f" % (mp.Parallelize.suggestedWorkerCount(), time.time() - start))
-            print( "Results match serial:      %s" % str(results3 == results))
+            print(( "\nParallel time, %d workers: %0.2f" % (mp.Parallelize.suggestedWorkerCount(), time.time() - start)))
+            print(( "Results match serial:      %s" % str(results3 == results)))
 
     def show(self):
         self.win = pg.GraphicsWindow()
@@ -320,7 +320,7 @@ class Variations(Protocol):
         self.temp = temp
         
         self.make_cells(cf, temp, dt)
-        print dir(self.pre_cells[0])
+        print(dir(self.pre_cells[0]))
         seed = 0
         j = 0
         if mode == 'sound':
@@ -337,7 +337,7 @@ class Variations(Protocol):
                 j = j + 1
                 synapses[-1].terminal.relsite.Dep_Flag = False  # no depression in these simulations
                 
-        print 'setup to run'
+        print('setup to run')
         self.stim_params = []
         self.istim = []
         self.istims = []
@@ -412,7 +412,7 @@ class Variations(Protocol):
                 self.poststims[m][1].play(self.poststims[m][0]._ref_i, dt, 0)
             self['v_post%02d' % m] = self.post_cells[m].soma(0.5)._ref_v
         h.finitialize()  # init and instantiate recordings
-        print 'running'
+        print('running')
         h.t = 0.
         h.tstop = 200.
         h.batch_run(h.tstop, h.dt, 'v.dat')
@@ -432,12 +432,12 @@ class Variations(Protocol):
             start = time.time()
             for inj in np.arange(-1.0, 1.51, 0.5):
                 self.run(mode='IV', temp=34.0, dt=0.025, stimamp=10, iinj=[inj])
-                print 'ran for current = ', inj
+                print('ran for current = ', inj)
                 for c in range(self.npost):
                     self.civ[c].append(self['v_post%02d' % c])
                     if c == 0:  # just the first
                         self.iiv.append(self['poststim%02d' %  c])
-            print( "\nSerial time, %0.2f" % (time.time() - start))
+            print(( "\nSerial time, %0.2f" % (time.time() - start)))
             if runname is not None:
                 f = open(runname, 'w')
                 pickle.dump({'t': self['t'], 'v': self.civ, 'i': self.iiv}, f)
@@ -446,7 +446,7 @@ class Variations(Protocol):
             # mp.parallelizer.multiprocessing.cpu_count()
             nworker = 16
             self.npost = len(varsg)
-            tasks = range(self.npost)
+            tasks = list(range(self.npost))
             results = [None] * len(tasks)
             ivc = [None] * len(tasks)
             start = time.time()
@@ -465,9 +465,9 @@ class Variations(Protocol):
                     ivc[i] = iv_curve.IVCurve()
                     ivc[i].run({'pulse': [(-1., 1.5, 0.25)]}, post_cell)
                     tasker.results[i] = {'v': ivc[i].voltage_traces, 'i': ivc[i].current_traces, 't': ivc[i].time_values, 'gklt': gklts, 'gh': ghs}
-            print( "\nParallel time: %d workers,  %0.2f sec" % (nworker, time.time() - start))
+            print(( "\nParallel time: %d workers,  %0.2f sec" % (nworker, time.time() - start)))
             cell_info = {'varrange': varsg}
-            print cell_info
+            print(cell_info)
             res = {'cells': cell_info, 'results': results}
             if runname is not None:
                 f = open(runname, 'w')
@@ -486,7 +486,7 @@ class Variations(Protocol):
             varsg = np.linspace(0.25, 2.0, int((2.0-0.25)/0.25)+1) #[0.5, 0.75, 1.0, 1.5, 2.0]  # covary Ih and gklt in constant ratio
             self.npost = len(varsg)
             nrep = 25
-            tasks = range(self.npost)
+            tasks = list(range(self.npost))
             results = [None] * len(tasks)
             ivc = [None] * len(tasks)
             gklts = np.zeros(len(varsg))
@@ -551,7 +551,7 @@ class Variations(Protocol):
                         # set up recordings
                         self['v_post%02d' % j] = post_cell.soma(0.5)._ref_v
                         h.finitialize()  # init and instantiate recordings
-                        print 'running %d' % i
+                        print('running %d' % i)
                         h.t = 0.
                         h.tstop = rundur*1000.  # rundur is in seconds.
                         post_cell.check_all_mechs()  # make sure no further changes were introduced before run.
@@ -560,7 +560,7 @@ class Variations(Protocol):
                         i_reps.append(0.*self['v_post%02d' % j])
                         p_reps.append(pre_cells[0]._stvec.to_python())
                     tasker.results[i] = {'v': v_reps, 'i': i_reps, 't': self['t'], 'pre': pre_cells[0]._stvec.to_python()}
-            print( "\nParallel time: %d workers,  %0.2f sec" % (nworker, time.time() - start))
+            print(( "\nParallel time: %d workers,  %0.2f sec" % (nworker, time.time() - start)))
             cell_info = {'gklt': gklts, 'gh': ghs}
             stim_info = {'nreps': nrep, 'cf': cf, 'f0': f0, 'rundur': rundur, 'pipdur': pipdur, 'dbspl': dbspl, 'fmod': fmod, 'dmod': dmod}
             res = {'cells': cell_info, 'stim': stim_info, 'results': results}
@@ -658,12 +658,12 @@ def showplots(name):
     ncells = len(d['results'])
     stiminfo = d['stim']
     dur = stiminfo['rundur']*1000.
-    print 'dur: ', dur
-    print 'stim info: '
-    print '  fmod: ', stiminfo['fmod']
-    print '  dmod: ', stiminfo['dmod']
-    print '  f0:   ', stiminfo['f0']
-    print '  cf:   ', stiminfo['cf']
+    print('dur: ', dur)
+    print('stim info: ')
+    print('  fmod: ', stiminfo['fmod'])
+    print('  dmod: ', stiminfo['dmod'])
+    print('  f0:   ', stiminfo['f0'])
+    print('  cf:   ', stiminfo['cf'])
     varsg = np.linspace(0.25, 2.0, int((2.0-0.25)/0.25)+1)  # was not stored... 
     fig, ax = mpl.subplots(ncells+1, 2, figsize=(8.5, 11.))
     spikelists = [[]]*ncells
@@ -760,13 +760,13 @@ if __name__ == '__main__':
              start_time = timeit.default_timer()
              prot.runIV(parallelize = True)
              elapsed = timeit.default_timer() - start_time
-             print ('Elapsed time for IV simulations: %f' % (elapsed))
+             print(('Elapsed time for IV simulations: %f' % (elapsed)))
              showpicklediv(runname)
          if runtype == 'sound':
              start_time = timeit.default_timer()
              prot.runSound(parallelize=True)
              elapsed = timeit.default_timer() - start_time
-             print ('Elapsed time for AN simulations: %f' % (elapsed))
+             print(('Elapsed time for AN simulations: %f' % (elapsed)))
              showplots(runname)
 #         pg.show()
          # if sys.flags.interactive == 0:
@@ -778,6 +778,6 @@ if __name__ == '__main__':
     elif runtype in ['plots']:
         showplots(runname)
     else:
-        print 'run type should be one of sound, IV, showiv, plots'
+        print('run type should be one of sound, IV, showiv, plots')
         
 

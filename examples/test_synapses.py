@@ -27,8 +27,8 @@ import sys
 
 def runtest():
     if len(sys.argv) < 3:
-        print "Usage:  python test_synapses.py <pre_celltype> <post_celltype>"
-        print "   Supported cell types: sgc, bushy, tstellate, dstellate"
+        print("Usage:  python test_synapses.py <pre_celltype> <post_celltype>")
+        print("   Supported cell types: sgc, bushy, tstellate, dstellate")
         sys.exit(1)
 
 
@@ -62,7 +62,7 @@ def runtest():
     nTerminals = convergence.get(sys.argv[1], {}).get(sys.argv[2], None)
     if nTerminals is None:
         nTerminals = 1
-        print "Warning: Unknown convergence for %s => %s, assuming %d" % (sys.argv[1], sys.argv[2], nTerminals)
+        print("Warning: Unknown convergence for %s => %s, assuming %d" % (sys.argv[1], sys.argv[2], nTerminals))
 
     if sys.argv[1:3] == ['sgc', 'bushy']:
         niter = 5

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from __future__ import print_function
+
 
 """
 Test adex model
@@ -12,7 +12,7 @@ import neuron
 import matplotlib.pyplot as plt
 from collections import OrderedDict
 import weave
-from gif.Filter_Rect_LogSpaced import *
+from .gif.Filter_Rect_LogSpaced import *
 
 class AdEx():
     def __init__(self):
@@ -260,7 +260,7 @@ class AdEx():
             for j, k in enumerate(keys[1:]):
                 d[fk][k] = float(dline[j+1])
     
-        f, self.ax = plt.subplots(len(d.keys())/2, 2)
+        f, self.ax = plt.subplots(len(list(d.keys()))/2, 2)
         self.ax = self.ax.ravel()
         for i, fig in enumerate(d.keys()):
             (tb, v) = self.runone(d[fig], self.ax[i])

@@ -47,7 +47,7 @@ class MSOBinauralTest(Protocol):
         self.beatfreq = 0.
         self.f0 = 500.
         f0 = {'left': self.f0, 'right': self.f0+self.beatfreq}
-        nsgc = len(ears.keys())
+        nsgc = len(list(ears.keys()))
         sgcCell = {}
         bushyCell = {}
         msoCell = {}
@@ -84,7 +84,7 @@ class MSOBinauralTest(Protocol):
         self.msyns = msosyn
         self.msoCell = msoCell
         self.all_cells = []  # hold all "real" cells (DummySGC does not have mechanisms)
-        for ear in ears.keys():
+        for ear in list(ears.keys()):
             self.all_cells.append([c for c in self.bushy_cells[ear]])
         self.all_cells.append([self.msoCell])
         
@@ -159,10 +159,10 @@ class MSOBinauralTest(Protocol):
         fb = self.beatfreq
         vs = PU.vector_strength(spikesinwin, f0)
 
-        print 'MSO Vector Strength at %.1f: %7.3f, d=%.2f (us) Rayleigh: %7.3f  p = %.3e  n = %d' % (f0, vs['r'], vs['d']*1e6, vs['R'], vs['p'], vs['n'])
+        print('MSO Vector Strength at %.1f: %7.3f, d=%.2f (us) Rayleigh: %7.3f  p = %.3e  n = %d' % (f0, vs['r'], vs['d']*1e6, vs['R'], vs['p'], vs['n']))
         if fb > 0:
             vsb = PU.vector_strength(spikesinwin, fb)
-            print 'MSO Vector Strength to beat at %.1f: %7.3f, d=%.2f (us) Rayleigh: %7.3f  p = %.3e  n = %d' % (fb, vsb['r'], vsb['d']*1e6, vsb['R'], vsb['p'], vsb['n'])
+            print('MSO Vector Strength to beat at %.1f: %7.3f, d=%.2f (us) Rayleigh: %7.3f  p = %.3e  n = %d' % (fb, vsb['r'], vsb['d']*1e6, vsb['R'], vsb['p'], vsb['n']))
         (hist, binedges) = np.histogram(vs['ph'])
         p6 = self.win.addPlot(title='VS', row=3, col=1)
         p6.plot(binedges, hist, stepMode=True, fillBrush=(100, 100, 255, 150), fillLevel=0)

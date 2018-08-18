@@ -42,7 +42,7 @@ specs = OrderedDict([('pip', (pipwins, sound.TonePip)), ('pipmod', (pipmodwins, 
     ('wavefile', (wavewins, sound.ReadWavefile))])
 
 for stim in stims:
-    print stim
+    print(stim)
     if stim in ['clicks']:
         wave = stims[stim][1](rate=Fs, duration=1.0, dbspl=level,
                          click_duration=1e-4, click_starts=1e-3*np.linspace(10, 500, 50))
@@ -51,7 +51,7 @@ for stim in stims:
     elif stim in ['wavefile']:
         wave = stims[stim][1](wavefile='examples/stim172_geese.wav', rate=Fs, dbspl=level)
         wave.sound  # force generation here
-        print 'time shape test: ', wave.time.shape  
+        print('time shape test: ', wave.time.shape)  
     else:
         wave = stims[stim][1](rate=Fs, duration=1.0, f0=cf, dbspl=level, 
                          pip_duration=0.8, pip_start=[10e-3], ramp_duration=2.5e-3,

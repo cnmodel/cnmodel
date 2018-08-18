@@ -108,15 +108,15 @@ class CNSoundStim(Protocol):
         h.celsius = self.temp
         h.dt = self.dt
         
-        print "init.."
+        print("init..")
         self.custom_init()
-        print "start.."
+        print("start..")
         last_update = time.time()
         while h.t < h.tstop:
             h.fadvance()
             now = time.time()
             if now - last_update > 1.0:
-                print "%0.2f / %0.2f" % (h.t, h.tstop)
+                print("%0.2f / %0.2f" % (h.t, h.tstop))
                 last_update = now
         
         # record vsoma and spike times for all cells
@@ -168,7 +168,7 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         freqs = set()
         levels = set()
         max_iter = 0
-        for k,v in results.items():
+        for k,v in list(results.items()):
             f0, dbspl, iteration = k
             max_iter = max(max_iter, iteration)
             stim, result = v
@@ -284,7 +284,7 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         y = stimpos.y()
         
         best = None
-        for stim, result in self.results.values():
+        for stim, result in list(self.results.values()):
             f0 = stim.opts['f0']
             dbspl = stim.opts['dbspl']
             if x < f0 or y < dbspl:
@@ -321,7 +321,7 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
 
     def selected_trials(self):
         if self.trial_combo.currentIndex() == 0:
-            return range(self.iterations)
+            return list(range(self.iterations))
         else:
             return [self.trial_combo.currentIndex() - 1]
 
@@ -358,7 +358,7 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         lvals = set()
         
         # first get lists of all frequencies and levels in the matrix
-        for stim, vec in self.results.values():
+        for stim, vec in list(self.results.values()):
             fvals.add(stim.key()['f0'])
             lvals.add(stim.key()['dbspl'])
         fvals = sorted(list(fvals))
@@ -367,8 +367,8 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         # Get spontaneous rate statistics
         spont_spikes = 0
         spont_time = 0
-        for stim, iterations in self.results.values():
-            for vec in iterations.values():
+        for stim, iterations in list(self.results.values()):
+            for vec in list(iterations.values()):
                 spikes = vec[(pop.type, ind)][1]
                 spont_spikes += ((spikes >= self.baseline[0]) & (spikes < self.baseline[1])).sum()
                 spont_time += self.baseline[1] - self.baseline[0]
@@ -377,7 +377,7 @@ class NetworkSimDisplay(pg.QtGui.QSplitter):
         # next count the number of spikes for the selected cell at each point in the matrix
         matrix = np.zeros((len(fvals), len(lvals)))
         trials = self.selected_trials()
-        for stim, iteration in self.results.values():
+        for stim, iteration in list(self.results.values()):
             for i in trials:
                 vec = iteration[i]
                 spikes = vec[(pop.type, ind)][1]
@@ -421,7 +421,7 @@ class NetworkTree(QtGui.QTreeWidget):
         all_conns = pop.cell_connections(cell)
         if all_conns == 0:
             return
-        for cpop, conns in all_conns.items():
+        for cpop, conns in list(all_conns.items()):
             pop_grp = QtGui.QTreeWidgetItem([cpop.type, str(conns)])
             item.addChild(pop_grp)
 
@@ -470,12 +470,12 @@ class NetworkVisualizer(pg.PlotWidget):
         # now assign connection lines and record forward connectivity
         con_x = []
         con_y = []
-        for pop in self.pops.values():
+        for pop in list(self.pops.values()):
             for i,cell in enumerate(pop._cells):
                 conns = cell['connections']
                 if conns == 0:
                     continue
-                for prepop, precells in conns.items():
+                for prepop, precells in list(conns.items()):
                     spot = pop.cell_spots[i]
                     if spot is None:
                         continue
@@ -509,7 +509,7 @@ class NetworkVisualizer(pg.PlotWidget):
 
         # display presynaptic cells
         if rec['connections'] != 0:
-            for prepop, preinds in rec['connections'].items():
+            for prepop, preinds in list(rec['connections'].items()):
                 for preind in preinds:
                     spot = prepop.cell_spots[preind].copy()
                     spot['size'] = 15
@@ -551,8 +551,8 @@ if __name__ == '__main__':
     #n_levels = 3
     levels = np.linspace(20, 100, n_levels)
     
-    print("Frequencies:", fvals/1000.)
-    print("Levels:", levels)
+    print(("Frequencies:", fvals/1000.))
+    print(("Levels:", levels))
 
     syntype = 'multisite'
     path = os.path.dirname(__file__)
@@ -584,7 +584,7 @@ if __name__ == '__main__':
                                     ramp_duration=2.5e-3, pip_duration=stimpar['pip'], 
                                     pip_start=stimpar['start'])
     
-            print("=== Start run %d/%d ===" % (i+1, tot_runs))
+            print(("=== Start run %d/%d ===" % (i+1, tot_runs)))
             cachefile = os.path.join(cachepath, 'seed=%d_f0=%f_dbspl=%f_syntype=%s_iter=%d.pk' % (seed, f, db, syntype, iteration))
             if '--ignore-cache' in sys.argv or not os.path.isfile(cachefile):
                 result = prot.run(stim, seed=i)
@@ -593,11 +593,11 @@ if __name__ == '__main__':
                 print("  (Loading cached results)")
                 result = pickle.load(open(cachefile, 'rb'))
             tasker.results[(f, db, iteration)] = (stim, result)
-            print('--- finished run %d/%d ---' % (i+1, tot_runs))
+            print(('--- finished run %d/%d ---' % (i+1, tot_runs)))
         
     # get time of run before display
     elapsed = timeit.default_timer() - start_time
-    print 'Elapsed time for %d stimuli: %f  (%f sec per stim), synapses: %s' % (len(tasks), elapsed, elapsed/len(tasks), prot.bushy._synapsetype)
+    print('Elapsed time for %d stimuli: %f  (%f sec per stim), synapses: %s' % (len(tasks), elapsed, elapsed/len(tasks), prot.bushy._synapsetype))
     
     nd = NetworkSimDisplay(prot, results, baseline=stimpar['baseline'], response=stimpar['response'])
     nd.show()

@@ -133,23 +133,23 @@ class SGCInputTestPL(Protocol):
         prespk = self.pre_cells[0]._spiketrain  # just sample one...
         spkin = prespk[np.where(prespk > phasewin[0]*1e3)]
         spikesinwin = spkin[np.where(spkin <= phasewin[1]*1e3)]
-        print "\nCell type: %s" % self.cell
-        print "Stimulus: "
+        print("\nCell type: %s" % self.cell)
+        print("Stimulus: ")
 
         # set freq for VS calculation
         if self.stimulus == 'tone':
             f0 = self.f0
-            print "Tone: f0=%.3f at %3.1f dbSPL, cell CF=%.3f" % (self.f0, self.dbspl, self.cf)
+            print("Tone: f0=%.3f at %3.1f dbSPL, cell CF=%.3f" % (self.f0, self.dbspl, self.cf))
         if self.stimulus == 'SAM':
             f0 = self.fMod
-            print ("SAM Tone: f0=%.3f at %3.1f dbSPL, fMod=%3.1f  dMod=%5.2f, cell CF=%.3f" %
-                 (self.f0, self.dbspl, self.fMod, self.dMod, self.cf))
+            print(("SAM Tone: f0=%.3f at %3.1f dbSPL, fMod=%3.1f  dMod=%5.2f, cell CF=%.3f" %
+                 (self.f0, self.dbspl, self.fMod, self.dMod, self.cf)))
         if self.stimulus == 'clicks':
             f0 = 1./self.click_rate
-            print "Clicks: interval %.3f at %3.1f dbSPL, cell CF=%.3f " % (self.click_rate, self.dbspl, self.cf)
+            print("Clicks: interval %.3f at %3.1f dbSPL, cell CF=%.3f " % (self.click_rate, self.dbspl, self.cf))
         vs = PU.vector_strength(spikesinwin, f0)
         
-        print 'AN Vector Strength at %.1f: %7.3f, d=%.2f (us) Rayleigh: %7.3f  p = %.3e  n = %d' % (f0, vs['r'], vs['d']*1e6, vs['R'], vs['p'], vs['n'])
+        print('AN Vector Strength at %.1f: %7.3f, d=%.2f (us) Rayleigh: %7.3f  p = %.3e  n = %d' % (f0, vs['r'], vs['d']*1e6, vs['R'], vs['p'], vs['n']))
         (hist, binedges) = np.histogram(vs['ph'])
         p6.plot(binedges, hist, stepMode=True, fillBrush=(100, 100, 255, 150), fillLevel=0)
         p6.setXRange(0., 2*np.pi)
@@ -158,7 +158,7 @@ class SGCInputTestPL(Protocol):
         spkin = bspk[np.where(bspk > phasewin[0]*1e3)]
         spikesinwin = spkin[np.where(spkin <= phasewin[1]*1e3)]
         vs = PU.vector_strength(spikesinwin, f0)
-        print '%s Vector Strength: %7.3f, d=%.2f (us) Rayleigh: %7.3f  p = %.3e  n = %d' % (self.cell, vs['r'], vs['d']*1e6, vs['R'], vs['p'], vs['n'])
+        print('%s Vector Strength: %7.3f, d=%.2f (us) Rayleigh: %7.3f  p = %.3e  n = %d' % (self.cell, vs['r'], vs['d']*1e6, vs['R'], vs['p'], vs['n']))
         (hist, binedges) = np.histogram(vs['ph'])
         p7.plot(binedges, hist, stepMode=True, fillBrush=(100, 100, 255, 150), fillLevel=0)
         p7.setXRange(0., 2*np.pi)
@@ -169,9 +169,9 @@ class SGCInputTestPL(Protocol):
 
 if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] in ['help', '-h', '--help']:
-        print "\nUsage: python test_sgc_input_phaselocking.py\n    celltype [bushy, tstellate, octopus, dstellate] (default: bushy)"
-        print "    stimulus [tone, SAM, clicks] (default: tone)"
-        print "    species [guineapig mouse] (default: guineapig)\n"
+        print("\nUsage: python test_sgc_input_phaselocking.py\n    celltype [bushy, tstellate, octopus, dstellate] (default: bushy)")
+        print("    stimulus [tone, SAM, clicks] (default: tone)")
+        print("    species [guineapig mouse] (default: guineapig)\n")
         exit(0)
     if len(sys.argv) > 1:
         cell = sys.argv[1]
@@ -185,7 +185,7 @@ if __name__ == '__main__':
         species = sys.argv[3]
     else:
         species = 'guineapig'
-    print 'cell type: ', cell
+    print('cell type: ', cell)
     prot = SGCInputTestPL()
     prot.set_cell(cell)
     prot.run(stimulus=stimulus, species=species)

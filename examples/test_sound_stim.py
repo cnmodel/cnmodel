@@ -30,7 +30,7 @@ def time_usage(func):
         beg_ts = time.time()
         res = func(*args, **kwargs)
         end_ts = time.time()
-        print("** Elapsed time: %f" % (end_ts - beg_ts))
+        print(("** Elapsed time: %f" % (end_ts - beg_ts)))
         return res
     return wrapper
 
@@ -46,7 +46,7 @@ def set_dbspl(signal, dbspl):
 @time_usage
 def sound_stim(seed, useMatlab=True):
     cf = 1.5e3
-    levels = range(-10, 101, 10)
+    levels = list(range(-10, 101, 10))
 
     result = {}
     if useMatlab:
@@ -71,18 +71,18 @@ def runtest():
     usematlab = True
     if len(sys.argv) > 0:
         if len(sys.argv) == 1:
-            print 'Call requires argument, must be either "matlab" or "cochlea"; default is "matlab"'
+            print('Call requires argument, must be either "matlab" or "cochlea"; default is "matlab"')
             exit()
         flag = sys.argv[1]
         if flag not in ['matlab', 'cochlea']:
-            print 'Flag must be either "matlab" or "cochlea"; default is "matlab"'
+            print('Flag must be either "matlab" or "cochlea"; default is "matlab"')
             exit()
         if flag == 'cochlea':
             usematlab=False
     if usematlab:
-        print 'Running with matlab simulator'
+        print('Running with matlab simulator')
     else:
-        print 'Running with MR cochlea simulator'
+        print('Running with MR cochlea simulator')
             
     result = sound_stim(seed, useMatlab=usematlab)
 

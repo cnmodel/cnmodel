@@ -121,7 +121,7 @@ class SGCInputTestPSTH(Protocol):
                 # res contains: {'time': time, 'vm': Vm, 'xmtr': xmtr, 'pre_cells': pre_cells, 'post_cell': post_cell}
                 self.pre_cells[nr] = res['pre_cells']
                 self.time[nr] = res['time']
-                self.xmtr = {k: v.to_python() for k, v in res['xmtr'].items()}
+                self.xmtr = {k: v.to_python() for k, v in list(res['xmtr'].items())}
                 self.vms[nr] = res['vm']
                 self.synapses[nr] = res['synapses']
                 self.xmtrs[nr] =self.xmtr
@@ -261,7 +261,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 3:
         nrep = int(sys.argv[3])
     
-    print 'cell type: ', cell
+    print('cell type: ', cell)
     prot = SGCInputTestPSTH()
     prot.set_cell(cell)
     prot.run(stimulus=stimulus, reps=nrep)

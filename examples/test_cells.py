@@ -1,3 +1,4 @@
+
 #!/usr/bin/python
 
 """
@@ -154,7 +155,7 @@ class Tests():
                  morphology='cnmodel/morphology/tstellate_stick.hoc', decorator=True)
 
         elif args.celltype == 'tstellatenav11' and args.morphology == 'point':  # note this uses a different model...
-            print 'test_cells: Stellate NAV11'
+            print('test_cells: Stellate NAV11')
             cell = cells.TStellateNav11.create(model='Nav11', species=args.species, modelType=None,
                 ttx=args.ttx, debug=debugFlag)
 
@@ -236,10 +237,10 @@ class Tests():
         
         """
         self.cell.set_temperature(float(args.temp))
-        print self.cell.status
+        print(self.cell.status)
         V0 = self.cell.find_i0(showinfo=True)
 #        self.cell.cell_initialize()
-        print 'Currents at nominal Vrest= %.2f I = 0: I = %g ' % (V0, self.cell.i_currents(V=V0))
+        print('Currents at nominal Vrest= %.2f I = 0: I = %g ' % (V0, self.cell.i_currents(V=V0)))
         self.cell.print_mechs(self.cell.soma)
         instant = self.cell.compute_rmrintau(auto_initialize=False, vrange=None)
         print('    From Inst: Rin = {:7.1f}  Tau = {:7.1f}  Vm = {:7.1f}'.format(instant['Rin'], instant['tau'], instant['v']))
@@ -253,7 +254,7 @@ class Tests():
             self.iv.show(cell=self.cell)
 
         elif args.rmp is True:
-            print 'temperature: ', self.cell.status['temperature']
+            print('temperature: ', self.cell.status['temperature'])
             self.iv = IVCurve()
             self.iv.run({'pulse': (0, 0, 1)}, self.cell, durs=default_durs,
                    sites=sites, reppulse=ptype, temp=float(args.temp))
@@ -298,8 +299,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     if args.celltype not in cellinfo['types']:
-        print 'cell: %s is not in our list of cell types' % (args.celltype)
-        print 'celltypes: ', cellinfo['types']
+        print('cell: %s is not in our list of cell types' % (args.celltype))
+        print('celltypes: ', cellinfo['types'])
         sys.exit(1)
 
     path = os.path.dirname(cnmodel.__file__)
@@ -314,7 +315,7 @@ if __name__ == '__main__':
     else:
         ptype = 'pulses'
     if args.morphology in cellinfo['morphology']:
-        print 'Morphological configuration %s is ok' % args.morphology
+        print('Morphological configuration %s is ok' % args.morphology)
 
     t = Tests()
     t.selectCell(args)

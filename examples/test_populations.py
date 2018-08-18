@@ -24,7 +24,7 @@ import sys
 
 def testpopulation():
     if len(sys.argv) < 3:
-        print "Usage:  python test_populations.py <pre_celltype> <post_celltype>"
+        print("Usage:  python test_populations.py <pre_celltype> <post_celltype>")
         sys.exit(1)
 
     pop_types = {
@@ -39,7 +39,7 @@ def testpopulation():
     pops = []
     for cell_type in sys.argv[1:3]:
         if cell_type not in pop_types:
-            print '\nUnsupported cell type: "%s". Options are %s' % (cell_type, pop_types.keys())
+            print('\nUnsupported cell type: "%s". Options are %s' % (cell_type, list(pop_types.keys())))
             sys.exit(-1)
         pops.append(pop_types[cell_type]())
 

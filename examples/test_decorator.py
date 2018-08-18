@@ -4,7 +4,7 @@ Basic test of cnmodel decorator on simple cell
 Users LC_bushy.hoc and XM13 mechanisms.
 
 """
-from __future__ import print_function
+
 
 
 __author__ = 'pbmanis'
@@ -79,7 +79,7 @@ class F5():
         PH.noaxes(self.plots['p2'])
         PH.calbar(self.plots['p2'], calbar=[125, 0.1, 0., 0.5], unitNames={'x': 'ms', 'y': 'nA'})
 
-        text = (u"{0:2d}\u00b0C {1:.2f}-{2:.2f} nA".format(
+        text = ("{0:2d}\u00b0C {1:.2f}-{2:.2f} nA".format(
                 int(self.temperature), np.min(self.iv.current_cmd), np.max(self.iv.current_cmd)))
         ti = pg.TextItem(text, anchor=(1, 0))
         ti.setFont(pg.QtGui.QFont('Arial', 9))

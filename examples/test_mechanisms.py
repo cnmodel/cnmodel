@@ -21,8 +21,10 @@ with this routine. the list "nottestablemechs" in the file defines mechanisms pr
 with cnmodel that cannot be run with this program.
 
 """
+import sys
+from neuron import h
+from neuron import nrn
 
-import neuron as h
 import gc
 import numpy as np
 #import scipy as sp
@@ -44,10 +46,10 @@ class ChannelKinetics():
                 modfile.append(arg) # must be string, not list...
         else:
             modfile.append(args) # 'CaPCalyx'
-        print 'modfile: ', modfile
+        print('modfile: ', modfile)
         colors = ['b', 'r', 'g', 'y', 'c', 'm', 'w']
         if len(modfile) > len(colors):
-            print 'Too many modfiles... keep it simple!'
+            print('Too many modfiles... keep it simple!')
             exit()
         # if isinstance(args, list) and len(args) > 1:
         #     modfile2 = args[1]
@@ -145,8 +147,8 @@ class ChannelKinetics():
         self.vcPost.dur3 = tstep[1]
         self.vcPost.amp3 = clampV
         self.vcPost.rs = 1e-9
-        print "soma: ", self.soma, 
-        print ' vcpost sec: ', self.vcPost.Section()
+        print("soma: ", self.soma, end=' ') 
+        print(' vcpost sec: ', self.vcPost.Section())
 
         if modfile[0:2] == 'ih':
             stimamp = np.linspace(-140, -40, num=21, endpoint=True)
@@ -155,7 +157,7 @@ class ChannelKinetics():
         self.ivss = np.zeros((2, stimamp.shape[0]))
         self.ivmin = np.zeros((2, stimamp.shape[0]))
         self.ivmax = np.zeros((2, stimamp.shape[0]))
-        print('I range = %6.1f-%6.1f, T = %4.1f' % (np.min(stimamp), np.max(stimamp), h.celsius))
+        print(('I range = %6.1f-%6.1f, T = %4.1f' % (np.min(stimamp), np.max(stimamp), h.celsius)))
 
         for i, V in enumerate(stimamp):
             stim={}
@@ -188,10 +190,10 @@ class ChannelKinetics():
         self.p2.plot(self.ivmax[0,:], self.ivmax[1,:], symbol='t', symbolSize=4.0, pen=pg.mkPen(color))
         self.p5.plot(self.ivmin[0,:], self.ivmin[1,:], symbol='s', symbolSize=4.0, pen=pg.mkPen(color))
 
-        print export
+        print(export)
         if export:
             exporter = pg.exporters.MatplotlibExporter(self.p1)
-            print 'exporting: ' + '%s_traces.svg' % modfile
+            print('exporting: ' + '%s_traces.svg' % modfile)
             exporter.export(fileName='%s_traces.pdf' % modfile)
             exporter = pg.exporters.MatplotlibExporter(self.p3)
             exporter.export('%s_command.pdf' % modfile)
@@ -203,7 +205,6 @@ class ChannelKinetics():
 
 def getmechs():
     mechs = []
-
     for n in dir(nrn):
         o = getattr(nrn, n)
         if str(o) == str(nrn.Mechanism):
@@ -213,16 +214,16 @@ def getmechs():
 if __name__ == "__main__":
     mechs = getmechs()
     if len(sys.argv) < 2:
-        print "\n\nUsage: python test_mechanisms.py <mechname>"
-        print "  Available mechanisms:"
+        print("\n\nUsage: python test_mechanisms.py <mechname>")
+        print("  Available mechanisms:")
         linelen = 0
         for i, n in enumerate(mechs):
             if n in nottestablemechs: # 'Mechanism':
                 continue
-            print "%20s" % n,
+            print("%20s" % n, end=' ')
             linelen += 20
             if linelen > 80:
-                print ""
+                print("")
                 linelen = 0
         sys.exit(1)
     
@@ -236,7 +237,7 @@ if __name__ == "__main__":
     if sys.argv[1] == 'all':
         for n in mechs:
             if n in nottestablemechs:
-                print('Skipping %s' % n)
+                print(('Skipping %s' % n))
                 continue
             else:
                 ck = ChannelKinetics(n)

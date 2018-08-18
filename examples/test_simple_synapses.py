@@ -17,8 +17,8 @@ from cnmodel.synapses import Synapse
 
 def runtest():
     if len(sys.argv) < 3:
-        print "Usage:  python test_synapses.py <pre_celltype> <post_celltype>"
-        print "   Supported cell types: sgc, bushy, tstellate, dstellate, tuberculoventral, pyramidal"
+        print("Usage:  python test_synapses.py <pre_celltype> <post_celltype>")
+        print("   Supported cell types: sgc, bushy, tstellate, dstellate, tuberculoventral, pyramidal")
         sys.exit(1)
 
     convergence = {
@@ -54,7 +54,7 @@ def runtest():
     nTerminals = convergence.get(sys.argv[1], {}).get(sys.argv[2], None)
     if nTerminals is None:
         nTerminals = 1
-        print "Warning: Unknown convergence for %s => %s, assuming %d" % (sys.argv[1], sys.argv[2], nTerminals)
+        print("Warning: Unknown convergence for %s => %s, assuming %d" % (sys.argv[1], sys.argv[2], nTerminals))
 
     if sys.argv[1:3] == ['sgc', 'bushy']:
         niter = 1
@@ -69,6 +69,6 @@ def runtest():
 
 if __name__ == '__main__':
     r = runtest()
-    print 'runtest done'
+    print('runtest done')
     if sys.flags.interactive == 0:
         pg.QtGui.QApplication.exec_()
