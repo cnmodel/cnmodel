@@ -1,3 +1,4 @@
+from __future__ import print_function
 """
 Run unit tests for cnmodel
 """
@@ -34,7 +35,7 @@ def runtests():
         flags.append('cnmodel/')
 
     # Start tests.
-    print "Testing with flags: %s" % " ".join(flags)
+    print("Testing with flags: %s" % " ".join(flags))
     pytest.main(flags)
 
 if __name__ == '__main__':

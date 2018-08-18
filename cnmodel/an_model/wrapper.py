@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import numpy as np
 from ..util import matlab_proc
@@ -14,17 +15,17 @@ def get_matlab():
         _proc = matlab_proc.MatlabProcess(cwd=model_path)
         # Try building the model mex files 
         if _proc.exist('model_IHC') == 0:
-            print "\nCompiling MEX for auditory periphery model..."
+            print ("\nCompiling MEX for auditory periphery model...")
             try:
                 _proc('mexANmodel;')
             except Exception as err:
-                print err.output
-                print ""
+                print (err.output)
+                print ("")
                 raise RuntimeError(
                     "An error occurred while compiling the auditory periphery model.\n" +
                     "The complete output is printed above. " +
                     "See cnmodel/an_model/model/readme.txt for more information.")
-            print "Done."
+            print ("Done.")
     return _proc
 
 
