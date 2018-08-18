@@ -152,7 +152,7 @@ class PyramidalKanold(Pyramidal, Cell):
 
         # decorate the morphology with ion channels
         if decorator is None:   # basic model, only on the soma
-            self.mechanisms = ['napyr', 'kdpyr', 'kif', 'kis', 'ihpyr', 'leak', 'kcnq', 'nap']
+            self.mechanisms = ['napyr', 'kdpyr', 'kif', 'kis', 'ihpyr_adj', 'leak', 'kcnq', 'nap']
             for mech in self.mechanisms:
                 try:
                     self.soma.insert(mech)
@@ -174,7 +174,7 @@ class PyramidalKanold(Pyramidal, Cell):
             field='soma_natype')
         pars = Params(cap=cellcap, natype=chtype)
         for g in ['soma_napyr_gbar', 'soma_kdpyr_gbar', 'soma_kif_gbar', 'soma_kis_gbar',
-                  'soma_kcnq_gbar', 'soma_nap_gbar', 'soma_ihpyr_gbar', 'soma_leak_gbar',
+                  'soma_kcnq_gbar', 'soma_nap_gbar', 'soma_ihpyr_adj_gbar', 'soma_ihpyr_adj_q10', 'soma_leak_gbar',
                   'soma_e_h','soma_leak_erev', 'soma_e_k', 'soma_e_na']:
             pars.additem(g,  data.get(dataset, species=species, cell_type=celltype,
             field=g))
@@ -222,12 +222,13 @@ class PyramidalKanold(Pyramidal, Cell):
             soma().kcnq.gbar = nstomho(pars.soma_kcnq_gbar, self.somaarea) # does not exist in canonical model.
             soma().kif.gbar = nstomho(pars.soma_kif_gbar, self.somaarea)
             soma().kis.gbar = nstomho(pars.soma_kis_gbar, self.somaarea)
-            soma().ihpyr.gbar = nstomho(pars.soma_ihpyr_gbar, self.somaarea)
+            soma().ihpyr_adj.gbar = nstomho(pars.soma_ihpyr_adj_gbar, self.somaarea)
+            soma().ihpyr_adj.q10 = 3.0  # no temp scaling to sta
             soma().leak.gbar = nstomho(pars.soma_leak_gbar, self.somaarea)
             soma().leak.erev = pars.soma_leak_erev
             soma().ena = pars.soma_e_na
             soma().ek = pars.soma_e_k
-            soma().ihpyr.eh = pars.soma_e_h
+            soma().ihpyr_adj.eh = pars.soma_e_h
 
         # elif species in 'rat' and modelType == 'II':
         #     """
@@ -305,6 +306,8 @@ class PyramidalKanold(Pyramidal, Cell):
              self.ix['kcnq'] = self.soma().kcnq.gk*(V - self.soma().ek)
         if 'ihpyr' in self.mechanisms:
              self.ix['ihpyr'] = self.soma().ihpyr.gh*(V - self.soma().ihpyr.eh)
+        if 'ihpyr_adj' in self.mechanisms:
+             self.ix['ihpyr_adj'] = self.soma().ihpyr_adj.gh*(V - self.soma().ihpyr_adj.eh)
         # leak
         if 'leak' in self.mechanisms:
             self.ix['leak'] = self.soma().leak.gbar*(V - self.soma().leak.erev)
@@ -335,7 +338,7 @@ class PyramidalKanold(Pyramidal, Cell):
             dendrites[i]().kif.gbar = 0.0001 # a little Ht
             dendrites[i].insert('leak') # leak
             dendrites[i]().leak.gbar = 0.00001
-            dendrites[i].insert('ihvcn') # some H current
+            dendrites[i].insert('ihpyr_adj') # some H current
             dendrites[i]().ihvcn.gbar =  0. # 0.00002
             dendrites[i]().ihvcn.eh = -43.0
         self.maindend = dendrites
