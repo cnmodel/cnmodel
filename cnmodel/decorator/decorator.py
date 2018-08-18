@@ -90,7 +90,7 @@ class Decorator():
         
         cell.hr.mechanisms = []
         for s in cell.hr.sec_groups.keys():
-            sectype = self.remapSectionType(string.rsplit(s, '[')[0])
+            sectype = self.remapSectionType(s.rsplit('[')[0])
             if sectype not in cell.channelMap.keys():
                 print('encountered unknown section group type: %s  Not decorating' % sectype)
                 print('channels in map: ', cell.channelMap.keys())
@@ -234,7 +234,7 @@ class Decorator():
         secstuff = {}
         for s in cell.hr.sec_groups.keys():
             print('s: ', s)
-            sectype = self.remapSectionType(string.rsplit(s, '[')[0])
+            sectype = self.remapSectionType(s.rsplit('[')[0])
             print(sectype)
             if sectype not in cell.channelMap.keys():
                 if sectype in ['undefined']:  # skip undefined sections

@@ -128,7 +128,7 @@ class DummySGC(SGC):
         if simulator is None:
             simulator = self._simulator
         spikes = an_model.get_spiketrain(cf=self.cf, sr=self.sr, seed=seed, 
-            stim=stim, simulator=simulator)
+            stim=stim, simulator=str(simulator))
         return spikes * 1000
 
 

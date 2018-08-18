@@ -75,7 +75,7 @@ class SimpleSynapseTest(Protocol):
         h.dt = dt
         self.temp = temp
         self.dt = dt
-        for nrep in xrange(iterations): # could do multiple runs.... 
+        for nrep in list(range(iterations)): # could do multiple runs.... 
             self.reset()
             self['v_pre'] = pre_cell.soma(0.5)._ref_v
             self['t'] = h._ref_t

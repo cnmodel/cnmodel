@@ -7,7 +7,11 @@ import pyqtgraph as pg
 import os
 import re
 import os.path
-
+try:
+  basestring
+except NameError:
+  basestring = str
+ 
 class HocReader(object):
     
     def __init__(self, hoc):
