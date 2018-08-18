@@ -186,6 +186,8 @@ class IVCurve(Protocol):
 
         # Connect recording vectors
         self['v_soma'] = self.cell.soma(0.5)._ref_v
+        self['q10'] = self.cell.soma(0.5).ihpyr_adj._ref_q10
+        self['ih_ntau'] = self.cell.soma(0.5).ihpyr_adj._ref_kh_n_tau
         self['i_inj'] = istim._ref_i
         self['time'] = h._ref_t
 
@@ -203,6 +205,8 @@ class IVCurve(Protocol):
         self.voltage_traces.append(self['v_soma'])
         self.current_traces.append(self['i_inj'])
         self.time_values = np.array(self['time']-self.initdelay)
+        self.mon_q10 = np.array(self['q10'])
+        self.mon_ih_ntau = np.array(self['ih_ntau'])
 
     def peak_vm(self, window=0.5):
         """
