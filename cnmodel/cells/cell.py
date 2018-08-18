@@ -491,11 +491,13 @@ class Cell(object):
                 erev = 0.
                 if m == 'leak':
                     erev = eval('section().'+m+'.erev')
-                if m in ['jsrna', 'na', 'nacn', 'nav11', 'nacncoop']:
+                if m in ['jsrna', 'na', 'nacn', 'nav11', 'nacncoop', 'napyr', 'nap']:
                     erev = eval('section().ena')
                 if m in ['klt', 'kht', 'ka']:
+                    erev = eval('section().e%s'%m)
+                if m in ['kis', 'kif', 'kdpyr', 'kcnq']:
                     erev = eval('section().ek')
-                if m in ['hcno', 'ihvcn', 'hcnobo']:
+                if m in ['hcno', 'ihvcn', 'hcnobo', 'ihpyr', 'ihpyr_adj']:
                     erev = eval('section().'+m+'.eh')
                 print('{0:>12s} : {2:8.1f} nS  {1:7.3e} mho/cm2  {3:>5.1f} mV'.
                         format(m, gx, mho2ns(gx, self.somaarea), erev))
@@ -710,21 +712,40 @@ class Cell(object):
             self.ix['nav11'] = self.soma().nav11.gna*(V - self.soma().ena)
         if 'nacn' in self.mechanisms:
             self.ix['nacn'] = self.soma().nacn.gna*(V - self.soma().ena)
+        if 'napyr' in self.mechanisms:
+            self.ix['napyr'] = self.soma().napyr.gna*(V - self.soma().ena)
+        if 'nap' in self.mechanisms:
+            self.ix['nap'] = self.soma().nap.gna*(V - self.soma().ena)
         if 'nacncoop' in self.mechanisms:
             self.ix['nacncoop'] = self.soma().nacncoop.gna*(V - self.soma().ena)
+        
         if 'klt' in self.mechanisms:
             self.ix['klt'] = self.soma().klt.gklt*(V - self.soma().ek)
         if 'kht' in self.mechanisms:
             self.ix['kht'] = self.soma().kht.gkht*(V - self.soma().ek)
         if 'ka' in self.mechanisms:
             self.ix['ka'] = self.soma().ka.gka*(V - self.soma().ek)
+        if 'kdpyr' in self.mechanisms:
+            self.ix['kdpyr'] = self.soma().kdpyr.gk*(V - self.soma().ek)
+        if 'kcnq' in self.mechanisms:
+            self.ix['kcnq'] = self.soma().kdcnq.gk*(V - self.soma().ek)
+        if 'kis' in self.mechanisms:
+            self.ix['kis'] = self.soma().kis.gk*(V - self.soma().ek)
+        if 'kif' in self.mechanisms:
+            self.ix['kif'] = self.soma().kif.gk*(V - self.soma().ek)
+        
         if 'ihvcn' in self.mechanisms:
             self.ix['ihvcn'] = self.soma().ihvcn.gh*(V - self.soma().ihvcn.eh)
+        if 'ihpyr' in self.mechanisms:
+            self.ix['ihpyr'] = self.soma().ihpyr.gh*(V - self.soma().ihpyr.eh)
+        if 'ihpyr_adj' in self.mechanisms:
+            self.ix['ihpyr_adj'] = self.soma().ihpyr_adj.gh*(V - self.soma().ihpyr_adj.eh)
         if 'hcno' in self.mechanisms:
             raise ValueError('HCNO is not supported - use hcnobo instead')
             #self.ix['hcno'] = self.soma().hcno.gh*(V - self.soma().hcno.eh)
         if 'hcnobo' in self.mechanisms:
             self.ix['hcnobo'] = self.soma().hcnobo.gh*(V - self.soma().hcnobo.eh)
+        
         if 'leak' in self.mechanisms:
             self.ix['leak'] = self.soma().leak.gbar*(V - self.soma().leak.erev)
 #        print self.status['name'], self.status['type'], V, self.ix
@@ -814,7 +835,7 @@ class Cell(object):
                 # pyramidal cell specific:
                 'napyr': 'gna', 'nap': 'gnap',
                 'kdpyr': 'gk', 'kif': 'gkif', 'kis': 'gkis',
-                'ihpyr': 'gh',
+                'ihpyr': 'gh', 'ihpyr_adj': 'gh',
                 'kcnq': 'gk',
                 # cartwheel cell specific:
                 'bkpkj': 'gbkpkj', 'hpkj': 'gh',
