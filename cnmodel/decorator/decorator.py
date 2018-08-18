@@ -1,3 +1,4 @@
+from __future__ import print_function
 __author__ = 'pbmanis'
 
 """
@@ -35,9 +36,9 @@ class Decorator():
                               parMap=parMap,
         )
         self.excludeMechs = [] # ['ihvcn', 'kht', 'klt', 'nav11']
-        print 'modelType in dec: ', cell.status['modelType']
-        print 'modelName in dec is ', cell.status['modelName']
-        print 'cell type in dec: ', cellType
+        print('modelType in dec: ', cell.status['modelType'])
+        print('modelName in dec is ', cell.status['modelName'])
+        print('cell type in dec: ', cellType)
         cell.channel_manager(modelName=cell.status['modelName'], modelType=cell.status['modelType'])
 #        print 'Cell: \n', dir(cell)
 #        print 'mechanisms: ', cell.hr.mechanisms
@@ -56,7 +57,7 @@ class Decorator():
                         'ihvcn': None, 'jsrna': None, 'nav11': 'vsna', 'nacncoop': None,
                         'hcnobo': None}
         self._biophys(cell, verify=verify)
-        print ('\033[1;31;40m Decorator: Model Decorated with channels (if this appears more than once per cell, there is a problem)\033[0m')
+        print('\033[1;31;40m Decorator: Model Decorated with channels (if this appears more than once per cell, there is a problem)\033[0m')
 
 
     def _biophys(self, cell, verify=False):
@@ -91,8 +92,8 @@ class Decorator():
         for s in cell.hr.sec_groups.keys():
             sectype = self.remapSectionType(string.rsplit(s, '[')[0])
             if sectype not in cell.channelMap.keys():
-                print 'encountered unknown section group type: %s  Not decorating' % sectype
-                print 'channels in map: ', cell.channelMap.keys()
+                print('encountered unknown section group type: %s  Not decorating' % sectype)
+                print('channels in map: ', cell.channelMap.keys())
                 continue
             # print 'Biophys: Section type: ', sectype, 'from: ', s
             # print sectype
@@ -107,7 +108,7 @@ class Decorator():
                 mech = mechname.split('_')[0] # get the part before the _
                 parameter = mechname.split('_')[1]  # and the part after
                 if mech not in self.gbar_mapper.keys():
-                    print 'Mechanism %s not found? ' % mech
+                    print('Mechanism %s not found? ' % mech)
                     continue
                 if mech in self.excludeMechs:
                     continue
@@ -123,7 +124,7 @@ class Decorator():
                     except:
                         raise ValueError('Failed with mech: %s ' % mech)  # fail if cannot insert.
                     if verify:
-                        print '   inserted %s into section ' % mech, sec
+                        print('   inserted %s into section ' % mech, sec)
                 
                 gbar_setup = None
                 gbar = 0
@@ -155,7 +156,7 @@ class Decorator():
                         try:
                             setattr(cell.hr.get_section(sec), vshift_setup, vshift)  # set conductance magnitude
                         except:
-                            print dir(cell.hr.get_section(sec))
+                            print(dir(cell.hr.get_section(sec)))
                             raise ValueError (' cannot set mechanism attribute %s  ... %s ' % (vshift_setup, vshift))
                         # print('vshift_setup: %s %s' % (sectype, vshift_setup), vshift)
                         
@@ -227,19 +228,19 @@ class Decorator():
          go through all the groups, and find inserted conductances and their values
          print the results to the terminal
         """
-        print '\nChannel Validation'
-        print '  Looking for sec_groups: ', sorted(cell.hr.sec_groups.keys())
-        print '  Available Channel Maps: ', sorted(cell.channelMap.keys())
+        print('\nChannel Validation')
+        print('  Looking for sec_groups: ', sorted(cell.hr.sec_groups.keys()))
+        print('  Available Channel Maps: ', sorted(cell.channelMap.keys()))
         secstuff = {}
         for s in cell.hr.sec_groups.keys():
-            print 's: ', s
+            print('s: ', s)
             sectype = self.remapSectionType(string.rsplit(s, '[')[0])
-            print sectype
+            print(sectype)
             if sectype not in cell.channelMap.keys():
                 if sectype in ['undefined']:  # skip undefined sections
                     continue
-                print '\033[1;31;40m Validation: encountered unknown section group type: %s  Cannot Validate' % sectype
-                print 'Cell morphology file: %s \033[0m' % cell.morphology_file
+                print('\033[1;31;40m Validation: encountered unknown section group type: %s  Cannot Validate' % sectype)
+                print('Cell morphology file: %s \033[0m' % cell.morphology_file)
                 continue
 #            print 'Validating Section: %s' % s
             for mech in cell.channelMap[sectype].keys():
@@ -248,7 +249,7 @@ class Decorator():
                 if mech in self.excludeMechs:
                     continue
                 if verify:
-                    print '\tSection: %-15ss  found mechanism: %-8ss at %.5f' % (s, mech, cell.channelMap[sectype][mech])
+                    print('\tSection: %-15ss  found mechanism: %-8ss at %.5f' % (s, mech, cell.channelMap[sectype][mech]))
                 x = nu.Mechanism(mech) # , {gmapper[mech]: self.channelMap[cellType][sectype][mech]})
                 setup = ('%s_%s' % (self.gbar_mapper[mech], mech))
                 for sec in cell.hr.sec_groups[s]:
@@ -266,7 +267,7 @@ class Decorator():
                         secstuff[sec] = '(%10s) g_%-6s = %g [%.1f] ' % (sectype, mech, bar, Erev)
         if verify:
             for i, k in enumerate(secstuff.keys()):
-                print '**%-20s ' % k, secstuff[k]
+                print('**%-20s ' % k, secstuff[k])
                 
 
     def remapSectionType(self, sectype):

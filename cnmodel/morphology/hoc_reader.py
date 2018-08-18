@@ -1,3 +1,4 @@
+from __future__ import print_function
 from neuron import h
 import neuron
 import collections
@@ -159,11 +160,11 @@ class HocReader(object):
                 if mecbar in dir(x):
                     gmech.append(getattr(x, mechanism[1]))
                 else:
-                    print 'hoc_reader:get_density did not find the mechanism in dir x', dir(x)
+                    print('hoc_reader:get_density did not find the mechanism in dir x', dir(x))
             except NameError:
                 return(0.)
             except:
-                print 'hoc_reader:get_density failed to evaluate the mechanisms... '
+                print('hoc_reader:get_density failed to evaluate the mechanisms... ')
                 raise
 
 #        print gmech

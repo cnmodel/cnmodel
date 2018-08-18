@@ -1,3 +1,4 @@
+from __future__ import print_function
 # -*- encoding: utf-8 -*-
 from collections import OrderedDict
 import re
@@ -30,8 +31,8 @@ def get_source(*args, **kwds):
 def print_table(table):
     for k in DATA.keys():
         if table == k[0]:
-            print'data key: ', k
-            print DATA[k][0]
+            print('data key: ', k)
+            print( DATA[k][0])
 
 def get_table_info(table):
     """
@@ -155,6 +156,7 @@ def add_table_data(name, row_key, col_key, data, **kwds):
     #
     # parse table
     #
+
     while len(table[0].strip()) == 0:
         table.pop(0)
     
@@ -199,7 +201,8 @@ def add_table_data(name, row_key, col_key, data, **kwds):
             # If the value contains '±' then a tuple is returned containing the values
             # on either side.
             val, _, source = m.groups()
-            val = unicode(val)
+            #val = unicode(val)  # python 2
+            val = str(val)  # python 3
             if val.strip() == '':
                 val = None
             else:
