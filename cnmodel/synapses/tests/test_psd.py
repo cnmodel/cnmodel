@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 import numpy as np
 import pyqtgraph as pg
@@ -77,7 +78,7 @@ def sgc_psd_test(cell_class, seed, plot=False, tstop=5.0, n_syn=20):
         print('NMDA Receptor conductance in model should be %.16f (table is %.16f)'
                 % (NMDAR_gmax * ratio, NMDAR_gmax))
     cv_correct = (abs(exp_epsc_cv / epsc_cv - 1.0) < 0.1)
-    print 'cv_correct: ', cv_correct
+    print ('cv_correct: ', cv_correct)
     if not cv_correct:
         ratio = exp_epsc_cv/epsc_cv
         print('CV Receptor in synapses.py model should be %.6f (measured = %.6f; table = %.6f)'

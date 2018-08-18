@@ -1,3 +1,4 @@
+from __future__ import print_function
 from collections import OrderedDict
 from scipy import interpolate
 import numpy as np
@@ -116,7 +117,7 @@ class SynapseTest(Protocol):
         self.all_releases = []
         self.all_release_events = []
         start_time = timeit.default_timer()
-        for nrep in xrange(iterations): # could do multiple runs.... 
+        for nrep in list(range(iterations)): # could do multiple runs.... 
             self.reset()
             self['v_pre'] = pre_cell.soma(0.5)._ref_v
             self['t'] = h._ref_t
@@ -199,7 +200,7 @@ class SynapseTest(Protocol):
             self.all_release_events.append(self.release_events())
 
         elapsed = timeit.default_timer() - start_time
-        print 'Elapsed time for %d Repetions: %f' % (iterations, elapsed)
+        print('Elapsed time for %d Repetions: %f' % (iterations, elapsed))
         
     def release_events(self, syn_no=0):
         """
@@ -444,34 +445,34 @@ class SynapseTest(Protocol):
         for i in range(ns):
             if i < len(events['n_spikes']) and events['n_spikes'][i] > 0:
                 v = (i, events['n_spikes'][i], events['n_zones'][i], events['n_releases'][i])
-                print 'Synapse %d:  spikes: %d  zones: %d  releases: %d' % v
-        print ""
-        print 'Total release requests: %d' % events['tot_requests']
-        print 'Total release events:   %d' % events['tot_releases']
-        print 'Release probability: %8.3f' % events['release_p']
+                print ('Synapse %d:  spikes: %d  zones: %d  releases: %d' % v)
+        print ("")
+        print ('Total release requests: %d' % events['tot_requests'])
+        print( 'Total release events:   %d' % events['tot_releases'])
+        print ('Release probability: %8.3f' % events['release_p'])
         if not isinstance(synapse.psd, Exp2PSD):
             prel_final = synapse.terminal.relsite.Dn * synapse.terminal.relsite.Fn
-            print 'Final release probability (Dn * Fn): %8.3f' % prel_final
+            print ('Final release probability (Dn * Fn): %8.3f' % prel_final)
 
 
         #
         # Compute NMDA / AMPA open probability
         #
-        print ""
+        print( "")
         oprob = self.open_probability()
         if 'gly' in oprob:
             glyImax, glyOPmax = oprob['gly']
-            print 'Max GLYR Open Prob: %f' % (glyOPmax,)
-            print 'Max GLYR I: %f' % (glyImax,)
+            print ('Max GLYR Open Prob: %f' % (glyOPmax,))
+            print ('Max GLYR I: %f' % (glyImax,))
         elif 'ampa' in oprob or 'nmda' in oprob:
             nmImax, nmOPmax = oprob['nmda'].values()
             amImax, amOPmax = oprob['ampa'].values()
-            print 'Max NMDAR Open Prob: %f   AMPA Open Prob: %f' % (nmOPmax, amOPmax)
-            print 'Max NMDAR I: %f   AMPA I: %f' % (nmImax, amImax)
+            print ('Max NMDAR Open Prob: %f   AMPA Open Prob: %f' % (nmOPmax, amOPmax))
+            print ('Max NMDAR I: %f   AMPA I: %f' % (nmImax, amImax))
             if nmImax + amImax != 0.0:
-                print '   N/(N+A): %f\n' % (nmImax / (nmImax + amImax))
+                print( '   N/(N+A): %f\n' % (nmImax / (nmImax + amImax)))
             else:
-                print "   (no NMDA/AMPA current; release might have failed)"
+                print( "   (no NMDA/AMPA current; release might have failed)")
 
         self.win = pg.GraphicsWindow()
         self.win.resize(1000, 1000)
@@ -556,30 +557,30 @@ class SynapseTest(Protocol):
         Lat_mean20_late = np.nanmean(events[eventno]['20% latency'][analysisWindow[1]])
         HW_mean_early = np.nanmean(events[eventno]['half width'][analysisWindow[0]])
         HW_mean_late = np.nanmean(events[eventno]['half width'][analysisWindow[1]])
-        print "\n--------------"
-        print "Means:"
-        print "--------------"
+        print( "\n--------------")
+        print( "Means:")
+        print ("--------------")
         #print RT_mean2080_early
         #print Lat_mean20_early
         #print HW_mean_early
-        print 'Early:   RT {0:7.3f} ms   Lat {1:7.3f} ms   HW {2:7.3f} ms'.format(RT_mean2080_early, Lat_mean20_early,
-                                                                                HW_mean_early)
-        print 'Late :   RT {0:7.3f} ms   Lat {1:7.3f} ms   HW {2:7.3f} ms'.format(RT_mean2080_late, Lat_mean20_late,
-                                                                                HW_mean_late)
+        print ('Early:   RT {0:7.3f} ms   Lat {1:7.3f} ms   HW {2:7.3f} ms'.format(RT_mean2080_early, Lat_mean20_early,
+                                                                                HW_mean_early))
+        print ('Late :   RT {0:7.3f} ms   Lat {1:7.3f} ms   HW {2:7.3f} ms'.format(RT_mean2080_late, Lat_mean20_late,
+                                                                                HW_mean_late))
         RT_std2080_early = np.nanstd(events[eventno]['rise time'][analysisWindow[0]])
         RT_std2080_late = np.nanstd(events[eventno]['rise time'][analysisWindow[1]])
         Lat_std20_early = np.nanstd(events[eventno]['20% latency'][analysisWindow[0]])
         Lat_std20_late = np.nanstd(events[eventno]['20% latency'][analysisWindow[1]])
         HW_std_early = np.nanstd(events[eventno]['half width'][analysisWindow[0]])
         HW_std_late = np.nanstd(events[eventno]['half width'][analysisWindow[1]])
-        print "\n--------------"
-        print "Standard Deviations:"
-        print "--------------"
-        print 'Early:   RT {0:7.3f} ms   Lat {1:7.3f} ms   HW {2:7.3f} ms'.format(RT_std2080_early, Lat_std20_early,
-                                                                                HW_std_early)
-        print 'Late :   RT {0:7.3f} ms   Lat {1:7.3f} ms   HW {2:7.3f} ms'.format(RT_std2080_late, Lat_std20_late,
-                                                                                HW_std_late)
-        print "-----------------"
+        print ("\n--------------")
+        print ("Standard Deviations:")
+        print ("--------------")
+        print ('Early:   RT {0:7.3f} ms   Lat {1:7.3f} ms   HW {2:7.3f} ms'.format(RT_std2080_early, Lat_std20_early,
+                                                                                HW_std_early))
+        print ('Late :   RT {0:7.3f} ms   Lat {1:7.3f} ms   HW {2:7.3f} ms'.format(RT_std2080_late, Lat_std20_late,
+                                                                                HW_std_late))
+        print ("-----------------")
 
 
         #

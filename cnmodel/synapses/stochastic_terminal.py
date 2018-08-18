@@ -1,3 +1,4 @@
+from __future__ import print_function
 from neuron import h
 
 from .terminal import Terminal
@@ -48,7 +49,7 @@ class StochasticTerminal(Terminal):
             release zones (True) or just creates a single release zone that
             varies its amplitude based on the depression/facilitation state.
         message : str
-              A message to print when instantiating (mostly for verification of code flow).
+              A message to   when instantiating (mostly for verification of code flow).
         type: str (default: 'lognormal')
             'lognormal' sets the release event latency distribution to use a lognormal function. Currently,
             no other function is supported.
@@ -103,7 +104,7 @@ class StochasticTerminal(Terminal):
             
         message='  >> creating terminal with %d release zones using lognormal release latencies (coh4)' % nzones
         if debug:
-            print message
+            print(message)
         terminal = pre_sec
         #terminal.push()
         if calcium_pars is not None:
@@ -280,7 +281,7 @@ class StochasticTerminal(Terminal):
         
         There are other data sets in the source that are commented out.
         """
-        #print "USING average kinetics for Bushy IPSCs"
+        #print( "USING average kinetics for Bushy IPSCs")
 
         # average of 16cells for 100 Hz (to model); no recovery.
         self.relsite.F = 0.18521
@@ -314,14 +315,14 @@ class StochasticTerminal(Terminal):
             3: select = 3, use data from 31aug08b (single cell, clean dataset)
         
         """
-       # print "Using bushy ipsc"
+       # print ("Using bushy ipsc")
 
         if select is None or select > 4 or select <= 0:
             self.bushy_ipsc_average()
             return
 
         if select is 1: # 30aug08f
-#            print "using 30aug08f ipsc"
+#            print ("using 30aug08f ipsc")
             self.relsite.F = 0.221818
             self.relsite.k0 = 0.003636364
             self.relsite.kmax = 0.077562107
@@ -336,7 +337,7 @@ class StochasticTerminal(Terminal):
             self.relsite.glu = 1.000000
 
         if select is 2: #30aug08h
-#            print "using 30aug08H ipsc"
+#            print ("using 30aug08H ipsc")
             self.relsite.F = 0.239404
             self.relsite.k0 = 3.636364 / 1000.
             self.relsite.kmax = 16.725479 / 1000.
@@ -351,7 +352,7 @@ class StochasticTerminal(Terminal):
             self.relsite.glu = 1.000000
 
         if select is 3:
-#            print "using IPSC#3 "
+#            print ("using IPSC#3 ")
             self.relsite.F = 0.29594
             self.relsite.k0 = 0.44388 / 1000.0
             self.relsite.kmax = 15.11385 / 1000.0

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from neuron import h
 import numpy as np
 import scipy
@@ -186,8 +187,8 @@ class IVCurve(Protocol):
 
         # Connect recording vectors
         self['v_soma'] = self.cell.soma(0.5)._ref_v
-        self['q10'] = self.cell.soma(0.5).ihpyr_adj._ref_q10
-        self['ih_ntau'] = self.cell.soma(0.5).ihpyr_adj._ref_kh_n_tau
+        # self['q10'] = self.cell.soma(0.5).ihpyr_adj._ref_q10
+        # self['ih_ntau'] = self.cell.soma(0.5).ihpyr_adj._ref_kh_n_tau
         self['i_inj'] = istim._ref_i
         self['time'] = h._ref_t
 
@@ -205,8 +206,8 @@ class IVCurve(Protocol):
         self.voltage_traces.append(self['v_soma'])
         self.current_traces.append(self['i_inj'])
         self.time_values = np.array(self['time']-self.initdelay)
-        self.mon_q10 = np.array(self['q10'])
-        self.mon_ih_ntau = np.array(self['ih_ntau'])
+        # self.mon_q10 = np.array(self['q10'])
+        # self.mon_ih_ntau = np.array(self['ih_ntau'])
 
     def peak_vm(self, window=0.5):
         """
@@ -555,4 +556,4 @@ class IVCurve(Protocol):
             #y = fit.eval(x=t, **fit.init_params.valuesdict())
             #Vplot.plot(t, y, pen={'color': 'b', 'style': pg.QtCore.Qt.DashLine})
             
-        print "Resting membrane potential: %0.1f mV\n" % self.rest_vm()
+        print( "Resting membrane potential: %0.1f mV\n" % self.rest_vm())

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import pyqtgraph as pg
 
@@ -108,9 +109,9 @@ class PopulationTest(Protocol):
 
 
     def show(self):
-        print "Connected %d presynaptic cells to 1 postsynaptic cell." % len(self.pre_cell_inds)
-        print "Postsynaptic CF = %0.2f" % self.post_pop.cells[self.post_cell_ind]['cf']
-        print "Presynaptic CF = %s" % self.pre_pop.cells[self.pre_cell_inds]['cf']
+        print ("Connected %d presynaptic cells to 1 postsynaptic cell." % len(self.pre_cell_inds))
+        print ("Postsynaptic CF = %0.2f" % self.post_pop.cells[self.post_cell_ind]['cf'])
+        print ("Presynaptic CF = %s" % self.pre_pop.cells[self.pre_cell_inds]['cf'])
         
         self.win = pg.GraphicsWindow()
         self.win.resize(1000, 1000)
