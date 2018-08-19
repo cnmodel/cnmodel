@@ -1,6 +1,7 @@
 *.pyc
 *.npz
 *.lock
+*.bak
 
 i386
 x86_64
