@@ -48,7 +48,7 @@ class RunTrial():
         synapses = []
         j = 0
         xmtr = {}
-        for nsgc, sgc in enumerate(range(info['n_sgc'])):
+        for nsgc, sgc in enumerate(range(info['n_sic0'])):
             pre_cells.append(cells.DummySGC(cf=info['cf'], sr=info['sr']))
             if synapseType == 'simple':
                 synapses.append(pre_cells[-1].connect(post_cell, type=synapseType))
@@ -60,7 +60,7 @@ class RunTrial():
                     xmtr['xmtr%04d'%j].record(synapses[-1].terminal.relsite._ref_XMTR[i])
                     j = j + 1
                 synapses[-1].terminal.relsite.Dep_Flag = False  # no depression in these simulations
-            pre_cells[-1].set_sound_stim(info['stim'], seed = info['seed'] + nsgc, simulator=info['simulator'])
+            pre_cells[-1].set_sound_stim(info['stim'], seed = info['seed'] + nsgc, simulator=str(info['simulator']))
         Vm = h.Vector()
         Vm.record(post_cell.soma(0.5)._ref_v)
         rtime = h.Vector()
@@ -93,7 +93,7 @@ class SGCInputTestPSTH(Protocol):
         self.fMod = 100.  # mod freq, Hz
         self.dMod = 0.  # % mod depth, Hz
         self.dbspl = 50.
-        self.simulator = simulator
+        self.simulator = str(simulator)
         self.sr = 1  # set SR group
         if self.stimulus == 'SAM':
             self.stim = sound.SAMTone(rate=self.Fs, duration=self.run_duration, f0=self.f0, 
@@ -236,9 +236,10 @@ class SGCInputTestPSTH(Protocol):
         self.win.show()
 
 class Variations(Protocol):
-    def __init__(self, runtype, runname):
+    def __init__(self, runtype, runname, simulator):
         self.runtype = runtype
         self.runname = runname
+        self.simulator = str(simulator)
         self.npost = 5  # number of post cells to test
         self.npre = 3  # number of presynaptic cells
         self.reset()
@@ -294,7 +295,7 @@ class Variations(Protocol):
         self.fMod = fmod  # mod freq, Hz
         self.dMod = dmod  # % mod depth, Hz
         self.dbspl = dbspl
-        self.simulator = simulator
+#        self.simulator = str(simulator)
         self.sr = 1  # set SR group
         if self.stimulus == 'SAM':
             self.stim = sound.SAMTone(rate=self.Fs, duration=self.run_duration, f0=self.f0, 
@@ -470,8 +471,8 @@ class Variations(Protocol):
             print(cell_info)
             res = {'cells': cell_info, 'results': results}
             if runname is not None:
-                f = open(runname, 'w')
-                pickle.dump(res, f)
+                f = open(runname, 'wb')
+                pickle.dump(res, f, -1)
                 f.close()
                 
 
@@ -516,7 +517,7 @@ class Variations(Protocol):
                     post_cell.initial_mechanisms = None  # forget the mechanisms we set up initially
                     post_cell.save_all_mechs()  # and save new ones because we are explicitely varying them
                     self.make_stimulus(stimulus=stimulus, cf=cf, f0=f0, rundur=rundur, pipdur=pipdur, 
-                        dbspl=50., simulator=None, fmod=fmod, dmod=dmod)
+                        dbspl=50., simulator=self.simulator, fmod=fmod, dmod=dmod)
                     
                     pre_cells = []
                     synapses = []
@@ -528,7 +529,7 @@ class Variations(Protocol):
                     p_reps = [] # pre spike on 0'th sgc
                     for j in range(nrep):
                         for prec in range(len(pre_cells)):
-                            pre_cells[prec].set_sound_stim(self.stim, seed=seed)
+                            pre_cells[prec].set_sound_stim(self.stim, seed=seed, simulator=self.simulator)
                             seed += 1
                             # for i in range(synapses[-1].terminal.n_rzones):
                             #     xmtr['xmtr%04d'%j] = h.Vector()
@@ -565,8 +566,8 @@ class Variations(Protocol):
             stim_info = {'nreps': nrep, 'cf': cf, 'f0': f0, 'rundur': rundur, 'pipdur': pipdur, 'dbspl': dbspl, 'fmod': fmod, 'dmod': dmod}
             res = {'cells': cell_info, 'stim': stim_info, 'results': results}
             if runname is not None:
-                f = open(runname, 'w')
-                pickle.dump(res, f)
+                f = open(runname, 'wb')
+                pickle.dump(res, f, -1)
                 f.close()
 
     #
@@ -591,7 +592,7 @@ class Variations(Protocol):
     #             pen=pg.mkPen(pg.intColor(m, len(self.post_cells)), hues=len(self.post_cells), width=1.0))
 
 def showpicklediv(name):
-    f = open(name, 'r')
+    f = open(name, 'rb')
     result = pickle.load(f)
     f.close()
     d = result['results']
@@ -652,7 +653,7 @@ def showplots(name):
     """
     Show traces from sound stimulation - without current injection
     """
-    f = open(name, 'r')
+    f = open(name, 'rb')
     d = pickle.load(f)
     f.close()
     ncells = len(d['results'])
@@ -716,7 +717,7 @@ def showplots(name):
 # #        vector_plot(fig, vs['ph'], np.ones(len(vs['ph'])), yp = apos)
 #         phase_hist(fig, vs['ph'], yp=apos)
 #        phase_hist(fig, pre_vs['ph'], yp=apos)
-    prot = Variations(runtype, runname)
+    prot = Variations(runtype, runname, 'cochlea')
 #   stim_info = {'nreps': nrep, 'cf': cf, 'f0': f0, 'rundur': rundur, 'pipdur': pipdur, 'dbspl': dbspl, 'fmod': fmod, 'dmod': dmod}
     if stiminfo['dmod'] > 0:
         stimulus = 'SAM'
@@ -747,7 +748,7 @@ if __name__ == '__main__':
     if panel == 'a':
         runtype = 'IV'
         runname = 'Figure6_IV'
-    elif panel == 'b':
+    elif panel == 'd':
         runtype = 'sound'
         runname = 'Figure6_AN'
     else:
@@ -755,7 +756,7 @@ if __name__ == '__main__':
     if panel is None:
         raise ValueError("Must specify figure panel to generate: 'a', 'b'")
     if runtype in ['sound', 'IV']:
-         prot = Variations(runtype, runname)
+         prot = Variations(runtype, runname, 'cochlea')
          if runtype == 'IV':
              start_time = timeit.default_timer()
              prot.runIV(parallelize = True)

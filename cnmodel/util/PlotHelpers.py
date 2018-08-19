@@ -59,7 +59,7 @@ def _ax_tolist(ax):
     if isinstance(ax, list):
         return(ax)
     elif isinstance(ax, dict):
-        axlist = axl.keys()
+        axlist = list(axl.keys())
         return([ax for ax in axl[axlist]])
     else:
         return([ax])
@@ -102,7 +102,7 @@ def nice_plot(axl, spines=['left', 'bottom'], position=10, direction='inward', a
         if ax is None:
             continue
         #print 'ax: ', ax
-        for loc, spine in ax.spines.iteritems():
+        for loc, spine in ax.spines.items():
             if loc in spines:
                 spine.set_color('k')
                 #print 'spine color : k'
@@ -189,7 +189,7 @@ def setY(ax1, ax2):
     
     """
     if type(ax1) is list:
-        print 'PlotHelpers: cannot use list as source to set Y axis'
+        print('PlotHelpers: cannot use list as source to set Y axis')
         return
     ax2 = _ax_tolist(ax2)
     # if type(ax2) is not list:
@@ -219,7 +219,7 @@ def setX(ax1, ax2):
     
     """
     if type(ax1) is list:
-        print 'PlotHelpers: cannot use list as source to set Y axis'
+        print('PlotHelpers: cannot use list as source to set Y axis')
         return
     ax2 = _ax_tolist(ax2)
     # if type(ax2) is not list:
@@ -262,7 +262,7 @@ def labelPanels(axl, axlist=None, font='Arial', fontsize=18, weight='normal', xy
 
     """
     if isinstance(axl, dict):
-        axlist = axl.keys()
+        axlist = list(axl.keys())
     axl = _ax_tolist(axl)
     # if isinstance(axl, dict):
     #     axt = [axl[x] for x in axl]
@@ -305,7 +305,7 @@ def listAxes(axd):
         if type(axd) is list:
             return axd
         else:
-            print 'listAxes expects dictionary or list; type not known (fix the code)'
+            print('listAxes expects dictionary or list; type not known (fix the code)')
             raise
     axl = [axd[x] for x in axd]
     return axl
@@ -316,7 +316,7 @@ def cleanAxes(axl):
     for ax in axl:
         if ax is None:
             continue
-        for loc, spine in ax.spines.iteritems():
+        for loc, spine in ax.spines.items():
             if loc in ['left', 'bottom']:
                 spine.set_visible(True)
             elif loc in ['right', 'top']:
@@ -467,7 +467,7 @@ def adjust_spines(axl, spines = ['left', 'bottom'], direction = 'outward', dista
         else:
             # no xaxis ticks
             ax.xaxis.set_ticks([])
-        for loc, spine in ax.spines.iteritems():
+        for loc, spine in ax.spines.items():
             if loc in spines:
                 spine.set_position((direction,distance)) # outward by 10 points
                 if smart is True:
@@ -558,8 +558,8 @@ def calbar(axl, calbar=None, axesoff=True, orient='left', unitNames=None, fontsi
                     horizontalalignment = 'right', verticalalignment = 'center',
                     fontsize = fontsize, weight=weight, family='sans-serif',)
             else:
-                print "PlotHelpers.py: I did not understand orientation: %s" % (orient)
-                print "plotting as if set to left... "
+                print("PlotHelpers.py: I did not understand orientation: %s" % (orient))
+                print("plotting as if set to left... ")
                 ax.plot([calbar[0], calbar[0], calbar[0]+calbar[2]], 
                     [calbar[1]+calbar[3], calbar[1], calbar[1]],
                     color = 'k', linestyle = '-', linewidth = 1.5)
@@ -753,7 +753,7 @@ def circles(x, y, s, c='b', ax=None, vmin=None, vmax=None, **kwargs):
     if ax is None:
         ax = mpl.gca()    
 
-    if isinstance(c,basestring):
+    if isinstance(c,str):
         color = c     # ie. use colors.colorConverter.to_rgba_array(c)
     else:
         color = None  # use cmap, norm after collection is created
@@ -828,7 +828,7 @@ def rectangles(x, y, sw, sh=None, c='b', ax=None, vmin=None, vmax=None, **kwargs
     if ax is None:
         ax = mpl.gca()    
 
-    if isinstance(c,basestring):
+    if isinstance(c,str):
         color = c     # ie. use colors.colorConverter.to_rgba_array(c)
     else:
         color = None  # use cmap, norm after collection is created
@@ -1024,7 +1024,7 @@ class Plotter():
             gridbuilt = True
         # 2. specified values - starts with Nx1 subplots, then reorganizes according to shape boxes
         elif isinstance(rcshape, dict):  # true for OrderedDict also
-            nplots = len(rcshape.keys())
+            nplots = len(list(rcshape.keys()))
             gs = gridspec.GridSpec(nplots, 1)
             rc = (nplots, 1)
             self.axarr = np.empty(shape=(rc[0], rc[1],), dtype=object)  # use a numpy object array, indexing features
@@ -1037,7 +1037,7 @@ class Plotter():
             for k, pk in enumerate(rcshape.keys()):
                 self.axdict[pk] = self.axarr[k,0]
             plo = labeloffset
-            self.axlabels = labelPanels(self.axarr.tolist(), axlist=rcshape.keys(), xy=(-0.095+plo[0], 0.95+plo[1]), fontsize=fontsize['panel'])
+            self.axlabels = labelPanels(self.axarr.tolist(), axlist=list(rcshape.keys()), xy=(-0.095+plo[0], 0.95+plo[1]), fontsize=fontsize['panel'])
             self.resize(rcshape)
         else:
             raise ValueError('Input rcshape must be list/tuple or dict')
@@ -1050,7 +1050,7 @@ class Plotter():
                     self.axarr[k,] = mpl.subplot(gs[g[0]:g[1], g[2]:g[3]])
             elif isinstance(axmap, dict) or isinstance(axmap, OrderedDict): # keys are panel labels
                 if not gridbuilt:
-                    self.axarr = np.empty(shape=(len(axmap.keys()), 1), dtype=object)
+                    self.axarr = np.empty(shape=(len(list(axmap.keys())), 1), dtype=object)
                 na = np.prod(self.axarr.shape)  # number of axes
                 for k, pk in enumerate(axmap.keys()):
                     g = axmap[pk]  # get the gridspec info
@@ -1089,7 +1089,7 @@ class Plotter():
 
         if label:
             if isinstance(axmap, dict) or isinstance(axmap, OrderedDict):  # in case predefined... 
-                self.axlabels = labelPanels(self.axarr.ravel().tolist(), axlist=axmap.keys(), xy=(-0.095+p[0], 0.95+p[1]), fontsize=fontsize['panel'])
+                self.axlabels = labelPanels(self.axarr.ravel().tolist(), axlist=list(axmap.keys()), xy=(-0.095+p[0], 0.95+p[1]), fontsize=fontsize['panel'])
                 return
             self.axlist = []
             if roworder == True:
@@ -1172,7 +1172,7 @@ class Plotter():
                 # print ('group: ', group)
                 r = self.arrangement[colname].index(group)  # get the row position this way
                 return(self.axarr[r, c])
-        print('Group {:s} not in the arrangement'.format(group))
+        print(('Group {:s} not in the arrangement'.format(group)))
         return None
         
         sizer = {'A': {'pos': [0.08, 0.22, 0.50, 0.4]}, 'B1': {'pos': [0.40, 0.25, 0.60, 0.3]}, 'B2': {'pos': [0.40, 0.25, 0.5, 0.1]},
@@ -1210,7 +1210,7 @@ class Plotter():
             bbox.y0 = sizer[s]['pos'][2]
             bbox.y1 = sizer[s]['pos'][3] + sizer[s]['pos'][2]  # offsets are in figure fractions
             ax.set_position(bbox)
-            if 'labelpos' in sizer[s].keys() and len(sizer[s]['labelpos']) == 2:
+            if 'labelpos' in list(sizer[s].keys()) and len(sizer[s]['labelpos']) == 2:
                 x, y = sizer[s]['labelpos']
                 self.axlabels[i].set_x(x)
                 self.axlabels[i].set_y(y)
@@ -1224,7 +1224,7 @@ if __name__ == '__main__':
     labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
     l = [(a, a+2, 0, 1) for a in range(0, 6, 2)]
     r = [(a, a+1, 1, 2) for a in range(0, 6)]
-    axmap = OrderedDict(zip(labels, l+r))
+    axmap = OrderedDict(list(zip(labels, l+r)))
     P = Plotter((6,2), axmap=axmap, figsize=(6., 6.), label=True)
 #    P = Plotter((2,3), label=True)  # create a figure with plots
     # for a in P.axarr.flatten():
@@ -1235,7 +1235,7 @@ if __name__ == '__main__':
     for i, a in enumerate(P.axarr.flatten()):
         label = string.uppercase[i]
         axd[label] = a
-    for a in axd.keys():
+    for a in list(axd.keys()):
         axd[a].plot(np.random.random(10), np.random.random(10))
     nice_plot([axd[a] for a in axd], position=-0.1)
     cleanAxes([axd['B'], axd['C']])

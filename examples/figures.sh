@@ -38,7 +38,7 @@ case $1 in
          
      *)
          echo $"Plot selected figures from paper"
-         echo $"Usage: $0 {2a | 2b | 2c | 3 | 4 | 5 | 6a | 6b | 7}"
+         echo $"Usage: $0 {2a | 2b | 2c | 3 | 4 | 5 | 6a | 6d | 7}"
          exit 1         
 esac
 

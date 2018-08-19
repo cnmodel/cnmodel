@@ -78,11 +78,11 @@ def play():
                          ('clicks', (clickwins, sound.ClickTrain)),
                          ('fmsweep', (fmwins, sound.FMSweep))])
     if stimarg == 'all':
-        stimlist = stims.keys()
+        stimlist = list(stims.keys())
     else:
         stimlist = [stimarg]
     for stim in stimlist:
-        print stim
+        print(stim)
         if stim in ['clicks']:
             wave = stims[stim][1](rate=Fs, duration=1.0, dbspl=level,
                              click_duration=1e-4, click_starts=1e-3*np.linspace(10, 500, 10))
@@ -99,7 +99,7 @@ def play():
                                # noverlap=512, scaling='spectrum')
             specs[stim][0].plot(f, np.sqrt(Pxx_spec))
         if HAVE_PYSOUNDS:
-            print ('Playing %s' % stim)
+            print(('Playing %s' % stim))
             PS.playSound(wave.sound, wave.sound, Fs)
 
     if plots and sys.flags.interactive == 0:
