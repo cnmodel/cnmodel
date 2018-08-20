@@ -2,9 +2,18 @@
 *.npz
 *.lock
 *.bak
+*.dat
 
 i386
 x86_64
 cnmodel/anmodel
 doc/build
+build
+dist/
+cnmodel.egg*
+.cache*
+.pytest*
+Figure6*
+
+
 
