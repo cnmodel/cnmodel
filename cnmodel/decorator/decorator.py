@@ -89,7 +89,7 @@ class Decorator():
                  .format(cellType, self.channelInfo.modelType))
         
         cell.hr.mechanisms = []
-        for s in cell.hr.sec_groups.keys():
+        for s in list(cell.hr.sec_groups.keys()):
             sectype = self.remapSectionType(s.rsplit('[')[0])
             if sectype not in cell.channelMap.keys():
                 print('encountered unknown section group type: %s  Not decorating' % sectype)
@@ -104,7 +104,7 @@ class Decorator():
             #   a. only insert the mechanism once
             #   b. only adjust the relevant parameter
             
-            for mechname in cell.channelMap[sectype].keys():
+            for mechname in list(cell.channelMap[sectype].keys()):
                 mech = mechname.split('_')[0] # get the part before the _
                 parameter = mechname.split('_')[1]  # and the part after
                 if mech not in self.gbar_mapper.keys():
@@ -118,6 +118,8 @@ class Decorator():
                 if mech not in cell.hr.mechanisms:  
                     cell.hr.mechanisms.append(mech)  # just add the mechanism to our list
                 x = nu.Mechanism(mech)
+                if cell.hr.sec_groups[s] == set():
+                    continue  # no sections of this type
                 for sec in cell.hr.sec_groups[s]:  # insert into all the sections of this type (group)
                     try:
                         x.insert_into(cell.hr.get_section(sec))
@@ -232,10 +234,8 @@ class Decorator():
         print('  Looking for sec_groups: ', sorted(cell.hr.sec_groups.keys()))
         print('  Available Channel Maps: ', sorted(cell.channelMap.keys()))
         secstuff = {}
-        for s in cell.hr.sec_groups.keys():
-            print('s: ', s)
+        for s in list(cell.hr.sec_groups.keys()):
             sectype = self.remapSectionType(s.rsplit('[')[0])
-            print(sectype)
             if sectype not in cell.channelMap.keys():
                 if sectype in ['undefined']:  # skip undefined sections
                     continue
@@ -243,7 +243,7 @@ class Decorator():
                 print('Cell morphology file: %s \033[0m' % cell.morphology_file)
                 continue
 #            print 'Validating Section: %s' % s
-            for mech in cell.channelMap[sectype].keys():
+            for mech in list(cell.channelMap[sectype].keys()):
                 if mech not in self.gbar_mapper.keys():
                     continue
                 if mech in self.excludeMechs:

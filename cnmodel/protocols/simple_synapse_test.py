@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 from neuron import h
 import pyqtgraph as pg
 
