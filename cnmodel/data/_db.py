@@ -1,5 +1,4 @@
 from __future__ import print_function
-# -*- encoding: utf-8 -*-
 from collections import OrderedDict
 import re
 
@@ -146,7 +145,7 @@ def add_table_data(name, row_key, col_key, data, **kwds):
             break
         table.append(line)
     
-    #print desc
+    #print desc 
     #print table
     
     # parse remaining lines as sources
@@ -155,10 +154,12 @@ def add_table_data(name, row_key, col_key, data, **kwds):
     
     #
     # parse table
-    #
+    # table might be empty, so take care of that first.
+    if table == []:
+        return []  # no changes
 
     while len(table[0].strip()) == 0:
-        table.pop(0)
+            table.pop(0)
     
     spaces = [c == ' ' for c in table[0]]
     cols = [0] + [i for i in range(1, len(spaces)) if spaces[i-1] and not spaces[i]]

@@ -339,6 +339,7 @@ class SAMNoise(Sound):
                        o['pip_duration'], o['pip_start'], o['dbspl'],
                        o['fmod'], o['dmod'], 0., o['seed'])
 
+
 class SAMTone(Sound):
     """ SAM tones with cosine-ramped edges.
     
@@ -459,6 +460,229 @@ class SAMNoise(Sound):
                         o['dbspl'], o['pip_duration'], o['pip_start'], o['seed'])
         return sinusoidal_modulation(self.time, basenoise, o['pip_start'], o['fmod'], o['dmod'], 0.)
 
+
+class ComodulationMasking(Sound):
+    """
+    Parameters
+    ----------
+    rate : float
+        sample rate, in Hz
+    
+    duration : float
+
+        entire waveform duration in seconds
+    pip_start : float
+        time to start the test tone pips (seconds)
+    
+    pip_duration : float
+        duration of the test (target) tone pips
+    
+    ramp_duration : float
+        rise/fall of the stimulus envelope at onset and offset
+        
+    f0 : float (kHz)
+        Center frequency for the target tone, in kHz
+    
+    dbspl : float
+        tone intensity, in dB SPL (re 0.00002 dynes/cm2)
+    
+    fmod : float
+        amplitude modulation frequency, in Hz
+    
+    dmod : float
+        amplitude modulation depth, in 
+    
+    flanking_type : string
+        One of:
+            'Multitone' : multiple tones, with phase, spacing and # of bands specified as below
+            'NBNoise' : the flanking stimulus is made up of narrow band noises (not implemented)
+            'None' : no flanking sounds (just on-target stimuli)
+    
+    flanking_spacing : float
+        Spacing of flanking bands in octaves from the center frequency, f0
+    
+    flanking_phase : string
+        One of:
+            'Comodulated': all of the flanking tones are comodulated in phase 
+                with the target at the same frequency and depth
+            'Codeviant' : The flanking bands have the same amplitude and frequency
+                as the target, but the phase of each band is different. Phases are
+                calculated so that all the bands wrap around 2*pi
+            'Random': The phases are selected at random. This is probably best only
+                used when there are a large number of flanking bands.
+    
+    flanking_bands : int
+        Number of flanking bands on either side of f0, spaced accordingly.
+    
+    Returns
+    -------
+    array :
+        waveform
+    
+    """
+    def __init__(self, **kwds):
+        print (kwds)
+        for k in ['rate', 'duration', 'pip_duration', 'f0', 'dbspl', 'fmod', 'dmod', 'pip_start', 'ramp_duration',
+                  'flanking_type', 'flanking_spacing', 'flanking_phase', 'flanking_bands']:
+            if k not in kwds:
+                raise TypeError("Missing required argument '%s'" % k)
+        Sound.__init__(self, **kwds)
+    
+    def generate(self):
+        
+        o = self.opts
+        # start with center tone
+        onfreqmasker = piptone(self.time, o['ramp_duration'], o['rate'], o['f0'],
+                       o['dbspl'], o['pip_duration'], o['pip_start'])
+        onfreqmasker = sinusoidal_modulation(self.time, onfreqmasker, o['pip_start'],
+            o['fmod'], o['dmod'], 0.)
+        tardelay = 0.5/o['fmod']  # delay by one half cycle
+        target = piptone(self.time, o['ramp_duration'], o['rate'], o['f0'],
+                       o['dbspl'], o['pip_duration']-tardelay, [p + tardelay for p in o['pip_start']])
+        target = sinusoidal_modulation(self.time, target, [p + tardelay for p in o['pip_start']],
+                       o['fmod'], o['dmod'], 0.)
+        if o['flanking_type'] not in ['None', 'MultiTone']:
+            raise ValueError('Unknown flanking_type: %s' % o['flanking_type'])
+        if o['flanking_type'] in ['None', 'Reference']:
+            return (onfreqmasker+target)/2.0  # scaling...
+        if o['flanking_type'] in ['MultiTone']:
+            nband = o['flanking_bands']
+            octspace = o['flanking_spacing']
+            f0 = o['f0']
+            flankfs = [f0*(2**(octspace*(k+1))) for k in range(nband)]
+            flankfs.extend([f0/((2**(octspace*(k+1)))) for k in range(nband)])
+            flankfs = sorted(flankfs)
+            flanktone = [[]]*len(flankfs)
+            for i, fs in enumerate(flankfs):
+                flanktone[i] = piptone(self.time, o['ramp_duration'], o['rate'], flankfs[i],
+                               o['dbspl'], o['pip_duration'], o['pip_start'])
+        print(('type ,phase: ', o['flanking_type'], o['flanking_phase']))
+        if o['flanking_type'] == 'NBnoise':
+            raise ValueError('Flanking type nbnoise not yet implemented')
+        if o['flanking_phase'] == 'Comodulated':
+                ph = np.zeros(len(flankfs))
+        if o['flanking_phase'] == 'Codeviant':
+                ph = 2.0*np.pi*np.arange(-o['flanking_bands'], o['flanking_bands']+1, 1)/o['flanking_bands']
+        if o['flanking_phase'] == 'Random':
+                ph = 2.0*np.pi*np.arange(-o['flanking_bands'], o['flanking_bands']+1, 1)/o['flanking_bands']
+                raise ValueError('Random flanking phases not implemented')
+        print(('flanking phases: ', ph))
+        print (len(flanktone))
+        print(('flanking freqs: ', flankfs))
+        for i, fs in enumerate(flankfs):
+            flanktone[i] = sinusoidal_modulation(self.time, flanktone[i],
+                    o['pip_start'], o['fmod'], o['dmod'], ph[i])
+            if i == 0:
+                maskers = flanktone[i]
+            else:
+                maskers = maskers + flanktone[i]
+        signal = (onfreqmasker+maskers+target)/(o['flanking_bands']+2)
+        return signal
+
+
+class DynamicRipple(Sound):
+    def __init__(self, **kwds):
+        for k in ['rate', 'duration']:
+            if k not in kwds:
+                raise TypeError("Missing required argument '%s'" % k)
+        # if kwds['pip_duration'] < kwds['ramp_duration'] * 2:
+        #     raise ValueError("pip_duration must be greater than (2 * ramp_duration).")
+        import DMR
+        self.dmr = DMR.DMR()
+        Sound.__init__(self, **kwds)
+    
+    def generate(self):
+        """
+        Call to compute a dynamic ripple stimulus
+        
+        Returns
+        -------
+        array :
+           
+           generated waveform
+        """
+        o = self.opts
+        self.dmr.set_params(Fs=o['rate'], duration=o['duration']+1./o['rate'])
+        self.dmr.make_waveform()
+        self._time = self.dmr.vTime # get time from the generator, not linspace
+        return(self.dmr.vStim)
+
+
+class SpeechShapedNoise(Sound):
+    """
+    Adapted from http://www.srmathias.com/speech-shaped-noise/
+    """
+    def __init__(self, **kwds):
+        for k in ['rate', 'duration', 'waveform', 'samplingrate']:
+            if k not in kwds:
+                raise TypeError("Missing required argument '%s'" % k)
+        # if kwds['pip_duration'] < kwds['ramp_duration'] * 2:
+        #     raise ValueError("pip_duration must be greater than (2 * ramp_duration).")
+        Sound.__init__(self, **kwds)
+    
+    def generate(self):
+        o = self.opts
+        print('opts: ', o)
+        ssn, t = make_ssn(o['rate'], o['duration'], o['waveform'].sound, o['samplingrate'])
+        self._time = t  # override time array because we read a wave file
+        # if self.opts['duration'] == 0:
+        #     self.opts['duration'] = np.max(t) - 1./o['rate']
+        return ssn
+
+
+class RandomSpectrumShape(Sound):
+    """
+    Random Spectral Shape stimuli
+    log-spaced tones
+    Amplitudes adjusted in groups of 4 or 8 (amp_group_size)
+    Amplitude SD (amp_sd)
+    Frequency range (octaves above and below f0) (octaves)
+    spacing (fraction of octave: e.g, 1/8 or 1/64 as 8 or 64) (spacing)
+    
+    Generates one sample
+    
+    Young and Calhoun, 2005
+    Yu and Young, 2000
+    """
+    def __init__(self, **kwds):
+        for k in ['rate', 'duration', 'f0', 'dbspl', 'pip_duration', 'pip_start',
+                  'ramp_duration', 'amp_group_size', 'amp_sd', 'spacing', 'octaves']:
+            if k not in kwds:
+                raise TypeError("Missing required argument '%s'" % k)
+        if kwds['pip_duration'] < kwds['ramp_duration'] * 2:
+            raise ValueError("pip_duration must be greater than (2 * ramp_duration).")
+        if kwds['f0'] > kwds['rate'] * 0.5:
+            raise ValueError("f0 must be less than (0.5 * rate).")
+        
+        Sound.__init__(self, **kwds)
+    
+    def generate(self):
+        o = self.opts
+        octaves = o['octaves']
+        lowf = o['f0']/octaves
+        highf = o['f0']*octaves
+        freqlist = np.logspace(np.log2(lowf), np.log2(highf), num=o['spacing']*octaves*2, endpoint=True, base=2)
+        amplist = np.zeros_like(freqlist)
+        db = o['dbspl']
+        # assign amplitudes
+        if db == None:
+            db = 80.
+        groupsize = o['amp_group_size']
+        for i in range(0, len(freqlist), groupsize):
+            if o['amp_sd'] > 0.:
+                a = np.random.normal(scale=o['amp_sd'])
+            else:
+                a = 0.
+            amplist[i:i+groupsize] = 20.0*np.log10(a + db)
+        for i in range(len(freqlist)):
+            wave = piptone(self.time, o['ramp_duration'], o['rate'], freqlist[i],
+                    amplist[i], o['pip_duration'], o['pip_start'], pip_phase=np.pi*2.0*np.random.rand())
+            if i == 0:
+                result = wave
+            else:
+                result = result + wave
+        return result/(np.sqrt(np.mean(result**2.0))) # scale by rms level
+        
 
 class ReadWavefile(Sound):
     """ Read a .wav file from disk, possibly converting the sample rate and the scale
@@ -825,4 +1049,55 @@ def fmsweep(t, start, duration, freqs, ramp, dBSPL):
         method=ramp, phi=0, vertex_zero=True)
     sw = np.sqrt(2) * dbspl_to_pa(dBSPL) * sw
     return sw
+
+
+def make_ssn(rate, duration, sig, samplingrate):
+        """
+        Speech-shaped noise
+        Adapted from http://www.srmathias.com/speech-shaped-noise/
+        Created on Thu Jun 26 12:42:08 2014
+        @author: smathias
+        """
+        # note rate is currently ignored...
+        sig = np.array(sig).astype('float64')
+        if rate != samplingrate:  # interpolate to the current system sampling rate from the original rate
+            sig = np.interp(np.arange(0, len(sig)/rate, 1./rate),
+                np.arange(0, len(sig)/samplingrate), 1./samplingrate)
+        sig = 2*sig/np.max(sig)
+        z, t = noise_from_signal(sig, rate, keep_env=True)
+        return z, t
+
+
+def noise_from_signal(x, fs=40000, keep_env=True):
+    """Create a noise with same spectrum as the input signal.
+    Parameters
+    ----------
+    x : array_like
+        Input signal.
+    fs : int
+         Sampling frequency of the input signal. (Default value = 40000)
+    keep_env : bool
+         Apply the envelope of the original signal to the noise. (Default
+         value = False)
+    Returns
+    -------
+    ndarray
+        Noise signal.
+    """
+    x = np.asarray(x)
+    n_x = x.shape[-1]
+    n_fft = next_pow_2(n_x)
+    X = np.fft.rfft(x, next_pow_2(n_fft))
+    # Randomize phase.
+    noise_mag = np.abs(X) * np.exp(
+        2. * np.pi * 1j * np.random.random(X.shape[-1]))
+    noise = np.real(np.fft.irfft(noise_mag, n_fft))
+    out = noise[:n_x]
+    if keep_env:
+        env = np.abs(scipy.signal.hilbert(x))
+        [bb, aa] = scipy.signal.butter(6., 50. / (fs / 2.))  # 50 Hz LP filter
+        env = scipy.signal.filtfilt(bb, aa, env)
+        out *= env
+    t = np.arange(0, (len(out))/fs, 1./fs)
+    return out, t
 
