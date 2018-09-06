@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 from __future__ import print_function
 from collections import OrderedDict
 import re
@@ -234,10 +235,6 @@ def add_table_data(name, row_key, col_key, data, **kwds):
                     raise ValueError("Table cell (%d, %d) has unknown source key: '%s'" % (i, j, source))
             
             cells[i][j] = (val, source)
-    
-    #print col_names
-    #print row_names
-    #print cells
 
     changes = [] # a list of parameters that are changed if we are rewriting a table
     for i,row in enumerate(row_names):
