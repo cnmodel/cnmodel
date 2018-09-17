@@ -3,7 +3,7 @@
 *.lock
 *.bak
 *.dat
-
+cache
 i386
 x86_64
 cnmodel/anmodel

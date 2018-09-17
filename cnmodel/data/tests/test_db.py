@@ -1,5 +1,6 @@
 # -*- encoding: utf-8 -*-
 import pytest
+import sys
 from cnmodel import data
 
 
@@ -37,9 +38,13 @@ data.add_table_data('test_data', row_key='param', col_key='col', data=table,
 
 
 def test_db():
-    with pytest.raises(TypeError):
-        # raise exception if unicode is given in ono-unicode string
-        data.add_table_data('test_data', row_key='param', col_key='col', data='±')
+    # this should only be a problem with Python 2, so we need to 
+    # check which version we are running under before letting the test
+    # throw the exception:
+    if sys.version_info[0] == 2:
+        with pytest.raises(TypeError):
+            # raise exception if unicode is given in ono-unicode string
+            data.add_table_data('test_data', row_key='param', col_key='col', data=u'±')
     
     d = data.get('test_data', param='param1', col='col2', extra='test_kwd')
     assert d == (2.2, 1.5)
