@@ -5,8 +5,9 @@
 *.dat
 cache
 i386
+*.mexmaci64
 x86_64
-cnmodel/anmodel
+cnmodel/an_model
 doc/build
 build
 dist/
@@ -14,6 +15,7 @@ cnmodel.egg*
 .cache*
 .pytest*
 Figure6*
+
 
 
 
