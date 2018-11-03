@@ -49,7 +49,7 @@ for stim in stims:
         # wave = stims[stim][1](rate=Fs, dbspl=level, click_interval=10., nclicks=10,
         #                  click_duration=1e-4, click_start=10.)
     elif stim in ['wavefile']:
-        wave = stims[stim][1](wavefile='examples/stim172_geese.wav', rate=Fs, dbspl=level)
+        wave = stims[stim][1](wavefile='cnmodel/examples/stim172_geese.wav', rate=Fs, dbspl=level)
         wave.sound  # force generation here
         print('time shape test: ', wave.time.shape)  
     else:

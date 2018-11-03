@@ -19,11 +19,5 @@ setup(name='cnmodel',
       author_email='pmanis@med.unc.edu',
       license='MIT',
       packages=find_packages(include=['cnmodel*']),
-      zip_safe=False,
-      entry_points={
-          'console_scripts': [
-               'test_cells=cnmodel.examples.test_cells:main',
-          ]
-      },
-      )
+      zip_safe=False)
       

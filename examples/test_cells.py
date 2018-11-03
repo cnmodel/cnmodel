@@ -227,7 +227,7 @@ class Tests():
         print(cell.__doc__)
         self.cell = cell
 
-    def run_test(self, args):
+    def run_test(self, sites, ptype, args):
         """
         Run either vc or cc test, and plot the result
         
@@ -269,8 +269,7 @@ class Tests():
         else:
             raise ValueError("Nothing to run. Specify one of --cc, --vc, --rmp.")
 
-
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description=('test_cells.py:',
     ' Biophysical representations of neurons (mostly auditory), test file'))
     parser.add_argument('celltype', action='store')
@@ -320,7 +319,10 @@ if __name__ == '__main__':
     t = Tests()
     t.selectCell(args)
     app = pg.mkQApp()
-    t.run_test(args)
+    t.run_test(sites, ptype, args)
     
     if sys.flags.interactive == 0:
-        pg.QtGui.QApplication.exec_()
+        pg.QtGui.QApplication.exec_() 
+
+if __name__ == '__main__':
+    main()
