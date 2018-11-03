@@ -16,8 +16,8 @@ def test_max_open_probability():
     # And a presynaptic terminal to provide XMTR input
     term = h.MultiSiteSynapse(0.5, sec=sec)
     term.nZones = 1
-    term.setpointer(term._ref_XMTR[0], 'XMTR', apsd)
-    term.setpointer(term._ref_XMTR[0], 'XMTR', npsd)
+    h.setpointer(term._ref_XMTR[0], 'XMTR', apsd)
+    h.setpointer(term._ref_XMTR[0], 'XMTR', npsd)
     
     h.celsius = 34.0
     h.finitialize()

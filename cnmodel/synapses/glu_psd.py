@@ -64,8 +64,8 @@ class GluPSD(PSD):
             nmda = h.NMDA_Kampa(loc, self.section) # Kampa state model NMDA receptors
 
             # Connect terminal to psd
-            relsite.setpointer(relsite._ref_XMTR[i], 'XMTR', ampa)
-            relsite.setpointer(relsite._ref_XMTR[i], 'XMTR', nmda)
+            h.setpointer(relsite._ref_XMTR[i], 'XMTR', ampa)
+            h.setpointer(relsite._ref_XMTR[i], 'XMTR', nmda)
             
             # Set any extra ampa parameters provided by the caller
             # (Ro1, Ro2, Rc1, Rc2, PA, ...)
