@@ -51,11 +51,11 @@ class SGC(Population):
         logging.info("Assigning spike trains to %d SGC cells..", len(real))
         if not parallel:
             for i, ind in enumerate(real):
-                logging.info("Assigning spike train to SGC %d (%d/%d)", ind, i, len(real))
+                #logging.info("Assigning spike train to SGC %d (%d/%d)", ind, i, len(real))
                 cell = self.get_cell(ind)
                 cell.set_sound_stim(stim, self.next_seed)
                 self.next_seed += 1
-                
+
         else:
             seeds = range(self.next_seed, self.next_seed + len(real))
             self.next_seed = seeds[-1] + 1
