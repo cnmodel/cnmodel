@@ -13,9 +13,12 @@ class Tuberculoventral(Population):
         freqs = self._get_cf_array(species)
         fields = [
             ('cf', float),
+            ('input_sr', list)
         ]
         super(Tuberculoventral, self).__init__(species, len(freqs), fields=fields, **kwds)
         self._cells['cf'] = freqs
+        self._cells['input_sr'] = [np.tile([1., 1., 1.], len(freqs))]
+        
     
     def create_cell(self, cell_rec):
         """ Return a single new cell to be used in this population. The 

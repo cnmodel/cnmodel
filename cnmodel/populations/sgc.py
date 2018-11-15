@@ -25,9 +25,14 @@ class SGC(Population):
         ]
         super(SGC, self).__init__(species, len(freqs), fields=fields, model=model, **kwds)
         self._cells['cf'] = freqs
-        # evenly distribute SR groups
-        self._cells['sr'] = np.arange(len(freqs)) % 3
-    
+        # old version:
+            # evenly distribute SR groups
+            #self._cells['sr'] = np.arange(len(freqs)) % 3
+        # new version:
+        # draw from distributions matching approximate SR distribution 
+        sr_vals = self.get_sgcsr_array(freqs, species='mouse')
+        self._cells['sr'] = sr_vals
+        
     def set_seed(self, seed):
         self.next_seed = seed
     
