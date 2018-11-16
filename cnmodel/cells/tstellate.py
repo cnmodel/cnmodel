@@ -159,6 +159,7 @@ class TStellateRothman(TStellate):
             if nach == None:
                 nach = 'nacn'
             self.i_test_range={'pulse': (-1.0, 1.0, 0.05)}
+        self.debug = debug
         self.status = {'species': species, 'cellClass': self.type, 'modelType': modelType, 'modelName': modelName,
                         'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'ttx': ttx, 'name': self.type,
@@ -174,7 +175,8 @@ class TStellateRothman(TStellate):
             """
             instantiate a basic soma-only ("point") model
             """
-            print( "<< TStellate model: Creating point cell, type={:s} >>".format(modelType))
+            if self.debug:
+                print( "<< TStellate model: Creating point cell, type={:s} >>".format(modelType))
             soma = h.Section(name="TStellate_Soma_%x" % id(self))  # one compartment of about 29000 um2
             soma.nseg = 1
             self.add_section(soma, 'soma')
@@ -183,7 +185,8 @@ class TStellateRothman(TStellate):
             instantiate a structured model with the morphology as specified by 
             the morphology file
             """
-            print("<< TStellate: Creating cell with morphology = %s>>" % morphology)
+            if self.debug:
+                print("<< TStellate: Creating cell with morphology = %s>>" % morphology)
             self.set_morphology(morphology_file=morphology)
 
         # decorate the morphology with ion channels
@@ -201,7 +204,7 @@ class TStellateRothman(TStellate):
 
         self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
         self.get_mechs(self.soma)
-        if debug:
+        if self.debug:
                 print("<< T-stellate: JSR Stellate Type 1 cell model created >>")
 
     def get_cellpars(self, dataset, species='guineapig', modelType='I-c'):
@@ -262,7 +265,8 @@ class TStellateRothman(TStellate):
             # model description in Xie and Manis 2013. Note that
             # conductances were not scaled for temperature (rates were)
             # so here we reset the default Q10's for conductance (g) to 1.0
-            print('  Setting Conductances for mouse I-c Tstellate cell, (modified from Xie and Manis, 2013)')
+            if self.debug:
+                print('  Setting Conductances for mouse I-c Tstellate cell, (modified from Xie and Manis, 2013)')
             self.c_m = 0.9  # default in units of F/cm^2
             dataset = 'XM13_channels'
             self.vrange = [-75., -55.]
@@ -290,7 +294,8 @@ class TStellateRothman(TStellate):
             
         elif species == 'guineapig':
             # and modelType == 'I-c':  # values from R&M 2003, Type I
-            print('  Setting Conductances for Guinea Pig I-c, Rothman and Manis, 2003')
+            if self.debug:
+                print('  Setting Conductances for Guinea Pig I-c, Rothman and Manis, 2003')
             dataset = 'RM03_channels'
             self.c_m = 0.9  # default in units of F/cm^2
             self.vrange = [-75., -55.]
@@ -474,7 +479,7 @@ class TStellateRothman(TStellate):
         #     raise ValueError('model type %s is not implemented' % modelType)
         # self.check_temperature()
         
-    def adjust_na_chans(self, soma, sf=1.0, gbar=1000., debug=False):
+    def adjust_na_chans(self, soma, sf=1.0, gbar=1000.):
         """
         Adjust the sodium channel conductance, depending on the type of conductance
         
@@ -485,8 +490,6 @@ class TStellateRothman(TStellate):
             conductances adjusted depending on the sodium channel type
         gbar : float (default: 1000.)
             The "maximal" conductance to be set in the model.
-        debug : boolean (default: False)
-            A flag the prints out messages to confirm the operations applied.
             
         Returns
         -------
@@ -500,25 +503,25 @@ class TStellateRothman(TStellate):
         if nach == 'jsrna':
             soma().jsrna.gbar = gnabar*sf
             soma.ena = self.e_na
-            if debug:
+            if self.debug:
                 print('jsrna gbar: ', soma().jsrna.gbar)
         elif nach == 'nav11':
             soma().nav11.gbar = gnabar
             soma.ena = self.e_na
             soma().nav11.vsna = 4.3
-            if debug:
+            if self.debug:
                 print("tstellate using inva11")
             print('nav11 gbar: ', soma().nav11.gbar)
             print('nav11 vsna: ', soma().nav11.vsna)
         elif nach == 'na':
             soma().nacn.gbar = gnabar
             soma.ena = self.e_na
-            if debug:
+            if self.debug:
                 print('na gbar: ', soma().na.gbar)
         elif  nach == 'nacn':
             soma().nacn.gbar = gnabar
             soma.ena = self.e_na
-            if debug:
+            if self.debug:
                 print('nacn gbar: ', soma().nacn.gbar)
         else:
             raise ValueError("tstellate setting Na channels: channel %s not known" % nach)
@@ -656,7 +659,7 @@ class TStellateNav11(TStellate):
         self.get_mechs(self.soma)
         self.cell_initialize(vrange=self.vrange)
 #        self.print_mechs(self.soma)
-        if debug:
+        if self.debug:
                 print("<< T-stellate: Xie&Manis 2013 cell model created >>")
 
     def species_scaling(self, species='mouse', modelType='I-c', silent=True):
@@ -797,7 +800,7 @@ class TStellateNav11(TStellate):
         else:
             raise ValueError('model type %s is not implemented' % modelType)
 
-    def adjust_na_chans(self, soma, gbar=800., debug=False):
+    def adjust_na_chans(self, soma, gbar=800.):
         """
         Adjust the sodium channel conductance, depending on the type of conductance
         
@@ -808,8 +811,6 @@ class TStellateNav11(TStellate):
             conductances adjusted depending on the sodium channel type
         gbar : float (default: 800.)
             The "maximal" conductance to be set in the model.
-        debug : boolean (default: False)
-            A flag the prints out messages to confirm the operations applied.
             
         Returns
         -------
@@ -824,7 +825,7 @@ class TStellateNav11(TStellate):
             soma().nav11.gbar = gnabar
             soma.ena = self.e_na
             soma().nav11.vsna = 4.3
-            if debug:
+            if self.debug:
                 print("tstellate using inva11")
         else:
             raise ValueError("tstellate setting Na channels only supporting nav11: channel %s not known" % nach)

@@ -187,7 +187,7 @@ class BushyRothman(Bushy):
                 modelName = 'XM13'
             if nach is None:
                 nach = 'na'
-        
+        self.debug = debug
         self.status = {'species': species, 'cellClass': self.type, 'modelType': modelType, 'modelName': modelName,
                         'soma': True, 'axon': False, 'dendrites': False, 'pumps': False, 'hillock': False, 
                        'initialsegment': False, 'myelinatedaxon': False, 'unmyelinatedaxon': False,
@@ -196,7 +196,8 @@ class BushyRothman(Bushy):
 
         self.spike_threshold = -40
         self.vrange = [-70., -55.]  # set a default vrange for searching for rmp
-        print( 'model type, model name, species: ', modelType, modelName, species, nach)
+        if self.debug:
+            print( 'model type, model name, species: ', modelType, modelName, species, nach)
 
         self.c_m = 0.9E-6  # default in units of F/cm^2
 
@@ -208,7 +209,8 @@ class BushyRothman(Bushy):
             """
             instantiate a basic soma-only ("point") model
             """
-            print ("<< Bushy model: Creating point cell >>")
+            if self.debug:
+                print ("<< Bushy model: Creating point cell >>")
             soma = h.Section(name="Bushy_Soma_%x" % id(self))  # one compartment of about 29000 um2
             soma.nseg = 1
             self.add_section(soma, 'soma')
@@ -217,7 +219,8 @@ class BushyRothman(Bushy):
             instantiate a structured model with the morphology as specified by 
             the morphology file
             """
-            print ("<< Bushy model: Creating cell with morphology from %s >>" % morphology)
+            if self.debug:
+                print ("<< Bushy model: Creating cell with morphology from %s >>" % morphology)
             self.set_morphology(morphology_file=morphology)
 
         # decorate the morphology with ion channels
@@ -251,7 +254,8 @@ class BushyRothman(Bushy):
             field='na_type')
         pars = Params(cap=cellcap, natype=chtype)
         # print('pars cell/chtype: ')
-        pars.show()
+        if self.debug:
+            pars.show()
         if self.status['modelName'] == 'RM03':
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ih_gbar', 'leak_gbar']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
@@ -264,9 +268,7 @@ class BushyRothman(Bushy):
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ihvcn_gbar', 'leak_gbar']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
-        #print dir(pars)
-        # print('pars after checking self.status: ')
-        # pars.show()
+
         return pars
         
     def species_scaling(self, species='guineapig', modelType='II', silent=True):
@@ -307,7 +309,8 @@ class BushyRothman(Bushy):
             # so here we reset the default Q10's for conductance (g) to 1.0
             if modelType not in ['II', 'II-I']:
                 raise ValueError('\nModel type %s is not implemented for mouse bushy cells' % modelType)
-            print ('  Setting conductances for mouse bushy cell (%s), Xie and Manis, 2013' % modelType)
+            if self.debug:
+                print ('  Setting conductances for mouse bushy cell (%s), Xie and Manis, 2013' % modelType)
             dataset = 'XM13_channels'
             self.vrange = [-68., -55.]  # set a default vrange for searching for rmp
             self.i_test_range = {'pulse': (-1., 1., 0.05)}
@@ -326,7 +329,8 @@ class BushyRothman(Bushy):
             self.axonsf = 0.57
             
         elif species == 'guineapig':
-            print ('  Setting conductances for guinea pig %s bushy cell, Rothman and Manis, 2003' % modelType)
+            if self.debug:
+                print ('  Setting conductances for guinea pig %s bushy cell, Rothman and Manis, 2003' % modelType)
             self._valid_temperatures = (22., 38.)
             if self.status['temperature'] is None:
                 self.status['temperature'] = 22. 
@@ -661,7 +665,7 @@ class BushyRothman(Bushy):
 #             raise ValueError('model type %s is not implemented' % modelType)
 #         self.check_temperature()
 
-    def adjust_na_chans(self, soma, sf=1.0, gbar=1000., debug=False):
+    def adjust_na_chans(self, soma, sf=1.0, gbar=1000.):
         """
         adjust the sodium channel conductance
         
@@ -674,9 +678,6 @@ class BushyRothman(Bushy):
         gbar : float (default: 1000.)
             The maximal conductance for the sodium channel
         
-        debug : boolean (false):
-            Verbose printing
-            
         Returns
         -------
             Nothing :
@@ -691,19 +692,19 @@ class BushyRothman(Bushy):
         if nach == 'jsrna':
             soma().jsrna.gbar = gnabar
             soma.ena = self.e_na
-            if debug:
+            if self.debug:
                 print ('jsrna gbar: ', soma().jsrna.gbar)
         elif nach == 'nav11':
             soma().nav11.gbar = gnabar
             soma.ena = 50 # self.e_na
 #            print('gnabar: ', soma().nav11.gbar, ' vs: 0.0192307692308')
             soma().nav11.vsna = 4.3
-            if debug:
+            if self.debug:
                 print ("bushy using inva11")
         elif nach in ['na', 'nacn']:
             soma().na.gbar = gnabar
             soma.ena = self.e_na
-            if debug:
+            if self.debug:
                 print ('na gbar: ', soma().na.gbar)
         else:
             raise ValueError('Sodium channel %s is not recognized for Bushy cells', nach)
@@ -742,11 +743,11 @@ class BushyRothman(Bushy):
         soma().nakpump.ATPi = 5
         self.status['pumps'] = True
 
-    def add_dendrites(self, debug=False):
+    def add_dendrites(self):
         """
         Add a simple dendrite to the bushy cell.
         """
-        if debug:
+        if self.debug:
             print ('Adding dendrite to Bushy model')
         section = h.Section
         primarydendrite = section(cell=self.soma)
@@ -774,7 +775,7 @@ class BushyRothman(Bushy):
         self.primarydendrite = primarydendrite
         self.secondarydendrite = secondarydendrite
         self.status['dendrite'] = True
-        if debug:
+        if self.debug:
             print ('Bushy: added dendrites')
             h.topology()
         self.add_section(maindend, 'primarydendrite')

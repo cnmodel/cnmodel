@@ -169,7 +169,7 @@ class Tuberculoventral(Tuberculoventral):
             modelType = 'TVmouse'
         if nach == None:
             nach = 'nacncoop'
-            
+        self.debug = debug  
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Tuberculoventral',
                        'morphology': morphology, 'decorator': decorator, 'temperature': None}
@@ -181,7 +181,8 @@ class Tuberculoventral(Tuberculoventral):
             """
             instantiate a basic soma-only ("point") model
             """
-            print("<< Tuberculoventral model: Creating point cell >>")
+            if self.debug:
+                print("<< Tuberculoventral model: Creating point cell >>")
             soma = h.Section(name="Tuberculoventral_Soma_%x" % id(self))  # one compartment of about 29000 um2
             soma.nseg = 1
             self.add_section(soma, 'soma')
@@ -190,7 +191,8 @@ class Tuberculoventral(Tuberculoventral):
             instantiate a structured model with the morphology as specified by 
             the morphology file
             """
-            print("<< Tuberculoventral model: Creating structured cell >>")
+            if self.debug:
+                print("<< Tuberculoventral model: Creating structured cell >>")
             self.set_morphology(morphology_file=morphology)
 
         # decorate the morphology with ion channels
@@ -203,7 +205,7 @@ class Tuberculoventral(Tuberculoventral):
             self.decorate()
         self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
         self.get_mechs(self.soma)
-        if debug:
+        if self.debug:
                 print("<< Tuberculoventral cell model created >>")
 
     def get_cellpars(self, dataset, species='mouse', celltype='TVmouse'):
@@ -238,7 +240,8 @@ class Tuberculoventral(Tuberculoventral):
             run silently (True) or verbosely (False)
         """
         soma = self.soma
-        print('modelType: ', modelType)
+        if self.debug:
+            print('modelType: ', modelType)
         if modelType in ['TVmouse', 'I']:
             celltype = 'TVmouse' # modelType
             modelType = 'TVmouse'
@@ -262,7 +265,7 @@ class Tuberculoventral(Tuberculoventral):
             pars = self.get_cellpars('TV_channels', species='mouse', celltype=modelType)
             self.set_soma_size_from_Cm(pars.soma_cap)
             self.status['na'] = pars.soma_na_type
-            self.adjust_na_chans(soma, gbar=pars.soma_nacncoop_gbar)
+            self.adjust_na_chans(soma, gbar=pars.soma_nacncoop_gbar, debug=self.debug)
             soma().kht.gbar = nstomho(pars.soma_kht_gbar, self.somaarea)
             soma().ka.gbar = nstomho(pars.soma_ka_gbar, self.somaarea)
             soma().ihvcn.gbar = nstomho(pars.soma_ihvcn_gbar, self.somaarea)
