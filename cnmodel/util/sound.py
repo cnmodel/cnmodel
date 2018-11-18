@@ -485,6 +485,9 @@ class ComodulationMasking(Sound):
     
     dbspl : float
         tone intensity, in dB SPL (re 0.00002 dynes/cm2)
+
+    s2n : float
+        signal re masker, in dbspl
     
     fmod : float
         amplitude modulation frequency, in Hz
@@ -522,20 +525,20 @@ class ComodulationMasking(Sound):
     """
     def __init__(self, **kwds):
         # print (kwds)
-        for k in ['rate', 'duration', 'pip_duration', 'f0', 'dbspl', 'fmod', 'dmod',
+        for k in ['rate', 'duration', 'pip_duration', 'f0', 'dbspl', 's2n', 'fmod', 'dmod',
                    'pip_start', 'ramp_dur',
                   'fl_type', 'fl_sp', 'fl_ph', 'fl_bands']:
             if k not in kwds:
                 raise TypeError("Missing required argument '%s'" % k)
         if 'fl_spl' not in kwds:
             kwds['fl_spl'] = kwds['dbspl']
-        if 'mask_spl' not in kwds:
-            kwds['mask_spl'] = kwds['dbspl']
-        if kwds['mask_spl'] is None:
-            kwds['mask_spl'] = 0.
+        # if 'mask_spl' not in kwds:
+       #      kwds['mask_spl'] = kwds['dbspl']
+        # if kwds['mask_spl'] is None:
+        #     kwds['mask_spl'] = 0.
         if kwds['fl_spl'] is None:
             kwds['fl_spl'] = kwds['dbspl']
-            
+
         Sound.__init__(self, **kwds)
     
     def generate(self):
@@ -543,13 +546,13 @@ class ComodulationMasking(Sound):
         o = self.opts
         # start with center tone
         onfreqmasker = piptone(self.time, o['ramp_dur'], o['rate'], o['f0'],
-                       o['mask_spl'], o['pip_duration'], o['pip_start'])
+                       o['dbspl'], o['pip_duration'], o['pip_start'])
         onfreqmasker = sinusoidal_modulation(self.time, onfreqmasker, o['pip_start'],
             o['fmod'], o['dmod'], 0.)
         #onfreqmasker = np.zeros_like(onfreqmasker)
         tardelay = 0.5/o['fmod']  # delay by one half cycle
         target = piptone(self.time, o['ramp_dur'], o['rate'], o['f0'],
-                       o['dbspl'], o['pip_duration']-tardelay, [p + tardelay for p in o['pip_start']])
+                       o['dbspl']+o['s2n'], o['pip_duration']-tardelay, [p + tardelay for p in o['pip_start']])
         target = sinusoidal_modulation(self.time, target, [p + tardelay for p in o['pip_start']],
                        o['fmod'], o['dmod'], 0.)
         #target = np.zeros_like(target)
