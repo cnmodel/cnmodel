@@ -205,7 +205,7 @@ class Population(object):
             raise TypeError("Cannot connect population %s to %s; no convergence range specified in data table." % (pop, self))
             
         dist = {'cf': scipy.stats.lognorm(input_range, scale=cf)}
-        print(cf, input_range, dist)
+#        print(cf, input_range, dist)
         return size, dist
 
     def get_sgcsr_array(self, freqs, species='mouse'):
@@ -273,7 +273,7 @@ class Population(object):
         fmax = data.get('populations', species=species, cell_type=self.type, field='cf_max')
         s = (fmax / fmin) ** (1./size)
         freqs = fmin * s**np.arange(size)
-        print('frqs #: ', len(freqs))
+#        print('frqs #: ', len(freqs))
         # Cut off at 40kHz because the auditory nerve model only goes that far :(
         freqs = freqs[freqs<=40e3]
         
