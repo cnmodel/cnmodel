@@ -277,6 +277,38 @@ XMax         0.733 [1]    0.731 [1]        0.731 [1]     0.731 [2]         0.731
 
 """)
 
+add_table_data('dstellate_synapse', row_key='field', col_key='post_type', 
+                species='mouse', data=u"""
+
+DStellate Synapse values
+gly_gmax is the default value in the program (scaled by Po for the receptors). See synapses/gly_psd.py
+IPSC_cv is the coefficient of variation of the IPSC. (Not currently used in the model)
+Pr is the release probabilty (not currently used)
+n_rsites is the number of release sites per dstellate terminal.
+
+-----------------------------------------------------------------------------------------------------------------------------------
+             bushy             tstellate          dstellate         octopus         pyramidal      tuberculoventral
+                                                                                                                
+gly_gmax     1000. [1]         1000. [1]          0. [2]            0. [2]          1000. [1]      1000. [1]    
+IPSC_cv      0.3 [3]           0.3 [3]            0.3 [3]           0.3 [3]         0.3 [3]        0.3 [3]       
+Pr           1.000 [4]         1.000 [4]          1.000 [4]         1.000 [4]       1.000 [4]      1.000 [4]       
+n_rsites     6 [5]             6 [5]              0 [1]             0 [2]           6 [5]          6 [5]            
+
+-----------------------------------------------------------------------------------------------------------------------------------
+
+[1] Default value from GlyPSD
+
+[2] No evidence for dstellate inputs to other d stellate cells.
+    Octopus cells do not get inhibitory input
+    
+[3] Guess
+
+[4] Default value
+
+[5] Guess
+
+""")
+
 
 # Mouse data
 # TV conductance onto pyr cells: 2.1 nS SD 2.9 nS (Kuo et al., 2012)
