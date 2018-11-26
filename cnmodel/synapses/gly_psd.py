@@ -53,7 +53,7 @@ class GlyPSD(PSD):
         self.post_cell = cells.cell_from_section(post_sec)
 
         self.psdType = psdType
-        
+        self.gmax = gmax
         glyslowPoMax = 0.162297  # thse were measured from the kinetic models in Synapses.py, as peak open P for the glycine receptors
         glyfastPoMax = 0.038475  # also later verified, same numbers...
         if self.psdType == 'glyfast':

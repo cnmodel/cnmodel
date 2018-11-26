@@ -54,9 +54,20 @@ class TStellate(Cell):
         else:
             loc = 0.5
             post_sec = self.soma
-        
+        #print('cells/tstellaty.py psd type: ', psd_type)
         if psd_type == 'simple':
-            return self.make_exp2_psd(post_sec, terminal, loc=loc)
+            print('*** terminal cell type: ', terminal.cell.type)
+            if terminal.cell.type == 'sgc':
+                weight = data.get('sgc_synapse', species=self.species,
+                        post_type=self.type, field='weight')
+                return self.make_exp2_psd(post_sec, terminal, weight=weight, loc=loc)
+            if terminal.cell.type == 'dstellate':
+                weight = self.ds_gmax = data.get('dstellate_synapse', species=self.species,
+                        post_type=self.type, field='weight')
+                print('ds max: ', weight)
+                return self.make_exp2_psd(post_sec, terminal, weight=weight, loc=loc)
+                
+            #print('cells/tstellaty.py weight: ', weight)
         elif psd_type == 'multisite':
             if terminal.cell.type == 'sgc':
                 # Max conductances for the glu mechanisms are calibrated by 
@@ -82,6 +93,7 @@ class TStellate(Cell):
             elif terminal.cell.type == 'dstellate':
                 self.ds_gmax = data.get('dstellate_synapse', species=self.species,
                         post_type=self.type, field='gly_gmax')
+                print('ds max: ', self.ds_gmax)
                 return self.make_gly_psd(post_sec, terminal, type='glyfast', loc=loc, gmax=self.ds_gmax)
             elif terminal.cell.type == 'tuberculoventral':
                 return self.make_gly_psd(post_sec, terminal, type='glyfast', loc=loc)
