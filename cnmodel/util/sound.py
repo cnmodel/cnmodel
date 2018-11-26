@@ -463,28 +463,41 @@ class SAMNoise(Sound):
 
 class ComodulationMasking(Sound):
     """
+    Make a stimulus for comodulation masking release.
+    Note the parameter names are shortened so that the SGC generated filename
+    in cnmodel fits within system limits.
+    
     Parameters
     ----------
     rate : float
         sample rate, in Hz
     
-    duration : float
-
+    dur : float
         entire waveform duration in seconds
-    pip_start : float
+    
+    pipst : float
         time to start the test tone pips (seconds)
+        array, such as [0.25, 0.35, 0.45]
     
-    pip_duration : float
+    pipdu : float
         duration of the test (target) tone pips
+
+    maskst : float
+        time to start the masker tones pips (seconds)
+        array, such as [0.1]
     
-    ramp_duration : float
-        rise/fall of the stimulus envelope at onset and offset
+    maskdu : float
+        duration of the masker tone pips
+
+    rf : float
+        rise/fall of the pips 
         
     f0 : float (kHz)
         Center frequency for the target tone, in kHz
     
-    dbspl : float
-        tone intensity, in dB SPL (re 0.00002 dynes/cm2)
+    db : float
+        on-target masker and flankinb band intensity
+        In dB SPL (re 0.00002 dynes/cm2)
 
     s2n : float
         signal re masker, in dbspl
@@ -494,17 +507,21 @@ class ComodulationMasking(Sound):
     
     dmod : float
         amplitude modulation depth, in %
-    
-    flanking_type : string
+   
+    fltype : string
+        Flanking type:
         One of:
             'MultiTone' : multiple tones, with phase, spacing and # of bands specified as below
             'NBNoise' : the flanking stimulus is made up of narrow band noises (not implemented)
             'None' : no flanking sounds (just on-target stimuli)
     
-    flanking_spacing : float
+    flspc : float
         Spacing of flanking bands in octaves from the center frequency, f0
     
-    flanking_phase : string
+    flgap : int
+        gap around the cf in flspc (e.g., 1 would skip the first adjacent band)
+    
+    flph : string
         One of:
             'Comodulated': all of the flanking tones are comodulated in phase 
                 with the target at the same frequency and depth
@@ -514,7 +531,10 @@ class ComodulationMasking(Sound):
             'Random': The phases are selected at random. This is probably best only
                 used when there are a large number of flanking bands.
     
-    flanking_bands : int
+    flspl : float
+        Flanking signal, in dbspl. 
+    
+    flN : int
         Number of flanking bands on either side of f0, spaced accordingly.
     
     Returns
@@ -525,19 +545,21 @@ class ComodulationMasking(Sound):
     """
     def __init__(self, **kwds):
         # print (kwds)
-        for k in ['rate', 'duration', 'pip_duration', 'f0', 'dbspl', 's2n', 'fmod', 'dmod',
-                   'pip_start', 'ramp_dur',
-                  'fl_type', 'fl_sp', 'fl_ph', 'fl_bands']:
+        for k in ['rate', 'duration', 'pipdu', 'pipst', 'rf', 'maskst', 'maskdu', 
+                 # general:
+                 'f0', 'dbspl', 's2n', 'fmod', 'dmod',
+                 # flankers:
+                 'flgap', 'fltype', 'flspc', 'flph', 'flN']:
             if k not in kwds:
                 raise TypeError("Missing required argument '%s'" % k)
-        if 'fl_spl' not in kwds:
-            kwds['fl_spl'] = kwds['dbspl']
+        if 'flspl' not in kwds:
+            kwds['flspl'] = kwds['dbspl']
         # if 'mask_spl' not in kwds:
        #      kwds['mask_spl'] = kwds['dbspl']
         # if kwds['mask_spl'] is None:
         #     kwds['mask_spl'] = 0.
-        if kwds['fl_spl'] is None:
-            kwds['fl_spl'] = kwds['dbspl']
+        if kwds['flspl'] is None:
+            raise ValueError()
 
         Sound.__init__(self, **kwds)
     
@@ -545,57 +567,62 @@ class ComodulationMasking(Sound):
         
         o = self.opts
         # start with center tone
-        onfreqmasker = piptone(self.time, o['ramp_dur'], o['rate'], o['f0'],
-                       o['dbspl'], o['pip_duration'], o['pip_start'])
-        onfreqmasker = sinusoidal_modulation(self.time, onfreqmasker, o['pip_start'],
+        onfreqmasker = piptone(self.time, o['rf'], o['rate'], o['f0'],
+                       o['flspl'], o['maskdu'], o['maskst'])
+        tardelay = 0. # 1.5/o['fmod']  # delay by one and one half cycles (no target in first dip)
+        target = shape_signal(onfreqmasker, self.time, o['rf'], o['rate'], o['f0'],
+                       o['dbspl']+o['s2n'], o['pipdu']-tardelay, [p + tardelay for p in o['pipst']])
+        onfreqmasker = sinusoidal_modulation(self.time, onfreqmasker, o['maskst'],
             o['fmod'], o['dmod'], 0.)
-        #onfreqmasker = np.zeros_like(onfreqmasker)
-        tardelay = 0.5/o['fmod']  # delay by one half cycle
-        target = piptone(self.time, o['ramp_dur'], o['rate'], o['f0'],
-                       o['dbspl']+o['s2n'], o['pip_duration']-tardelay, [p + tardelay for p in o['pip_start']])
-        target = sinusoidal_modulation(self.time, target, [p + tardelay for p in o['pip_start']],
-                       o['fmod'], o['dmod'], 0.)
+        # target = piptone(self.time, o['rf'], o['rate'], o['f0'],
+        #                o['dbspl']+o['s2n'], o['pipdu']-tardelay, [p + tardelay for p in o['pipst']])
+        # target = sinusoidal_modulation(self.time, target, [p + tardelay for p in o['pip_start']],
+        #                o['fmod'], o['dmod'], 0.)
         #target = np.zeros_like(target)
         self.onmask = onfreqmasker
         self.target = target
-        if o['fl_type'] not in ['None', 'NBNoise', 'MultiTone']:
-            raise ValueError('Unknown flanking_type: %s' % o['flatype'])
-        if o['fl_type'] in ['NBNoise']:
+        if o['fltype'] not in ['None', 'Ref', 'NBN', 'Tone']:
+            raise ValueError('Unknown flanking_type: %s' % o['fltype'])
+        if o['fltype'] in ['NBN']:
             raise ValueError('Flanking type "NBNoise" is not yet implemented')
-        if o['fl_type'] in ['None']:
+        elif o['fltype'] in ['None']:
             return (onfreqmasker+target)/2.0  # scaling...
-        if o['fl_type'] in ['MultiTone']:
-            nband = o['fl_bands']
-            octspace = o['fl_sp']
+        elif o['fltype'] in ['Tone']:
+            nband = int(o['flN'])
+            gap = int(o['flgap'])
+            octspace = o['flspc']
             f0 = o['f0']
-            flankfs = [f0*(2**(octspace*(k+1))) for k in range(nband)]
-            flankfs.extend([f0/((2**(octspace*(k+1)))) for k in range(nband)])
+            flankfs = [f0*(2**(octspace*(k+1+gap))) for k in range(nband)]
+            flankfs.extend([f0/((2**(octspace*(k+1+gap)))) for k in range(nband)])
             flankfs = sorted(flankfs)
             flanktone = [[]]*len(flankfs)
             for i, fs in enumerate(flankfs):
-                flanktone[i] = piptone(self.time, o['ramp_dur'], o['rate'], flankfs[i],
-                               o['fl_spl'], o['pip_duration'], o['pip_start'])
-        #print(('type, phase: ', o['flanking_type'], o['flanking_phase']))
-        if o['fl_type'] == 'NBnoise':
+                flanktone[i] = piptone(self.time, o['rf'], o['rate'], flankfs[i],
+                               o['flspl'], o['maskdu'], o['maskst'])
+        elif o['fltype'] in ['None', 'Ref']:
+            return (onfreqmasker+target)/2.0  # scaling...
+        if o['fltype'] == 'NBN':
             raise ValueError('Flanking type nbnoise not yet implemented')
-        if o['fl_ph'] == 'Comodulated':
+        
+        ph = 0.
+        if o['flph'] == 'Comod':
                 ph = np.zeros(len(flankfs))
-        if o['fl_ph'] == 'Codeviant':
-                ph = 2.0*np.pi*np.arange(-o['fl_bands'], o['fl_bands']+1, 1)/o['fl_bands']
-        if o['fl_ph'] == 'Random':
-                ph = 2.0*np.pi*np.arange(-o['fla_bands'], o['flbands']+1, 1)/o['fl_bands']
+        elif o['flph'] == 'Codev':
+                ph = 2.0*np.pi*np.arange(-o['flN'], o['flN']+1, 1)/o['flN']
+        elif o['flph'] == 'Random':
+                ph = 2.0*np.pi*np.arange(-o['flN'], o['flN']+1, 1)/o['flN']
                 raise ValueError('Random flanking phases not implemented')
         #print(('flanking phases: ', ph))
         #print (len(flanktone))
         #print(('flanking freqs: ', flankfs))
         for i, fs in enumerate(flankfs):
             flanktone[i] = sinusoidal_modulation(self.time, flanktone[i],
-                    o['pip_start'], o['fmod'], o['dmod'], ph[i])
+                    o['maskst'], o['fmod'], o['dmod'], ph[i])
             if i == 0:
                 maskers = flanktone[i]
             else:
                 maskers = maskers + flanktone[i]
-        signal = (onfreqmasker+maskers+target)/(o['fl_bands']+2)
+        signal = (onfreqmasker+maskers+target)/(o['flN']+2)
         return signal
 
 
@@ -992,6 +1019,58 @@ def piptone(t, rt, Fs, F0, dBSPL, pip_dur, pip_start):
     for start in pip_start:
         ts = int(np.floor(start * Fs))
         pin[ts:ts+pip.size] += pip
+
+    return pin
+
+def shape_signal(signal, t, rt, Fs, F0, dBSPL, pip_dur, pip_start):
+    """
+    Create a waveform with multiple sine-ramped tone pips, based on the 
+    signal (so output is *always* in phase with the reference signal waveform)
+    Output is in Pascals.
+    
+    Parameters
+    ----------
+    t : array
+        array of time values
+    rt : float
+        ramp duration (risetime)
+    Fs : float
+        sample rate
+    F0 : float
+        pip frequency
+    dBSPL : float
+        maximum sound pressure level of pip
+    pip_dur : float
+        duration of pip including ramps
+    pip_start : float
+        list of starting times for multiple pips
+
+    Returns
+    -------
+    array :
+        waveform
+
+    """
+    pip_t = t
+    pip_pts = pip_t.shape[0]
+    pip = signal # referencestimulus
+
+    # make envelope with cos2 rise-fall
+    ramp_pts = int(rt * Fs) + 1
+    env_pts = int(pip_dur * Fs)
+    envelope = np.ones(env_pts)
+    ramp = np.sin(np.linspace(0, np.pi/2., ramp_pts))**2
+    envelope[:ramp_pts] *= ramp
+    envelope[-ramp_pts:] *= ramp[::-1]
+    
+    # apply envelope template to waveform
+    pin = np.zeros(t.size)
+    ps = pip_start
+    if ~isinstance(ps, list):
+        ps = [ps]
+    for start in pip_start:
+        ts = int(np.floor(start * Fs))
+        pin[ts:ts+envelope.size] += pip[ts:ts+envelope.size]*envelope
 
     return pin
 
