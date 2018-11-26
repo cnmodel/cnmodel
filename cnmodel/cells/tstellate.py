@@ -92,8 +92,8 @@ class TStellate(Cell):
                 return self.make_glu_psd(post_sec, terminal, self.AMPAR_gmax, self.NMDAR_gmax, loc=loc)
             elif terminal.cell.type == 'dstellate':
                 self.ds_gmax = data.get('dstellate_synapse', species=self.species,
-                        post_type=self.type, field='gly_gmax')
-                print('ds max: ', self.ds_gmax)
+                        post_type=self.type, field='gly_gmax')*1e3
+                #print('ds max: ', self.ds_gmax)
                 return self.make_gly_psd(post_sec, terminal, type='glyfast', loc=loc, gmax=self.ds_gmax)
             elif terminal.cell.type == 'tuberculoventral':
                 return self.make_gly_psd(post_sec, terminal, type='glyfast', loc=loc)
