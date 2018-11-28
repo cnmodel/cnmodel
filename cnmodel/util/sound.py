@@ -570,8 +570,10 @@ class ComodulationMasking(Sound):
         onfreqmasker = piptone(self.time, o['rf'], o['rate'], o['f0'],
                        o['flspl'], o['maskdu'], o['maskst'])
         tardelay = 0. # 1.5/o['fmod']  # delay by one and one half cycles (no target in first dip)
-        target = shape_signal(onfreqmasker, self.time, o['rf'], o['rate'], o['f0'],
+        target = piptone(self.time, o['rf'], o['rate'], o['f0'],
                        o['dbspl']+o['s2n'], o['pipdu']-tardelay, [p + tardelay for p in o['pipst']])
+        # target = shape_signal(onfreqmasker, self.time, o['rf'], o['rate'], o['f0'],
+        #                o['dbspl']+o['s2n'], o['pipdu']-tardelay, [p + tardelay for p in o['pipst']])
         if (o['dbspl']+o['s2n']) <= 0.:
             target = np.zeros_like(target)
         onfreqmasker = sinusoidal_modulation(self.time, onfreqmasker, o['maskst'],
@@ -579,8 +581,6 @@ class ComodulationMasking(Sound):
         # print("o['dbspl']+o['s2n']: ", o['dbspl']+o['s2n'])
         # print('np.max(target): ', np.max(target))
 
-        # target = piptone(self.time, o['rf'], o['rate'], o['f0'],
-        #                o['dbspl']+o['s2n'], o['pipdu']-tardelay, [p + tardelay for p in o['pipst']])
         # target = sinusoidal_modulation(self.time, target, [p + tardelay for p in o['pip_start']],
         #                o['fmod'], o['dmod'], 0.)
         self.onmask = onfreqmasker
@@ -1057,7 +1057,7 @@ def shape_signal(signal, t, rt, Fs, F0, dBSPL, pip_dur, pip_start):
     """
     pip_t = t
     pip_pts = pip_t.shape[0]
-    pip = signal # referencestimulus
+    pip = np.sqrt(2) * dbspl_to_pa(dBSPL) * signal # referencestimulus
 
     # make envelope with cos2 rise-fall
     ramp_pts = int(rt * Fs) + 1
