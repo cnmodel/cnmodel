@@ -525,9 +525,13 @@ class ComodulationMasking(Sound):
         One of:
             'Comodulated': all of the flanking tones are comodulated in phase 
                 with the target at the same frequency and depth
-            'Codeviant' : The flanking bands have the same amplitude and frequency
+            'Codgh' : 'Grose and Hall codeviant':
+                The flanking bands have the same amplitude and frequency
                 as the target, but the phase of each band is different. Phases are
                 calculated so that all the bands wrap around 2*pi
+            'Codvw' : 'Verhey and Winter codeviant':
+                The flanking bands have the same amplitude and frequency
+                as the target, but are out of phase with the on-frequency masker
             'Random': The phases are selected at random. This is probably best only
                 used when there are a large number of flanking bands.
     
@@ -611,11 +615,15 @@ class ComodulationMasking(Sound):
         ph = 0.
         if o['flph'] == 'Comod':
                 ph = np.zeros(len(flankfs))
-        elif o['flph'] == 'Codev':
+        elif o['flph'] == 'Codvw':  # verhey and winter: just 180 out of phase
+                ph = np.pi*np.ones(len(flankfs))
+        elif o['flph'] in ['Codgh', 'Codev']:  # with precession: Grose and Hall 89
                 ph = 2.0*np.pi*np.arange(-o['flN'], o['flN']+1, 1)/o['flN']
         elif o['flph'] == 'Random':
                 ph = 2.0*np.pi*np.arange(-o['flN'], o['flN']+1, 1)/o['flN']
                 raise ValueError('Random flanking phases not implemented')
+        else:
+            raise ValueError('Masker Phase pattern of type %s is not implemented' % o['flph'])
         #print(('flanking phases: ', ph))
         #print (len(flanktone))
         #print(('flanking freqs: ', flankfs))
