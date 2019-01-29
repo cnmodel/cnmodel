@@ -417,12 +417,12 @@ class Cell(object):
                                     PA=params['PA']),
                                 **kwds)
 
-    def make_gly_psd(self, post_sec, terminal, type, **kwds):
+    def make_gly_psd(self, post_sec, terminal, psdtype, **kwds):
         # Get GLY kinetic constants from database 
         params = data.get('gly_kinetics', species=self.species, post_type=self.type,
                             field=['KU', 'KV', 'XMax'])
         psd = synapses.GlyPSD(post_sec, terminal,
-                                psdType=type,
+                                psdType=psdtype,
                                 **kwds)
         return psd
 

@@ -52,9 +52,26 @@ class Bushy(Cell):
             post_sec = self.soma
         
         if psd_type == 'simple':
-            weight = data.get('sgc_synapse', species=self.species,
+            if terminal.cell.type == 'sgc':
+                weight = data.get('sgc_synapse', species=self.species,
                         post_type=self.type, field='weight')
-            return self.make_exp2_psd(post_sec, terminal, weight=weight, loc=loc)
+                return self.make_exp2_psd(post_sec, terminal, weight=weight, loc=loc)
+            elif terminal.cell.type == 'dstellate':
+                weight = data.get('dstellate_synapse', species=self.species,
+                        post_type=self.type, field='weight')
+                simp_psd = self.make_exp2_psd(post_sec, terminal, weight=weight, loc=loc)
+                simp_psd.e = -80.
+                return simp_psd
+            elif terminal.cell.type == 'tuberculoventral':
+                weight = data.get('tuberculoventral_synapse', species=self.species,
+                        post_type=self.type, field='weight')
+                simp_psd = self.make_exp2_psd(post_sec, terminal, weight=weight, loc=loc)
+                simp_psd.e = -80.
+                return simp_psd
+            else:
+                raise TypeError("Cannot make simple PSD for %s => %s" % 
+                            (terminal.cell.type, self.type))
+            
         elif psd_type == 'multisite':
             if terminal.cell.type == 'sgc':
                 # Max conductances for the glu mechanisms are calibrated by 
@@ -82,9 +99,9 @@ class Bushy(Cell):
                 return self.make_glu_psd(post_sec, terminal, self.AMPAR_gmax, 
                             self.NMDAR_gmax, loc=loc, nmda_vshift=self.NMDAR_vshift)
             elif terminal.cell.type == 'dstellate':
-                return self.make_gly_psd(post_sec, terminal, type='glyslow', loc=loc)
+                return self.make_gly_psd(post_sec, terminal, psdtype='glyslow', loc=loc)
             elif terminal.cell.type == 'tuberculoventral':
-                return self.make_gly_psd(post_sec, terminal, type='glyslow', loc=loc)
+                return self.make_gly_psd(post_sec, terminal, psdtype='glyslow', loc=loc)
             else:
                 raise TypeError("Cannot make PSD for %s => %s" % 
                             (terminal.cell.type, self.type))
