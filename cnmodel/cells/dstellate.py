@@ -54,10 +54,23 @@ class DStellate(Cell):
         else:
             loc = 0.5
             post_sec = self.soma
+        
         if psd_type == 'simple':
-            weight = data.get('sgc_synapse', species=self.species,
+            if terminal.cell.type in ['sgc', 'dstellate', 'tuberculoventral']:
+                weight = data.get('%s_synapse' % terminal.cell.type, species=self.species,
                         post_type=self.type, field='weight')
-            return self.make_exp2_psd(post_sec, terminal, weight=weight, loc=loc)
+                tau1 = data.get('%s_synapse' % terminal.cell.type, species=self.species,
+                        post_type=self.type, field='tau1')
+                tau2 = data.get('%s_synapse' % terminal.cell.type, species=self.species,
+                        post_type=self.type, field='tau2')
+                erev = data.get('%s_synapse' % terminal.cell.type, species=self.species,
+                        post_type=self.type, field='erev')
+                return self.make_exp2_psd(post_sec, terminal, weight=weight, loc=loc,
+                        tau1=tau1, tau2=tau2, erev=erev)
+            else:
+                raise TypeError("Cannot make simple PSD for %s => %s" % 
+                            (terminal.cell.type, self.type))
+
         
         elif psd_type == 'multisite':
             if terminal.cell.type == 'sgc':
@@ -84,7 +97,10 @@ class DStellate(Cell):
 
             elif terminal.cell.type == 'dstellate':
                 # Get GLY kinetic constants from database 
-                return self.make_gly_psd(post_sec, terminal, type='glyfast', loc=loc)
+                return self.make_gly_psd(post_sec, terminal, psdtype='glyfast', loc=loc)
+            elif terminal.cell.type == 'tuberculoventral':
+                # Get GLY kinetic constants from database 
+                return self.make_gly_psd(post_sec, terminal, psdtype='glyfast', loc=loc)
             else:
                 raise TypeError("Cannot make PSD for %s => %s" % 
                                 (terminal.cell.type, self.type))
@@ -95,24 +111,17 @@ class DStellate(Cell):
         if term_type == 'simple':
             return synapses.SimpleTerminal(self.soma, post_cell, spike_source=self.spike_source,
                      **kwds)
-
         elif term_type == 'multisite':
-            if post_cell.type == 'bushy':
-                nzones, delay = 10, 0
-            elif post_cell.type == 'tstellate':
-                nzones, delay = 5, 0
-            elif post_cell.type == 'dstellate':
-                nzones, delay = 5, 0
-            elif post_cell.type == 'tuberculoventral':
-                nzones, delay = 25, 0
-            elif post_cell.type == 'pyramidal':
-                nzones, delay = 5, 0
+            if post_cell.type in ['dstellate', 'tuberculoventral', 'pyramidal', 'bushy', 'tstellate']:
+                nzones = data.get('dstellate_synapse', species=self.species,
+                        post_type=post_cell.type, field='n_rsites')
+                delay = data.get('dstellate_synapse', species=self.species,
+                        post_type=post_cell.type, field='delay')
             else:
-                raise NotImplementedError("No knowledge as to how to connect DStellate to cell type %s" %
+                raise NotImplementedError("No knowledge as to how to connect D stellate cell to cell type %s" %
                                         type(post_cell))
-            
             pre_sec = self.soma
-            return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, spike_source=self.spike_source, 
+            return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, spike_source=self.spike_source,
                                             delay=delay, **kwds)
         else:
             raise ValueError("Unsupported terminal type %s" % term_type)

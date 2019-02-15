@@ -46,7 +46,21 @@ class Pyramidal(Cell):
             post_sec = self.soma
         
         if psd_type == 'simple':
-            return self.make_exp2_psd(post_sec, terminal, loc=loc)
+            if terminal.cell.type in ['sgc', 'dstellate', 'tuberculoventral', 'cartwheel']:
+                weight = data.get('%s_synapse' % terminal.cell.type, species=self.species,
+                        post_type=self.type, field='weight')
+                tau1 = data.get('%s_synapse' % terminal.cell.type, species=self.species,
+                        post_type=self.type, field='tau1')
+                tau2 = data.get('%s_synapse' % terminal.cell.type, species=self.species,
+                        post_type=self.type, field='tau2')
+                erev = data.get('%s_synapse' % terminal.cell.type, species=self.species,
+                        post_type=self.type, field='erev')
+                return self.make_exp2_psd(post_sec, terminal, weight=weight, loc=loc,
+                        tau1=tau1, tau2=tau2, erev=erev)
+            else:
+                raise TypeError("Cannot make simple PSD for %s => %s" % 
+                            (terminal.cell.type, self.type))
+
         elif psd_type == 'multisite':
             if terminal.cell.type == 'sgc':
                 # Max conductances for the glu mechanisms are calibrated by 
@@ -67,9 +81,9 @@ class Pyramidal(Cell):
                     self.NMDA_gmax = self.NMDA_gmax*kwds['NMDAScale']
                 return self.make_glu_psd(post_sec, terminal, self.AMPAR_gmax, self.NMDAR_gmax, loc=loc)
             elif terminal.cell.type == 'dstellate':  # WBI input -Voigt, Nelken, Young
-                return self.make_gly_psd(post_sec, terminal, type='glyfast', loc=loc)
+                return self.make_gly_psd(post_sec, terminal, psdtype='glyfast', loc=loc)
             elif terminal.cell.type == 'tuberculoventral':  # TV cells talk to each other-Kuo et al.
-                return self.make_gly_psd(post_sec, terminal, type='glyfast', loc=loc)
+                return self.make_gly_psd(post_sec, terminal, psdtype='glyfast', loc=loc)
             else:
                 raise TypeError("Cannot make PSD for %s => %s" % 
                             (terminal.cell.type, self.type))

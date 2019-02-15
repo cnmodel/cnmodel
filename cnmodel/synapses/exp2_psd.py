@@ -8,7 +8,7 @@ class Exp2PSD(PSD):
     """
     Simple double-exponential PSD from Neuron (fast).
     """
-    def __init__(self, section, terminal, weight=0.01, loc=0.5):
+    def __init__(self, section, terminal, weight=0.01, loc=0.5, tau1=0.1, tau2=0.3, erev=0):
         """
         Parameters
         ----------
@@ -23,9 +23,9 @@ class Exp2PSD(PSD):
         """
         PSD.__init__(self, section, terminal)
         self.syn = h.Exp2Syn(loc, sec=section)
-        self.syn.tau1 = 0.1
-        self.syn.tau2 = 0.3
-        self.syn.e = 0
+        self.syn.tau1 = tau1
+        self.syn.tau2 = tau2
+        self.syn.e = erev
 
         terminal.connect(self.syn, weight=weight)
  

@@ -28,6 +28,9 @@ EPSC_cv      0.12 [8]          0.499759 [9]       0.886406 [9]      1.393382 [9]
 Pr           1.000 [11]        1.000 [11]         1.000 [11]        1.000 [11]      1.000 [8]      1.000 [8]
 n_rsites     100 [5]           4 [6]              1 [4]             1 [4]           2 [8]          2 [8]
 weight       0.027 [12]        0.006 [12]         0.00064 [12]      0.0011 [12]     0.0023 [12]    0.0029 [12]
+tau1         0.1 [5]           0.1 [5]            0.2 [5]           0.1 [5]         0.1 [5]        0.1 [5] 
+tau2         0.3 [5]           0.3 [5]            0.5 [5]           0.3 [5]         0.3 [5]        0.3 [5] 
+erev         0   [5]           0   [5]            0   [5]           0   [5]         0   [5]        0   [5] 
 -----------------------------------------------------------------------------------------------------------------------------------
 
 [1] Derived from Cao, X. & Oertel, D. (2010). Single-terminal conductance was
@@ -287,18 +290,62 @@ Pr is the release probabilty (not currently used)
 n_rsites is the number of release sites per dstellate terminal.
 
 -----------------------------------------------------------------------------------------------------------------------------------
-             bushy             tstellate          dstellate         octopus         pyramidal      tuberculoventral
+             bushy             tstellate          dstellate         octopus         pyramidal      tuberculoventral cartwheel
                                                                                                                 
-gly_gmax     1000. [1]         1000. [1]          0. [2]            0. [2]          1000. [1]      1000. [1]    
-IPSC_cv      0.3 [3]           0.3 [3]            0.3 [3]           0.3 [3]         0.3 [3]        0.3 [3]       
-Pr           1.000 [4]         1.000 [4]          1.000 [4]         1.000 [4]       1.000 [4]      1.000 [4]       
-n_rsites     6 [5]             6 [5]              0 [1]             0 [2]           6 [5]          6 [5]            
-weight       0.01              0.01               0.01              0.0             0.01           0.01 
+gly_gmax     1000. [1]         1000. [1]          0. [2]            0. [2]          1000. [1]      1000. [1]        0±0 [2]
+IPSC_cv      0.3 [3]           0.3 [3]            0.3 [3]           0.3 [3]         0.3 [3]        0.3 [3]          0.3 [3]    
+Pr           1.000 [4]         1.000 [4]          1.000 [4]         1.000 [4]       1.000 [4]      1.000 [4]        1.000 [4]  
+n_rsites     10 [5]            5 [5]              5 [5]             0 [2]           5 [5]          25 [5]           0 [2]      
+weight       0.01              0.01               0.01              0.0             0.01           0.01             0.01 
+delay        0 [6]             0                  0                 0               0              0                0
+tau1         0.5 [5]           0.1 [5]            0.1 [5]           0.1 [5]         0.1 [5]        0.1 [5]          0.1 [5]
+tau2         11. [5]           0.3 [5]            0.3 [5]           0.3 [5]         0.3 [5]        0.3 [5]          0.3 [5]
+erev         -80 [5]           -80 [5]            -80 [5]           -80 [5]         -80 [5]        -80 [5]          -80 [5]
 -----------------------------------------------------------------------------------------------------------------------------------
 
 [1] Default value from GlyPSD
 
-[2] No evidence for dstellate inputs to other d stellate cells.
+[2] No evidence for dstellate inputs to other d stellate cells or cartwheel cells.
+    Octopus cells do not get inhibitory input
+    
+[3] Guess
+
+[4] Default value
+
+[5] Guess *educated*
+
+[6] delay from pre to post; default is 0
+
+""")
+
+
+
+add_table_data('tuberculoventral_synapse', row_key='field', col_key='post_type', 
+                species='mouse', data=u"""
+
+Tuberculventral Synapse values
+gly_gmax is the default value in the program (scaled by Po for the receptors). See synapses/gly_psd.py
+IPSC_cv is the coefficient of variation of the IPSC. (Not currently used in the model)
+Pr is the release probabilty (not currently used)
+n_rsites is the number of release sites per tuberculoventral terminal.
+
+-----------------------------------------------------------------------------------------------------------------------------------
+             bushy             tstellate          dstellate         octopus         pyramidal      tuberculoventral cartwheel
+                                                                                                                
+gly_gmax     5.0 [3]           3.0 [3]            3.0 [3]           0. [2]          2.1±2.9 [6]    1.8±2.3 [6]      0±0 [6]
+IPSC_cv      0.3 [3]           0.3 [3]            0.3 [3]           0.3 [3]         1.0 [3]        0.3 [3]          0.3 [3]    
+Pr           1.000 [4]         1.000 [4]          1.000 [4]         1.000 [4]       1.000 [4]      1.000 [4]        1.000 [4]  
+n_rsites     6 [5]             6 [5]              0 [1]             0 [2]           6 [5]          6 [5]            6 [5]      
+weight       0.01              0.01               0.01              0.0             0.01           0.01             0.0 
+delay        0 [7]             0                  0                 0               0              0                0
+tau1         0.5 [5]           0.1 [5]            0.1 [5]           0.1 [5]         0.1 [5]        0.1 [5]          0.1 [5]
+tau2         11. [5]           0.3 [5]            0.3 [5]           0.3 [5]         0.3 [5]        0.3 [5]          0.3 [5]
+erev         -80 [5]           -80 [5]            -80 [5]           -80 [5]         -80 [5]        -80 [5]          -80 [5]
+-----------------------------------------------------------------------------------------------------------------------------------
+
+[1] Default value from GlyPSD
+
+[2] No evidence for tuberculo inputs to other d stellate cells or cartwheel cells.
     Octopus cells do not get inhibitory input
     
 [3] Guess
@@ -307,13 +354,55 @@ weight       0.01              0.01               0.01              0.0         
 
 [5] Guess
 
+[6] Mouse data
+    TV conductance onto pyr cells: 2.1 nS SD 2.9 nS (Kuo et al., 2012)
+    TV conductance onto TV cells: 1.8 ns SD 2.3 nS.
+
+[7] delay from pre to post; default is just 0
+
 """)
 
+add_table_data('cartwheel_synapse', row_key='field', col_key='post_type', 
+                species='mouse', data=u"""
 
-# Mouse data
-# TV conductance onto pyr cells: 2.1 nS SD 2.9 nS (Kuo et al., 2012)
-# TV conductance onto TV cells: 1.8 ns SD 2.3 nS.
-#
+Cartwheel cell synapse values
+gly_gmax is the default value in the program (scaled by Po for the receptors). See synapses/gly_psd.py
+IPSC_cv is the coefficient of variation of the IPSC. (Not currently used in the model)
+Pr is the release probabilty (not currently used)
+n_rsites is the number of release sites per cartwheel cell terminal.
+
+-----------------------------------------------------------------------------------------------------------------------------------
+             bushy             tstellate          dstellate         octopus         pyramidal      tuberculoventral  cartwheel
+                                                                                                                
+gly_gmax     0.0 [3]           0.0 [3]            0.0 [3]           0. [2]          2.1±2.9 [6]    0±0 [6]           1.8±2.3 [6]    
+IPSC_cv      0.3 [3]           0.3 [3]            0.3 [3]           0.3 [3]         1.0 [3]        0.3 [3]           0.3 [3]       
+Pr           1.000 [4]         1.000 [4]          1.000 [4]         1.000 [4]       1.000 [4]      1.000 [4]         1.000 [4]       
+n_rsites     6 [5]             6 [5]              0 [1]             0 [2]           6 [5]          6 [5]             6 [5]            
+weight       0.01              0.01               0.01              0.0             0.01           0.01              0.01 
+delay        0 [7]             0                  0                 0               0              0                 0
+tau1         0.3 [5]           0.3 [5]            0.3 [5]           0.3 [5]         0.3 [5]        0.3 [5]           0.3 [5]
+tau2         2.0 [5]           2.0 [5]            2.0 [5]           2.0 [5]         2.0 [5]        2.0 [5]           2.0 [5]
+erev         -80 [5]           -80 [5]            -80 [5]           -80 [5]         -80 [5]        -80 [5]           -80 [5]
+-----------------------------------------------------------------------------------------------------------------------------------
+
+[1] Default value from GlyPSD
+
+[2] No evidence for cartwheel inputs to Dstellate, bushy or tstellate cells.
+    Octopus cells do not get inhibitory input
+    
+[3] Guess
+
+[4] Default value
+
+[5] Guess
+
+[6] Mouse data
+    TV conductance onto pyr cells: 2.1 nS SD 2.9 nS (Kuo et al., 2012)
+    TV conductance onto TV cells: 1.8 ns SD 2.3 nS.
+
+[7] delay from pre to post; default is just 0
+
+""")
 
 add_table_data('bushy_synapse', row_key='field', col_key='post_type', 
                species='mouse', data=u"""
@@ -339,7 +428,8 @@ NMDAR_gmax   0 [3]
 EPSC_cv      0.12 [4]      
 Pr           1.000 [5]    
 n_rsites     36 [6]         
-
+weight       0.01
+delay        0
 -----------------------------------------------------------------------------------------------------------------------------------
 
 [1] Taken from the mouse bushy cell model.
