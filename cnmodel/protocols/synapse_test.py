@@ -31,6 +31,7 @@ class SynapseTest(Protocol):
         * Distribution of PSG amplitude, kinetics, and latency
         * Synaptic depression / facilitation and recovery timecourses
         """
+        self.dt = dt
         Protocol.run(self, **kwds)
         
         pre_cell = cells.cell_from_section(pre_sec)
