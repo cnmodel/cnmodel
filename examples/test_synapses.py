@@ -35,9 +35,8 @@ def runtest():
     convergence = {
         'sgc': {'bushy': 1, 'tstellate': 1, 'dstellate': 1, 'dstellate_eager': 10, 'octopus': 10},
         'dstellate': {'bushy': 10, 'tstellate': 15, 'dstellate': 5},
+        'tuberculoventral': {'bushy': 1, 'tstellate': 1, 'dstellate': 1, 'pyramidal': 1},
         }
-
-
 
     c = []
     for cellType in sys.argv[1:3]:
@@ -51,6 +50,10 @@ def runtest():
             cell = cells.DStellate.create(model='Eager', debug=True, ttx=False)
         elif cellType == 'bushy':
             cell = cells.Bushy.create(debug=True, ttx=True)
+        elif cellType == 'tuberculoventral':
+            cell = cells.Tuberculoventral.create(debug=True, ttx=True)
+        elif cellType == 'pyramidal':
+            cell = cells.Pyramidal.create(debug=True, ttx=True)
         elif cellType == 'octopus':
             cell = cells.Octopus.create(debug=True, ttx=True)
         else:
@@ -72,6 +75,9 @@ def runtest():
     if len(sys.argv) > 3:
         syntype = sys.argv[3]
     assert(syntype in ['simple', 'multisite'])
+    if syntype == 'simple':
+        niter = 1
+
     st = SynapseTest()
     st.run(preCell.soma, postCell.soma, nTerminals, vclamp=-65., iterations=niter, synapsetype=syntype)
     st.show_result()
