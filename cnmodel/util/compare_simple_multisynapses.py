@@ -23,6 +23,7 @@ from pathlib import Path
 import numpy as np
 # import pyqtgraph as pg
 import matplotlib.pyplot as mpl
+import neuron as h
 import cnmodel.util.PlotHelpers as PH
 from cnmodel.protocols import SynapseTest
 from cnmodel import cells
@@ -207,10 +208,12 @@ def compute_psc(synapsetype='multisite', celltypes=['sgc', 'tstellate']):
         print(f"Warning: Unknown convergence for {celltypes[0]:s} -> {celltypes[1]:s}, ASSUMING {nTerminals:d} terminals")
 
     if celltypes == ['sgc', 'bushy']:
-        niter = 200
+        niter = 50
     else:
-        niter = 500
+        niter = 200
     assert(synapsetype in ['simple', 'multisite'])
+    if synapsetype == 'simple':
+        niter = 1
     st = SynapseTest()
     dt = 0.010
     stim = {
@@ -261,7 +264,7 @@ def fit_one(st, stk):
     else:
         erev = -70.  # value used in gly_psd
     print('\nstk, erev: ', stk, erev)
-    F = Exp2SynFitting(initpars={'tau1': 1.0, 'tauratio': 4.0, 'weight': 0.001, 'erev': erev, 'v': -65., 'delay': 0})
+    F = Exp2SynFitting(initpars={'tau1': 1.0, 'tauratio': 5.0, 'weight': 0.0001, 'erev': erev, 'v': -65., 'delay': 0})
     t = st['t']
     p = F.fitpars
     target = np.mean(np.array(st['i']), axis=0)
@@ -397,6 +400,25 @@ def run_all():
         pickle.dump(pkst, fh)
     plot_all(pkst)
 
+def run_one(pre, post):
+    """
+    Run all of the multisite synapse calculations for each cell pair
+    Save the results in the multisite.pkl file
+    """
+    assert pre in ['sgc', 'tstellate', 'dstellate', 'tuberculoventral']
+    assert post in ['bushy', 'tstellate', 'dstellate', 'tuberculoventral', 'pyramidal']
+    st = {}
+    pkst = read_pickle('multisite')
+    # if pre == 'sgc' and post in ['bushy', 'tstellate']:
+    sti = compute_psc(synapsetype='multisite', celltypes=[pre, post])
+    st[(pre, post)] = sti
+    # remove neuron objects before pickling
+    pkst[(pre, post)] = {'t': sti['t'], 'i': sti.isoma, 'v': sti['v_soma'], 'pre': sti['v_pre']}
+    
+    with(open(Path('multisite').with_suffix('.pkl'), 'wb')) as fh:
+        pickle.dump(pkst, fh)
+    plot_all(pkst)
+
 
 def main():
     parser = argparse.ArgumentParser(description='Compare simple and multisite synapses')
@@ -405,6 +427,13 @@ def main():
                         help='Select mode [simple, multisite, compare]')
     parser.add_argument('-r', '--run', action='store_true', dest='run',
                         help='Run multisite models between all cell types')
+    parser.add_argument('-o', '--runone', action='store_true', dest='runone',
+                        help='Run multisite models between specified cell types')
+    parser.add_argument('--pre', type=str, dest='pre', default='None',
+                        help = 'Select presynaptic cell for runone')
+    parser.add_argument('--post', type=str, dest='post', default='None',
+                        help = 'Select postsynaptic cell for runone')
+                        
     parser.add_argument('-f', '--fit', action='store_true', dest='fit',
                         help='Fit exp2syn waveforms to multisite data')
     parser.add_argument('-t', '--test', action='store_true', dest='test',
@@ -422,6 +451,11 @@ def main():
 
     if args.run:
         run_all()
+        exit()
+
+    if args.runone:
+        run_one(args.pre, args.post)
+        exit()
 
     if args.fit:
         fit_all() # self contained - always fits exp2syn against the current multistie data
