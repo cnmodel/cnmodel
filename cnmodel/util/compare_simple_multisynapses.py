@@ -126,24 +126,35 @@ class Exp2SynFitting:
         # if tau1/tau2 > 1.0:  # make sure tau1 is less than tau2
         #     tau1 = 0.999*tau2
         tau2 = tauratio*tau1
-        tp = (tau1*tau2)/(tau2 - tau1) * np.log10(tau2/tau1)
+        tp = (tau1*tau2)/(tau2 - tau1) * np.log(tau2/tau1)
         factor = -np.exp(-tp/tau1) + np.exp(-tp/tau2)
         factor = 1.0/factor
         G = weight * factor * (np.exp(-(x-delay)/tau2) - np.exp(-(x-delay)/tau1))
         G[x-delay < 0] = 0.
         i = G * (v - erev)  #      i(nanoamps), g(micromhos);
+
         return i
     
     def exp2syn_err(self, p, x, y):
         return np.fabs(y-self.exp2syn(x, **dict([(k,p.value) for k,p in p.items()])))
 
-
+    def factor(self, tau1, tauratio, weight):
+        """
+        calculate tau-scaled weight
+        """
+        tau2 = tau1*tauratio
+        tp = (tau1*tau2)/(tau2 - tau1) * np.log(tau2/tau1)
+        factor = -np.exp(-tp/tau1) + np.exp(-tp/tau2)
+        factor = 1.0/factor
+        G = weight * factor
+        return(G)
+    
 def testexp():
     """
     Test the exp2syn fitting function
     """
-    pars = {'tau1': 0.1, 'tauratio': 2.0, 'weight': 0.1, 'erev': -80., 'v': -60., 'delay': 1}
-    F = Exp2SynFitting(initpars={'tau1': 0.2,  'tauratio': 2.0, 'weight': 0.1, 'erev': -80., 'v': -60., 'delay': 0})
+    pars = {'tau1': 0.1, 'tauratio': 2.0, 'weight': 0.1, 'erev': -70., 'v': -65., 'delay': 1}
+    F = Exp2SynFitting(initpars={'tau1': 0.2,  'tauratio': 2.0, 'weight': 0.1, 'erev': -70., 'v': -65., 'delay': 0})
     t = np.arange(0, 10., 0.01)
     p = F.fitpars
     target = F.exp2syn(t, pars['tau1'], pars['tauratio'], pars['weight'], pars['erev'], pars['v'], pars['delay'])
@@ -248,14 +259,16 @@ def fit_one(st, stk):
     if stk[0] in ['sgc', 'tstellate', 'granule']:
         erev = 0.  # set erev according to the source cell (excitatory: 0, inhibitory: -80)
     else:
-        erev = -80.
+        erev = -70.  # value used in gly_psd
     print('\nstk, erev: ', stk, erev)
-    F = Exp2SynFitting(initpars={'tau1': 1.0, 'tauratio': 4.0, 'weight': 0.001, 'erev': erev, 'v': -60., 'delay': 0})
+    F = Exp2SynFitting(initpars={'tau1': 1.0, 'tauratio': 4.0, 'weight': 0.001, 'erev': erev, 'v': -65., 'delay': 0})
     t = st['t']
     p = F.fitpars
     target = np.mean(np.array(st['i']), axis=0)
     # print(F.fitpars)
     pars = F.fit(t, target, F.fitpars)
+    gw = F.factor(pars['tau1'].value, pars['tauratio'].value, pars['weight'].value)
+    pars.add('GWeight', value=gw, vary=False)
     fitted = F.exp2syn(st['t'], pars['tau1'], pars['tauratio'], pars['weight'], pars['erev'], pars['v'], pars['delay'])
     lmfit.printfuncs.report_fit(F.mim.params)
     return(pars, fitted)
@@ -275,6 +288,7 @@ def fit_all():
     for i, stk in enumerate(stm.keys()): # for each pre-post cell pair
         fitp, fit = fit_one(stm[stk], stk)
         fits[stk] = fitp
+
         fitted[stk] = {'t': stm[stk]['t'], 'i': [fit], 'pars': fitp}
     with(open('simple.pkl', 'wb')) as fh:
         pickle.dump(fitted, fh) 
@@ -293,6 +307,12 @@ def plot_all(stm, sts=None):
         sd = np.std(idat, axis=0)
         ax[i].plot(np.array(data['t']), np.mean(idat, axis=0)+sd, 'c--', linewidth=0.5)        # for j in range(idat.shape[0]):
         ax[i].plot(np.array(data['t']), np.mean(idat, axis=0)-sd, 'c--', linewidth=0.5)        # for j in range(idat.shape[0]):
+        rel = 0
+        for j in range(idat.shape[0]):
+            if np.min(idat[j,:]) < -1e-2 or np.max(idat[j,:]) > 1e-2:
+                rel += 1
+        print(f'{str(stk):s} {rel:d} of {idat.shape[0]:d} {str(idat.shape):s}')
+            
         #     ax[i].plot(data['t'], idat[j], 'k-', linewidth=0.5, alpha=0.25)
         ax[i].set_title('%s : %s' % (stk[0], stk[1]), fontsize=7)
     
@@ -307,7 +327,7 @@ def plot_all(stm, sts=None):
 def print_exp2syn_fits(st):
     stkeys = list(st.keys())
     postcells = ['bushy', 'tstellate', 'dstellate', 'octopus', 'pyramidal', 'tuberculoventral', 'cartwheel']
-    fmts = {'weight': '{0:<18.6f}', 'tau1': '{0:<18.3f}', 'tau2': '{0:<18.3f}', 'delay':'{0:<18.3f}', 'erev': '{0:<18.1f}'}
+    fmts = {'weight': '{0:<18.6f}', 'GWeight': '{0:<18.6f}', 'tau1': '{0:<18.3f}', 'tau2': '{0:<18.3f}', 'delay':'{0:<18.3f}', 'erev': '{0:<18.1f}'}
     pars = list(fmts.keys())
     for pre in ['sgc', 'dstellate', 'tuberculoventral']:
         firstline = False
@@ -370,7 +390,7 @@ def run_all():
             # if pre == 'sgc' and post in ['bushy', 'tstellate']:
             sti = compute_psc(synapsetype='multisite', celltypes=[pre, post])
             st[(pre, post)] = sti
-            # remove neuron objects
+            # remove neuron objects before pickling
             pkst[(pre, post)] = {'t': sti['t'], 'i': sti.isoma, 'v': sti['v_soma'], 'pre': sti['v_pre']}
     
     with(open(Path('multisite').with_suffix('.pkl'), 'wb')) as fh:
