@@ -31,7 +31,6 @@ class SynapseTest(Protocol):
         * Distribution of PSG amplitude, kinetics, and latency
         * Synaptic depression / facilitation and recovery timecourses
         """
-        self.dt = dt
         Protocol.run(self, **kwds)
         
         pre_cell = cells.cell_from_section(pre_sec)
@@ -39,9 +38,9 @@ class SynapseTest(Protocol):
         synapses = []
         for i in range(n_synapses):
             synapses.append(pre_cell.connect(post_cell, type=synapsetype))
-
+        if len(synapses) == 0:
+            raise ValueError('No synapses created for this cell combination!')
         self.synapses = synapses
-        print('# synapses pre to post: ', len(self.synapses))
         self.pre_sec = synapses[0].terminal.section
         self.post_sec = synapses[0].psd.section
         self.pre_cell = pre_cell
