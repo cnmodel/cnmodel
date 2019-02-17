@@ -123,8 +123,8 @@ def add_table_data(name, row_key, col_key, data, **kwds):
     
     """
     if isinstance(data, str) and '\xc2' in data:
-        raise TypeError('Data table appears to contain unicode characters but'
-                        'was not defined as unicode.')
+        raise TypeError('Data table <%s> appears to contain unicode characters but'
+                        'was not defined as unicode.' % name)
     
     lines = data.split('\n')
     
@@ -174,7 +174,7 @@ def add_table_data(name, row_key, col_key, data, **kwds):
                 continue
             if line[c-1] != " ":
                 print('line : ', line)
-                raise Exception("Table line %d column %s does not obey column boundaries." % (i, j))
+                raise Exception("Table <%s> line %d column %s does not obey column boundaries." % (name, (i, j)))
             
     # Break table into cells
     cells = []
