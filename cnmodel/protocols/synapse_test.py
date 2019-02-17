@@ -41,6 +41,7 @@ class SynapseTest(Protocol):
             synapses.append(pre_cell.connect(post_cell, type=synapsetype))
 
         self.synapses = synapses
+        print('# synapses pre to post: ', len(self.synapses))
         self.pre_sec = synapses[0].terminal.section
         self.post_sec = synapses[0].psd.section
         self.pre_cell = pre_cell
