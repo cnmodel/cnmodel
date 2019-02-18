@@ -34,6 +34,9 @@ def runtests():
     if add_path:
         flags.append('cnmodel/')
 
+    # ignore the an cache
+    flags.append('--ignore=cnmodel/an_model/cache/')
+    
     # Start tests.
     print("Testing with flags: %s" % " ".join(flags))
     pytest.main(flags)
