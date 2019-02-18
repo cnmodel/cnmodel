@@ -1,3 +1,7 @@
+Changes
+=======
+This version of cnmodel runs under Python3.6 or later, using Neuron 7.6. New features include a method for changing the data tables on the fly without editing the original tables, and a tool for fitting Exp2Syn "simple" PSCs to the multisite PSC data (or, potentially, to experimental data) to get parameters for the synapse description table.
+
 About CNModel
 =============
 
@@ -34,10 +38,10 @@ Installation requirements
 -------------------------
 This package depends on the following:
 
-1. Python 2.7 with numpy (1.11), scipy (0.19.0), lmfit (0.9.6), matplotlib (2.0 or 1.5), faulthandler, and pyqtgraph (0.9.10). The cochlea module requires pandas as well. 
+1. Python 3.6 with numpy (1.14.3), scipy (1.1.0), lmfit (0.9.11), matplotlib (3.0.0), faulthandler, and pyqtgraph (0.11.0). The cochlea module requires pandas as well. 
    An Anaconda install with the appropriate scientific packages works well::
        
-       conda install python=2.7 pyqt pyqtgraph matplotlib numpy scipy pandas pytest faulthandler
+       conda install python=3.6 pyqt pyqtgraph matplotlib numpy scipy pandas pytest faulthandler
        
 2. lmfit (nonlinear fitter) is best obtained via pip to install the latest versions: ``pip install lmfit``
 3. A Python-linked version of NEURON (www.neuron.yale.edu). The code has been tested with NEURON 7.3, 7.4 and 7.5.
@@ -75,12 +79,45 @@ At that point::
      
 should generate a plot with several sets of traces showing responses of individual neuron models to depolarizing and hyperpolarizing current steps.
 
-The test suite should be run as:
+The test suite should be run as::
 
     $ python test.py
 
 This will test each of the models against reference data, the synapse mechanisms, a number of internal routines, and the auditory nerve model. The tests should pass for each component. Failures may indicate incorrect installation or incorrect function within individual components. These should be corrected before proceeding with simulations.
 
+Matlab
+------
+This version has been tested with the Matlab AN model of Zilany et al., 2014. 
+Before using, you will need to compile the C code in an_model using Matlab's mex tool. First however, change the following code:
+In model_Synapse.c:
+
+Change (line 63 in the source)::
+
+	$ int    nrep, pxbins, lp,  outsize[2], totalstim;
+
+to::
+	$ int    nrep, pxbins, lp,  totalstim;
+    $ size_t outsize[2];
+    
+Likewise, in model_IHC.c, change::
+
+	$ int    nrep, pxbins, lp,  outsize[2], totalstim, species;
+
+to::
+
+	$ int    nrep, pxbins, lp,  totalstim, species;
+    $ size_t outsize[2];
+
+Then, in Matlab, go to the cnmodel/an_model/model directory, and run::
+
+    $ mexANmodel
+
+Then, cd to an_model and run::
+    
+    $ testANmodel    
+    
+to confirm that the model is installed and working.
+(You may need to add the model directory to the Matlab path.)
 
 Figures
 -------
