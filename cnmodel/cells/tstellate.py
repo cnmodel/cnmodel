@@ -71,7 +71,6 @@ class TStellate(Cell):
                 raise TypeError("Cannot make simple PSD for %s => %s" % 
                             (terminal.cell.type, self.type))
 
-                
             #print('cells/tstellaty.py weight: ', weight)
         elif psd_type == 'multisite':
             if terminal.cell.type == 'sgc':
