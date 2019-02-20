@@ -40,7 +40,7 @@ def test_an_model():
     stimdb = 65 # stimulus intensity in dB SPL
 
     # PSTH parameters
-    nrep = 1000            # number of stimulus repetitions (e.g., 50)
+    nrep = 50           # number of stimulus repetitions (e.g., 50)
     psthbinwidth = 0.5e-3 # binwidth in seconds
 
     stim = sound.TonePip(rate=Fs, duration=T, f0=F0, dbspl=stimdb, 
@@ -51,11 +51,9 @@ def test_an_model():
 
 
     an_model.seed_rng(34978)
-
     start = time.time()
-    vihc = an_model.model_ihc(pin, CF, nrep, 1/Fs, T+1e-3, cohc, cihc, species, _transfer=False) 
+    vihc = an_model.model_ihc(pin, CF, nrep, 1/Fs, T+1e-3, cohc, cihc, species) # , _transfer=False) 
     print("IHC time:", time.time() - start)
-
     start = time.time()
     m, v, psth = an_model.model_synapse(vihc, CF, nrep, 1/Fs, fiberType, noiseType, implnt)
     print("Syn time:", time.time() - start)
@@ -66,7 +64,7 @@ def test_an_model():
 
     p2 = win.addPlot(col=0, row=1, title='IHC voltage')
     p2.setXLink(p1)
-    vihc = vihc.get()[0]
+    #vihc = vihc.get()[0]
     vihc = vihc[:len(vihc) // nrep]
     t = np.arange(len(vihc)) * 1e-5
     p2.plot(t, vihc)
