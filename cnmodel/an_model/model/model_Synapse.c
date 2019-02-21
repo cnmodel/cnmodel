@@ -60,8 +60,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
 	
 	double *px, cf, tdres, fibertype, noiseType, implnt;
-	int    nrep, pxbins, lp, outsize[2], totalstim;
-
+	int    nrep, pxbins, lp,  totalstim;
+    size_t outsize[2];
+    
 	double *pxtmp, *cftmp, *nreptmp, *tdrestmp, *fibertypetmp, *noiseTypetmp, *implnttmp;
         
     double *meanrate, *varrate, *psth;
