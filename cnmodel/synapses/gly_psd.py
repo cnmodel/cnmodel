@@ -108,7 +108,6 @@ class GlyPSD(PSD):
             for pname, pval in params.items():
                 setattr(clefts[k], pname, pval)
 
-#            clefts[k].setpointer(clefts[k]._ref_CXmtr, 'XMTR', psd[k]) #connect transmitter release to the PSD
             h.setpointer(clefts[k]._ref_CXmtr, 'XMTR', psd[k]) #connect transmitter release to the PSD
             
             v = 1.0 + gvar * np.random.standard_normal()

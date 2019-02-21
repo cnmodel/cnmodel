@@ -1,5 +1,6 @@
 Changes
 =======
+
 This version of cnmodel runs under Python3.6 or later, using Neuron 7.6. New features include a method for changing the data tables on the fly without editing the original tables, and a tool for fitting Exp2Syn "simple" PSCs to the multisite PSC data (or, potentially, to experimental data) to get parameters for the synapse description table.
 
 About CNModel
@@ -59,7 +60,7 @@ This package depends on the following:
 
 2. A Python-linked version of NEURON (www.neuron.yale.edu). The code has been tested with NEURON 7.5 and 7.6.
 3. A C compiler (gcc). Needed for compilation of mechanisms for NEURON.
-5. The Zilany et al (JASA 2014) auditory periphery model. This can be provided one of two ways:
+4. The Zilany et al (JASA 2014) auditory periphery model. This can be provided one of two ways:
     
    * The Python-based cochlea model by Rudnicki and Hemmert at https://github.com/mrkrd/cochlea. 
      This is probably best installed via pip per the instructions on the PyPi site: ``pip install cochlea``.
@@ -70,7 +71,7 @@ This package depends on the following:
      and the THRESHOLD_ALL_* files. When cnmodel attempts to access this code the first time, 
      it will perform the necessary compilation.
    
-6. neuronvis (optional) available at https://github.com/campagnola/neuronvis or https://github.com/pbmanis/neuronvis).
+5. neuronvis (optional) available at https://github.com/campagnola/neuronvis or https://github.com/pbmanis/neuronvis).
    This provides 3D visualization for morphology.
 
 After the code is installed, enter the cnmodel directory and compile the NEURON mod files::
@@ -92,13 +93,27 @@ Windows caveat:
 --------------
 Manually compile the mex files (using Matlab, go to the an_model/models folder, and use mexANmodel.m to compile the files). Then, add the an_model/model folder to the Matlab path, so that it can find the files when needed.
 
+For more detailed information on setup in a Windows environment, see the file Windows_setup.md. Thanks to Laurel Carney for prompting the generation of this set of instructions, and for identifying issues on Windows.
+
+Note: *This package is not yet compatible with Python 3.x. Neuron is not yet compatible with Python 3.x*
+
+
 Testing
 -------
+
 
 Make sure you are in the cnmodel directory, and that you have selected the right environment in Anaconda (in 
 my case, this is usually py3mpl3).
 
 At this point::
+
+After the code is installed, enter the cnmodel directory and compile the NEURON mod files::
+
+    $ nrnivmodl cnmodel/mechanisms
+
+This will create a directory ("x86_64" or "special") in the top cnmodel directory with the compiled mechanisms.
+
+Then::
 
     $ python examples/toy_model.py
      
@@ -109,6 +124,7 @@ The test suite should be run as::
     $ python test.py
 
 This will test each of the models against reference data, the synapse mechanisms, a number of internal routines, and the auditory nerve model. The tests should pass for each component. Failures may indicate incorrect installation or incorrect function within individual components. These should be corrected before proceeding with simulations.
+
 
 Note
 ----
@@ -147,6 +163,7 @@ Then, cd to an_model and run::
     
 to confirm that the model is installed and working.
 (You may need to add the model directory to the Matlab path.)
+
 
 Figures
 -------

@@ -9,9 +9,7 @@ Usage:
 
 """
 
-
-__author__ = 'pbmanis'
-
+from __future__ import print_function
 
 
 import sys
@@ -212,7 +210,8 @@ class Toy(Protocol):
             pl[name].setRange(xRange=(0., 130.), yRange=(-160., 40.))
             PH.noaxes(pl[name])
             PH.calbar(pl[list(self.celltypes.keys())[0]], calbar=[0, -120., 10., 20.], unitNames={'x': 'ms', 'y': 'mV'})
-            text = ("{0:2d}\u00b0C {1:.2f}-{2:.2f} nA".format(int(temperature), np.min(self.iv.current_cmd), np.max(self.iv.current_cmd)))
+
+            text = (u"{0:2d}\u00b0C {1:.2f}-{2:.2f} nA".format(int(temperature), np.min(self.iv.current_cmd), np.max(self.iv.current_cmd)))
             ti = pg.TextItem(text, anchor=(1, 0))
             ti.setFont(pg.QtGui.QFont('Arial', 9))
             ti.setPos(120., -120.)

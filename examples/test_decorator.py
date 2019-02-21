@@ -4,6 +4,12 @@ Basic test of cnmodel decorator on simple cell
 Users LC_bushy.hoc and XM13 mechanisms.
 
 """
+from __future__ import print_function
+
+
+__author__ = 'pbmanis'
+
+
 
 
 

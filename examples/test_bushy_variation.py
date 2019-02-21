@@ -12,7 +12,6 @@ b runs PSTHs to AN input (CF tones) across the same variations.
 
 """
 
-
 import sys
 import numpy as np
 import pyqtgraph as pg
@@ -32,9 +31,6 @@ from cnmodel import data
 import matplotlib.pyplot as mpl
 import cnmodel.util.PlotHelpers as PH
 import timeit
-
-
-
 
 synapseType = 'multisite' # 'simple'
 species = 'mouse'  # tables for other species do not yet exist
@@ -324,6 +320,7 @@ class Variations(Protocol):
         print(dir(self.pre_cells[0]))
         seed = 0
         j = 0
+
         if mode == 'sound':
             self.make_stimulus(stimulus='tone')
 
@@ -339,6 +336,7 @@ class Variations(Protocol):
                 synapses[-1].terminal.relsite.Dep_Flag = False  # no depression in these simulations
                 
         print('setup to run')
+
         self.stim_params = []
         self.istim = []
         self.istims = []

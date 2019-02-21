@@ -99,7 +99,9 @@ def play():
                                # noverlap=512, scaling='spectrum')
             specs[stim][0].plot(f, np.sqrt(Pxx_spec))
         if HAVE_PYSOUNDS:
-            print(('Playing %s' % stim))
+
+            print ('Playing %s' % stim)
+
             PS.playSound(wave.sound, wave.sound, Fs)
 
     if plots and sys.flags.interactive == 0:

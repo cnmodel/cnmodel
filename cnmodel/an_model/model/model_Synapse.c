@@ -19,14 +19,14 @@
 
         Ibrahim, R. A., and Bruce, I. C. (2010). "Effects of peripheral tuning on the auditory nerve's representation
             of speech envelope and temporal fine structure cues," in The Neurophysiological Bases of Auditory Perception,
-            eds. E. A. Lopez-Poveda and A. R. Palmer and R. Meddis, Springer, NY, pp. 429–438.
+            eds. E. A. Lopez-Poveda and A. R. Palmer and R. Meddis, Springer, NY, pp. 429â€“438.
 
    Please cite these papers if you publish any research
    results obtained with this code or any modified versions of this code.
 
    See the file readme.txt for details of compiling and running the model.  
    
-   %%% © M. S. Arefeen Zilany (msazilany@gmail.com), Ian C. Bruce (ibruce@ieee.org),
+   %%% Â© M. S. Arefeen Zilany (msazilany@gmail.com), Ian C. Bruce (ibruce@ieee.org),
          Rasha A. Ibrahim, Paul C. Nelson, and Laurel H. Carney - November 2013 %%%
    
 */
@@ -60,8 +60,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
 	
 	double *px, cf, tdres, fibertype, noiseType, implnt;
+
 	int    nrep, pxbins, lp, totalstim;
-    mwSize outsize[2];
+  mwSize outsize[2];
+
 	double *pxtmp, *cftmp, *nreptmp, *tdrestmp, *fibertypetmp, *noiseTypetmp, *implnttmp;
         
     double *meanrate, *varrate, *psth;

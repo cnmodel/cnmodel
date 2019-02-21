@@ -11,9 +11,8 @@ This script:
     other bushy cell.
 3. Specifies the CFs of the SGC cells individually. Also specifies the frequency of 
     and stimuli by ear allowing for "binaural beats"
-5. Records the bushy and MSO cell membrane voltages, sgc spike time, and calculates
+4. Records the bushy and MSO cell membrane voltages, sgc spike time, and calculates
     vector strengths.
-
 
 The auditory nerve spike train is generated automatically by the DummySGC class
 using the tone pip. For lower-level access to the auditory nerve model, see the
@@ -27,7 +26,6 @@ Usage:
     python examples/test_mso_inputs.py [cochlea | matlab] will try to use the specified
     simulator. If no simulator is specified, it will try to use cochlea or matlab, in
     that order.
-
 
 """
 import sys

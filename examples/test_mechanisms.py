@@ -214,8 +214,10 @@ def getmechs():
 if __name__ == "__main__":
     mechs = getmechs()
     if len(sys.argv) < 2:
+
         print("\n\nUsage: python test_mechanisms.py <mechname>")
         print("  Available mechanisms:")
+
         linelen = 0
         for i, n in enumerate(mechs):
             if n in nottestablemechs: # 'Mechanism':
@@ -224,6 +226,7 @@ if __name__ == "__main__":
             linelen += 20
             if linelen > 80:
                 print("")
+
                 linelen = 0
         sys.exit(1)
     
