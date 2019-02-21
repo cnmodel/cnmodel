@@ -321,20 +321,20 @@ class Variations(Protocol):
         print dir(self.pre_cells[0])
         seed = 0
         j = 0
-        if mode == 'sound':
-            self.make_stimulus(stimulus='tone')
-
-            for np in range(len(self.pre_cells)):
-                self.pre_cells[np].set_sound_stim(self.stim, seed=seed)
-                seed += 1
-                synapses.append(pre_cells[-1].connect(post_cell,
-                    post_opts={'AMPAScale': 2.0, 'NMDAScale': 2.0}, type=synapseType))
-                for i in range(synapses[-1].terminal.n_rzones):
-                    xmtr['xmtr%04d'%j] = h.Vector()
-                    xmtr['xmtr%04d'%j].record(synapses[-1].terminal.relsite._ref_XMTR[i])
-                j = j + 1
-                synapses[-1].terminal.relsite.Dep_Flag = False  # no depression in these simulations
-                
+        # if mode == 'sound':
+        #     self.make_stimulus(stimulus='tone')
+        #
+        #     for np in range(len(self.pre_cells)):
+        #         self.pre_cells[np].set_sound_stim(self.stim, seed=seed)
+        #         seed += 1
+        #         synapses.append(pre_cells[-1].connect(post_cell,
+        #             post_opts={'AMPAScale': 1.0, 'NMDAScale': 1.0}, type=synapseType))
+        #         for i in range(synapses[-1].terminal.n_rzones):
+        #             xmtr['xmtr%04d'%j] = h.Vector()
+        #             xmtr['xmtr%04d'%j].record(synapses[-1].terminal.relsite._ref_XMTR[i])
+        #         j = j + 1
+        #         synapses[-1].terminal.relsite.Dep_Flag = False  # no depression in these simulations
+        #
         print 'setup to run'
         self.stim_params = []
         self.istim = []
