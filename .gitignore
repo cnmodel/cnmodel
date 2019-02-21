@@ -5,6 +5,8 @@
 *.dat
 cache
 i386
+cnmodel/mechanisms/*.c
+cnmodel/mechanisms/*.o
 cnmodel/an_model/model/*.mexmaci64
 x86_64
 cnmodel/an_model
