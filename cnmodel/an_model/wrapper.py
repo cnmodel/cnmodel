@@ -27,22 +27,22 @@ def get_matlab():
         _proc = matlab.engine.start_matlab()
         _proc.cd(model_path)
         # Try building the model mex files 
-        if _proc.exist('model_IHC') == 0:
-            print ("\nCompiling MEX for auditory periphery model...")
-            try:
-                _proc.clear('all', nargout=0)
-                _proc.mex('-v', 'model_IHC.c', 'complex.c')
-                _proc.clear('all', nargout=0)
-                _proc.mex('-v', 'model_Synapse.c', 'complex.c')
-                # _proc('mexANmodel;')
-            except Exception as err:
-                print (err.output)
-                print ("")
-                raise RuntimeError(
-                    "An error occurred while compiling the auditory periphery model.\n" +
-                    "The complete output is printed above. " +
-                    "See cnmodel/an_model/model/readme.txt for more information.")
-            print ("Done.")
+        # if _proc.exist('model_IHC') == 0:
+        #     print ("\nCompiling MEX for auditory periphery model...")
+        #     try:
+        #         _proc.clear('all', nargout=0)
+        #         _proc.mex('-v', 'model_IHC.c', 'complex.c')
+        #         _proc.clear('all', nargout=0)
+        #         _proc.mex('-v', 'model_Synapse.c', 'complex.c')
+        #         # _proc('mexANmodel;')
+        #     except Exception as err:
+        #         print (err.output)
+        #         print ("")
+        #         raise RuntimeError(
+        #             "An error occurred while compiling the auditory periphery model.\n" +
+        #             "The complete output is printed above. " +
+        #             "See cnmodel/an_model/model/readme.txt for more information.")
+        #     print ("Done.")
     return _proc
 
 
@@ -137,7 +137,7 @@ def model_synapse(vihc, CF, nrep=1, tdres=1e-5, fiberType=0, noiseType=1, implnt
         # if not isinstance(arg, matlab_proc.MatlabReference):
         arg = float(arg)
         args.append(arg)    
-    mlout = ml.model_Synapse(vihc, *args, **kwds, nargout=3)
+    mlout = ml.model_Synapse(vihc, *args,  nargout=3)
     mlout = np.array(mlout).squeeze()  # get rid of extra dimension in return (3,1,n)
     return mlout    
 
