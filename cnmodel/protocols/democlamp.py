@@ -101,7 +101,7 @@ def run_democlamp(cell, dend, vsteps=[-60,-70,-60], tsteps=[10,50,100]):
     for m,  VX in enumerate(vcmds):
         stim['amp'] = VX
         pl = vplots[m]
-        print m, VX
+        print(m, VX)
         (secmd, maxt, tstims) = make_pulse(stim)
         for n, rsc in enumerate(compensation):
             vec={}
