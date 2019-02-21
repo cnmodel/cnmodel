@@ -41,11 +41,24 @@ This package depends on the following:
 1. Python 3.6 with numpy (1.14.3), scipy (1.1.0), lmfit (0.9.11), matplotlib (3.0.0), faulthandler, and pyqtgraph (0.11.0). The cochlea module requires pandas as well. 
    An Anaconda install with the appropriate scientific packages works well::
        
-       conda install python=3.6 pyqt pyqtgraph matplotlib numpy scipy pandas pytest faulthandler
+       conda install python=3.6 pyqt pyqtgraph matplotlib numpy scipy pandas pytest cython
+       pip install resampy
+       pip install lmfit
+       pip install cochlea
        
-2. lmfit (nonlinear fitter) is best obtained via pip to install the latest versions: ``pip install lmfit``
-3. A Python-linked version of NEURON (www.neuron.yale.edu). The code has been tested with NEURON 7.3, 7.4 and 7.5.
-4. A C compiler (gcc). Needed for compilation of mechanisms for NEURON.
+       or:
+       
+       conda create --name py3mpl3 python=3.6 pyqt pyqtgraph matplotlib=3 numpy scipy pandas pytest cython
+       pip install resampy
+       pip install lmfit
+       pip install cochlea
+       
+      
+       (Note that under MacOSX, python 3.7 is usable, but the Windows versio of Matlab R2018b is restricted
+           to python 3.6)
+
+2. A Python-linked version of NEURON (www.neuron.yale.edu). The code has been tested with NEURON 7.5 and 7.6.
+3. A C compiler (gcc). Needed for compilation of mechanisms for NEURON.
 5. The Zilany et al (JASA 2014) auditory periphery model. This can be provided one of two ways:
     
    * The Python-based cochlea model by Rudnicki and Hemmert at https://github.com/mrkrd/cochlea. 
@@ -60,20 +73,32 @@ This package depends on the following:
 6. neuronvis (optional) available at https://github.com/campagnola/neuronvis or https://github.com/pbmanis/neuronvis).
    This provides 3D visualization for morphology.
 
-For more detailed information on setup in a Windows environment, see the file Windows_setup.md. Thanks to Laurel Carney for prompting the generation of this set of instructions, and for identifying issues on Windows.
-
-Note: *This package is not yet compatible with Python 3.x. Neuron is not yet compatible with Python 3.x*
-
-Testing
--------
-
 After the code is installed, enter the cnmodel directory and compile the NEURON mod files::
 
     $ nrnivmodl cnmodel/mechanisms
 
 This will create a directory ("x86_64" or "special") in the top cnmodel directory with the compiled mechanisms.
 
-At that point::
+Under Windows 10, use::
+
+     $ mknrndll cnmodel\mechanisms
+
+to do the same thing. 
+
+
+For more detailed information on setup in a Windows environment, see the file Windows_setup.md. Thanks to Laurel Carney for prompting the generation of this set of instructions, and for identifying issues on Windows.
+
+Windows caveat:
+--------------
+Manually compile the mex files (using Matlab, go to the an_model/models folder, and use mexANmodel.m to compile the files). Then, add the an_model/model folder to the Matlab path, so that it can find the files when needed.
+
+Testing
+-------
+
+Make sure you are in the cnmodel directory, and that you have selected the right environment in Anaconda (in 
+my case, this is usually py3mpl3).
+
+At this point::
 
     $ python examples/toy_model.py
      
@@ -84,6 +109,10 @@ The test suite should be run as::
     $ python test.py
 
 This will test each of the models against reference data, the synapse mechanisms, a number of internal routines, and the auditory nerve model. The tests should pass for each component. Failures may indicate incorrect installation or incorrect function within individual components. These should be corrected before proceeding with simulations.
+
+Note
+----
+Under Windows, it may be best to use the standard windows command terminal rather than the "bash" terminal provided by NEURON, at least to run the Python scripts.
 
 Matlab
 ------
