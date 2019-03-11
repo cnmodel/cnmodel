@@ -254,10 +254,14 @@ def report_changes(changes):
     For changes to data tables, give user a readout
     """
     if len(changes) > 0:
-        print("\nWarning: Data Table '%s' (in memory) has been modified!" % changes[0]['name'])
+        anychg = False
         for ch in changes:
             # print('  >>> Changing %s, %s from default (%s) to %s' % (ch['row'], ch['col'], str(ch['new'][0]), str(ch['old'][0])))
-            print('  >>> Changing %s, from default (%s) to %s' % (ch['key'], str(ch['old'][0]), str(ch['new'][0])))
+            if str(ch['old'][0]) != str(ch['new'][0]):
+                if anychg is False:
+                    print("\nWarning: Data Table '%s' (in memory) has been modified!" % changes[0]['name'])
+                    anychg = True
+                print('  >>> Changing %s, from default (%s) to %s' % (ch['key'], str(ch['old'][0]), str(ch['new'][0])))
 
 
 def parse_sources(lines):
