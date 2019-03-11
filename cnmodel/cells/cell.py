@@ -128,11 +128,9 @@ class Cell(object):
                 raise ValueError('Unknown morphology file type [must be .hoc or .swc]')
         elif isinstance(morphology_file, morphology.Morphology):
             self.morphology = morphology_file
-        elif isinstance(morphology_file, str):  # passed a hoc object
-            self.morphology = morphology.HocReader(morphology_file)
         else:
             print(morphology_file)
-            raise TypeError('Invalid morphology type')
+            raise TypeError('Invalid morphology type: must be filename(str) or ')
         self.hr = self.morphology # extensive renaming required in calling classes, temporary fix.
         self.morphology.read_section_info()  # not sure this is necessary... 
         # these were not instantiated when the file was read, but when the decorator was run.
@@ -455,7 +453,7 @@ class Cell(object):
         a mechanism is required to have a gbar variable.
         This routine should be called at the end of every cell creation routine.
         """
-        u=dir(section())
+        u = dir(section())
         mechs = []
         for m in u:
             if m[0:2] == '__':
@@ -921,14 +919,16 @@ class Cell(object):
 
     def computeAreas(self):
         self.areaMap = {}
-        for sec in self.all_sections:
-            s = self.all_sections[sec]
-            sectype = self.get_section_type(sec)
+        for sec in self.all_sections:  # keys for names of section types
+            s = self.all_sections[sec]  # get all the sections of that type
+            sectype = self.get_section_type(s)
             if len(s) > 0:
+                self.areaMap[sec] = {}
                 for u in s:
-                    self.areaMap[u] = np.pi*u.diam*u.L
+                    self.areaMap[sec][u] = np.pi*u.diam*u.L
             else:
-                print('    No section of type %s in cell' % sectype)
+                pass
+                # print('    No section of type %s in cell' % sec)
 
     def add_axon(self, c_m=1.0, R_a=150, axonsf=1.0, nodes=5, debug=False, dia=None, len=None, seg=None):
         """
