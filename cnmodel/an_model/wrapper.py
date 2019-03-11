@@ -1,9 +1,20 @@
 from __future__ import print_function
 import os
 import numpy as np
-from ..util import matlab_proc
+import scipy.io
+import tempfile
+# from ..util import matlab_proc
+
+import matlab.engine
+# import matplotlib.pyplot as mpl
 
 _proc = None
+
+"""
+Wrapper for matlab computations
+Uses matlab.engine to access matlab functions and variables
+(previous version used matlab_proc)
+"""
 
 def get_matlab():
     """ Return a running MatlabProcess instance.
@@ -12,20 +23,26 @@ def get_matlab():
     if _proc is None:
         path = os.path.dirname(__file__)
         model_path = os.path.join(path, 'model')
-        _proc = matlab_proc.MatlabProcess(cwd=model_path)
+        # _proc = matlab_proc.MatlabProcess(cwd=model_path)
+        _proc = matlab.engine.start_matlab()
+        _proc.cd(model_path)
         # Try building the model mex files 
-        if _proc.exist('model_IHC') == 0:
-            print ("\nCompiling MEX for auditory periphery model...")
-            try:
-                _proc('mexANmodel;')
-            except Exception as err:
-                print (err.output)
-                print ("")
-                raise RuntimeError(
-                    "An error occurred while compiling the auditory periphery model.\n" +
-                    "The complete output is printed above. " +
-                    "See cnmodel/an_model/model/readme.txt for more information.")
-            print ("Done.")
+        # if _proc.exist('model_IHC') == 0:
+        #     print ("\nCompiling MEX for auditory periphery model...")
+        #     try:
+        #         _proc.clear('all', nargout=0)
+        #         _proc.mex('-v', 'model_IHC.c', 'complex.c')
+        #         _proc.clear('all', nargout=0)
+        #         _proc.mex('-v', 'model_Synapse.c', 'complex.c')
+        #         # _proc('mexANmodel;')
+        #     except Exception as err:
+        #         print (err.output)
+        #         print ("")
+        #         raise RuntimeError(
+        #             "An error occurred while compiling the auditory periphery model.\n" +
+        #             "The complete output is printed above. " +
+        #             "See cnmodel/an_model/model/readme.txt for more information.")
+        #     print ("Done.")
     return _proc
 
 
@@ -61,22 +78,23 @@ def model_ihc(pin, CF, nrep=1, tdres=1e-5, reptime=1, cohc=1, cihc=1, species=1,
         Shera et al. (PNAS 2002), or "3" for human BM tuning from 
         Glasberg & Moore (Hear. Res. 1990)
     """
+    ml = get_matlab()
     # make sure pin is a row vector
-    pin = pin.reshape(1, pin.size)
-    
+    # pin = pin.reshape(1, pin.size)
+    assert reptime >= pin.size * tdres
     # convert all args to double, as required by model_IHC
+    # fastest way seems to be through savemat and ml load
+    fh = tempfile.mktemp(suffix='.mat')
+    scipy.io.savemat(fh, {'A': pin})
+    pin = ml.load(fh)['A']
+
     args = [pin]
     for arg in (CF, nrep, tdres, reptime, cohc, cihc, species):
-        if not isinstance(arg, matlab_proc.MatlabReference):
-            arg = float(arg)
+        arg = float(arg)
         args.append(arg)
-        
-    assert reptime >= pin.size * tdres
-    
-    ml = get_matlab()
-    fn = ml.model_IHC
-    fn.nargout = 1  # necessary because nargout(model_IHC) fails
-    return fn(*args, **kwds)
+
+    mlout = ml.model_IHC(*args, **kwds)
+    return mlout[0]
 
 
 def model_synapse(vihc, CF, nrep=1, tdres=1e-5, fiberType=0, noiseType=1, implnt=1, **kwds):
@@ -111,22 +129,17 @@ def model_synapse(vihc, CF, nrep=1, tdres=1e-5, fiberType=0, noiseType=1, implnt
         "Approxiate" or "actual" implementation of the power-law functions: 
         "0" for approx. and "1" for actual implementation
     """
-    # make sure vihc is a row vector (unless it is a reference to a matlab variable)
-    if isinstance(vihc, np.ndarray):
-        vihc = vihc.reshape(1, vihc.size)
 
-    # convert all args to double, as required by model_Synapse
-    args = [vihc]
-    for arg in (CF, nrep, tdres, fiberType, noiseType, implnt):
-        if not isinstance(arg, matlab_proc.MatlabReference):
-            arg = float(arg)
-        args.append(arg)
-    
     ml = get_matlab()
-    fn = ml.model_Synapse
-    fn.nargout = 3  # necessary because nargout(model_IHC) fails
-    return fn(*args, **kwds)
-    
+
+    args = [] 
+    for arg in (CF, nrep, tdres, fiberType, noiseType, implnt):
+        # if not isinstance(arg, matlab_proc.MatlabReference):
+        arg = float(arg)
+        args.append(arg)    
+    mlout = ml.model_Synapse(vihc, *args,  nargout=3)
+    mlout = np.array(mlout).squeeze()  # get rid of extra dimension in return (3,1,n)
+    return mlout    
 
 def seed_rng(seed):
     """
@@ -135,4 +148,17 @@ def seed_rng(seed):
     seed = int(seed)
     cmd = "RandStream.setGlobalStream(RandStream('mcg16807','seed',%d));" % seed
     ml = get_matlab()
-    ml(cmd)
+    rso = ml.RandStream('mcg16807', 'seed', matlab.int32([seed]), nargout=1)
+    ml.RandStream.setGlobalStream(rso)
+    #(cmd)
+
+if __name__ == '__main__':
+    # test
+    tdres = 1e-5
+    tb = np.arange(0, 0.1, tdres)
+    CF = 4000.
+    _proc = get_matlab()
+    pin = 10*np.sin(2*np.pi*CF*tb)
+    vihc = model_ihc(pin, CF, nrep=1, tdres=tdres, reptime=1, cohc=1, cihc=1, species=1)
+    vsyn = model_synapse(vihc, CF, nrep=1, tdres=tdres, fiberType=1, noiseType=1, implnt=0) # , **kwds))
+    

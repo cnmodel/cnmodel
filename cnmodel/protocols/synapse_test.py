@@ -38,7 +38,8 @@ class SynapseTest(Protocol):
         synapses = []
         for i in range(n_synapses):
             synapses.append(pre_cell.connect(post_cell, type=synapsetype))
-
+        if len(synapses) == 0:
+            raise ValueError('No synapses created for this cell combination!')
         self.synapses = synapses
         self.pre_sec = synapses[0].terminal.section
         self.post_sec = synapses[0].psd.section

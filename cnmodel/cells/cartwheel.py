@@ -41,7 +41,21 @@ class Cartwheel(Cell):
 
         
         if psd_type == 'simple':
-            return self.make_exp2_psd(post_sec, terminal, loc=loc)
+            if terminal.cell.type in ['sgc', 'dstellate', 'tuberculoventral', 'cartwheel']:
+                weight = data.get('%s_synapse' % terminal.cell.type, species=self.species,
+                        post_type=self.type, field='weight')
+                tau1 = data.get('%s_synapse' % terminal.cell.type, species=self.species,
+                        post_type=self.type, field='tau1')
+                tau2 = data.get('%s_synapse' % terminal.cell.type, species=self.species,
+                        post_type=self.type, field='tau2')
+                erev = data.get('%s_synapse' % terminal.cell.type, species=self.species,
+                        post_type=self.type, field='erev')
+                return self.make_exp2_psd(post_sec, terminal, weight=weight, loc=loc,
+                        tau1=tau1, tau2=tau2, erev=erev)
+            else:
+                raise TypeError("Cannot make simple PSD for %s => %s" % 
+                            (terminal.cell.type, self.type))
+
         else:
             raise ValueError("Unsupported psd type %s for cartwheel cell (inputs not implemented yet)" % psd_type)
 
@@ -50,18 +64,16 @@ class Cartwheel(Cell):
             return synapses.SimpleTerminal(self.pre_sec, post_cell, 
                                             **kwds)
         elif term_type == 'multisite':
-            if post_cell.type == 'pyramidal':
-                nzones, delay = 5, 0
-            elif post_cell.type == 'cartwheel':
-                nzones, delay = 5, 0
-            elif post_cell.type == 'MLStellate':
-                nzones, delay = 5, 0
+            if post_cell.type in ['tuberculoventral', 'pyramidal']:
+                nzones = data.get('cartwheel_synapse', species=self.species,
+                        post_type=post_cell.type, field='n_rsites')
+                delay = data.get('cartwheel_synapse', species=self.species,
+                        post_type=post_cell.type, field='delay')
             else:
-                raise NotImplementedError("No knowledge as to how to connect Cartwheel cell to cell type %s" %
+                raise NotImplementedError("No knowledge as to how to connect cartwheel cell to cell type %s" %
                                         type(post_cell))
-            
-            self.pre_sec = self.soma
-            return synapses.StochasticTerminal(self.pre_sec, post_cell, nzones=nzones, 
+            pre_sec = self.soma
+            return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones, spike_source=self.spike_source,
                                             delay=delay, **kwds)
         else:
             raise ValueError("Unsupported terminal type %s" % term_type)

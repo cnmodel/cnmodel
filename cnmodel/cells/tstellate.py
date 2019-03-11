@@ -56,17 +56,21 @@ class TStellate(Cell):
             post_sec = self.soma
         #print('cells/tstellaty.py psd type: ', psd_type)
         if psd_type == 'simple':
-            print('*** terminal cell type: ', terminal.cell.type)
-            if terminal.cell.type == 'sgc':
-                weight = data.get('sgc_synapse', species=self.species,
+            if terminal.cell.type in ['sgc', 'dstellate', 'tuberculoventral']:
+                weight = data.get('%s_synapse' % terminal.cell.type, species=self.species,
                         post_type=self.type, field='weight')
-                return self.make_exp2_psd(post_sec, terminal, weight=weight, loc=loc)
-            if terminal.cell.type == 'dstellate':
-                weight = self.ds_gmax = data.get('dstellate_synapse', species=self.species,
-                        post_type=self.type, field='weight')
-                print('ds max: ', weight)
-                return self.make_exp2_psd(post_sec, terminal, weight=weight, loc=loc)
-                
+                tau1 = data.get('%s_synapse' % terminal.cell.type, species=self.species,
+                        post_type=self.type, field='tau1')
+                tau2 = data.get('%s_synapse' % terminal.cell.type, species=self.species,
+                        post_type=self.type, field='tau2')
+                erev = data.get('%s_synapse' % terminal.cell.type, species=self.species,
+                        post_type=self.type, field='erev')
+                return self.make_exp2_psd(post_sec, terminal, weight=weight, loc=loc,
+                        tau1=tau1, tau2=tau2, erev=erev)
+            else:
+                raise TypeError("Cannot make simple PSD for %s => %s" % 
+                            (terminal.cell.type, self.type))
+
             #print('cells/tstellaty.py weight: ', weight)
         elif psd_type == 'multisite':
             if terminal.cell.type == 'sgc':
@@ -94,9 +98,11 @@ class TStellate(Cell):
                 self.ds_gmax = data.get('dstellate_synapse', species=self.species,
                         post_type=self.type, field='gly_gmax')*1e3
                 #print('ds max: ', self.ds_gmax)
-                return self.make_gly_psd(post_sec, terminal, type='glyfast', loc=loc, gmax=self.ds_gmax)
+                return self.make_gly_psd(post_sec, terminal, psdtype='glyfast', loc=loc, gmax=self.ds_gmax)
             elif terminal.cell.type == 'tuberculoventral':
-                return self.make_gly_psd(post_sec, terminal, type='glyfast', loc=loc)
+                self.tv_gmax = data.get('tuberculoventral_synapse', species=self.species,
+                        post_type=self.type, field='gly_gmax')*1e3
+                return self.make_gly_psd(post_sec, terminal, psdtype='glyfast', loc=loc, gmax=self.tv_gmax)
             else:
                 raise TypeError("Cannot make PSD for %s => %s" % 
                             (terminal.cell.type, self.type))

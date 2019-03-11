@@ -117,9 +117,7 @@ class GlyPSD(PSD):
             psd[k].Erev = eRev # set the reversal potential
         
         par = list(par)
-        #if self.psdType == 'ampa': # include nmda receptors in psd
-            #psd.extend(psdn)
-            #par.extend(parn)
+
         if message is not None:
             print(message)
                 

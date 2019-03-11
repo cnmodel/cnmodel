@@ -1,4 +1,5 @@
 import sys
+import argparse
 import numpy as np
 import pyqtgraph as pg
 from neuron import h
@@ -9,7 +10,6 @@ from cnmodel.util import custom_init
 import cnmodel.util.pynrnutilities as PU
 from cnmodel import data
 
-synapseType = 'simple'
 species = 'mouse'  # tables for other species do not yet exist
 
 def runTrial(cell, info):
@@ -249,18 +249,27 @@ class SGCInputTestPSTH(Protocol):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        cell = sys.argv[1]
-    else:
-        cell = 'bushy'
-    if len(sys.argv) > 2:
-        stimulus = sys.argv[2]
-    else:
-        stimulus = 'tone'
-    nrep = 10
-    if len(sys.argv) > 3:
-        nrep = int(sys.argv[3])
-    
+    parser = argparse.ArgumentParser(description='Compute AN only PSTH in postsynaptic cell')
+    parser.add_argument(type=str, dest='cell', default='bushy',
+                        choices = ['bushy', 'tstellate', 'dstellate', 'octopus',
+                                   'tuberculoventral', 'pyramida'],
+                        help='Select target cell')
+    parser.add_argument('-s', '--stimulus', type=str, dest='stimulus', default='tone',
+                        choices=['tone', 'SAM', 'clicks'],
+                        help="Select stimulus from ['tone', 'SAM', 'clicks']")
+    parser.add_argument('-t', '--type', type=str, dest='syntype', default='simple',
+                        choices=['simple', 'multisite'],
+                        help='Set synapse type (simple, multisite)')
+    parser.add_argument('-n', '--nrep', type=int, dest='nrep', default=10,
+                        help='Set number of repetitions')
+                        
+    args = parser.parse_args()
+
+    cell = args.cell
+    stimulus = args.stimulus
+    nrep = args.nrep
+    synapseType = args.syntype
+
     print('cell type: ', cell)
     prot = SGCInputTestPSTH()
     prot.set_cell(cell)

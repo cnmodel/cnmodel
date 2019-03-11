@@ -5,8 +5,9 @@
 *.dat
 cache
 i386
-cnmodel/an_model/model/model_IHC.mexmaci64
-cnmodel/an_model/model/model_Synapse.mexmaci64
+cnmodel/mechanisms/*.c
+cnmodel/mechanisms/*.o
+cnmodel/an_model/model/*.mexmaci64
 x86_64
 cnmodel/an_model
 doc/build
