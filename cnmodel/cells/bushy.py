@@ -324,14 +324,14 @@ class BushyRothman(Bushy):
                 raise ValueError('\nModel type %s is not implemented for mouse bushy cells' % modelType)
             if self.debug:
                 print ('  Setting conductances for mouse bushy cell (%s), Xie and Manis, 2013' % modelType)
-            if modelname == 'XM13':
+            if self.status['modelName'] == 'XM13':
                 dataset = 'XM13_channels'
-            elif modelname == 'XM13nacncoop':
+            elif self.status['modelName'] == 'XM13nacncoop':
                 dataset = 'XM13_channels_nacncoop'
-            elif modelname.startswith('mGBC'):
+            elif self.status['modelName'].startswith('mGBC'):
                 dataset = 'mGBC_channels'
             else:
-                raise ValueError(f'ModelName {modelname:s} not recognized for mouse bushy cells')
+                raise ValueError(f"ModelName {self.status['modelName']:s} not recognized for mouse bushy cells")
             self.vrange = [-68., -55.]  # set a default vrange for searching for rmp
             self.i_test_range = {'pulse': (-1., 1., 0.05)}
             self._valid_temperatures = (34., )
