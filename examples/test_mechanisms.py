@@ -81,7 +81,7 @@ class ChannelKinetics():
         #
         self.tdur = {'CaPCalyx': [20., 10.], 
                      'nav11': [10., 5.], 'jsrna': [10., 5.], 'ichanWT2005': [10., 5.], 
-                     'nacn': [10., 5.], 'nacncoop': [10., 5.],
+                     'nacn': [10., 5.], 'nacncoop': [10., 5.], 'nabu': [10., 5.],
                      'kht':[200., 20.], 'klt': [200., 20.], 'ka': [25., 5.],
                      'hcno': [1000., 200.], 'ih': [1000., 200.], 'ihvcn': [1000., 200.],'hcnobo': [1000., 200.],
                      'ihsgcBasalMiddle': [1000., 200.], 'ihsgcApical': [1000., 200.], 
@@ -148,7 +148,8 @@ class ChannelKinetics():
         self.vcPost.amp3 = clampV
         self.vcPost.rs = 1e-9
         print("soma: ", self.soma, end=' ') 
-        print(' vcpost sec: ', self.vcPost.Section())
+        # print(dir(self.vcPost))
+        # print(' vcpost sec: ', self.vcPost.Section())
 
         if modfile[0:2] == 'ih':
             stimamp = np.linspace(-140, -40, num=21, endpoint=True)

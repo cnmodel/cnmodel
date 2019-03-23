@@ -54,7 +54,7 @@ class Decorator():
                         'ihvcn': 'eh', 'jsrna': 'ena', 'nav11': 'ena', 'nacncoop': 'ena',
                         'hcnobo': 'eh'}
         self.vshift_mapper = {'nacn': None, 'kht': None, 'klt': None, 'leak': None,
-                        'ihvcn': None, 'jsrna': None, 'nav11': 'vsna', 'nacncoop': None,
+                        'ihvcn': None, 'jsrna': None, 'nav11': 'vsna', 'nacncoop': 'vsna',
                         'hcnobo': None}
         self._biophys(cell, verify=verify)
         print('\033[1;31;40m Decorator: Model Decorated with channels (if this appears more than once per cell, there is a problem)\033[0m')
