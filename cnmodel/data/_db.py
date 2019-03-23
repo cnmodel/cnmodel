@@ -173,8 +173,8 @@ def add_table_data(name, row_key, col_key, data, **kwds):
             if len(line) < c:
                 continue
             if line[c-1] != " ":
-                print('line : ', line)
-                raise Exception("Table <%s> line %d column %s does not obey column boundaries." % (name, (i, j)))
+                print('Table line with error: \n    ', line)
+                raise Exception("Table <%s> line: %d, column: %s does not obey column boundaries." % (name, i, j))
             
     # Break table into cells
     cells = []
