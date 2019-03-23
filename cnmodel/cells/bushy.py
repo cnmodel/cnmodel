@@ -732,6 +732,7 @@ class BushyRothman(Bushy):
         elif nach in ['na', 'nacn']:
             soma().na.gbar = gnabar
             soma.ena = self.e_na
+            soma().na.vsna = 0.
             if self.debug:
                 print ('na gbar: ', soma().na.gbar)
         else:

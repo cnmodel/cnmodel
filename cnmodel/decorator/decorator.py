@@ -129,7 +129,7 @@ class Decorator():
                         print('   inserted %s into section ' % mech, sec)
                 
                 gbar_setup = None
-                gbar = 0
+                gbar = 0.
                 if parameter == 'gbar':
                     gbar = self.gbarAdjust(cell, sectype, mechname, sec)  # map density by location/distance
                     gbar_setup = ('%s_%s' % (self.gbar_mapper[mech], mech))  # map name into .mod file name
@@ -138,7 +138,7 @@ class Decorator():
                     #         print 'parMap[mech]', mech, parMap[mech], gbar,
                     #     gbar = gbar * parMap[mech]  # change gbar here...
                     #     if verify:
-                    #         print '  new gbar: ', gbar
+                    print( '####### new gbar: ', gbar)
                 
                 vshift_setup = None
                 vshift = 0.
@@ -146,7 +146,8 @@ class Decorator():
                 if parameter == 'vshift' and self.vshift_mapper[mech] is not None:
                     vshift_setup = ('%s_%s' % (self.vshift_mapper[mech], mech))  # map voltage shift
                     vshift = cell.channelMap[sectype][mechname]
-                    # print('*********   mech: gbar, vshift: ', gbar, vshift)
+                    print('*********   mech: gbar, vshift: ', gbar, vshift, vshift_setup)
+                    exit()
                 
                 cell.hr.h.Ra = self.channelInfo.newRa
                 for sec in cell.hr.sec_groups[s]:  # now set conductances and other parameters as requested
