@@ -846,18 +846,21 @@ class Cell(object):
         if auto_initialize:
             self.cell_initialize(vrange=vrange)
             custom_init()
-
+        self.computeAreas()
         gsum = 0.
-        section = self.soma
-        u = self.get_mechs(section)
-        for m in u:
-#            gx = 'section().'+m+'.'+gnames[m]
-            gm = '%s_%s' % (gnames[m], m)
-            gsum += getattr(section(), gm) 
-            #eval(gx)
-           # print('{0:>12s} : gx '.format(m))
-        # convert gsum from us/cm2 to nS using cell area
-#        print ('gsum, self.somaarea: ', gsum, self.somaarea)
+        soma_sections = self.all_sections['soma']
+        # 1e-8*np.pi*soma.diam*soma.L
+        somaarea = np.sum([1e-8*np.pi*s.L*s.diam for s in soma_sections])
+        for sec in soma_sections:
+            u = self.get_mechs(sec)
+            for m in u:
+    #            gx = 'section().'+m+'.'+gnames[m]
+                gm = '%s_%s' % (gnames[m], m)
+                gsum += getattr(sec(), gm) 
+                #eval(gx)
+               # print('{0:>12s} : gx '.format(m))
+            # convert gsum from us/cm2 to nS using cell area
+    #        print ('gsum, self.somaarea: ', gsum, self.somaarea)
         gs = mho2ns(gsum, self.somaarea)
         Rin = 1e3/gs  # convert to megohms
         tau = Rin*self.totcap*1e-3  # convert to msec

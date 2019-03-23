@@ -59,12 +59,12 @@ INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}
 
 NEURON {
 THREADSAFE
-THREADSAFE
+
 	POINT_PROCESS NMDA_Kampa
 	POINTER XMTR
 	RANGE U, Cl, D1, D2, Open, MaxOpen, UMg, ClMg, D1Mg, D2Mg, OMg
 	RANGE g, gmax, vshift, Erev, rb, rmb, rmu, rbMg,rmc1b,rmc1u,rmc2b,rmc2u
-	GLOBAL Erev, mg, Rb, Ru, Rd1, Rr1, Rd2, Rr2, Ro, Rc, Rmb, Rmu
+	GLOBAL mg, Rb, Ru, Rd1, Rr1, Rd2, Rr2, Ro, Rc, Rmb, Rmu
 	GLOBAL RbMg, RuMg, Rd1Mg, Rr1Mg, Rd2Mg, Rr2Mg, RoMg, RcMg
 	GLOBAL Rmd1b,Rmd1u,Rmd2b,Rmd2u,rmd1b,rmd1u,rmd2b,rmd2u
 	GLOBAL Rmc1b,Rmc1u,Rmc2b,Rmc2u
