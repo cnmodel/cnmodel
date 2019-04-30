@@ -201,7 +201,7 @@ class SynapseTest(Protocol):
             self.all_release_events.append(self.release_events())
 
         elapsed = timeit.default_timer() - start_time
-        print('Elapsed time for %d Repetions: %f' % (iterations, elapsed))
+        print('Elapsed time for %d Repetitions: %f' % (iterations, elapsed))
         
     def release_events(self, syn_no=0):
         """
