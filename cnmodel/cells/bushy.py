@@ -199,7 +199,10 @@ class BushyRothman(Bushy):
             if modelName is None:
                 modelName = 'XM13'
             if nach is None:
-                nach = 'na'
+                raise ValueError("Bushy cell requires specification of Na channel type; got None")
+            if nach not in ['nav11', 'na', 'nacn', 'nacncoop', 'nabu']:
+                raise ValueError("Unrecognized bushy cell sodium channel type: %s" % nach)
+
         self.debug = debug
         self.status = {'species': species, 'cellClass': self.type, 'modelType': modelType, 'modelName': modelName,
                         'soma': True, 'axon': False, 'dendrites': False, 'pumps': False, 'hillock': False, 
@@ -324,6 +327,8 @@ class BushyRothman(Bushy):
                 raise ValueError('\nModel type %s is not implemented for mouse bushy cells' % modelType)
             if self.debug:
                 print ('  Setting conductances for mouse bushy cell (%s), Xie and Manis, 2013' % modelType)
+            print('model name: ', self.status['modelName'])
+            exit()
             if self.status['modelName'] == 'XM13':
                 dataset = 'XM13_channels'
             elif self.status['modelName'] == 'XM13nacncoop':
@@ -720,7 +725,7 @@ class BushyRothman(Bushy):
 #            print('gnabar: ', soma().nav11.gbar, ' vs: 0.0192307692308')
             soma().nav11.vsna = 4.3
             if self.debug:
-                print ("bushy using inva11")
+                print ("bushy using nav11")
         if nach == 'nacncoop':
             soma().nacncoop.gbar = gnabar
             soma().nacncoop.KJ = 2000.
