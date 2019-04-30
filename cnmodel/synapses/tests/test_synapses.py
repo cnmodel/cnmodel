@@ -54,13 +54,13 @@ def make_cell(typ):
     if typ == 'sgc':
         cell = cells.SGC.create()
     elif typ == 'tstellate':
-        cell = cells.TStellate.create(debug=True, ttx=False)
+        cell = cells.TStellate.create(ttx=False, debug=False)
     elif typ == 'dstellate': # Type I-II Rothman model, similiar excitability (Xie/Manis, unpublished)
-        cell = cells.DStellate.create(model='RM03', debug=True, ttx=False)
+        cell = cells.DStellate.create(model='RM03', debug=False, ttx=False)
     elif typ == 'dstellate_eager': # From Eager et al.
-        cell = cells.DStellate.create(model='Eager', debug=True, ttx=False)
+        cell = cells.DStellate.create(model='Eager', debug=False, ttx=False)
     elif typ == 'bushy':
-        cell = cells.Bushy.create(debug=True, ttx=False)
+        cell = cells.Bushy.create(debug=False, ttx=False)
     else:
         raise ValueError("Unknown cell type '%s'" % typ)
     return cell
