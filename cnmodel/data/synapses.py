@@ -29,7 +29,6 @@ AMPA_gmax         21.05±15.4 [1]    4.6±3.1 [2]       0.49±0.29 [7]     0.87�
 AMPAR_gmax        4.6516398 [10]    4.632848  [10]    1.7587450 [10]    16.975147 [10]    0.9 [8]           2.2  [8]          0
 NMDA_gmax         10.8±4.6 [1]      2.4±1.6 [2]       0.552±0.322 [7]   0.17±0.046 [3]    0.4±0.33 [8]      2.4±1.6 [8]       0
 NMDAR_gmax        0.4531933 [10]    1.2127097 [10]    0.9960820 [10]    0.6562702 [10]    0.2 [8]           1.2127097 [8]     0
-NMDAR_vsh         -15.0 [12]        -15.0 [12]        -15.0 [12]        -15.0 [12]        -15.0 [12]        -15.0 [12]        0
 NMDAR_vshift      0.0   [12]        0.0   [12]        0.0   [12]        0.0   [12]        0.0   [12]        0.0   [12]        0
 EPSC_cv           0.12 [8]          0.499759 [9]      0.886406 [9]      1.393382 [9]      0.499 [8]         0.499 [8]         0
 Pr                1.000 [11]        1.000 [11]        1.000 [11]        1.000 [11]        1.000 [8]         1.000 [8]         0
@@ -143,7 +142,7 @@ erev              0.0               0.0               0.0               0.0     
 [12]  NMDA_vshift is the voltage shift for the activation of the NMDAR's, relative
       to 0 (standard in the NMDA_Kampa model). A negative value shifts the voltage
       dependence to the right (depolarizing).
-      The value of the shift here (-15 mV) was chosen based on an exploration
+      The value of the shift (0 or -15 mV) was chosen based on an exploration
       of fitting functions against the NMDA-Kampa IV curve in an SGC-bushy cell
       model, and comparing them against data. The functions were the modified
       Woodhull function and a Boltzmann function, yielding values of 1.19 mM for 
@@ -154,6 +153,12 @@ erev              0.0               0.0               0.0               0.0     
       an approximate 10-fold difference between AMPA and NMDA conductance in
       mouse bushy cells. An exact fit was not obtained, but no other parameters
       of the NMDA_Kampa model were changed. 
+      ***
+      Removed the follwing line 4/30/2019, as it was confusing.
+      These were the -15 mV shifts. They cause the sgc->busy psd (for example) to fail, 
+      because that was computed with a 0 mV scaling.
+      NMDAR_vsh         -15.0 [12]        -15.0 [12]        -15.0 [12]        -15.0 [12]        -15.0 [12]        -15.0 [12]        0
+      
    
 [13]  weight is the weight to use in a netcon object (NEURON) for "simple"
       synapses based on the exp2syn mechanism.
