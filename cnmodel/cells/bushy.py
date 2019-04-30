@@ -327,8 +327,8 @@ class BushyRothman(Bushy):
                 raise ValueError('\nModel type %s is not implemented for mouse bushy cells' % modelType)
             if self.debug:
                 print ('  Setting conductances for mouse bushy cell (%s), Xie and Manis, 2013' % modelType)
-            print('model name: ', self.status['modelName'])
-            exit()
+            #print('model name: ', self.status['modelName'])
+            
             if self.status['modelName'] == 'XM13':
                 dataset = 'XM13_channels'
             elif self.status['modelName'] == 'XM13nacncoop':
