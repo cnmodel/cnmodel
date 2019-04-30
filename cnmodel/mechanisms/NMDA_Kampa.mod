@@ -63,11 +63,12 @@ THREADSAFE
 	POINT_PROCESS NMDA_Kampa
 	POINTER XMTR
 	RANGE U, Cl, D1, D2, Open, MaxOpen, UMg, ClMg, D1Mg, D2Mg, OMg
-	RANGE g, gmax, Erev, vshift, rb, rmb, rmu, rbMg,rmc1b,rmc1u,rmc2b,rmc2u
+	RANGE Erev, rb, rmb, rmu, rbMg, rmc1b, rmc1u, rmc2b, rmc2u
+    RANGE g, gmax, vshift
 	GLOBAL mg, Rb, Ru, Rd1, Rr1, Rd2, Rr2, Ro, Rc, Rmb, Rmu
 	GLOBAL RbMg, RuMg, Rd1Mg, Rr1Mg, Rd2Mg, Rr2Mg, RoMg, RcMg
-	GLOBAL Rmd1b,Rmd1u,Rmd2b,Rmd2u,rmd1b,rmd1u,rmd2b,rmd2u
-	GLOBAL Rmc1b,Rmc1u,Rmc2b,Rmc2u
+	GLOBAL Rmd1b, Rmd1u, Rmd2b, Rmd2u, rmd1b, rmd1u, rmd2b, rmd2u
+	GLOBAL Rmc1b, Rmc1u, Rmc2b, Rmc2u
 	GLOBAL vmin, vmax, valence, memb_fraction
 	NONSPECIFIC_CURRENT i
 }
@@ -82,7 +83,6 @@ UNITS {
 }
 
 PARAMETER {
-
 	Erev	= 5    	(mV)	: reversal potential
 	gmax	= 500  	(pS)	: maximal conductance
 	mg	= 1  	(mM)	: external magnesium concentration
@@ -170,7 +170,8 @@ STATE {
 
 INITIAL {
 	U = 1
-	qfac = Q10^((celsius-23)/10 (degC))}
+	qfac = Q10^((celsius-23)/10 (degC))
+}
 
 BREAKPOINT {
 	SOLVE kstates METHOD sparse

@@ -83,7 +83,6 @@ THREADSAFE
     POINT_PROCESS AMPATRUSSELL
     POINTER XMTR
     RANGE C0, C1, C2, D, O1, O2
-
     RANGE Rb, Ru1, Ru2, Rd, Rr, Ro1, Rc1, Ro2, Rc2, Open, MaxOpen
     GLOBAL vmin, vmax
 	GLOBAL Q10, Mode
@@ -102,7 +101,6 @@ UNITS {
 }
 
 PARAMETER {
-
     Erev    = 7    (mV) : reversal potential
     gmax    = 10  (pS)  : maximal conductance
     vmin = -120 (mV)
@@ -185,7 +183,7 @@ BREAKPOINT {
  :   fprintf(stderr, "kstates @ t=%7.2f Rb: %f  XMTR: %f:  gmax: %f, o1: %f   o2: %f\n", t, Rb, XMTR, gmax, O1, O2);
  :   ENDVERBATIM
 
-    gvdepcalc(v)
+ :   gvdepcalc(v)
     Open = O1 + O2
     g = gmax * Open / MaxOpen
     if ( Mode == 1) {
