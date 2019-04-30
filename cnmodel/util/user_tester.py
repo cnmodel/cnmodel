@@ -93,6 +93,8 @@ class UserTester(object):
                 print('Comparing Scalar data, model: %s, measure: %s' % (self.key, key))
                 #print 'args: ', dir(self.args[0])
                 print('Expected: ', expect, ',  received: ', info, '  relative tolerance: ', self.rtol)
+                print('Ratio: received/expected: ', info/expect)
+                print('Difference: received-expected: ', info - expect)
                 if isinstance(self.args[0], str):
                     pass
                     # print ': ', str
@@ -129,7 +131,7 @@ class UserTester(object):
         win.setData(expect, info)
         win.show()
         print("Store new test results? [y/n]",)
-        yn = raw_input()
+        yn = input()
         win.hide()
         return yn.lower().startswith('y')
     
