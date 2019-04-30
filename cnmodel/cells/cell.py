@@ -660,7 +660,7 @@ class Cell(object):
                     self.channelMap[c][g] = pars[g]*scale
                 else:
                     self.channelMap[c][g] = pars[g]
-
+        print('channelmap soma: ', self.channelMap['soma'])
         self.irange = np.linspace(-0.6, 1, 9)
         self.distMap =         {'dend': {'klt': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
                                  'kht': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
@@ -708,6 +708,9 @@ class Cell(object):
             self.ix['jsrna'] = self.soma().jsrna.gna*(V - self.soma().ena)
         if 'nav11' in self.mechanisms:
             self.ix['nav11'] = self.soma().nav11.gna*(V - self.soma().ena)
+        if 'nabu' in self.mechanisms:
+            self.ix['nabu'] = self.soma().nabu.gna*(V - self.soma().ena)
+
         if 'nacn' in self.mechanisms:
             self.ix['nacn'] = self.soma().nacn.gna*(V - self.soma().ena)
         if 'napyr' in self.mechanisms:
@@ -825,7 +828,7 @@ class Cell(object):
         
         """
         gnames = {# R&M 03 and related:
-                'nacn': 'gna', 'na': 'gna', 'jsrna': 'gna', 'nav11': 'gna', 'nacncoop': 'gna',
+                'nacn': 'gna', 'na': 'gna', 'jsrna': 'gna', 'nav11': 'gna', 'nacncoop': 'gna', 'nabu': 'gna',
                 'leak': 'gbar',
                 'klt': 'gklt', 'kht': 'gkht',
                 'ka': 'gka',
