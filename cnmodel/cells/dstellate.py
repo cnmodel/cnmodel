@@ -11,7 +11,7 @@ __all__ = ['DStellate', 'DStellateRothman', 'DStellateEager']
 
 class DStellate(Cell):
     
-    type = 'dstellate'
+    celltype = 'dstellate'
 
     @classmethod
     def create(cls, model='RM03', **kwds):
@@ -56,33 +56,33 @@ class DStellate(Cell):
             post_sec = self.soma
         
         if psd_type == 'simple':
-            if terminal.cell.type in ['sgc', 'dstellate', 'tuberculoventral']:
-                weight = data.get('%s_synapse' % terminal.cell.type, species=self.species,
-                        post_type=self.type, field='weight')
-                tau1 = data.get('%s_synapse' % terminal.cell.type, species=self.species,
-                        post_type=self.type, field='tau1')
-                tau2 = data.get('%s_synapse' % terminal.cell.type, species=self.species,
-                        post_type=self.type, field='tau2')
-                erev = data.get('%s_synapse' % terminal.cell.type, species=self.species,
-                        post_type=self.type, field='erev')
+            if terminal.cell.celltype in ['sgc', 'dstellate', 'tuberculoventral']:
+                weight = data.get('%s_synapse' % terminal.cell.celltype, species=self.species,
+                        post_type=self.celltype, field='weight')
+                tau1 = data.get('%s_synapse' % terminal.cell.celltype, species=self.species,
+                        post_type=self.celltype, field='tau1')
+                tau2 = data.get('%s_synapse' % terminal.cell.celltype, species=self.species,
+                        post_type=self.celltype, field='tau2')
+                erev = data.get('%s_synapse' % terminal.cell.celltype, species=self.species,
+                        post_type=self.celltype, field='erev')
                 return self.make_exp2_psd(post_sec, terminal, weight=weight, loc=loc,
                         tau1=tau1, tau2=tau2, erev=erev)
             else:
                 raise TypeError("Cannot make simple PSD for %s => %s" % 
-                            (terminal.cell.type, self.type))
+                            (terminal.cell.celltype, self.celltype))
 
         
         elif psd_type == 'multisite':
-            if terminal.cell.type == 'sgc':
+            if terminal.cell.celltype == 'sgc':
                 # Max conductances for the glu mechanisms are calibrated by 
                 # running `synapses/tests/test_psd.py`. The test should fail
                 # if these values are incorrect
                 self.AMPAR_gmax = data.get('sgc_synapse', species=self.species,
-                        post_type=self.type, field='AMPAR_gmax')*1e3
+                        post_type=self.celltype, field='AMPAR_gmax')*1e3
                 self.NMDAR_gmax = data.get('sgc_synapse', species=self.species,
-                        post_type=self.type, field='NMDAR_gmax')*1e3
+                        post_type=self.celltype, field='NMDAR_gmax')*1e3
                 self.Pr = data.get('sgc_synapse', species=self.species,
-                        post_type=self.type, field='Pr')
+                        post_type=self.celltype, field='Pr')
                 # adjust gmax to correct for initial Pr
                 self.AMPAR_gmax = self.AMPAR_gmax/self.Pr
                 self.NMDAR_gmax = self.NMDAR_gmax/self.Pr
@@ -95,15 +95,15 @@ class DStellate(Cell):
                     self.NMDAR_gmax = self.NMDAR_gmax*kwds['NMDAScale']
                 return self.make_glu_psd(post_sec, terminal, self.AMPAR_gmax, self.NMDAR_gmax, loc=loc)
 
-            elif terminal.cell.type == 'dstellate':
+            elif terminal.cell.celltype == 'dstellate':
                 # Get GLY kinetic constants from database 
                 return self.make_gly_psd(post_sec, terminal, psdtype='glyfast', loc=loc)
-            elif terminal.cell.type == 'tuberculoventral':
+            elif terminal.cell.celltype == 'tuberculoventral':
                 # Get GLY kinetic constants from database 
                 return self.make_gly_psd(post_sec, terminal, psdtype='glyfast', loc=loc)
             else:
                 raise TypeError("Cannot make PSD for %s => %s" % 
-                                (terminal.cell.type, self.type))
+                                (terminal.cell.celltype, self.celltype))
         else:
             raise ValueError("Unsupported psd type %s" % psd_type)
 
@@ -112,11 +112,11 @@ class DStellate(Cell):
             return synapses.SimpleTerminal(self.soma, post_cell, spike_source=self.spike_source,
                      **kwds)
         elif term_type == 'multisite':
-            if post_cell.type in ['dstellate', 'tuberculoventral', 'pyramidal', 'bushy', 'tstellate']:
+            if post_cell.celltype in ['dstellate', 'tuberculoventral', 'pyramidal', 'bushy', 'tstellate']:
                 nzones = data.get('dstellate_synapse', species=self.species,
-                        post_type=post_cell.type, field='n_rsites')
+                        post_type=post_cell.celltype, field='n_rsites')
                 delay = data.get('dstellate_synapse', species=self.species,
-                        post_type=post_cell.type, field='delay')
+                        post_type=post_cell.celltype, field='delay')
             else:
                 raise NotImplementedError("No knowledge as to how to connect D stellate cell to cell type %s" %
                                         type(post_cell))

@@ -15,7 +15,7 @@ __all__ = ['Bushy', 'BushyRothman']
 
 class Bushy(Cell):
     
-    type = 'bushy'
+    celltype = 'bushy'
 
     @classmethod
     def create(cls, model='RM03', **kwds):
@@ -52,34 +52,34 @@ class Bushy(Cell):
             post_sec = self.soma
         
         if psd_type == 'simple':
-            if terminal.cell.type in ['sgc', 'dstellate', 'tuberculoventral']:
-                weight = data.get('%s_synapse' % terminal.cell.type, species=self.species,
-                        post_type=self.type, field='weight')
-                tau1 = data.get('%s_synapse' % terminal.cell.type, species=self.species,
-                        post_type=self.type, field='tau1')
-                tau2 = data.get('%s_synapse' % terminal.cell.type, species=self.species,
-                        post_type=self.type, field='tau2')
-                erev = data.get('%s_synapse' % terminal.cell.type, species=self.species,
-                        post_type=self.type, field='erev')
+            if terminal.cell.celltype in ['sgc', 'dstellate', 'tuberculoventral']:
+                weight = data.get('%s_synapse' % terminal.cell.celltype, species=self.species,
+                        post_type=self.celltype, field='weight')
+                tau1 = data.get('%s_synapse' % terminal.cell.celltype, species=self.species,
+                        post_type=self.celltype, field='tau1')
+                tau2 = data.get('%s_synapse' % terminal.cell.celltype, species=self.species,
+                        post_type=self.celltype, field='tau2')
+                erev = data.get('%s_synapse' % terminal.cell.celltype, species=self.species,
+                        post_type=self.celltype, field='erev')
                 return self.make_exp2_psd(post_sec, terminal, weight=weight, loc=loc,
                         tau1=tau1, tau2=tau2, erev=erev)
             else:
                 raise TypeError("Cannot make simple PSD for %s => %s" % 
-                            (terminal.cell.type, self.type))
+                            (terminal.cell.celltype, self.celltype))
             
         elif psd_type == 'multisite':
-            if terminal.cell.type == 'sgc':
+            if terminal.cell.celltype == 'sgc':
                 # Max conductances for the glu mechanisms are calibrated by 
                 # running `synapses/tests/test_psd.py`. The test should fail
                 # if these values are incorrect
                 self.AMPAR_gmax = data.get('sgc_synapse', species=self.species,
-                        post_type=self.type, field='AMPAR_gmax')*1e3
+                        post_type=self.celltype, field='AMPAR_gmax')*1e3
                 self.NMDAR_gmax = data.get('sgc_synapse', species=self.species,
-                        post_type=self.type, field='NMDAR_gmax')*1e3
+                        post_type=self.celltype, field='NMDAR_gmax')*1e3
                 self.Pr = data.get('sgc_synapse', species=self.species,
-                        post_type=self.type, field='Pr')
+                        post_type=self.celltype, field='Pr')
                 self.NMDAR_vshift = data.get('sgc_synapse', species=self.species,
-                        post_type=self.type, field='NMDAR_vshift')
+                        post_type=self.celltype, field='NMDAR_vshift')
                 # adjust gmax to correct for initial Pr
                 self.AMPAR_gmax = self.AMPAR_gmax/self.Pr
                 self.NMDAR_gmax = self.NMDAR_gmax/self.Pr
@@ -93,13 +93,13 @@ class Bushy(Cell):
                     self.NMDAR_gmax = self.NMDAR_gmax * kwds['NMDAScale']  # and NMDA... 
                 return self.make_glu_psd(post_sec, terminal, self.AMPAR_gmax, 
                             self.NMDAR_gmax, loc=loc, nmda_vshift=self.NMDAR_vshift)
-            elif terminal.cell.type == 'dstellate':
+            elif terminal.cell.celltype == 'dstellate':
                 return self.make_gly_psd(post_sec, terminal, psdtype='glyslow', loc=loc)
-            elif terminal.cell.type == 'tuberculoventral':
+            elif terminal.cell.celltype == 'tuberculoventral':
                 return self.make_gly_psd(post_sec, terminal, psdtype='glyslow', loc=loc)
             else:
                 raise TypeError("Cannot make PSD for %s => %s" % 
-                            (terminal.cell.type, self.type))
+                            (terminal.cell.celltype, self.celltype))
         else:
             raise ValueError("Unsupported psd type %s" % psd_type)
 
@@ -108,7 +108,7 @@ class Bushy(Cell):
             return synapses.SimpleTerminal(self.soma, post_cell, **kwds)
 
         elif term_type == 'multisite':
-            if post_cell.type in ['mso']:
+            if post_cell.celltype in ['mso']:
                 nzones = data.get('bushy_synapse', species=self.species,
                         post_type=post_cell.type, field='n_rsites')
                 delay = data.get('bushy_synapse', species=self.species,
@@ -206,17 +206,17 @@ class BushyRothman(Bushy):
             elif modelName.startswith('mGBC'):
                 dataset = 'mGBC_channels'
             else:
-                raise ValueError(f"ModelName {self.status['modelName']:s} not recognized for mouse bushy cells")
+                raise ValueError(f"ModelName {self.status['modelName']:s} not recognized for mouse {self.celltype:s} cells")
             # if nach is None:
             #     raise ValueError("Bushy cell requires specification of Na channel type; got None")
             # if nach not in ['nav11', 'na', 'nacn', 'nacncoop', 'nabu']:
             #     raise ValueError("Unrecognized bushy cell sodium channel type: %s" % nach)
 
         self.debug = debug
-        self.status = {'species': species, 'cellClass': self.type, 'modelType': modelType, 'modelName': modelName,
+        self.status = {'species': species, 'cellClass': self.celltype, 'modelType': modelType, 'modelName': modelName,
                        'soma': True, 'axon': False, 'dendrites': False, 'pumps': False, 'hillock': False, 
                        'initialsegment': False, 'myelinatedaxon': False, 'unmyelinatedaxon': False,
-                       'na': nach, 'ttx': ttx, 'name': self.type,
+                       'na': nach, 'ttx': ttx, 'name': self.celltype,
                        'morphology': morphology, 'decorator': decorator, 'temperature': temperature}
 
         self.spike_threshold = -40
@@ -235,8 +235,8 @@ class BushyRothman(Bushy):
             instantiate a basic soma-only ("point") model
             """
             if self.debug:
-                print ("<< Bushy model: Creating point cell >>")
-            soma = h.Section(name="Bushy_Soma_%x" % id(self))  # one compartment of about 29000 um2
+                print (f"<< {self.celltype.title():s} model: Creating point cell >>")
+            soma = h.Section(name=f"{self.celltype.title():s}_Soma_%x" % id(self))  # one compartment of about 29000 um2
             soma.nseg = 1
             self.add_section(soma, 'soma')
         else:
@@ -245,7 +245,7 @@ class BushyRothman(Bushy):
             the morphology file
             """
             if self.debug:
-                print ("<< Bushy model: Creating cell with morphology from %s >>" % morphology)
+                print (f"<< {self.celltype.title():s} model: Creating cell with morphology from {morphology:s} >>" )
             self.set_morphology(morphology_file=morphology)
 
         self.pars = self.get_cellpars(dataset, species=species, modelType=modelType)
@@ -265,7 +265,7 @@ class BushyRothman(Bushy):
         self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
         self.get_mechs(self.soma)
         if debug:
-            print ("   << Created cell >>")
+            print (f"   << Created {self.celltype.title():s} cell >>")
 
     def get_cellpars(self, dataset, species='guineapig', modelType='II'):
         """
@@ -330,9 +330,9 @@ class BushyRothman(Bushy):
             # conductances were not scaled for temperature (rates were)
             # so here we reset the default Q10's for conductance (g) to 1.0
             if self.status['modelType'] not in ['II', 'II-I']:
-                raise ValueError('\nModel type %s is not implemented for mouse bushy cells' % self.status['modelType'])
+                raise ValueError(f"\nModel type {self.status['modelType']:s} is not implemented for mouse {self.celltype.title():s} cells")
             if self.debug:
-                print ('  Setting conductances for mouse bushy cell (%s), Xie and Manis, 2013' % self.status['modelType'])
+                print (f"  Setting conductances for mouse {self.celltype.title():s} cell ({self.status['modelType']})")
             #print('model name: ', self.status['modelName'])
             
 
@@ -352,7 +352,7 @@ class BushyRothman(Bushy):
             
         elif self.status['species'] == 'guineapig':
             if self.debug:
-                print ('  Setting conductances for guinea pig %s bushy cell, Rothman and Manis, 2003' % self.status['modelType'])
+                print ("  Setting conductances for guinea pig {self.celltype.title():s} {self.status['modelType']:s} cell, Rothman and Manis, 2003")
             self._valid_temperatures = (22., 38.)
             if self.status['temperature'] is None:
                 self.status['temperature'] = 22. 
@@ -405,10 +405,7 @@ class BushyRothman(Bushy):
         soma : neuron section object
             A soma object whose sodium channel complement will have its 
             conductances adjusted depending on the channel type
-        
-        gbar : float (default: 1000.)
-            The maximal conductance for the sodium channel
-        
+
         Returns
         -------
             Nothing :
@@ -416,15 +413,14 @@ class BushyRothman(Bushy):
         """
         
         nach = self.status['na']
+        if self.status['ttx']:
+            sf = 0.
         # if self.debug:
         if nach == 'jsrna':  # sodium channel from Rothman Manis Young, 1993
-            if not self.status['ttx']:
-                soma().jsrna.gbar = nstomho(self.pars.jsrna_gbar, self.somaarea)*sf
-            else:
-                soma().jsrna.gbar = 0
+            soma().jsrna.gbar = nstomho(self.pars.jsrna_gbar, self.somaarea)*sf
             soma.ena = self.e_na
             if self.debug:
-                print ('jsrna gbar: ', soma().jsrna.gbar)
+                print ('Using jsrna, gbar: ', soma().jsrna.gbar)
 
         elif nach in ['na', 'nacn']: # sodium channel from Rothman and Manis, 2003
             try:
@@ -440,23 +436,17 @@ class BushyRothman(Bushy):
             soma.ena = self.e_na
             # soma().na.vsna = 0.
             if self.debug:
-                print ('na gbar: ', nabar)
+                print ('Using na/nacn: gbar: ', nabar)
 
         elif nach == 'nav11':  # sodium channel from Xie and Manis, 2013
-            if not self.status['ttx']:
-                soma().nav11.gbar =  nstomho(self.pars.nav11_gbar, self.somaarea)*sf
-            else:
-                soma().nav11.gbar = 0.
+            soma().nav11.gbar =  nstomho(self.pars.nav11_gbar, self.somaarea)*sf
             soma.ena = 50 # self.e_na
             soma().nav11.vsna = 4.3
             if self.debug:
-                print ("bushy using nav11")
+                print ("Using nav11")
 
         elif nach == 'nacncoop':  # coooperative sodium channel based on nacn
-            if not self.status['ttx']:
-                soma().nacncoop.gbar = nstomho(self.pars.nancoop_gbar, self.somaarea)*sf
-            else:
-                soma().nacncoop.gbar = 0.
+            soma().nacncoop.gbar = nstomho(self.pars.nancoop_gbar, self.somaarea)*sf
             soma().nacncoop.KJ = 2000.
             soma().nacncoop.p = 0.25
             somae().nacncoop.vsna = 0.
@@ -465,16 +455,13 @@ class BushyRothman(Bushy):
                 print('nacncoop gbar: ', soma().nacncoop.gbar)
 
         elif nach == 'nabu':  # sodium channel for bushy cells from Yang et al (Xu-Friedman lab)
-            if not self.status['ttx']:
-                soma().nabu.gbar =  nstomho(self.pars.nabu_gbar, self.somaarea)*sf
-            else:
-                soma().nabu.gbar = 0.
+            soma().nabu.gbar =  nstomho(self.pars.nabu_gbar, self.somaarea)*sf
             soma.ena = 50 # self.e_na
             if self.debug:
-                print ("bushy using nabu")
+                print ("Using nabu")
 
         else:
-            raise ValueError('Sodium channel %s is not recognized for Bushy cells', nach)
+            raise ValueError(f'Sodium channel <{nach:s}> is not recognized for {self.celltype:s} cells')
 
     def add_axon(self):
         """

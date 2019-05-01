@@ -87,7 +87,7 @@ class Cell(object):
         if self.status['temperature'] not in self._valid_temperatures:
             tstring = ', '.join('%3.1f ' % t for t in self._valid_temperatures)
             raise ValueError('Cell %s %s %s temperature %3.1f is invalid; must be in: [%s]' %
-                 (self.type, self.status['species'], self.status['modelType'], self.status['temperature'], tstring))
+                 (self.celltype, self.status['species'], self.status['modelType'], self.status['temperature'], tstring))
 
     def set_temperature(self, temperature):
         """
@@ -401,7 +401,7 @@ class Cell(object):
 
     def make_glu_psd(self, post_sec, terminal, AMPA_gmax, NMDA_gmax, **kwds):
         # Get AMPAR kinetic constants from database 
-        params = data.get('sgc_ampa_kinetics', species=self.species, post_type=self.type,
+        params = data.get('sgc_ampa_kinetics', species=self.species, post_type=self.celltype,
                             field=['Ro1', 'Ro2', 'Rc1', 'Rc2', 'PA'])
         
         return synapses.GluPSD(post_sec, terminal,
@@ -417,7 +417,7 @@ class Cell(object):
 
     def make_gly_psd(self, post_sec, terminal, psdtype, **kwds):
         # Get GLY kinetic constants from database 
-        params = data.get('gly_kinetics', species=self.species, post_type=self.type,
+        params = data.get('gly_kinetics', species=self.species, post_type=self.celltype,
                             field=['KU', 'KV', 'XMax'])
         psd = synapses.GlyPSD(post_sec, terminal,
                                 psdType=psdtype,
@@ -618,7 +618,7 @@ class Cell(object):
         decorationmap = dataset + '_compartments'
         cellpars = self.get_cellpars(dataset, species=self.status['species'], modelType=modelType)
         # refarea is the "reference area" for a somatic conductance
-        # units are: pF of cell soma / specific capicatance in uF/cm2 = cm2*1e-6
+        # units are: pF of cell soma / specific capacitance in uF/cm2 = cm2*1e-6
         # cellpars.cap is in pF; self.c_m is in uF/cm2
         # refarea = 1e-3*/uF/cm2 = 1e-3S/cm2 = uS/cm2
         # g will be computed from nS/refarea, in Mho/cm2; nS comes from the table

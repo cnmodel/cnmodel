@@ -12,7 +12,7 @@ __all__ = ['SGC', 'SGC_TypeI', 'DummySGC']
 
 
 class SGC(Cell):
-    type = 'sgc'
+    celltype = 'sgc'
 
     @classmethod
     def create(cls, model='I', species='mouse', **kwds):
@@ -52,7 +52,7 @@ class SGC(Cell):
             return synapses.SimpleTerminal(pre_sec, post_cell, 
                                            spike_source=self.spike_source, **kwds)
         elif term_type == 'multisite':
-            n_rsites = data.get('sgc_synapse', species='mouse', post_type=post_cell.type,
+            n_rsites = data.get('sgc_synapse', species='mouse', post_type=post_cell.celltype,
                             field='n_rsites')
             opts = {'nzones': n_rsites, 'delay': 0, 'dep_flag' : 1}
             opts.update(kwds)
@@ -62,10 +62,10 @@ class SGC(Cell):
             term = synapses.StochasticTerminal(pre_sec, post_cell,
                     spike_source=self.spike_source, **opts)
             
-            kinetics = data.get('sgc_ampa_kinetics', species='mouse', post_type=post_cell.type,
+            kinetics = data.get('sgc_ampa_kinetics', species='mouse', post_type=post_cell.celltype,
                             field=['tau_g', 'amp_g'])
             term.set_params(**kinetics)
-            dynamics = data.get('sgc_release_dynamics', species='mouse', post_type=post_cell.type,
+            dynamics = data.get('sgc_release_dynamics', species='mouse', post_type=post_cell.celltype,
                                 field=['F', 'k0', 'kmax', 'kd', 'kf', 'taud', 'tauf', 'dD', 'dF'])
             term.set_params(**dynamics)
             return term

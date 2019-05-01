@@ -13,13 +13,13 @@ __all__ = ['TStellate', 'TStellateRothman', 'TStellateNav11']
 
 class TStellate(Cell):
     
-    type = 'tstellate'
+    celltype = 'tstellate'
 
     @classmethod
     def create(cls, model='RM03', **kwds):
         if model == 'RM03':  # original Rothman-Manis 2003, 22C, point cell, extendable
             return TStellateRothman(**kwds)
-        elif model == 'Nav11':   # Xie-Manis, 2013, 37C, pointe cell, extendable
+        elif model == 'Nav11':   # Xie-Manis, 2013, 37C, point cell, extendable
             return TStellateNav11(**kwds)
         else:
             raise ValueError ('TStellate type %s is unknown', type)
@@ -56,33 +56,33 @@ class TStellate(Cell):
             post_sec = self.soma
         #print('cells/tstellaty.py psd type: ', psd_type)
         if psd_type == 'simple':
-            if terminal.cell.type in ['sgc', 'dstellate', 'tuberculoventral']:
-                weight = data.get('%s_synapse' % terminal.cell.type, species=self.species,
-                        post_type=self.type, field='weight')
-                tau1 = data.get('%s_synapse' % terminal.cell.type, species=self.species,
-                        post_type=self.type, field='tau1')
-                tau2 = data.get('%s_synapse' % terminal.cell.type, species=self.species,
-                        post_type=self.type, field='tau2')
-                erev = data.get('%s_synapse' % terminal.cell.type, species=self.species,
-                        post_type=self.type, field='erev')
+            if terminal.cell.celltype in ['sgc', 'dstellate', 'tuberculoventral']:
+                weight = data.get('%s_synapse' % terminal.cell.celltype, species=self.species,
+                        post_type=self.celltype, field='weight')
+                tau1 = data.get('%s_synapse' % terminal.cell.celltype, species=self.species,
+                        post_type=self.celltype, field='tau1')
+                tau2 = data.get('%s_synapse' % terminal.cell.celltype, species=self.species,
+                        post_type=self.celltype, field='tau2')
+                erev = data.get('%s_synapse' % terminal.cell.celltype, species=self.species,
+                        post_type=self.celltype, field='erev')
                 return self.make_exp2_psd(post_sec, terminal, weight=weight, loc=loc,
                         tau1=tau1, tau2=tau2, erev=erev)
             else:
                 raise TypeError("Cannot make simple PSD for %s => %s" % 
-                            (terminal.cell.type, self.type))
+                            (terminal.cell.celltype, self.celltype))
 
             #print('cells/tstellaty.py weight: ', weight)
         elif psd_type == 'multisite':
-            if terminal.cell.type == 'sgc':
+            if terminal.cell.celltype == 'sgc':
                 # Max conductances for the glu mechanisms are calibrated by 
                 # running `synapses/tests/test_psd.py`. The test should fail
                 # if these values are incorrect
                 self.AMPAR_gmax = data.get('sgc_synapse', species=self.species,
-                        post_type=self.type, field='AMPAR_gmax')*1e3
+                        post_type=self.celltype, field='AMPAR_gmax')*1e3
                 self.NMDAR_gmax = data.get('sgc_synapse', species=self.species,
-                        post_type=self.type, field='NMDAR_gmax')*1e3
+                        post_type=self.celltype, field='NMDAR_gmax')*1e3
                 self.Pr = data.get('sgc_synapse', species=self.species,
-                        post_type=self.type, field='Pr')
+                        post_type=self.celltype, field='Pr')
                 # adjust gmax to correct for initial Pr
                 self.AMPAR_gmax = self.AMPAR_gmax/self.Pr
                 self.NMDAR_gmax = self.NMDAR_gmax/self.Pr
@@ -94,18 +94,18 @@ class TStellate(Cell):
                 if 'NMDAScale' in kwds:
                     self.NMDAR_gmax = self.NMDAR_gmax*kwds['NMDAScale']
                 return self.make_glu_psd(post_sec, terminal, self.AMPAR_gmax, self.NMDAR_gmax, loc=loc)
-            elif terminal.cell.type == 'dstellate':
+            elif terminal.cell.celltype == 'dstellate':
                 self.ds_gmax = data.get('dstellate_synapse', species=self.species,
-                        post_type=self.type, field='gly_gmax')*1e3
+                        post_type=self.celltype, field='gly_gmax')*1e3
                 #print('ds max: ', self.ds_gmax)
                 return self.make_gly_psd(post_sec, terminal, psdtype='glyfast', loc=loc, gmax=self.ds_gmax)
-            elif terminal.cell.type == 'tuberculoventral':
+            elif terminal.cell.celltype == 'tuberculoventral':
                 self.tv_gmax = data.get('tuberculoventral_synapse', species=self.species,
-                        post_type=self.type, field='gly_gmax')*1e3
+                        post_type=self.celltype, field='gly_gmax')*1e3
                 return self.make_gly_psd(post_sec, terminal, psdtype='glyfast', loc=loc, gmax=self.tv_gmax)
             else:
                 raise TypeError("Cannot make PSD for %s => %s" % 
-                            (terminal.cell.type, self.type))
+                            (terminal.cell.celltype, self.celltype))
         else:
             raise ValueError("Unsupported psd type %s" % psd_type)
 
@@ -150,7 +150,11 @@ class TStellateRothman(TStellate):
         species: string (default 'guineapig')
             species defines the channel density that will be inserted for different models. Note that
             if a decorator function is specified, this argument is ignored.
-        
+
+        modelName: string (default: None)
+            modelName specifies the source conductance pattern (RM03, XM13, etc).
+            modelName is passed to the decorator, or to species_scaling to adjust point (single cylinder) models.
+                                     
         modelType: string (default: None)
             modelType specifies the type of the model that will be used (e.g., "I-c", "I-t").
             modelType is passed to the decorator, or to species_scaling to adjust point models.
@@ -164,29 +168,37 @@ class TStellateRothman(TStellate):
         """
         
         super(TStellateRothman, self).__init__()
-        self.i_test_range={'pulse': (-0.15, 0.15, 0.01)}
         if modelType is None:
             modelType = 'I-c'
+        
         if species == 'guineapig':
             modelName = 'RM03'
             temp = 22.
-            if nach == None:
-                nach = 'nacn'
+            dataset = 'RM03_channels'
+        
         if species == 'mouse':
             temp = 34.
             if modelName is None:
                 modelName = 'XM13'
-            if nach == None:
-                nach = 'nacn'
-            self.i_test_range={'pulse': (-1.0, 1.0, 0.05)}
+            if modelName == 'XM13':
+                dataset = 'XM13_channels'
+            elif modelName  == 'XM13nacncoop':
+                dataset = 'XM13_channels_nacncoop'
+            else:
+                raise ValueError(f"ModelName {self.status['modelName']:s} not recognized for mouse T-stellate cells")
+        print('dataset: ', dataset)
         self.debug = debug
-        self.status = {'species': species, 'cellClass': self.type, 'modelType': modelType, 'modelName': modelName,
-                        'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'ttx': ttx, 'name': self.type,
+        self.status = {'species': species, 'cellClass': self.celltype, 'modelType': modelType, 'modelName': modelName,
+                       'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+                       'na': nach, 'ttx': ttx, 'name': self.celltype,
                        'morphology': morphology, 'decorator': decorator, 'temperature': None}
-        self.c_m = 0.9E-6  # default in units of F/cm^2
+        self.c_m = 0.9  # default in units of uF/cm^2
         self.spike_threshold = -40.  # matches threshold in released CNModel (set in base cell class)
         self.vrange = [-70., -55.]
+
+        if self.debug:
+            print( 'model type, model name, species: ', modelType, modelName, species, nach)
+
         self._valid_temperatures = (temp, )
         if self.status['temperature'] == None:
             self.status['temperature'] = temp
@@ -209,16 +221,20 @@ class TStellateRothman(TStellate):
                 print("<< TStellate: Creating cell with morphology = %s>>" % morphology)
             self.set_morphology(morphology_file=morphology)
 
+        self.pars = self.get_cellpars(dataset, species=species, modelType=modelType)
+        self.status['na'] = self.pars.natype
+        print(self.pars.natype)
+        
         # decorate the morphology with ion channels
         if decorator is None:   # basic model, only on the soma
-            self.mechanisms = ['kht', 'ka', 'ihvcn', 'leak', nach]
+            self.mechanisms = ['kht', 'ka', 'ihvcn', 'leak', self.pars.natype]
             for mech in self.mechanisms:
                 self.soma.insert(mech)
             self.soma.ek = self.e_k
             self.soma.ena = self.e_na
             self.soma().ihvcn.eh = self.e_h
             self.soma().leak.erev = self.e_leak
-            self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
+            self.species_scaling(silent=True)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
             self.decorate()
 
@@ -233,7 +249,6 @@ class TStellateRothman(TStellate):
         chtype = data.get(dataset, species=species, model_type=modelType,
             field='na_type')
         pars = Params(cap=cellcap, natype=chtype)
-        # pars.show()
 
         if self.status['modelName'] == 'RM03':
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'ka_gbar', 'ih_gbar', 'leak_gbar', 'leak_erev', 'ih_eh', 'e_k', 'e_na']:
@@ -247,10 +262,12 @@ class TStellateRothman(TStellate):
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'ka_gbar', 'ihvcn_gbar', 'leak_gbar', 'leak_erev', 'ih_eh', 'e_k', 'e_na']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
+        if self.debug:
+            pars.show()
         return pars
     
 
-    def species_scaling(self, species='guineapig', modelType='I-c', silent=True):
+    def species_scaling(self, silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
         Used ONLY for point models.
@@ -273,52 +290,50 @@ class TStellateRothman(TStellate):
             run silently (True) or verbosely (False)
         """
         soma = self.soma
-        if modelType == 'I-c':
+        if self.status['modelType'] == 'I-c':
             celltype = 'tstellate'
-        elif modelType == 'I-t':
+        elif self.status['modelType'] == 'I-t':
             celltype = 'tstellate-t'
         else:
             raise ValueError('model type not recognized')
                     
-        if species == 'mouse': #  and modelType == 'I-c':
+        if self.status['species'] == 'mouse': #  and modelType == 'I-c':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
             # model description in Xie and Manis 2013. Note that
             # conductances were not scaled for temperature (rates were)
             # so here we reset the default Q10's for conductance (g) to 1.0
+            if self.status['modelType'] not in ['I-c', 'I-t']:
+                raise ValueError('\nModel type %s is not implemented for mouse bushy cells' % self.status['modelType'])
             if self.debug:
                 print('  Setting Conductances for mouse I-c Tstellate cell, (modified from Xie and Manis, 2013)')
-            self.c_m = 0.9  # default in units of F/cm^2
-            dataset = 'XM13_channels'
+            # self.c_m = 0.9  # default in units of F/cm^2
             self.vrange = [-75., -55.]
-            self.set_soma_size_from_Cm(25.0)
+            self.i_test_range={'pulse': (-1.0, 1.0, 0.05)}
             self._valid_temperatures = (34.,)
             if self.status['temperature'] is None:
                 self.set_temperature(34.)
 
-            pars = self.get_cellpars(dataset, species=species, modelType=modelType)
-            # pars.show()
-            self.set_soma_size_from_Cm(pars.cap)
-            self.status['na'] = pars.natype
-            self.adjust_na_chans(soma, gbar=pars.nacn_gbar, sf=1.0)
-            soma().kht.gbar = nstomho(pars.kht_gbar, self.somaarea)
-            soma().ka.gbar = nstomho(pars.ka_gbar, self.somaarea)
-            soma().ihvcn.gbar = nstomho(pars.ihvcn_gbar, self.somaarea)
-            soma().ihvcn.eh = pars.ih_eh # Rodrigues and Oertel, 2006
-            soma().leak.gbar = nstomho(pars.leak_gbar, self.somaarea)
-            soma().leak.erev = pars.leak_erev
-            self.e_k = pars.e_k
-            self.e_na = pars.e_na
-            soma.ena = self.e_na
+            self.set_soma_size_from_Cm(self.pars.cap)
+            self.adjust_na_chans(soma, sf=1.0)
+            soma().kht.gbar = nstomho(self.pars.kht_gbar, self.somaarea)
+            soma().ka.gbar = nstomho(self.pars.ka_gbar, self.somaarea)
+            soma().ihvcn.gbar = nstomho(self.pars.ihvcn_gbar, self.somaarea)
+            soma().ihvcn.eh = self.pars.ih_eh # Rodrigues and Oertel, 2006
+            soma().leak.gbar = nstomho(self.pars.leak_gbar, self.somaarea)
+            soma().leak.erev = self.pars.leak_erev
+            self.e_k = self.pars.e_k
+            self.e_na = self.pars.e_na
+            soma.ena = self.pars.e_na
             soma.ek = self.e_k
             self.axonsf = 0.5
             
-        elif species == 'guineapig':
+        elif self.status['species'] == 'guineapig':
             # and modelType == 'I-c':  # values from R&M 2003, Type I
             if self.debug:
                 print('  Setting Conductances for Guinea Pig I-c, Rothman and Manis, 2003')
-            dataset = 'RM03_channels'
             self.c_m = 0.9  # default in units of F/cm^2
             self.vrange = [-75., -55.]
+            self.i_test_range={'pulse': (-0.15, 0.15, 0.01)}
             self._valid_temperatures = (22., 38.)
             if self.status['temperature'] is None:
                 self.set_temperature(22.)
@@ -326,168 +341,24 @@ class TStellateRothman(TStellate):
             if self.status['temperature'] == 38.:  # adjust for 2003 model conductance levels at 38
                 sf = 3.03  # Q10 of 2, 22->38C. (p3106, R&M2003c)
                 # note that kinetics are scaled in the mod file.
-            pars = self.get_cellpars(dataset, species=species, modelType=modelType)
-            self.set_soma_size_from_Cm(pars.cap)
-            self.status['na'] = pars.natype
-            # pars.show()
-            self.adjust_na_chans(soma, gbar=pars.nacn_gbar, sf=sf)
-            soma().kht.gbar = nstomho(pars.kht_gbar, self.somaarea)
-            soma().ka.gbar = nstomho(pars.ka_gbar, self.somaarea)
-            soma().ihvcn.gbar = nstomho(pars.ih_gbar, self.somaarea)
-            soma().leak.gbar = nstomho(pars.leak_gbar, self.somaarea)
-            soma().leak.erev = pars.leak_erev
+            self.set_soma_size_from_Cm(self.pars.cap)
+            self.adjust_na_chans(soma, sf=sf)
+            soma().kht.gbar = nstomho(self.pars.kht_gbar, self.somaarea)
+            soma().ka.gbar = nstomho(self.pars.ka_gbar, self.somaarea)
+            soma().ihvcn.gbar = nstomho(self.pars.ih_gbar, self.somaarea)
+            soma().leak.gbar = nstomho(self.pars.leak_gbar, self.somaarea)
+            soma().leak.erev = self.pars.leak_erev
             self.axonsf = 0.5
 
         else:
-            raise ValueError('Species %s or species-type %s is not recognized for T-stellate cells' % (species, type))
+            raise ValueError(f"Species {self.status['species']:s} or species-type {self.status['modelType']:s} is not recognized for T-stellate cells")
 
-        self.status['species'] = species
-        self.status['modelType'] = modelType
         self.check_temperature()
 
-    # def channel_manager(self, modelType='RM03'):
-    #     """
-    #     This routine defines channel density maps and distance map patterns
-    #     for each type of compartment in the cell. The maps
-    #     are used by the ChannelDecorator class (specifically, called from it's private
-    #     _biophys function) to decorate the cell membrane with channels.
-    #
-    #     Parameters
-    #     ----------
-    #     modelType : string (default: 'RM03')
-    #         A string that defines the type of the model. Currently, 3 types are implemented:
-    #         RM03: Rothman and Manis, 2003 somatic densities for guinea pig
-    #         XM13: Xie and Manis, 2013, somatic densities for mouse
-    #         XM13PasDend: XM13, but with only passive dendrites, no channels.
-    #
-    #     Returns
-    #     -------
-    #     Nothing
-    #
-    #     Notes
-    #     -----
-    #
-    #     This routine defines the following variables for the class:
-    #
-    #         - conductances (gBar)
-    #         - a channelMap (dictonary of channel densities in defined anatomical compartments)
-    #         - a current injection range for IV's (when testing)
-    #         - a distance map, which defines how selected conductances in selected compartments
-    #             will change with distance. This includes both linear and exponential gradients,
-    #             the minimum conductance at the end of the gradient, and the space constant or
-    #             slope for the gradient.
-    #
-    #     """
-    #     if modelType == 'RM03':
-    #         totcap = 12.0E-12  # TStellate cell (type I) from Rothman and Manis, 2003, as base model
-    #         refarea = totcap / self.c_m  # see above for units
-    #         # Type I stellate Rothman and Manis, 2003c
-    #         self._valid_temperatures = (22., 38.)
-    #         if self.status['temperature'] is None:
-    #             self.set_temperature(22.)
-    #         sf = 1.0
-    #         if self.status['temperature'] == 38.:  # adjust for 2003 model conductance levels at 38
-    #             sf = 3.03  # Q10 of 2, 22->38C. (p3106, R&M2003c)
-    #         self.gBar = Params(nabar=sf*1000.0E-9/refarea,
-    #                            khtbar=sf*150.0E-9/refarea,
-    #                            kltbar=sf*0.0E-9/refarea,
-    #                            ihbar=sf*0.5E-9/refarea,
-    #                            leakbar=sf*2.0E-9/refarea,
-    #         )
-    #
-    #         self.channelMap = {
-    #             'axon': {'nacn': 0.0, 'klt': 0., 'kht': self.gBar.khtbar,
-    #                      'ihvcn': 0., 'leak': self.gBar.leakbar / 4.},
-    #             'hillock': {'nacn': self.gBar.nabar, 'klt': 0., 'kht': self.gBar.khtbar,
-    #                          'ihvcn': 0., 'leak': self.gBar.leakbar, },
-    #             'initseg': {'nacn': self.gBar.nabar, 'klt': 0., 'kht': self.gBar.khtbar,
-    #                         'ihvcn': self.gBar.ihbar / 2.,
-    #                         'leak': self.gBar.leakbar, },
-    #             'soma': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar,
-    #                      'kht': self.gBar.khtbar, 'ihvcn': self.gBar.ihbar,
-    #                      'leak': self.gBar.leakbar, },
-    #             'dend': {'nacn': self.gBar.nabar / 2.0, 'klt': 0., 'kht': self.gBar.khtbar * 0.5,
-    #                      'ihvcn': self.gBar.ihbar / 3., 'leak': self.gBar.leakbar * 0.5, },
-    #             'apic': {'nacn': 0.0, 'klt': 0., 'kht': self.gBar.khtbar * 0.2,
-    #                      'ihvcn': self.gBar.ihbar / 4.,
-    #                      'leak': self.gBar.leakbar * 0.2, },
-    #         }
-    #         self.irange = np.linspace(-0.1, 0.1, 7)
-    #         self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-    #                                  'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
-    #                         'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-    #                                  'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.}}, # gradients are: flat, linear, exponential
-    #                         }
-    #
-    #     elif modelType  == 'XM13':
-    #         totcap = 25.0E-12  # Base model from Xie and Manis, 2013 for type I stellate cell
-    #         refarea = totcap / self.c_m  # see above for units
-    #         self._valid_temperatures = (34.,)
-    #         if self.status['temperature'] is None:
-    #             self.set_temperature(34.)
-    #         self.gBar = Params(nabar=1800.0E-9/refarea,
-    #                            khtbar=250.0E-9/refarea,
-    #                            kltbar=0.0E-9/refarea,
-    #                            ihbar=18.0E-9/refarea,
-    #                            leakbar=8.0E-9/refarea,
-    #         )
-    #         self.channelMap = {
-    #             'axon': {'nav11': 0.0, 'klt': 0., 'kht': self.gBar.khtbar,
-    #                      'ihvcn': 0., 'leak': self.gBar.leakbar / 4.},
-    #             'hillock': {'nav11': self.gBar.nabar, 'klt': 0., 'kht': self.gBar.khtbar,
-    #                         'ihvcn': 0.,
-    #                         'leak': self.gBar.leakbar, },
-    #             'initseg': {'nav11': self.gBar.nabar, 'klt': 0., 'kht': self.gBar.khtbar,
-    #                         'ihvcn': self.gBar.ihbar / 2.,
-    #                         'leak': self.gBar.leakbar, },
-    #             'soma': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar,
-    #                      'kht': self.gBar.khtbar, 'ihvcn': self.gBar.ihbar,
-    #                      'leak': self.gBar.leakbar, },
-    #             'dend': {'nav11': self.gBar.nabar, 'klt': 0., 'kht': self.gBar.khtbar * 0.5,
-    #                      'ihvcn': self.gBar.ihbar / 3., 'leak': self.gBar.leakbar * 0.5, },
-    #             'apic': {'nav11': 0.0, 'klt': 0., 'kht': self.gBar.khtbar * 0.2,
-    #                      'ihvcn': self.gBar.ihbar / 4.,
-    #                      'leak': self.gBar.leakbar * 0.2, },
-    #         }
-    #         self.irange = np.linspace(-0.5, 0.5, 9)
-    #         self.distMap = {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-    #                                  'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-    #                                  'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 100.}}, # linear with distance, gminf (factor) is multiplied by gbar
-    #                         'apic': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-    #                                  'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
-    #                                  'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 100.}}, # gradients are: flat, linear, exponential
-    #                         }
-    #
-    #     elif modelType == 'XM13PasDend':
-    #         # bushy form Xie and Manis, 2013, based on Cao and Oertel mouse conductances
-    #         # passive dendritestotcap = 26.0E-12 # uF/cm2
-    #         totcap = 26.0E-12 # uF/cm2
-    #         refarea = totcap  / self.c_m  # see above for units
-    #         self._valid_temperatures = (34.,)
-    #         if self.status['temperature'] is None:
-    #             self.set_temperature(34.)
-    #         self.gBar = Params(nabar=1000.0E-9/refarea,
-    #                            khtbar=150.0E-9/refarea,
-    #                            kltbar=0.0E-9/refarea,
-    #                            ihbar=0.5E-9/refarea,
-    #                            leakbar=2.0E-9/refarea,
-    #         )
-    #         self.channelMap = {
-    #             'axon': {'nav11': self.gBar.nabar*0, 'klt': self.gBar.kltbar * 0.25, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
-    #                      'leak': self.gBar.leakbar * 0.25},
-    #             'hillock': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar, 'ihvcn': 0.,
-    #                         'leak': self.gBar.leakbar, },
-    #             'initseg': {'nav11': self.gBar.nabar*3, 'klt': self.gBar.kltbar*2, 'kht': self.gBar.khtbar*2,
-    #                         'ihvcn': self.gBar.ihbar * 0.5, 'leak': self.gBar.leakbar, },
-    #             'soma': {'nav11': self.gBar.nabar, 'klt': self.gBar.kltbar, 'kht': self.gBar.khtbar,
-    #                      'ihvcn': self.gBar.ihbar, 'leak': self.gBar.leakbar, },
-    #             'dend': {'nav11': self.gBar.nabar * 0.0, 'klt': self.gBar.kltbar*0 , 'kht': self.gBar.khtbar*0,
-    #                      'ihvcn': self.gBar.ihbar*0, 'leak': self.gBar.leakbar*0.5, },
-    #             'apic': {'nav11': self.gBar.nabar * 0.0, 'klt': self.gBar.kltbar * 0, 'kht': self.gBar.khtbar * 0.,
-    #                      'ihvcn': self.gBar.ihbar *0., 'leak': self.gBar.leakbar * 0.25, },
-    #         }
-    #         self.irange = np.linspace(-1, 1, 21)
     def get_distancemap(self):
+        """
+        This structure should be in a data table
+        """
         return {'dend': {'klt': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.},
                          'kht': {'gradient': 'llinear', 'gminf': 0., 'lambda': 200.},
                          'nav11': {'gradient': 'linear', 'gminf': 0., 'lambda': 200.}}, # linear with distance, gminf (factor) is multiplied by gbar
@@ -499,52 +370,72 @@ class TStellateRothman(TStellate):
         #     raise ValueError('model type %s is not implemented' % modelType)
         # self.check_temperature()
         
-    def adjust_na_chans(self, soma, sf=1.0, gbar=1000.):
+    def adjust_na_chans(self, soma, sf=1.0):
         """
-        Adjust the sodium channel conductance, depending on the type of conductance
+        adjust the sodium channel conductance
         
         Parameters
         ----------
-        soma : NEURON section object (required)
-            This identifies the soma object whose sodium channel complement will have it's
-            conductances adjusted depending on the sodium channel type
-        gbar : float (default: 1000.)
-            The "maximal" conductance to be set in the model.
-            
+        soma : neuron section object
+            A soma object whose sodium channel complement will have its 
+            conductances adjusted depending on the channel type
+
         Returns
         -------
-        Nothing
+            Nothing :
+        
         """
-        if self.status['ttx']:
-            gnabar = 0.0
-        else:
-            gnabar = nstomho(gbar, self.somaarea)*sf
+        
         nach = self.status['na']
-        if nach == 'jsrna':
-            soma().jsrna.gbar = gnabar*sf
+        if self.status['ttx']:
+            sf = 0.
+        # if self.debug:
+        if nach == 'jsrna':  # sodium channel from Rothman Manis Young, 1993
+            soma().jsrna.gbar = nstomho(self.pars.jsrna_gbar, self.somaarea)*sf
             soma.ena = self.e_na
             if self.debug:
-                print('jsrna gbar: ', soma().jsrna.gbar)
-        elif nach == 'nav11':
-            soma().nav11.gbar = gnabar
+                print ('Using jsrna, gbar: ', soma().jsrna.gbar)
+
+        elif nach in ['na', 'nacn']: # sodium channel from Rothman and Manis, 2003
+            try:
+                soma().na.gbar = nstomho(self.pars.na_gbar, self.somaarea)*sf
+                nabar = soma().na.gbar
+            except:
+                try:
+                    soma().nacn.gbar = nstomho(self.pars.nacn_gbar, self.somaarea)*sf
+                    nabar = soma().nacn.gbar
+                except:
+                    print('nach: ', nach, '\n', dir(soma()))
+                    pass # raise ValueError('Unable to set sodium channel density')
             soma.ena = self.e_na
+            # soma().na.vsna = 0.
+            if self.debug:
+                print ('Using na/nacn: gbar: ', nabar)
+
+        elif nach == 'nav11':  # sodium channel from Xie and Manis, 2013
+            soma().nav11.gbar =  nstomho(self.pars.nav11_gbar, self.somaarea)*sf
+            soma.ena = 50 # self.e_na
             soma().nav11.vsna = 4.3
             if self.debug:
-                print("tstellate using inva11")
-            print('nav11 gbar: ', soma().nav11.gbar)
-            print('nav11 vsna: ', soma().nav11.vsna)
-        elif nach == 'na':
-            soma().nacn.gbar = gnabar
+                print ("Using nav11")
+
+        elif nach == 'nacncoop':  # coooperative sodium channel based on nacn
+            soma().nacncoop.gbar = nstomho(self.pars.nancoop_gbar, self.somaarea)*sf
+            soma().nacncoop.KJ = 2000.
+            soma().nacncoop.p = 0.25
+            soma().nacncoop.vsna = 0.
             soma.ena = self.e_na
+            if debug:
+                print('nacncoop gbar: ', soma().nacncoop.gbar)
+
+        elif nach == 'nabu':  # sodium channel for bushy cells from Yang et al (Xu-Friedman lab)
+            soma().nabu.gbar =  nstomho(self.pars.nabu_gbar, self.somaarea)*sf
+            soma.ena = 50 # self.e_na
             if self.debug:
-                print('na gbar: ', soma().na.gbar)
-        elif  nach == 'nacn':
-            soma().nacn.gbar = gnabar
-            soma.ena = self.e_na
-            if self.debug:
-                print('nacn gbar: ', soma().nacn.gbar)
+                print ("Using nabu")
+
         else:
-            raise ValueError("tstellate setting Na channels: channel %s not known" % nach)
+            raise ValueError(f'Sodium channel <{nach:s}> is not recognized for {self.celltype:s} cells')
 
     def add_axon(self):
         Cell.add_axon(self, self.soma, self.somaarea, self.c_m, self.R_a, self.axonsf)

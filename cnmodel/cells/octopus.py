@@ -27,7 +27,7 @@ __all__ = ['Octopus', 'OctopusRothman', 'OctopusSpencer']
 
 class Octopus(Cell):
 
-    type = 'octopus'
+    celltype = 'octopus'
     
     @classmethod
     def create(cls, modelType='RM03', **kwds):
@@ -65,33 +65,33 @@ class Octopus(Cell):
             post_sec = self.soma
         
         if psd_type == 'simple':
-            if terminal.cell.type in ['sgc']:
-                weight = data.get('%s_synapse' % terminal.cell.type, species=self.species,
-                        post_type=self.type, field='weight')
-                tau1 = data.get('%s_synapse' % terminal.cell.type, species=self.species,
-                        post_type=self.type, field='tau1')
-                tau2 = data.get('%s_synapse' % terminal.cell.type, species=self.species,
-                        post_type=self.type, field='tau2')
-                erev = data.get('%s_synapse' % terminal.cell.type, species=self.species,
-                        post_type=self.type, field='erev')
+            if terminal.cell.celltype in ['sgc']:
+                weight = data.get('%s_synapse' % terminal.cell.celltype, species=self.species,
+                        post_type=self.celltype, field='weight')
+                tau1 = data.get('%s_synapse' % terminal.cell.celltype, species=self.species,
+                        post_type=self.celltype, field='tau1')
+                tau2 = data.get('%s_synapse' % terminal.cell.celltype, species=self.species,
+                        post_type=self.celltype, field='tau2')
+                erev = data.get('%s_synapse' % terminal.cell.celltype, species=self.species,
+                        post_type=self.celltype, field='erev')
                 return self.make_exp2_psd(post_sec, terminal, weight=weight, loc=loc,
                         tau1=tau1, tau2=tau2, erev=erev)
             else:
                 raise TypeError("Cannot make simple PSD for %s => %s" % 
-                            (terminal.cell.type, self.type))
+                            (terminal.cell.celltype, self.celltype))
 
             
         elif psd_type == 'multisite':
-            if terminal.cell.type == 'sgc':
+            if terminal.cell.celltype == 'sgc':
                 # Max conductances for the glu mechanisms are calibrated by 
                 # running `synapses/tests/test_psd.py`. The test should fail
                 # if these values are incorrect
                 self.AMPAR_gmax = data.get('sgc_synapse', species=self.species,
-                        post_type=self.type, field='AMPAR_gmax')*1e3
+                        post_type=self.celltype, field='AMPAR_gmax')*1e3
                 self.NMDAR_gmax = data.get('sgc_synapse', species=self.species,
-                        post_type=self.type, field='NMDAR_gmax')*1e3
+                        post_type=self.celltype, field='NMDAR_gmax')*1e3
                 self.Pr = data.get('sgc_synapse', species=self.species,
-                        post_type=self.type, field='Pr')
+                        post_type=self.celltype, field='Pr')
                 # adjust gmax to correct for initial Pr
                 self.AMPAR_gmax = self.AMPAR_gmax/self.Pr
                 self.NMDAR_gmax = self.NMDAR_gmax/self.Pr
@@ -102,11 +102,11 @@ class Octopus(Cell):
                 if 'NMDAScale' in kwds:
                     self.NMDAR_gmax = self.NMDAR_gmax*kwds['NMDAScale']
                 return self.make_glu_psd(post_sec, terminal, self.AMPAR_gmax, self.NMDAR_gmax, loc=loc)
-            elif terminal.cell.type == 'dstellate':
+            elif terminal.cell.celltype == 'dstellate':
                 return self.make_gly_psd(post_sec, terminal, psdtype='glyslow', loc=loc)
             else:
                 raise TypeError("Cannot make PSD for %s => %s" % 
-                            (terminal.cell.type, self.type))
+                            (terminal.cell.celltype, self.celltype))
         else:
             raise ValueError("Unsupported psd type %s" % psd_type)
 
