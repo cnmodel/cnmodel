@@ -281,10 +281,7 @@ class BushyRothman(Bushy):
             field='na_type')
         pars = Params(cap=cellcap, natype=chtype)
         # could override nach type from the call rather than the table.
-        print('pars natype: ', pars.natype)
         # print('pars cell/chtype: ')
-        if self.debug:
-            pars.show()
         if self.status['modelName'] == 'RM03':
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ih_gbar', 'leak_gbar']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
@@ -297,7 +294,8 @@ class BushyRothman(Bushy):
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ihvcn_gbar', 'leak_gbar']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
-        pars.show()
+        if self.debug:
+            pars.show()
         return pars
         
     def species_scaling(self, silent=True):
@@ -340,7 +338,7 @@ class BushyRothman(Bushy):
             
 
             self.vrange = [-68., -55.]  # set a default vrange for searching for rmp
-            self.i_test_range = {'pulse': (-1., 1.2, 0.05)}
+            self.i_test_range = {'pulse': (-1., 1.0, 0.05)}
             self._valid_temperatures = (34., )
             if self.status['temperature'] is None:
                 self.status['temperature'] = 34. 
@@ -420,7 +418,6 @@ class BushyRothman(Bushy):
         
         nach = self.status['na']
         # if self.debug:
-        print(f"Na Channel type: {nach:s}")
         if nach == 'jsrna':  # sodium channel from Rothman Manis Young, 1993
             if not self.status['ttx']:
                 soma().jsrna.gbar = nstomho(self.pars.jsrna_gbar, self.somaarea)*sf
@@ -431,7 +428,6 @@ class BushyRothman(Bushy):
                 print ('jsrna gbar: ', soma().jsrna.gbar)
 
         elif nach in ['na', 'nacn']: # sodium channel from Rothman and Manis, 2003
-            print('nacn gbar (adjust): ', self.pars.nacn_gbar, self.somaarea, self.pars.cap)
             try:
                 soma().na.gbar = nstomho(self.pars.na_gbar, self.somaarea)*sf
             except:
