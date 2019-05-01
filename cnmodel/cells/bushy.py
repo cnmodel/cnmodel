@@ -189,15 +189,14 @@ class BushyRothman(Bushy):
                                                     # The default values are set in the species_scaling routine
         if modelType == None:
             modelType = 'II'
+
         if species == 'guineapig':
             modelName = 'RM03'
             temp = 22.
-            # if nach == None:  # get this from the ion channel table, not here
             dataset = 'RM03_channels'
-            #     nach = 'na'
+
         if species == 'mouse':
             temp = 34.
-            # self.i_test_range={'pulse': (-1, 1.2, 0.05)}
             if modelName is None:
                 modelName = 'XM13'
             if modelName == 'XM13':
@@ -331,9 +330,9 @@ class BushyRothman(Bushy):
             # conductances were not scaled for temperature (rates were)
             # so here we reset the default Q10's for conductance (g) to 1.0
             if self.status['modelType'] not in ['II', 'II-I']:
-                raise ValueError('\nModel type %s is not implemented for mouse bushy cells' % modelType)
+                raise ValueError('\nModel type %s is not implemented for mouse bushy cells' % self.status['modelType'])
             if self.debug:
-                print ('  Setting conductances for mouse bushy cell (%s), Xie and Manis, 2013' % modelType)
+                print ('  Setting conductances for mouse bushy cell (%s), Xie and Manis, 2013' % self.status['modelType'])
             #print('model name: ', self.status['modelName'])
             
 
@@ -353,7 +352,7 @@ class BushyRothman(Bushy):
             
         elif self.status['species'] == 'guineapig':
             if self.debug:
-                print ('  Setting conductances for guinea pig %s bushy cell, Rothman and Manis, 2003' % modelType)
+                print ('  Setting conductances for guinea pig %s bushy cell, Rothman and Manis, 2003' % self.status['modelType'])
             self._valid_temperatures = (22., 38.)
             if self.status['temperature'] is None:
                 self.status['temperature'] = 22. 
@@ -430,16 +429,18 @@ class BushyRothman(Bushy):
         elif nach in ['na', 'nacn']: # sodium channel from Rothman and Manis, 2003
             try:
                 soma().na.gbar = nstomho(self.pars.na_gbar, self.somaarea)*sf
+                nabar = soma().na.gbar
             except:
                 try:
                     soma().nacn.gbar = nstomho(self.pars.nacn_gbar, self.somaarea)*sf
+                    nabar = soma().nacn.gbar
                 except:
                     print('nach: ', nach, '\n', dir(soma()))
                     pass # raise ValueError('Unable to set sodium channel density')
             soma.ena = self.e_na
             # soma().na.vsna = 0.
             if self.debug:
-                print ('na gbar: ', soma().na.gbar)
+                print ('na gbar: ', nabar)
 
         elif nach == 'nav11':  # sodium channel from Xie and Manis, 2013
             if not self.status['ttx']:
