@@ -20,7 +20,7 @@ from cnmodel.util import Params
 class Decorator():
     def __init__(self, cell, parMap=None, verify=False):
 
-        cellType = cell.type.lower()
+        cellType = cell.celltype.lower()
         self.channelInfo = Params(newCm=1.0,
                               newRa=150.0,  # standard value
                               newg_leak=0.000004935,
