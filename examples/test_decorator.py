@@ -28,13 +28,14 @@ import timeit
 
 
 class F5():
-    def __init__(self, filename):
+    def __init__(self, filename, lc_cell=False):
         # build plotting area
         #
         self.filename = filename
         self.iv = IVCurve()  # use standard IVCurve here...
         self.temperature = 34
         self.initdelay = 150.
+        self.lc_cell = lc_cell
         
     def run(self):
         self.post_cell = cells.Bushy.create(morphology=self.filename, decorator=Decorator,
@@ -43,8 +44,10 @@ class F5():
         self.post_cell.set_d_lambda(freq=2000.)  # necessary to ensure appropriate spatial 
         self.iv.reset()
         irange = self.post_cell.i_test_range
-        #irange = {'pulse': (-0.6, 1.1, 0.2)} for Figure 5 of paper
-        irange = {'pulse': (-0.5, 1.5, 0.25)}
+        if self.lc_cell:
+            irange = {'pulse': (-0.6, 1.1, 0.2)} # for Figure 5 of paper
+        else:
+            irange = {'pulse': (-0.5, 1.5, 0.25)}
         self.durs = (self.initdelay+20., 100., 50.)
         self.iv.run(irange, self.post_cell, durs=self.durs, temp=float(self.temperature),
                 initdelay=self.initdelay)
@@ -94,8 +97,8 @@ class F5():
 
 
 if __name__ == '__main__':
-    if len(sys.argv) == 1:
-        fig5 = F5('examples/LC_bushy.hoc')
+    if len(sys.argv) > 1  and sys.argv[1] == '5':
+        fig5 = F5('examples/LC_bushy.hoc', lc_cell=True)
     else:
         fn = ('/Users/pbmanis/Desktop/Python/VCNModel/VCN_Cells/VCN_c{0:02d}/Morphology/VCN_c{0:02d}.hoc'.format(int(sys.argv[1])))
         fig5 = F5(fn)

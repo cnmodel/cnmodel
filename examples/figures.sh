@@ -15,7 +15,7 @@ case $1 in
          python examples/test_synapses.py sgc bushy
          ;;
      5)
-         python examples/test_decorator.py
+         python examples/test_decorator.py 5
          ;;
      6a)
          python examples/test_bushy_variation.py a
