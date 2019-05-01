@@ -52,6 +52,10 @@ class UserTester(object):
         # Check test structures are the same
         assert type(info) is type(expect)
         if hasattr(info, '__len__'):
+            if len(info) != len(expect):
+                print('Model tested: %s, measure: %s' % (self.key, key))
+                print('Array received: ', info)
+                print('Array expected: ', expect)
             assert len(info) == len(expect)
             
         if isinstance(info, dict):
@@ -75,10 +79,10 @@ class UserTester(object):
                 assert np.all(inans == enans)
                 mask = ~inans
                 if not np.allclose(info[mask], expect[mask], rtol=self.rtol):
-                    print( '\nComparing data array, shapes match: ', info.shape == expect.shape)
-                    print( 'Model tested: %s, measure: %s' % (self.key, key))
+                    print('\nComparing data array, shapes match: ', info.shape == expect.shape)
+                    print('Model tested: %s, measure: %s' % (self.key, key))
                     #print( 'args: ', dir(self.args[0]))
-                    print( 'Array expected: ', expect[mask])
+                    print('Array expected: ', expect[mask])
                     print('Array received: '  , info[mask])
                     try:
                         self.args[0].print_all_mechs()

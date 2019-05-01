@@ -66,16 +66,16 @@ that can be accessed.
 -----------------------------------------------------------------------------------------------------------------------------------
                II             II-I           I-c           I-II          I-t       
                                                                                    
-nav11_gbar     0000.  [4]     0000.  [4]     000.   [4]    0.     [4]    3000.  [4] 
-nacn_gbar      1000.  [1]     1000.  [1]     3000.  [1]    0000.  [2]    0000.  [1] 
-na_gbar        1000.  [1]     1000.  [1]     3000.  [1]    1800.  [2]    0000.  [1] 
+nav11_gbar     0000.  [4]     0000.  [4]     800.   [4]    800.   [4]    1000.  [4] 
+nacn_gbar      1500.  [1]     1000.  [1]     3000.  [1]    0000.  [2]    0000.  [1] 
+na_gbar        0000.  [1]     0000.  [1]     3000.  [1]    1800.  [2]    0000.  [1] 
 kht_gbar       58.0   [1]     58.0   [1]     500.0  [1]    150.0  [2]    500.0  [1] 
 klt_gbar       80.0   [1]     20.0   [1]     0.0    [1]    14.0   [3]    0.0    [1] 
 ka_gbar        0.0    [1]     0.0    [1]     0.0    [1]    0.0    [2]    125.0  [1] 
 ihvcn_gbar     30.0   [1]     30.0   [1]     18.0   [1]    2.0    [2]    18.0   [1] 
 leak_gbar      2.0    [1]     2.0    [1]     8.0    [1]    2.0    [2]    8.0    [1] 
 leak_erev      -65    [1]     -65    [1]     -65    [1]    -65    [2]    -65    [1] 
-na_type        nacn   [1]     nav11  [1]     nacn   [1]    na     [3]    nav11  [1] 
+na_type        nacn   [1]     nacn   [1]     nacn   [1]    na     [3]    nav11  [1] 
 ih_type        ihvcn  [1]     ihvcn  [1]     ihvcn  [1]    ihvcn  [2]    ihvcn  [1] 
 soma_Cap       26.0   [1]     26.0   [1]     25.0   [1]    25.0   [2]    25.0   [1] 
 nav11_vshift   4.3    [1]     4.3    [1]     4.3    [1]    4.3    [1]    4.3    [1]
@@ -101,7 +101,7 @@ ih_eh          -43    [1]     -43    [1]     -43    [1]    -43    [2]    -43    
 
 [4] nav11 channels were used in original Xie and Manis (2013) ms, but are not
     used for mice in the master distribution of cnmodel, which used only the nacn
-    channels.  
+    channels. The channel type can be overridden however.
 
 """)
 

@@ -140,7 +140,7 @@ class Decorator():
                 if parameter == 'vshift' and self.vshift_mapper[mech] is not None:
                     vshift_setup = ('%s_%s' % (self.vshift_mapper[mech], mech))  # map voltage shift
                     vshift = cell.channelMap[sectype][mechname]
-                    print(f'*********   Shift add to mechanism {mech:s}: gbar={gbar:e}, vshift: {vshift:.6f}')
+                    # print(f'*********   Shift add to mechanism {mech:s}: gbar={gbar:e}, vshift: {vshift:.6f}')
                 
                 cell.hr.h.Ra = self.channelInfo.newRa
                 for sec in cell.hr.sec_groups[s]:  # now set conductances and other parameters as requested
