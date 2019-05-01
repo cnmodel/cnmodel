@@ -53,7 +53,8 @@ class UserTester(object):
         assert type(info) is type(expect)
         if hasattr(info, '__len__'):
             if len(info) != len(expect):
-                print('Model tested: %s, measure: %s' % (self.key, key))
+                print('\nComparing Lists, Model tested: %s, measure: %s' % (self.key, key))
+                print('Lengths: expected: %d  received: %d' % (len(expect), len(info)))
                 print('Array received: ', info)
                 print('Array expected: ', expect)
             assert len(info) == len(expect)
@@ -94,7 +95,7 @@ class UserTester(object):
                     self.compare_results(k, info[k], expect[k])
         elif np.isscalar(info):
             if not np.allclose(info, expect, rtol=self.rtol):
-                print('Comparing Scalar data, model: %s, measure: %s' % (self.key, key))
+                print('\nComparing Scalar data, model: %s, measure: %s' % (self.key, key))
                 #print 'args: ', dir(self.args[0])
                 print('Expected: ', expect, ',  received: ', info, '  relative tolerance: ', self.rtol)
                 print('Ratio: received/expected: ', info/expect)
