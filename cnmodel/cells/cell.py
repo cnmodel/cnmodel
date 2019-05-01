@@ -616,27 +616,24 @@ class Cell(object):
 
         dataset = '%s_channels' % modelName
         decorationmap = dataset + '_compartments'
-        # print('dataset: {0:s}   decorationmap: {1:s}'.format(dataset, decorationmap))
         cellpars = self.get_cellpars(dataset, species=self.status['species'], modelType=modelType)
+        # refarea is the "reference area" for a somatic conductance
+        # units are: pF of cell soma / specific capicatance in uF/cm2 = cm2*1e-6
+        # cellpars.cap is in pF; self.c_m is in uF/cm2
+        # refarea = 1e-3*/uF/cm2 = 1e-3S/cm2 = uS/cm2
+        # g will be computed from nS/refarea, in Mho/cm2; nS comes from the table
+        # refarea then is pF/uF/cm2*1e-3 = 1e-12/1e-6 * 1e-3 = 1e-9 *cm2
+        # nS/(1e-9 * cm2) = Mho/cm2
         refarea = 1e-3*cellpars.cap / self.c_m
-# ?       print ('cellpars: ' )
+
         cellpars.show()
-        # print(' species: ', self.status['species'])
-        # print('m# odelType: ', modelType)
-#         print('dataset: ', dataset)
         table = data._db.get_table_info(dataset)
-#         table = data.get_table_info('mGBC_channels')
-#         print(dir(data.ionchannels))
-#         print( data.print_table('mGBC_channels'))
         
         if len(table.keys()) == 0:
             raise ValueError('data table %s lacks keys - does it exist?' % dataset)
         chscale = data._db.get_table_info(decorationmap)
         pars = {}
         # retrive the conductances from the data set
-        # print ('table keys: ', table.keys())
-        # print('table: ', table)
-        # print('chscale: ', chscale)
         for g in table['field']:
             x = data._db.get(dataset, species=self.status['species'], model_type=modelType,
                                 field=g)
@@ -660,7 +657,8 @@ class Cell(object):
                     self.channelMap[c][g] = pars[g]*scale
                 else:
                     self.channelMap[c][g] = pars[g]
-        print('channelmap soma: ', self.channelMap['soma'])
+        for k in self.channelMap.keys():
+            print(f'channelmap {k:s}: ', self.channelMap[k])
         self.irange = np.linspace(-0.6, 1, 9)
         self.distMap =         {'dend': {'klt': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
                                  'kht': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
