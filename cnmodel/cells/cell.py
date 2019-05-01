@@ -624,7 +624,7 @@ class Cell(object):
         # g will be computed from nS/refarea, in Mho/cm2; nS comes from the table
         # refarea then is pF/uF/cm2*1e-3 = 1e-12/1e-6 * 1e-3 = 1e-9 *cm2
         # nS/(1e-9 * cm2) = Mho/cm2
-        refarea = 1e-3*cellpars.cap / self.c_m
+        refarea = 1e-3*cellpars.cap / (self.c_m*1e-6)
 
         cellpars.show()
         table = data._db.get_table_info(dataset)
@@ -657,8 +657,9 @@ class Cell(object):
                     self.channelMap[c][g] = pars[g]*scale
                 else:
                     self.channelMap[c][g] = pars[g]
-        for k in self.channelMap.keys():
-            print(f'channelmap {k:s}: ', self.channelMap[k])
+        if self.debug:
+            for k in self.channelMap.keys():
+                print(f'channelmap {k:s}: ', self.channelMap[k])
         self.irange = np.linspace(-0.6, 1, 9)
         self.distMap =         {'dend': {'klt': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
                                  'kht': {'gradient': 'exp', 'gminf': 0., 'lambda': 50.},
