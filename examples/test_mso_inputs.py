@@ -52,7 +52,7 @@ class MSOBinauralTest(Protocol):
         synapse = {}
         self.stim = {}
         self.ears = ears
-        self.stimdur = 0.2
+        self.stimdur = 2.0
         self.stimdelay = 0.02
         self.rundur = self.stimdelay + self.stimdur + 0.02
 
@@ -147,7 +147,7 @@ class MSOBinauralTest(Protocol):
         
         # phaselocking calculations
         phasewin = [self.stimdelay + 0.2*self.stimdur, self.stimdelay + self.stimdur]
-        msospk = PU.findspikes(self['t'], self['vm_mso'], -30.)
+        msospk = PU.findspikes(self['t'], self['vm_mso'], self.msoCell.spike_threshold)
 
         spkin = msospk[np.where(msospk > phasewin[0]*1e3)]
         spikesinwin = spkin[np.where(spkin <= phasewin[1]*1e3)[0]]
@@ -155,17 +155,20 @@ class MSOBinauralTest(Protocol):
         # set freq for VS calculation
         f0 = self.f0
         fb = self.beatfreq
-        vs = PU.vector_strength(spikesinwin, f0)
+        if len(spikesinwin) > 1:
+            vs = PU.vector_strength(spikesinwin, f0)
 
-        print('MSO Vector Strength at %.1f: %7.3f, d=%.2f (us) Rayleigh: %7.3f  p = %.3e  n = %d' % (f0, vs['r'], vs['d']*1e6, vs['R'], vs['p'], vs['n']))
-        if fb > 0:
-            vsb = PU.vector_strength(spikesinwin, fb)
-            print('MSO Vector Strength to beat at %.1f: %7.3f, d=%.2f (us) Rayleigh: %7.3f  p = %.3e  n = %d' % (fb, vsb['r'], vsb['d']*1e6, vsb['R'], vsb['p'], vsb['n']))
-        (hist, binedges) = np.histogram(vs['ph'])
-        p6 = self.win.addPlot(title='VS', row=3, col=1)
-        p6.plot(binedges, hist, stepMode=True, fillBrush=(100, 100, 255, 150), fillLevel=0)
-        p6.setXRange(0., 2*np.pi)
-        
+
+            print('MSO Vector Strength at %.1f: %7.3f, d=%.2f (us) Rayleigh: %7.3f  p = %.3e  n = %d' % (f0, vs['r'], vs['d']*1e6, vs['R'], vs['p'], vs['n']))
+            if fb > 0:
+                vsb = PU.vector_strength(spikesinwin, fb)
+                print('MSO Vector Strength to beat at %.1f: %7.3f, d=%.2f (us) Rayleigh: %7.3f  p = %.3e  n = %d' % (fb, vsb['r'], vsb['d']*1e6, vsb['R'], vsb['p'], vsb['n']))
+            (hist, binedges) = np.histogram(vs['ph'])
+            p6 = self.win.addPlot(title='VS', row=3, col=1)
+            p6.plot(binedges, hist, stepMode=True, fillBrush=(100, 100, 255, 150), fillLevel=0)
+            p6.setXRange(0., 2*np.pi)
+        else:
+            print('Too few spikes detected in MSO cell for calculation: ', len(spikesinwin))
         self.win.show()
 
 
