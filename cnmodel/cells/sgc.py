@@ -13,7 +13,8 @@ __all__ = ['SGC', 'SGC_TypeI', 'DummySGC']
 
 class SGC(Cell):
     celltype = 'sgc'
-
+    scaled = False
+    
     @classmethod
     def create(cls, model='I', species='mouse', **kwds):
         if model == 'dummy':
@@ -282,7 +283,9 @@ class SGC_TypeI(SGC):
         be appropriate, given that the other conductances are scaled up.
         
         """
-        
+        assert self.scaled is False  # block double scaling!
+        self.scaled = True
+                
         soma = self.soma
             
         if self.status['species'] == 'mouse':

@@ -11,7 +11,8 @@ __all__ = ['Pyramidal', 'PyramidalKanold']
 class Pyramidal(Cell):
 
     celltype = 'pyramidal'
-
+    scaled = False
+    
     @classmethod
     def create(cls, model='POK', **kwds):
         if model == 'POK':
@@ -220,7 +221,8 @@ class PyramidalKanold(Pyramidal, Cell):
         silent : boolean (default: True)
             run silently (True) or verbosely (False)
         """
-
+        assert self.scaled is False  # block double scaling!
+        self.scaled = True
 
         soma = self.soma
         if self.status['species'] in ['rat', 'mouse']:

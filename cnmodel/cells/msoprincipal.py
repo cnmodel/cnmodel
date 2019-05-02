@@ -14,7 +14,8 @@ __all__ = ['MSO']
 class MSO(Cell):
     
     celltype = 'mso'
-
+    scaled = False
+    
     @classmethod
     def create(cls, model='MSO-principal', **kwds):
         if model == 'MSO-principal':
@@ -209,7 +210,8 @@ class MSOPrincipal(MSO):
             run silently (True) or verbosely (False)
         
         """
-
+        assert self.scaled is False  # block double scaling!
+        self.scaled = True
             
         soma = self.soma
             

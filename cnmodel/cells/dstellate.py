@@ -12,7 +12,8 @@ __all__ = ['DStellate', 'DStellateRothman', 'DStellateEager']
 class DStellate(Cell):
     
     celltype = 'dstellate'
-
+    scaled = False
+    
     @classmethod
     def create(cls, model='RM03', **kwds):
         if model == 'RM03':
@@ -284,6 +285,9 @@ class DStellateRothman(DStellate):
             Flag for printing debugging information.
             
         """
+        assert self.scaled is False  # block double scaling!
+        self.scaled = True
+        
         soma = self.soma
         if self.status['species'] == 'mouse':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.

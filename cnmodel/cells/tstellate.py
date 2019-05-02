@@ -22,7 +22,8 @@ is read from table, so nav11 channel is used for mouse I-t model with XM13_chann
 class TStellate(Cell):
     
     celltype = 'tstellate'
-
+    scaled = False
+    
     @classmethod
     def create(cls, model='RM03', **kwds):
         if model == 'RM03':  # original Rothman-Manis 2003, 22C, point cell, extendable
@@ -290,6 +291,10 @@ class TStellateRothman(TStellate):
         silent : boolean (default: True)
             run silently (True) or verbosely (False)
         """
+        
+        assert self.scaled is False  # block double scaling!
+        self.scaled = True
+        
         soma = self.soma
 
         if self.status['species'] == 'mouse': #  and modelType == 'I-c':

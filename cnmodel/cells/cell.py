@@ -464,7 +464,7 @@ class Cell(object):
         All sections in the cell are set to the same value
         """
         if vrange is None:
-            self.species_scaling()
+            vrange = [-90., -50.]
         if self.vm0 is None:
             self.vm0 = self.find_i0(showinfo=showinfo, vrange=vrange, **kwargs)
         for part in self.all_sections.keys():

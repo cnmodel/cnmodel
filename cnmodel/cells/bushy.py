@@ -17,6 +17,7 @@ class Bushy(Cell):
     
     celltype = 'bushy'
     spike_source = None
+    scaled = False  # only allow scaling once
     
     @classmethod
     def create(cls, model='RM03', **kwds):
@@ -217,6 +218,7 @@ class BushyRothman(Bushy):
                        'initialsegment': False, 'myelinatedaxon': False, 'unmyelinatedaxon': False,
                        'na': nach, 'ttx': ttx, 'name': self.celltype,
                        'morphology': morphology, 'decorator': decorator, 'temperature': temperature}
+        self.vrange = [-70., -55.]  # set a default vrange for searching for rmp
 
         self.c_m = 0.9  # default in units of uF/cm^2
         self.spike_threshold = -40
@@ -308,11 +310,10 @@ class BushyRothman(Bushy):
             run silently (True) or verbosely (False)
         
         """
-        #print '\nSpecies scaling: %s   %s' % (species, type)
-        knownspecies = ['mouse', 'guineapig', 'cat']
-        
+        assert self.scaled is False  # block double scaling!
+        self.scaled = True
+         
         soma = self.soma
- #       cellType = self.map_celltype(modelType)
 
         if self.status['species'] == 'mouse':
             # use conductance levels determined from Cao et al.,  J. Neurophys., 2007. as 
@@ -323,8 +324,6 @@ class BushyRothman(Bushy):
                 raise ValueError(f"\nModel type {self.status['modelType']:s} is not implemented for mouse {self.celltype.title():s} cells")
             if self.debug:
                 print (f"  Setting conductances for mouse {self.celltype.title():s} cell ({self.status['modelType']})")
-            #print('model name: ', self.status['modelName'])
-            
 
             self.vrange = [-68., -55.]  # set a default vrange for searching for rmp
             self.i_test_range = {'pulse': (-1., 1.0, 0.05)}

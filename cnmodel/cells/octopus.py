@@ -28,6 +28,7 @@ __all__ = ['Octopus', 'OctopusRothman', 'OctopusSpencer']
 class Octopus(Cell):
 
     celltype = 'octopus'
+    scaled = False
     
     @classmethod
     def create(cls, modelType='RM03', **kwds):
@@ -283,6 +284,9 @@ class OctopusRothman(Octopus, Cell):
         silent : boolean (default: True)
             run silently (True) or verbosely (False)
         """
+        assert self.scaled is False  # block double scaling!
+        self.scaled = True
+
         soma = self.soma
 
         if self.status['species'] == 'guineapig' and self.status['modelType'] =='II-o':

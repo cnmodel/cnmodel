@@ -15,7 +15,8 @@ __all__ = ['Tuberculoventral']
 class Tuberculoventral(Cell):
     
     celltype = 'tuberculoventral'
-
+    scaled = False
+    
     @classmethod
     def create(cls, model='TVmouse', **kwds):
         if model in ['TVmouse', 'I']:
@@ -236,6 +237,9 @@ class Tuberculoventral(Tuberculoventral):
         silent : boolean (default: True)
             run silently (True) or verbosely (False)
         """
+        assert self.scaled is False  # block double scaling!
+        self.scaled = True
+        
         soma = self.soma
 
         if self.status['species'] == 'mouse':

@@ -12,6 +12,7 @@ __all__ = ['Cartwheel', 'CartwheelDefault']
 class Cartwheel(Cell):
 
     celltype = 'cartwheel'
+    scaled = False
     
     @classmethod
     def create(cls, model='CW', **kwds):
@@ -216,6 +217,9 @@ class CartwheelDefault(Cartwheel, Cell):
         ----
             For the cartwheel cell model, there is only a single scaling recognized. 
         """        
+        assert self.scaled is False  # block double scaling!
+        self.scaled = True
+        
         if self.status['species'] is not 'mouse':
             raise ValueError ('Cartwheel,  species: only "mouse" is recognized')
         if self.status['modelType'] is not 'cartwheel':
