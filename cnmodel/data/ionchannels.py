@@ -18,14 +18,15 @@ map to cell:    bushy-II      bushy-II-I    tstellate     tstellate-t   bushy-I-
 -----------------------------------------------------------------------------------------------------------------------------------
                II            II-I          I-c           I-t           I-II          II-o
 
-nacn_gbar      1000. [1]     1000. [1]     1000. [1]     1000. [1]     1000. [2]     1000. [3]
+nacn_gbar      1000. [1]     1000. [1]     1000. [1]     1000. [1]     1000. [2]     0000. [3]
+jsrna_gbar     0000. [1]     0000. [1]     0000. [1]     0000. [1]     0000. [2]     1000. [3]
 kht_gbar       150.0 [1]     150.0 [1]     150.0 [1]     80.0  [1]     150.0 [2]     150.0 [3] 
 klt_gbar       200.0 [1]     35.0  [1]     0.0   [1]     0.0   [1]     20.0  [2]     1000. [3] 
 ka_gbar        0.0   [1]     0.0   [1]     0.0   [1]     65.0  [1]     0.0   [2]     0.0   [3]
 ih_gbar        20.0  [1]     3.5   [1]     0.5   [1]     0.5   [1]     2.0   [2]     30.0  [3]
 leak_gbar      2.0   [1]     2.0   [1]     2.0   [1]     2.0   [1]     2.0   [2]     2.0   [3]
 leak_erev      -65   [1]     -65   [1]     -65   [1]     -65   [1]     -65   [2]     -65   [3]
-na_type        nacn  [1]     nacn  [1]     nacn  [1]     nacn  [1]     nacn  [2]     nacn  [3]
+na_type        nacn  [1]     nacn  [1]     nacn  [1]     nacn  [1]     nacn  [2]     jsrna [3]
 ih_type        ihvcn [1]     ihvcn [1]     ihvcn [1]     ihvcn [1]     ihvcn [2]     ihvcn [3]
 soma_Cap       12.0  [1]     12.0  [1]     12.0  [1]     12.0  [1]     12.0  [2]     25.0  [3]
 e_k            -84   [1]     -84   [1]     -84   [1]     -84   [2]     -84   [2]     -84   [2] 
@@ -298,7 +299,7 @@ ih_type        ihvcn      ihvcn                ihvcn              ihvcn         
 """)
 
 
-add_table_data('POK_channels', row_key='field', col_key='cell_type', 
+add_table_data('POK_channels', row_key='field', col_key='model_type', 
                species='rat', data=u"""
 
 This table describes the ion channel densities and voltage shifts for rat DCN pyramidal cells,
@@ -331,7 +332,7 @@ soma_Cap                  12     [1]
 
 """)
 
-add_table_data('CW_channels', row_key='field', col_key='cell_type', 
+add_table_data('CW_channels', row_key='field', col_key='model_type', 
                species='mouse', data=u"""
 
 This table describes the ion channel densities and voltage shifts
@@ -366,7 +367,7 @@ soma_Dia           18
 
 """)
 
-add_table_data('TV_channels', row_key='field', col_key='cell_type', 
+add_table_data('TV_channels', row_key='field', col_key='model_type', 
                species='mouse', data=u"""
 
 This table describes the ion channel densities and voltage shifts
@@ -402,7 +403,7 @@ soma_Cap             35       [1]
 
 """)
 
-add_table_data('sgc_mouse_channels', row_key='field', col_key='cell_type', 
+add_table_data('sgc_mouse_channels', row_key='field', col_key='model_type', 
                species='mouse', data=u"""
 
 This table describes the ion channel densities (and voltage shifts if necessary)
@@ -442,7 +443,7 @@ soma_e_na           50.   [1]     50.   [1]
 """)
 
 
-add_table_data('sgc_guineapig_channels', row_key='field', col_key='cell_type', 
+add_table_data('sgc_guineapig_channels', row_key='field', col_key='model_type', 
                species='guineapig', data=u"""
 
 This table describes the ion channel densities (and voltage shifts if necessary)
@@ -481,7 +482,7 @@ soma_e_na           50.   [1]     50.   [1]
 
 """)
 
-add_table_data('MSO_principal_channels', row_key='field', col_key='cell_type', 
+add_table_data('MSO_principal_channels', row_key='field', col_key='model_type', 
                species='guineapig', data=u"""
 
 This table describes the ion channel densities
@@ -491,7 +492,7 @@ for a putative MSO principal neuron based on the original Rothman Manis 2003 mod
                     MSO-principal   
                              
 MSO_name            Principal       
-soma_na_gbar        1000. [1]
+na_gbar             1000. [1]
 soma_kht_gbar       150.0 [1]
 soma_klt_gbar       200.0 [1]
 soma_ka_gbar        0.0   [1]
