@@ -97,7 +97,6 @@ class Cell(object):
         if self.status['decorator'] is None:
             if self.status['temperature'] is None:  # only if not already set
                 self.status['temperature'] = temperature
-                self.species_scaling(silent=False)
         else:
             self.status['temperature'] = temperature
 #            self.decorate()  # call the decorator
@@ -736,7 +735,8 @@ class Cell(object):
         # nS/(1e-9 * cm2) = Mho/cm2
         refarea = 1e-3*cellpars.cap / (self.c_m*1e-6)
 
-        cellpars.show()
+        if self.debug:
+            cellpars.show()
         table = data._db.get_table_info(dataset)
         
         if len(table.keys()) == 0:
