@@ -16,7 +16,8 @@ __all__ = ['Bushy', 'BushyRothman']
 class Bushy(Cell):
     
     celltype = 'bushy'
-
+    spike_source = None
+    
     @classmethod
     def create(cls, model='RM03', **kwds):
         if model == 'RM03':
@@ -110,9 +111,9 @@ class Bushy(Cell):
         elif term_type == 'multisite':
             if post_cell.celltype in ['mso']:
                 nzones = data.get('bushy_synapse', species=self.species,
-                        post_type=post_cell.type, field='n_rsites')
+                        post_type=post_cell.celltype, field='n_rsites')
                 delay = data.get('bushy_synapse', species=self.species,
-                        post_type=post_cell.type, field='delay')
+                        post_type=post_cell.celltype, field='delay')
             else:
                 raise NotImplementedError("No knowledge as to how to connect Bushy cell to cell type %s" %
                                         type(post_cell))
@@ -195,7 +196,7 @@ class BushyRothman(Bushy):
             temp = 22.
             dataset = 'RM03_channels'
 
-        if species == 'mouse':
+        elif species == 'mouse':
             temp = 34.
             if modelName is None:
                 modelName = 'XM13'
@@ -203,14 +204,12 @@ class BushyRothman(Bushy):
                 dataset = 'XM13_channels'
             elif modelName  == 'XM13nacncoop':
                 dataset = 'XM13_channels_nacncoop'
-            elif modelName.startswith('mGBC'):
+            elif modelName.startswith('mGBC'):  # mouse Globular bushy - a bit different (and experimental)
                 dataset = 'mGBC_channels'
             else:
                 raise ValueError(f"ModelName {self.status['modelName']:s} not recognized for mouse {self.celltype:s} cells")
-            # if nach is None:
-            #     raise ValueError("Bushy cell requires specification of Na channel type; got None")
-            # if nach not in ['nav11', 'na', 'nacn', 'nacncoop', 'nabu']:
-            #     raise ValueError("Unrecognized bushy cell sodium channel type: %s" % nach)
+        else:
+            raise ValueError(f"Species {species:s} not recognized for {self.celltype:s} cells")
 
         self.debug = debug
         self.status = {'species': species, 'cellClass': self.celltype, 'modelType': modelType, 'modelName': modelName,
@@ -219,34 +218,17 @@ class BushyRothman(Bushy):
                        'na': nach, 'ttx': ttx, 'name': self.celltype,
                        'morphology': morphology, 'decorator': decorator, 'temperature': temperature}
 
+        self.c_m = 0.9  # default in units of uF/cm^2
         self.spike_threshold = -40
-        self.vrange = [-70., -55.]  # set a default vrange for searching for rmp
         if self.debug:
             print( 'model type, model name, species: ', modelType, modelName, species, nach)
 
-        self.c_m = 0.9  # default in units of uF/cm^2
 
         self._valid_temperatures = (temp, )
         if self.status['temperature'] == None:
             self.status['temperature'] = temp
 
-        if morphology is None:
-            """
-            instantiate a basic soma-only ("point") model
-            """
-            if self.debug:
-                print (f"<< {self.celltype.title():s} model: Creating point cell >>")
-            soma = h.Section(name=f"{self.celltype.title():s}_Soma_%x" % id(self))  # one compartment of about 29000 um2
-            soma.nseg = 1
-            self.add_section(soma, 'soma')
-        else:
-            """
-            instantiate a structured model with the morphology as specified by 
-            the morphology file
-            """
-            if self.debug:
-                print (f"<< {self.celltype.title():s} model: Creating cell with morphology from {morphology:s} >>" )
-            self.set_morphology(morphology_file=morphology)
+        soma = self.do_morphology(morphology)
 
         self.pars = self.get_cellpars(dataset, species=species, modelType=modelType)
         self.status['na'] = self.pars.natype
@@ -269,30 +251,38 @@ class BushyRothman(Bushy):
 
     def get_cellpars(self, dataset, species='guineapig', modelType='II'):
         """
-        Read data for ion channels and cell parameters from the tables
+        Retrieve parameters for the specifed model type and species from the data tables
+        
+        dataset : str (no default)
+            name of the data table to use
+        
+        species : str (default: 'guineapig')
+            Species table to use
+        
+        modelType : str (default: 'II')
+            Model type to get parameters from the table.
+        
         """
-        #cell_type = self.map_celltype(cell_type)
-        # print('getcellpars: dataset, species, mmodeltype: ', dataset, species, modelType)
-        # print('model name: ', self.status['modelName'])
         cellcap = data.get(dataset, species=species, model_type=modelType,
             field='soma_Cap')  # total somatic capacitance (point cells)
         chtype = data.get(dataset, species=species, model_type=modelType,
             field='na_type')
         pars = Params(cap=cellcap, natype=chtype)
-        # could override nach type from the call rather than the table.
-        # print('pars cell/chtype: ')
         if self.status['modelName'] == 'RM03':
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ih_gbar', 'leak_gbar']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
-        if self.status['modelName'] == 'XM13':
+        elif self.status['modelName'] == 'XM13':
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ihvcn_gbar', 'leak_gbar']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
-        if self.status['modelName'] == 'mGBC':
+        elif self.status['modelName'] == 'mGBC':
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ihvcn_gbar', 'leak_gbar']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
+        else:
+            raise ValueError(f"get_cellpars: Model name {self.status['modelName']} is not yet implemented for cell type {self.celltype.title():s}")
+
         if self.debug:
             pars.show()
         return pars
@@ -353,10 +343,13 @@ class BushyRothman(Bushy):
         elif self.status['species'] == 'guineapig':
             if self.debug:
                 print ("  Setting conductances for guinea pig {self.celltype.title():s} {self.status['modelType']:s} cell, Rothman and Manis, 2003")
+
+            self.i_test_range = {'pulse': (-0.4, 0.4, 0.02)}
+            self.vrange = [-70., -55.]  # set a default vrange for searching for rmp
             self._valid_temperatures = (22., 38.)
             if self.status['temperature'] is None:
                 self.status['temperature'] = 22. 
-            self.i_test_range = {'pulse': (-0.4, 0.4, 0.02)}
+
             sf = 1.0
             if self.status['temperature'] == 38.:  # adjust for 2003 model conductance levels at 38
                 sf = 2  # Q10 of 2, 22->38C. (p3106, R&M2003c)
@@ -367,7 +360,6 @@ class BushyRothman(Bushy):
             soma().klt.gbar = nstomho(self.pars.klt_gbar, self.somaarea)
             soma().ihvcn.gbar = nstomho(self.pars.ih_gbar, self.somaarea)
             soma().leak.gbar = nstomho(self.pars.leak_gbar, self.somaarea)
-
             self.axonsf = 0.57
             
         else:
@@ -379,7 +371,6 @@ class BushyRothman(Bushy):
             raise ValueError(errmsg)
 
         self.check_temperature()
-#        self.cell_initialize(vrange=self.vrange)  # no need to do this just yet.
         if not silent:
            print (' set cell as: ', species)
            print (' with Vm rest = %6.3f' % self.vm0)
@@ -395,73 +386,6 @@ class BushyRothman(Bushy):
                                  'kht': {'gradient': 'linear', 'gminf': 0., 'lambda': 100.},
                                  'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
                         }
-
-    def adjust_na_chans(self, soma, sf=1.0):
-        """
-        adjust the sodium channel conductance
-        
-        Parameters
-        ----------
-        soma : neuron section object
-            A soma object whose sodium channel complement will have its 
-            conductances adjusted depending on the channel type
-
-        Returns
-        -------
-            Nothing :
-        
-        """
-        
-        nach = self.status['na']
-        if self.status['ttx']:
-            sf = 0.
-        # if self.debug:
-        if nach == 'jsrna':  # sodium channel from Rothman Manis Young, 1993
-            soma().jsrna.gbar = nstomho(self.pars.jsrna_gbar, self.somaarea)*sf
-            soma.ena = self.e_na
-            if self.debug:
-                print ('Using jsrna, gbar: ', soma().jsrna.gbar)
-
-        elif nach in ['na', 'nacn']: # sodium channel from Rothman and Manis, 2003
-            try:
-                soma().na.gbar = nstomho(self.pars.na_gbar, self.somaarea)*sf
-                nabar = soma().na.gbar
-            except:
-                try:
-                    soma().nacn.gbar = nstomho(self.pars.nacn_gbar, self.somaarea)*sf
-                    nabar = soma().nacn.gbar
-                except:
-                    print('nach: ', nach, '\n', dir(soma()))
-                    pass # raise ValueError('Unable to set sodium channel density')
-            soma.ena = self.e_na
-            # soma().na.vsna = 0.
-            if self.debug:
-                print ('Using na/nacn: gbar: ', nabar)
-
-        elif nach == 'nav11':  # sodium channel from Xie and Manis, 2013
-            soma().nav11.gbar =  nstomho(self.pars.nav11_gbar, self.somaarea)*sf
-            soma.ena = 50 # self.e_na
-            soma().nav11.vsna = 4.3
-            if self.debug:
-                print ("Using nav11")
-
-        elif nach == 'nacncoop':  # coooperative sodium channel based on nacn
-            soma().nacncoop.gbar = nstomho(self.pars.nancoop_gbar, self.somaarea)*sf
-            soma().nacncoop.KJ = 2000.
-            soma().nacncoop.p = 0.25
-            somae().nacncoop.vsna = 0.
-            soma.ena = self.e_na
-            if debug:
-                print('nacncoop gbar: ', soma().nacncoop.gbar)
-
-        elif nach == 'nabu':  # sodium channel for bushy cells from Yang et al (Xu-Friedman lab)
-            soma().nabu.gbar =  nstomho(self.pars.nabu_gbar, self.somaarea)*sf
-            soma.ena = 50 # self.e_na
-            if self.debug:
-                print ("Using nabu")
-
-        else:
-            raise ValueError(f'Sodium channel <{nach:s}> is not recognized for {self.celltype:s} cells')
 
     def add_axon(self):
         """

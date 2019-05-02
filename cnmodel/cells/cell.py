@@ -51,6 +51,7 @@ class Cell(object):
             self.all_sections[k] = []  # initialize to an empty list
         self.species = 'mouse'
         self.status = {}  # dictionary of parameters used to instantiate the cell.
+        self.pars = None
         # Record synaptic inputs and projections
         self.inputs = []  # inputs are recorded - synapse object, post_opts and kwds
         self.outputs = []
@@ -96,10 +97,31 @@ class Cell(object):
         if self.status['decorator'] is None:
             if self.status['temperature'] is None:  # only if not already set
                 self.status['temperature'] = temperature
-                self.species_scaling(species=self.status['species'], modelType=self.status['modelType'])
+                self.species_scaling(silent=False)
         else:
             self.status['temperature'] = temperature
 #            self.decorate()  # call the decorator
+
+    def do_morphology(self, morphology):
+        soma = None
+        if morphology is None:
+            """
+            instantiate a basic soma-only ("point") model
+            """
+            if self.debug:
+                print (f"<< {self.celltype.title():s} model: Creating point cell >>")
+            soma = h.Section(name=f"{self.celltype.title():s}_Soma_%x" % id(self))  # one compartment of about 29000 um2
+            soma.nseg = 1
+            self.add_section(soma, 'soma')
+        else:
+            """
+            instantiate a structured model with the morphology as specified by 
+            the morphology file
+            """
+            if self.debug:
+                print (f"<< {self.celltype.title():s} model: Creating cell with morphology from {morphology:s} >>" )
+            self.set_morphology(morphology_file=morphology)
+        return soma
             
     def set_morphology(self, morphology_file=None):
         """
@@ -441,6 +463,8 @@ class Cell(object):
         Initialize this cell to it's "rmp" under current conditions
         All sections in the cell are set to the same value
         """
+        if vrange is None:
+            self.species_scaling()
         if self.vm0 is None:
             self.vm0 = self.find_i0(showinfo=showinfo, vrange=vrange, **kwargs)
         for part in self.all_sections.keys():
@@ -577,8 +601,94 @@ class Cell(object):
         return True
         
     def get_cellpars(self, dataset, species='guineapig', cell_type='II'):
-        raise NotImplementedError('get_cellpars should be reimplemented in the individual cell modules')
-    
+        raise NotImplementedError('get_cellpars should be reimplemented in the individual cell class')
+
+    def adjust_na_chans(self, soma, sf=1.0):
+        """
+        adjust the sodium channel conductance
+        
+        Parameters
+        ----------
+        soma : neuron section object
+            A soma object whose sodium channel complement will have its 
+            conductances adjusted depending on the channel type
+        Returns
+        -------
+            Nothing :
+        
+        """
+        if self.pars is None:
+            raise ValueError('Parameters must be gathered before adjusting Na Channels')
+        if 'na' not in self.status.keys():
+            raise ValueError('Na channel type must be setbefore adjusting Na Channels')
+        nach = self.status['na']
+        if nach not in ['jsrna', 'na', 'nacn', 'nav11', 'nabu', 'nacncoop']:
+            raise ValueError(f'Na channel type {nach:s} is not recognized')
+            
+        if self.status['ttx']:
+            sf = 0.
+        # if self.debug:
+        if nach == 'jsrna':  # sodium channel from Rothman Manis Young, 1993
+            try:
+                soma().jsrna.gbar = nstomho(self.pars.jsrna_gbar, self.somaarea)*sf
+            except:
+                try:
+                    soma().jsrna.gbar = nstomho(self.pars.soma_na_gbar, self.somaarea)*sf
+                except:
+                    raise ValueError('Failed to convert jsrna for soma...')
+                    
+            soma.ena = self.e_na
+            if self.debug:
+                print ('Using jsrna, gbar: ', soma().jsrna.gbar)
+
+        elif nach in ['na', 'nacn']: # sodium channel from Rothman and Manis, 2003
+            # self.pars.show()
+            try:
+                soma().na.gbar = nstomho(self.pars.na_gbar, self.somaarea)*sf
+                nabar = soma().na.gbar
+            except:
+                try:
+                    soma().nacn.gbar = nstomho(self.pars.nacn_gbar, self.somaarea)*sf
+                    nabar = soma().nacn.gbar
+                except:
+                    # print('nach: ', nach, '\n', dir(soma()))
+                    pass # raise ValueError('Unable to set sodium channel density')
+            soma.ena = self.e_na
+            # soma().na.vsna = 0.
+            if self.debug:
+                print ('Using na/nacn: gbar: ', nabar)
+
+        elif nach == 'nav11':  # sodium channel from Xie and Manis, 2013
+            soma().nav11.gbar =  nstomho(self.pars.nav11_gbar, self.somaarea)*sf
+            soma.ena = 50 # self.e_na
+            soma().nav11.vsna = 4.3
+            if self.debug:
+                print ("Using nav11")
+
+        elif nach == 'nacncoop':  # coooperative sodium channel based on nacn
+            try:
+                soma().nacncoop.gbar = nstomho(self.pars.nancoop_gbar, self.somaarea)*sf
+            except:
+                try:  # alternate naming...
+                    soma().nacncoop.gbar = nstomho(self.pars.soma_nacncoop_gbar, self.somaarea)*sf
+                except:
+                    raise ValueError('Failed to convert nancoop for soma...')
+            soma().nacncoop.KJ = 2000.
+            soma().nacncoop.p = 0.25
+            soma().nacncoop.vsna = 0.
+            soma.ena = self.e_na
+            if self.debug:
+                print('nacncoop gbar: ', soma().nacncoop.gbar)
+
+        elif nach == 'nabu':  # sodium channel for bushy cells from Yang et al (Xu-Friedman lab)
+            soma().nabu.gbar =  nstomho(self.pars.nabu_gbar, self.somaarea)*sf
+            soma.ena = 50 # self.e_na
+            if self.debug:
+                print ("Using nabu")
+
+        else:
+            raise ValueError(f'Sodium channel <{nach:s}> is not recognized for {self.celltype:s} cells')
+
     def channel_manager(self, modelName=None, modelType=None):
         """
         This routine defines channel density maps and distance map patterns
@@ -807,8 +917,6 @@ class Cell(object):
             print('    *** found V0 = %f' % v0)
             print('    *** and cell has mechanisms: ', self.mechanisms)
         return v0
-
-
 
     def compute_rmrintau(self, auto_initialize=True, vrange=None):
         """

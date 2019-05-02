@@ -188,45 +188,36 @@ class DStellateRothman(DStellate):
             modelType = 'I-II'
         if species == 'guineapig':
             modelName = 'RM03'
+            dataset = 'RM03_channels'
             temp = 22.
-            if nach == None:
-                nach = 'nacn'
-        if species == 'mouse':
+        elif species == 'mouse':
             temp = 34.
             if modelName is None:
                 modelName = 'XM13'
-            if nach is None:
-                nach = 'na'
+                dataset = 'XM13_channels'
+            elif modelName  == 'XM13nacncoop':
+                dataset = 'XM13_channels_nacncoop'
+            else:
+                raise ValueError(f"ModelName {modelName:s} not recognized for mouse {self.celltype:s} cells")
+
+        else:
+            raise ValueError(f"Species {species:s} not recognized for {self.celltype:s} cells")
+
         self.debug = debug
-        # if modelType == None:  # allow us to pass None to get the default
-        #     modelType = 'I-II'
-        # if nach == None:
-        #     nach = 'na'
+
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'modelName': modelName,
                        'ttx': ttx, 'name': 'DStellate',
                        'morphology': morphology, 'decorator': decorator, 'temperature': None}
-        self.i_test_range = {'pulse': [(-0.3, 0.3, 0.03), (-0.05, 0., 0.005)]}  # set range for ic command test
-        self.vrange = [-75., -55.]
         self.spike_threshold = -40.  # matches threshold in released CNModel (set in base cell class)
         
-        if morphology is None:
-            """
-            instantiate a basic soma-only ("point") model
-            """
-            soma = h.Section(name="DStellate_Soma_%x" % id(self))  # one compartment of about 29000 um2
-            soma.nseg = 1
-            self.add_section(soma, 'soma')
-        else:
-            """
-            instantiate a structured model with the morphology as specified by 
-            the morphology file
-            """
-            self.set_morphology(morphology_file=morphology)
+        soma = self.do_morphology(morphology)
 
+        self.pars = self.get_cellpars(dataset, species=species, modelType=modelType)
+        self.status['na'] = self.pars.natype
         # decorate the morphology with ion channels
         if decorator is None:   # basic model, only on the soma
-            self.mechanisms = ['klt', 'kht', 'ihvcn', 'leak', nach]
+            self.mechanisms = ['klt', 'kht', 'ihvcn', 'leak', self.pars.natype]
             for mech in self.mechanisms:
                 self.soma.insert(mech)
             self.soma.ena = self.e_na
@@ -234,85 +225,92 @@ class DStellateRothman(DStellate):
             self.soma().leak.erev = self.e_leak
             self.c_m = 0.9
             self.set_soma_size_from_Cm(12.0)
-            self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
+            self.species_scaling(silent=True)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
             self.decorate()
         self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
         self.get_mechs(self.soma)
 
         if self.debug:
-            print("<< D-stellate: JSR Stellate Type I-II cell model created >>")
+            print (f"<< {self.celltype.title():s} model: Creating cell with morphology from {morphology:s} >>" )
 
     def get_cellpars(self, dataset, species='guineapig', modelType='I-II'):
+        """
+        Retrieve parameters for the specifed model type and species from the data tables
+        
+        dataset : str (no default)
+            name of the data table to use
+        
+        species : str (default: 'guineapig')
+            Species table to use
+        
+        modelType : str (default: 'I-II')
+            Model type to get parameters from the table.
+        
+        """
         cellcap = data.get(dataset, species=species, model_type=modelType,
             field='soma_Cap')
         chtype = data.get(dataset, species=species, model_type=modelType,
             field='na_type')
         pars = Params(cap=cellcap, natype=chtype)
-        # pars.show()
 
         if self.status['modelName'] == 'RM03':
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ka_gbar', 'ih_gbar', 'leak_gbar', 'leak_erev', 'ih_eh', 'e_k', 'e_na']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
-        if self.status['modelName'] == 'XM13':
+        elif self.status['modelName'] == 'XM13':
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ka_gbar', 'ihvcn_gbar', 'leak_gbar', 'leak_erev', 'ih_eh', 'e_k', 'e_na']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
-        if self.status['modelName'] == 'mGBC':
+        elif self.status['modelName'] == 'mGBC':
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ka_gbar', 'ihvcn_gbar', 'leak_gbar', 'leak_erev']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
+        else:
+            raise ValueError(f"get_cellpars: Model name {self.status['modelName']} is not yet implemented for cell type {self.celltype.title():s}")
+        
+        if self.debug:
+            pars.show()
         return pars
 
-    def species_scaling(self, species='guineapig', modelType='I-II', silent=True):
+    def species_scaling(self, silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
         
         Parameters
         ----------
-        species : string (default: 'guineapig')
-            A string specifying the species used for scaling. Recognized values are
-            'mouse', 'guineapig', and 'cat' (cat is just a larger version of the guineapig)
-        
-        modelType : string (default: 'I-II')
-            A string specifying the version of the model to use. 
-            Current choices are 'I-II' (others need to be implemented)
-        
+
         silent : boolean (default: True)
             Flag for printing debugging information.
             
         """
         soma = self.soma
-        celltype = modelType
-        if species == 'mouse':
+        if self.status['species'] == 'mouse':
             # use conductance levels from Cao et al.,  J. Neurophys., 2007.
-            dataset = 'XM13_channels'
+            self.i_test_range = {'pulse': [(-0.3, 0.3, 0.03), (-0.05, 0., 0.005)]}  # set range for ic command test
+            self.vrange = [-75., -55.]
             self._valid_temperatures = (34., )
             if self.status['temperature'] is None:
                 self.set_temperature(34.)
             self.c_m = 0.9
-            pars = self.get_cellpars(dataset, species=species, modelType=modelType)
-            self.set_soma_size_from_Cm(pars.cap)
-            self.status['na'] = pars.natype
-            # pars.show()
-            self.adjust_na_chans(soma, gbar=pars.na_gbar, sf=1.0)
-            soma().kht.gbar = nstomho(pars.kht_gbar, self.somaarea)
-            soma().klt.gbar = nstomho(pars.klt_gbar, self.somaarea)
-            # soma().ka.gbar = nstomho(pars.ka_gbar, self.somaarea)
-            soma().ihvcn.gbar = nstomho(pars.ihvcn_gbar, self.somaarea)
-            soma().ihvcn.eh = pars.ih_eh # Rodrigues and Oertel, 2006
-            soma().leak.gbar = nstomho(pars.leak_gbar, self.somaarea)
-            soma().leak.erev = pars.leak_erev
-            self.e_k = pars.e_k
-            self.e_na = pars.e_na
+            self.set_soma_size_from_Cm(self.pars.cap)
+            self.adjust_na_chans(soma, sf=1.0)
+            soma().kht.gbar = nstomho(self.pars.kht_gbar, self.somaarea)
+            soma().klt.gbar = nstomho(self.pars.klt_gbar, self.somaarea)
+            soma().ihvcn.gbar = nstomho(self.pars.ihvcn_gbar, self.somaarea)
+            soma().ihvcn.eh = self.pars.ih_eh # Rodrigues and Oertel, 2006
+            soma().leak.gbar = nstomho(self.pars.leak_gbar, self.somaarea)
+            soma().leak.erev = self.pars.leak_erev
+            self.e_k = self.pars.e_k
+            self.e_na = self.pars.e_na
             soma.ena = self.e_na
             soma.ek = self.e_k
            # soma().leak.erev = pars.leak_erev
             self.axonsf = 0.5
             
-        elif species == 'guineapig':  # values from R&M 2003, Type II-I
-            dataset = 'RM03_channels'
+        elif self.status['species'] == 'guineapig':  # values from R&M 2003, Type II-I
+            self.i_test_range = {'pulse': [(-0.3, 0.3, 0.03), (-0.05, 0., 0.005)]}  # set range for ic command test
+            self.vrange = [-75., -55.]
             self.c_m = 0.9
             self._valid_temperatures = (22., 38.)
             if self.status['temperature'] is None:
@@ -322,79 +320,19 @@ class DStellateRothman(DStellate):
                 sf = 3.03  # Q10 of 2, 22->38C. (p3106, R&M2003c)
                 self.i_test_range={'pulse': (-0.3, 0.3, 0.03)}
             self.vrange = [-75., -55.]
-            pars = self.get_cellpars(dataset, species=species, modelType=modelType)
-            self.set_soma_size_from_Cm(pars.cap)
-            self.status['na'] = pars.natype
-#            pars.show()
-            self.adjust_na_chans(soma, gbar=pars.nacn_gbar, sf=sf)
-            soma().kht.gbar = nstomho(pars.kht_gbar, self.somaarea)
-            soma().klt.gbar = nstomho(pars.klt_gbar, self.somaarea)
-            #soma().ka.gbar = nstomho(pars.ka_gbar, self.somaarea)
-            soma().ihvcn.gbar = nstomho(pars.ih_gbar, self.somaarea)
-            soma().leak.gbar = nstomho(pars.leak_gbar, self.somaarea)
-            soma().leak.erev = pars.leak_erev
+            self.set_soma_size_from_Cm(self.pars.cap)
+            self.adjust_na_chans(soma, sf=sf)
+            soma().kht.gbar = nstomho(self.pars.kht_gbar, self.somaarea)
+            soma().klt.gbar = nstomho(self.pars.klt_gbar, self.somaarea)
+            #soma().ka.gbar = nstomho(self.pars.ka_gbar, self.somaarea)
+            soma().ihvcn.gbar = nstomho(self.pars.ih_gbar, self.somaarea)
+            soma().leak.gbar = nstomho(self.pars.leak_gbar, self.somaarea)
+            soma().leak.erev = self.pars.leak_erev
             self.axonsf = 0.5
 
         else:
-            raise ValueError('Species %s or species-modelType %s is not recognized for D-Stellate cells' %  (species, modelType))
-        self.status['species'] = species
-        self.status['modelType'] = modelType
+            raise ValueError(f"Species {self.status['species']} or type {self.status['modelType']}  is not recognized for {self.celltype:s} cells")
         self.check_temperature()
-#        self.cell_initialize(showinfo=False)
-        if not silent:
-            print('set cell as: ', species)
-            print(' with Vm rest = %6.3f' % self.vm0)
-
-
-    def adjust_na_chans(self, soma, sf=1.0, gbar=1000.):
-        """
-        adjust the sodium channel conductance
-        
-        Parameters
-        ----------
-        soma : soma object (no default)
-            soma object whose sodium channel complement will have it's
-            conductances adjusted depending on the channel type
-        
-        gbar : float (default: 1000.)
-            The conductance to be set for the sodium channel
-        
-        debug : boolean (default: False)
-            Flag for printing the conductance value and Na channel model
-            
-        Returns
-        -------
-            Nothing
-        """
-        if self.status['ttx']:
-            gnabar = 0.0
-        else:
-            gnabar = nstomho(gbar, self.somaarea)*sf
-        nach = self.status['na']
-        if nach == 'jsrna':
-            soma().jsrna.gbar = gnabar
-            soma.ena = self.e_na
-            if self.debug:
-                print('jsrna gbar: ', soma().jsrna.gbar)
-        elif nach == 'nav11':
-            soma().nav11.gbar = gnabar * 0.5
-            soma.ena = self.e_na
-            soma().nav11.vsna = 4.3
-            if self.debug:
-                print("bushy using inva11")
-            print('nav11 gbar: ', soma().nav11.gbar)
-        elif nach == 'na':
-            soma().na.gbar = gnabar
-            soma.ena = self.e_na
-            if self.debug:
-                print('na gbar: ', soma().na.gbar)
-        elif nach == 'nacn':
-            soma().nacn.gbar = gnabar
-            soma.ena = self.e_na
-            if self.debug:
-                print('nacn gbar: ', soma().nacn.gbar)
-        else:
-            raise ValueError("Dstellate setting Na channels: channel %s not known" % nach)
 
     def add_axon(self):
         """

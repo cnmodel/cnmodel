@@ -139,7 +139,7 @@ class SGC_TypeI(SGC):
     """
     def __init__(self, morphology=None, decorator=None, nach=None, ttx=False,
                  species='guineapig', 
-                 modelType='bm', cf=None, sr=None, debug=False):
+                 modelType='sgc-bm', cf=None, sr=None, debug=False):
         """
         Initialize a spiral ganglion Type I cell, based on a bushy cell model.
         Modifications to the cell can be made by calling the methods below. These include
@@ -192,36 +192,39 @@ class SGC_TypeI(SGC):
         """         
         
         super(SGC_TypeI, self).__init__(cf=cf, sr=sr)
-        if modelType == None:
-            modelType = 'bm'  # modelTypes are: a (apical), bm (basal middle)
-        if nach == None:
-            nach = 'jsrna'
+        if species == 'guineapig':
+            modelName = 'SGC'
+            temp = 22.
+            dataset = 'sgc_guineapig_channels'
+        
+        elif species == 'mouse':
+            temp = 34.
+            modelName = 'SGC'
+            dataset = 'sgc_mouse_channels'
+        else:
+            raise ValueError(f"Species {species:s} not recognized for {self.celltype:s} cells")
+
+
         self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'SGC',
-                        'morphology': morphology, 'decorator': decorator, 'temperature': None}
+                       'na': nach, 'species': species, 'modelType': modelType, 'modelName': modelName,
+                       'ttx': ttx, 'name': 'SGC',
+                       'morphology': morphology, 'decorator': decorator, 'temperature': None}
 
         self.i_test_range={'pulse': [(-0.3, 0.3, 0.02), (-0.03, 0., 0.005)]}  # include finer range as well
         self.vrange = [-75., -55.]
-        if morphology is None:
-            """
-            instantiate a basic soma-only ("point") model
-            """
-            soma = h.Section(name="SGC_Soma_%x" % id(self)) # one compartment of about 29000 um2
-            soma.nseg = 1
-            self.add_section(soma, 'soma')
-        else:
-            """
-            instantiate a structured model with the morphology as specified by 
-            the morphology file
-            """
-            self.set_morphology(morphology_file=morphology)
+        self.debug = debug
+        
+        soma = self.do_morphology(morphology)
+        
+        self.pars = self.get_cellpars(dataset, species=species, modelType=modelType)
+        self.status['na'] = self.pars.natype
 
         # decorate the morphology with ion channels
         if decorator is None:   # basic model, only on the soma
-            self.mechanisms = [nach, 'klt', 'kht', 'leak']
-            if modelType == 'a':
+            self.mechanisms = [self.status['na'], 'klt', 'kht', 'leak']
+            if modelType == 'sgc-a':
                 self.mechanisms.append('ihsgcApical')
-            elif modelType == 'bm':
+            elif modelType == 'sgc-bm':
                 self.mechanisms.append('ihsgcBasalMiddle')
             else:
                 raise ValueError ('Type %s not known for SGC model' % modelType)
@@ -229,7 +232,7 @@ class SGC_TypeI(SGC):
                 self.soma.insert(mech)
             self.soma.ek = self.e_k
             self.soma().leak.erev = self.e_leak
-            self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
+            self.species_scaling(silent=True)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
             self.decorate()
         self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
@@ -237,20 +240,20 @@ class SGC_TypeI(SGC):
         if debug:
             print("<< SGC: Spiral Ganglion Cell created >>")
 
-    def get_cellpars(self, dataset, species='guineapig', celltype='sgc-a'):
-        cellcap = data.get(dataset, species=species, cell_type=celltype,
+    def get_cellpars(self, dataset, species='guineapig', modelType='sgc-a'):
+        cellcap = data.get(dataset, species=species, model_type=modelType,
             field='soma_Cap')
-        chtype = data.get(dataset, species=species, cell_type=celltype,
+        chtype = data.get(dataset, species=species, model_type=modelType,
             field='soma_na_type')
         pars = Params(soma_Cap=cellcap, natype=chtype)
         for g in ['soma_na_gbar', 'soma_kht_gbar', 'soma_klt_gbar', 'soma_ihap_gbar', 'soma_ihbm_gbar',
                   'soma_ihap_eh', 'soma_ihbm_eh', 'soma_leak_gbar', 'soma_leak_erev', 
                   'soma_e_k', 'soma_e_na']:
-            pars.additem(g,  data.get(dataset, species=species, cell_type=celltype,
+            pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
             field=g))
         return pars
 
-    def species_scaling(self, silent=True, species='guineapig', modelType='a'):
+    def species_scaling(self, silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
         Used ONLY for point models.
@@ -281,78 +284,33 @@ class SGC_TypeI(SGC):
         """
         
         soma = self.soma
-        if modelType == 'a':
-            celltype = 'sgc-a'
-        elif modelType == 'bm':
-            celltype = 'sgc-bm'
-        else:
-            raise ValueError('SGC: unrecognized model type %s ' % modelType)
             
-        if species == 'mouse':
+        if self.status['species'] == 'mouse':
             self._valid_temperatures = (34.,)
             if self.status['temperature'] is None:
                 self.set_temperature(34.)
-            par = self.get_cellpars('sgc_mouse_channels', species=species, celltype=celltype)
-        elif species == 'guineapig':
+        elif self.status['species'] == 'guineapig':
             # guinea pig data from Rothman and Manis, 2003, modelType II
             self._valid_temperatures = (22.,)
             if self.status['temperature'] is None:
                 self.set_temperature(22.)
-            par = self.get_cellpars('sgc_guineapig_channels', species=species, celltype=celltype)
                         
-        self.set_soma_size_from_Cm(par.soma_Cap)
-        self.adjust_na_chans(soma, gbar=par.soma_na_gbar)
-        soma().kht.gbar = nstomho(par.soma_kht_gbar, self.somaarea)
-        soma().klt.gbar = nstomho(par.soma_klt_gbar, self.somaarea)
-        if celltype == 'sgc-a':
-            soma().ihsgcApical.gbar = nstomho(par.soma_ihap_gbar, self.somaarea)
-            soma().ihsgcApical.eh = par.soma_ihap_eh
-        elif celltype == 'sgc-bm':
-            soma().ihsgcBasalMiddle.gbar = nstomho(par.soma_ihbm_gbar,  self.somaarea)
-            soma().ihsgcBasalMiddle.eh = par.soma_ihbm_eh
+        self.set_soma_size_from_Cm(self.pars.soma_Cap)
+        self.adjust_na_chans(soma)
+        soma().kht.gbar = nstomho(self.pars.soma_kht_gbar, self.somaarea)
+        soma().klt.gbar = nstomho(self.pars.soma_klt_gbar, self.somaarea)
+        if self.status['modelType'] == 'sgc-a':
+            soma().ihsgcApical.gbar = nstomho(self.pars.soma_ihap_gbar, self.somaarea)
+            soma().ihsgcApical.eh = self.pars.soma_ihap_eh
+        elif self.status['modelType'] == 'sgc-bm':
+            soma().ihsgcBasalMiddle.gbar = nstomho(self.pars.soma_ihbm_gbar,  self.somaarea)
+            soma().ihsgcBasalMiddle.eh = self.pars.soma_ihbm_eh
         else:
-            raise ValueError('Ihsgc modelType %s not recognized for species %s' % (celltype, species))
-        soma().leak.gbar = nstomho(par.soma_leak_gbar, self.somaarea)
-        soma().leak.erev = par.soma_leak_erev
+            raise ValueError('Ihsgc modelType %s not recognized for species %s' % (self.status['modelType'], self.status['species']))
+        soma().leak.gbar = nstomho(self.pars.soma_leak_gbar, self.somaarea)
+        soma().leak.erev = self.pars.soma_leak_erev
 
-        self.status['species'] = species
-        self.status['modelType'] = modelType
         self.check_temperature()
-        if not silent:
-            print('set cell as: ', species)
-            print(' with Vm rest = %f' % self.vm0)
-
-    def adjust_na_chans(self, soma, gbar=1000., debug=False):
-        """
-        adjust the sodium channel conductance
-        :param soma: a soma object whose sodium channel complement will have it's
-        conductances adjusted depending on the channel type
-        :return nothing:
-        """
-        if self.status['ttx']:
-            gnabar = 0.0
-        else:
-            gnabar = nstomho(gbar, self.somaarea)
-        nach = self.status['na']
-        if nach == 'jsrna':
-            soma().jsrna.gbar = gnabar
-            soma.ena = self.e_na
-            if debug:
-                print('jsrna gbar: ', soma().jsrna.gbar)
-        elif nach == 'nav11':
-            soma().nav11.gbar = gnabar * 0.5
-            soma.ena = self.e_na
-            soma().nav11.vsna = 4.3
-            if debug:
-                print("sgc using inva11")
-            print('nav11 gbar: ', soma().nav11.gbar)
-        elif nach in ['na', 'nacn']:
-            soma().na.gbar = gnabar
-            soma.ena = self.e_na
-            if debug:
-                print('na gbar: ', soma().na.gbar)
-        else:
-            raise ValueError('Sodium channel %s is not recognized for SGC cells', nach)
 
     def i_currents(self, V):
         """

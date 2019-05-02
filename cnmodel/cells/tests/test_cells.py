@@ -73,15 +73,18 @@ def test_cartwheel():
 
 def test_sgc_basal_middle():
     reset(raiseError=False)
-    cell = cells.SGC.create(species='mouse', modelType='bm')
+    cell = cells.SGC.create(species='mouse', modelType='sgc-bm')
     CellTester('SGC_rat_bm', cell)
 
 def test_sgc_apical():
     reset(raiseError=False)
-    cell = cells.SGC.create(species='mouse', modelType='a')
+    cell = cells.SGC.create(species='mouse', modelType='sgc-a')
     CellTester('SGC_rat_a', cell)
 
-
+def test_mso():
+    reset(raiseError=False)
+    cell = cells.MSO.create(species='guineapig', modelType='principal')
+    CellTester('mso_guineapig-principal', cell)
 
 #
 # Supporting functions
