@@ -136,9 +136,9 @@ class Toy(Protocol):
                                 ('DStellate, I-II, Mouse', (cells.DStellate,  'I-II', 'mouse', (-0.5, 0.5, 9), 34)),
                                 ('Pyramidal, I, Rat',    (cells.Pyramidal,  'I',    'rat', (-0.3, 0.4, 11), 34)),
                                 ('Cartwheel, I, Mouse',    (cells.Cartwheel,  'I',    'mouse', (-0.5, 0.5, 9), 34)),
-                                ('Tuberculoventral, I, Mouse', (cells.Tuberculoventral, 'I', 'mouse', (-0.35, 1, 11), 34)),
-                                ('SGC, bm, Mouse',         (cells.SGC,        "bm",   'mouse', (-0.2, 0.6, 9), 34)),
-                                ('SGC, a, Mouse',          (cells.SGC,         "a",   'mouse', (-0.2, 0.6, 9), 34)),
+                                ('Tuberculoventral, TVmouse, Mouse', (cells.Tuberculoventral, 'TVmouse', 'mouse', (-0.35, 1, 11), 34)),
+                                ('SGC, sgc-bm, Mouse',         (cells.SGC,        "sgc-bm",   'mouse', (-0.2, 0.6, 9), 34)),
+                                ('SGC, sgc-a, Mouse',          (cells.SGC,         "sgc-a",   'mouse', (-0.2, 0.6, 9), 34)),
                                 ])
 
         dt = 0.025
