@@ -152,18 +152,12 @@ The data tables in the cnmodel/data directory (synapses, ionchannels, population
         data.report_changes(changes)
         data.report_changes(changes_c)
 
-That is all that it takes. There are some limitations as to which parameters can be changed, as some paramaters, such as 
-    rate constants for the receptors and ion channels, are specified in the .mod files. 
-        The connectivity data table can be modified to represent a particular pattern of connectivity, and the populations data table
-        can be modified to change the relative numbers of cells.
+That is all that it takes. There are some limitations as to which parameters can be changed, as some paramaters, such as rate constants for the receptors and ion channels, are specified in the .mod files. 
+        The connectivity data table can be modified to represent a particular pattern of connectivity, and the populations data table can be modified to change the relative numbers of cells.
         
-The data tables are very strict about column alignment. The first character of the column title and the each of the values in that
-        column must line up directly. It is best/easiest to edit these tables in a programming editor with fixed width fonts and the ability to
-        perform column-based insertions. Changes to the data tables should be annotated appropriately.
+	The data tables are very strict about column alignment. The first character of the column title and the each of the values in that column must line up directly. It is best/easiest to edit these tables in a programming editor with fixed width fonts and the ability to perform column-based insertions. Changes to the data tables should be annotated appropriately.
 
-Channels and receptors are specified as NEURON .mod files. Adding new mechanisms to a cell will require modification of the code to recognize
-the mechanisms at several points, including in cnmodel/cells.py, the cell itself, and the data tables. Specific naming conventions should be 
-followed to simplify integration. Contact the authors for help.
+	Channels and receptors are specified as NEURON .mod files. Adding new mechanisms to a cell will require modification of the code to recognize the mechanisms at several points, including in cnmodel/cells.py, the cell itself, and the data tables. Specific naming conventions should be followed to simplify integration. Contact the authors for help.
 
 Adding new cell types
 ---------------------
