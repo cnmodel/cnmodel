@@ -1,10 +1,10 @@
 Changes
 =======
 
-01 May 2019
-This version of cnmodel runs under Python3.6 or later, using Neuron 7.6. New features include a method for changing the data tables on the fly without editing the original tables, and a tool for fitting Exp2Syn "simple" PSCs to the multisite PSC data (or, potentially, to experimental data) to get parameters for the synapse description table.
+01 May 2019, 04 June 2019
+This version of cnmodel runs under Python3.6 or Python3.7, using Neuron 7.6. New features include a method for changing the data tables on the fly without editing the original tables, and a tool for fitting Exp2Syn "simple" PSCs to the multisite PSC data (or, potentially, to experimental data) to get parameters for the synapse description table.
 
-The code base has been modified for Python 3.6. Functionally, the main internal change is that the parameters for the cells are (almost) completely removed to the data tables. All tests currently pass, but in a few cases are very close but not identical to the original Python 2.7 version (aka branch master). The source of one set of discrepancies has been traced to an error in a .mod file (a variable was declared in both the RANGE and GLOBAL lists); another discrepancy is in the mouse bushy type II cell, where the action potential threshold appears to be slightly shifted from the original version (reason currently unknown).
+The code base has been modified for Python 3. Functionally, the main internal change is that the parameters for the cells are (almost) completely removed to the data tables. All tests currently pass, but in a few cases are very close but not identical to the original Python 2.7 version (aka branch "master"). The source of one set of discrepancies has been traced to an error in a .mod file (a variable was declared in both the RANGE and GLOBAL lists); another discrepancy is in the mouse bushy type II cell, where the action potential threshold appears to be slightly shifted from the original version (reason currently unknown).
 
 About CNModel
 =============
@@ -58,10 +58,11 @@ This package depends on the following:
        pip install cochlea
        
       
-       (Note that under MacOSX, python 3.7 is usable, but the Windows versio of Matlab R2018b is restricted
+       (Note that under MacOSX, python 3.7 is usable; the Windows version of Matlab R2018b is restricted
            to python 3.6)
 
-2. A Python-linked version of NEURON (www.neuron.yale.edu). The code has been tested with NEURON 7.5 and 7.6.
+2. A Python-linked version of NEURON (www.neuron.yale.edu). The code has been tested with NEURON 7.5 and 7.6. We recommend
+getting the most recent version of NEURON and recompiling the .mod files in the mechanisms directory.
 3. A C compiler (gcc). Needed for compilation of mechanisms for NEURON.
 4. The Zilany et al (JASA 2014) auditory periphery model. This can be provided one of two ways:
     
@@ -74,8 +75,8 @@ This package depends on the following:
      and the THRESHOLD_ALL_* files. When cnmodel attempts to access this code the first time, 
      it will perform the necessary compilation.
    
-5. neuronvis (optional) available at https://github.com/campagnola/neuronvis or https://github.com/pbmanis/neuronvis).
-   This provides 3D visualization for morphology.
+5. neuronvis (optional) available at https://github.com/campagnola/neuronvis or (a newer version) https://github.com/pbmanis/neuronvis).
+   This provides 3D visualization for morphology, and is independent of cnmodel.
 
 After the code is installed, enter the cnmodel directory and compile the NEURON mod files::
 
@@ -89,19 +90,28 @@ Under Windows 10, use::
 
 to do the same thing. 
 
+Finally, go into the cnmodel directory and run::
+    
+    python setup.py develop
+    or:
+    python setup.py install
 
-For more detailed information on setup in a Windows environment, see the file Windows_setup.md. Thanks to Laurel Carney for prompting the generation of this set of instructions, and for identifying issues on Windows.
+We prefer the "develop" method, as it allows you to change the code in the cnmodel directory if necessary, without re-running the setup command.
 
-Windows caveats:
+
+Windows Notes:
 --------------
 
-Manually compile the mex files (using Matlab, go to the an_model/models folder, and use mexANmodel.m to compile the files). Then, add the an_model/model folder to the Matlab path, so that it can find the files when needed.
+0. For more detailed information on setup in a Windows environment for Python 2.7, see the file Windows_setup.md. Thanks to Laurel Carney for prompting the generation of this set of instructions, and for identifying issues on Windows. A similar setup should work for Python 3.6+.
+
+1. Manually compile the mex files for the Zilany et al model. In Matlab, go to the an_model/models folder, and use mexANmodel.m to compile the files. Then, add the an_model/model folder to the Matlab path, so that it can find the files when needed.
+
+2. Under Windows, it may be best to use the standard Windows command terminal rather than the "bash" terminal provided by NEURON, at least to run the Python scripts.
 
 
 
 Testing
 -------
-
 
 Make sure you are in the cnmodel directory, and that you have selected the right environment in Anaconda (in 
 my case, this is usually an environment called py3mpl3 - python 3 with matplotlib 3).
@@ -135,7 +145,7 @@ Usage
 -----
 CNModel is meant to be used as an imported package under Python. See the files in the examples directory to see how this is done. Typically, we create a separate directory (a "simulation" directory) that holds the code that uses cnmodel for simulations, at the same level as cnmodel or elsewhere (do not place the simulation directory inside cnmodel).
 
-The data tables in the cnmodel/data directory (synapses, ionchannels, populations, connectivity) should not be modified. If it is desired to change the parameters specified in these tables, it is best to copy them into the "simulation" directory, and modify them there. The data tables can then be used as follows::
+The data tables in the cnmodel/data directory (synapses, ionchannels, populations, connectivity) should not be modified. If it is desired to change the parameters specified in these tables, it is best to copy them into the "simulation" directory in a separate path, and modify them there. The data tables can then be used as follows::
 
         from cnmodel import data
         import data_XM13nacncoop as CHAN  # where data_XM13nacncoop.py is a modified table in the simulation directory
@@ -152,37 +162,37 @@ The data tables in the cnmodel/data directory (synapses, ionchannels, population
         data.report_changes(changes)
         data.report_changes(changes_c)
 
-That is all that it takes. There are some limitations as to which parameters can be changed, as some paramaters, such as rate constants for the receptors and ion channels, are specified in the .mod files. 
-        The connectivity data table can be modified to represent a particular pattern of connectivity, and the populations data table can be modified to change the relative numbers of cells.
-        
-	The data tables are very strict about column alignment. The first character of the column title and the each of the values in that column must line up directly. It is best/easiest to edit these tables in a programming editor with fixed width fonts and the ability to perform column-based insertions. Changes to the data tables should be annotated appropriately.
+That is all that it takes. Note the following: 
 
-	Channels and receptors are specified as NEURON .mod files. Adding new mechanisms to a cell will require modification of the code to recognize the mechanisms at several points, including in cnmodel/cells.py, the cell itself, and the data tables. Specific naming conventions should be followed to simplify integration. Contact the authors for help.
+1. There are some limitations as to which parameters can be changed. as some paramaters, such as rate constants for the receptors and ion channels, are specified in the .mod files and are not exposed externally. 
+
+2. The connectivity data table can be modified to represent a particular pattern of connectivity, and the populations data table can be modified to change the relative numbers of cells.
+        
+3. The data tables are very strict about column alignment. The first character of the column title and the each of the values in that column must line up directly. It is best/easiest to edit these tables in a programming editor with fixed width fonts and the ability to perform column-based insertions. Changes to the data tables should be annotated appropriately.
+
+4. Channels and receptors are all specified as NEURON .mod files. Adding new mechanisms to a cell will require modification of the code to recognize the mechanisms at several points. It is especially to handle this in cnmodel/cells.py, where knowledge of channel names is needed to compute initial states; in the cell code itself where the channels are actually inserted, and in the relevant data tables. Specific naming conventions should be followed to simplify integration. Contact the authors for help.
 
 Adding new cell types
 ---------------------
 
 To add a new cell type, it is necessary to:
     
-1- Create a source file in cnmodel/cells, likely based on the bushy.py source, renaming variables as necessary. The main routines in the class however, should maintain their present names and calling parameters.
+1. Create a source file in cnmodel/cells, likely based on the bushy.py source, renaming variables as necessary. The main routines in the class however, should maintain their present names and calling parameters.
     
-2- Add the values for the cells to the data tables (all tables will need to be updated with new columns for the cell type).
+1. Add the values for the cells to the data tables (all tables will need to be updated with new columns for the cell type).
 
-3- Run the model and make sure the new cell type is performing as desired. Target parameters should be identified and verified against the model.
+1. Run the model and make sure the new cell type is performing as desired. Target parameters should be identified and verified against the model.
 
-4- Update the unit tests to include the new cell type.
-
-
-
-Note
-----
-Under Windows, it may be best to use the standard Windows command terminal rather than the "bash" terminal provided by NEURON, at least to run the Python scripts.
+1.  Update the unit tests to include the new cell type.
 
 
-Matlab
+
+
+
+MATLAB (R)
 ------
-This version has been tested with the Matlab AN model of Zilany et al., 2014. 
-Before using, you will need to compile the C code in an_model using Matlab's mex tool. First however, it may be necessary to change the following code:
+This version has been tested with the MATLAB AN model of Zilany et al., 2014. 
+Before using, you will need to compile the C code in an_model using Matlab's mex tool. First however, it *may* be necessary to change the following code:
 
 In model_Synapse.c (cnmodel/an_model/model):
 
@@ -191,6 +201,7 @@ Change (line 63 in the source)::
 	$ int    nrep, pxbins, lp,  outsize[2], totalstim;
 
 to::
+
 	$ int    nrep, pxbins, lp,  totalstim;
     $ size_t outsize[2];
     
@@ -218,7 +229,7 @@ to confirm that the model is installed and working.
 Figures
 -------
 
-The data for the figures in the manuscript (Manis and Campagnola, Hearing Research 2018) can be generated using the bash script "figures.sh" in the examples subdirectory. 
+The data for most of the figures in the manuscript (Manis and Campagnola, Hearing Research 2018) can be generated using the bash script "figures.sh" in the examples subdirectory. 
 From the main cnmodel directory::
 
     $ ./examples figures.sh fignum
@@ -236,7 +247,8 @@ A number of additional tests are included in the examples directory.
 - `test_an_model.py` verifies that the auditory nerve model can be run. If necessary, it will compile (using MEX) the mechanisms for matlab. 
 - `test_ccstim.py` tests the generation of different stimulus waveforms by the pulse generator module.
 - `test_cells.py` runs different cell models in current or voltage clamp. 
-  Usage:: 
+  
+  Usage::
       
       test_cells.py celltype species[-h] [--type TYPE] [--temp TEMP] [-m MORPHOLOGY]
                     [--nav NAV] [--ttx] [-p PULSETYPE] [--vc | --cc | --rmp]
