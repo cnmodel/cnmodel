@@ -5,7 +5,11 @@ import scipy.io
 import tempfile
 # from ..util import matlab_proc
 
-import matlab.engine
+try:
+    import matlab.engine
+    MATLAB_FOUND = True
+except:
+    MATLAB_FOUND = False
 # import matplotlib.pyplot as mpl
 
 _proc = None

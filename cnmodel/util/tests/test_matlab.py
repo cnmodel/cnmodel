@@ -1,7 +1,11 @@
 import pytest
 import numpy as np
 # from cnmodel.util.matlab_proc import MatlabProcess
-import matlab.engine
+try:
+    import matlab.engine
+    MATLAB_FOUND = True
+except:
+    MATLAB_FOUND = False
 
 def test_matlab():
     global proc
@@ -35,4 +39,5 @@ def test_matlab():
 
     
 if __name__ == '__main__':
-    test_matlab()
+    if MATLAB_FOUND:
+        test_matlab()
