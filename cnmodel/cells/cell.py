@@ -516,7 +516,7 @@ class Cell(object):
                     erev = eval('section().ena')
                 if m in ['klt', 'kht', 'ka']:
                     erev = eval('section().e%s'%m)
-                if m in ['kis', 'kif', 'kdpyr', 'kcnq']:
+                if m in ['kis', 'kif', 'kdpyr', 'kcnq', 'kir']:
                     erev = eval('section().ek')
                 if m in ['hcno', 'ihvcn', 'hcnobo', 'ihpyr', 'ihpyr_adj']:
                     erev = eval('section().'+m+'.eh')
@@ -803,6 +803,7 @@ class Cell(object):
                 sec.v = V
         h.celsius = self.status['temperature']
         h.t = 0.
+        # print(self.mechanisms)
         h.finitialize(V)
         h.fcurrent()
         self.ix = {}
@@ -839,6 +840,10 @@ class Cell(object):
             self.ix['kdpyr'] = self.soma().kdpyr.gk*(V - self.soma().ek)
         if 'kcnq' in self.mechanisms:
             self.ix['kcnq'] = self.soma().kdcnq.gk*(V - self.soma().ek)
+        if 'kpksk' in self.mechanisms:
+            self.ix['kpksk'] = self.soma().kpksk.gk*(V - self.soma().ek)
+        if 'kir' in self.mechanisms:
+            self.ix['kir'] = self.soma().kir.gk*(V - self.soma().ek)
         if 'kis' in self.mechanisms:
             self.ix['kis'] = self.soma().kis.gk*(V - self.soma().ek)
         if 'kif' in self.mechanisms:
@@ -887,11 +892,12 @@ class Cell(object):
         # print (self.i_currents(V=vrange[0]), self.i_currents(V=vrange[1]))
         # v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1], maxiter=10000)
         # print( 'v0: ', v0)
+        i0 = self.i_currents(V=vrange[0])
         try:
             v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1], maxiter=10000)
         except:
             print('find i0 failed:')
-            print(self.ix)
+            # print(self.ix)
             i0 = self.i_currents(V=vrange[0])
             i1 = self.i_currents(V=vrange[1])
             ivi = []
@@ -944,7 +950,7 @@ class Cell(object):
                 'napyr': 'gna', 'nap': 'gnap',
                 'kdpyr': 'gk', 'kif': 'gkif', 'kis': 'gkis',
                 'ihpyr': 'gh', 'ihpyr_adj': 'gh',
-                'kcnq': 'gk',
+                'kcnq': 'gk', 'kir': 'gk',
                 # cartwheel cell specific:
                 'bkpkj': 'gbkpkj', 'hpkj': 'gh',
                 'kpkj': 'gk', 'kpkj2': 'gk', 'kpkjslow': 'gk',
