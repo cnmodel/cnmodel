@@ -171,7 +171,7 @@ class PyramidalKanold(Pyramidal, Cell):
 
         # decorate the morphology with ion channels
         if decorator is None:   # basic model, only on the soma
-            self.mechanisms = ['napyr', 'kdpyr', 'kif', 'kis', 'ihpyr', 'leak', 'kcnq', 'nap']
+            self.mechanisms = ['napyr', 'kdpyr', 'kif', 'kis', 'ihpyr', 'leak', 'kcnq', 'kir', 'nap', 'kpksk', 'cap']
             for mech in self.mechanisms:
                 try:
                     self.soma.insert(mech)
@@ -194,7 +194,8 @@ class PyramidalKanold(Pyramidal, Cell):
             field='soma_natype')
         pars = Params(cap=cellcap, natype=chtype)
         for g in ['soma_napyr_gbar', 'soma_kdpyr_gbar', 'soma_kif_gbar', 'soma_kis_gbar',
-                  'soma_kcnq_gbar', 'soma_nap_gbar', 'soma_ihpyr_gbar', 'soma_leak_gbar',
+                  'soma_kcnq_gbar', 'soma_kir_gbar', 'soma_kpksk_gbar', 'soma_cap_pcabar',
+                  'soma_nap_gbar', 'soma_ihpyr_gbar', 'soma_leak_gbar',
                   'soma_e_h','soma_leak_erev', 'soma_e_k', 'soma_e_na']:
             pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
             field=g))
@@ -239,6 +240,8 @@ class PyramidalKanold(Pyramidal, Cell):
             soma().nap.gbar = nstomho(self.pars.soma_nap_gbar, self.somaarea) # does not exist in canonical model
             soma().kdpyr.gbar = nstomho(self.pars.soma_kdpyr_gbar, self.somaarea)
             soma().kcnq.gbar = nstomho(self.pars.soma_kcnq_gbar, self.somaarea) # does not exist in canonical model.
+            soma().kpksk.gbar = nstomho(self.pars.soma_kpksk_gbar, self.somaarea) # does not exist in canonical model.
+            soma().kir.gbar = nstomho(self.pars.soma_kir_gbar, self.somaarea)
             soma().kif.gbar = nstomho(self.pars.soma_kif_gbar, self.somaarea)
             soma().kis.gbar = nstomho(self.pars.soma_kis_gbar, self.somaarea)
             soma().ihpyr.gbar = nstomho(self.pars.soma_ihpyr_gbar, self.somaarea)
@@ -293,6 +296,21 @@ class PyramidalKanold(Pyramidal, Cell):
             for m in self.mechanisms:
                 print('%s.gbar = %f' % (m, eval('soma().%s.gbar' % m)))
 
+    def _ghk(self, V, ci, co, Z, mc):
+        """
+        GHK equation - duplicate what is in .mod file
+        """
+        F = 9.6485e4 #  (coul)
+        R = 8.3145 # (joule/degC)
+        T = h.celsius + 273.19  # Kelvin
+        E = (1e-3) * V
+        Ci = ci + (mc.monovalPerm) * (mc.monovalConc)        ##Monovalent permeability
+        if (np.fabs(1.0-np.exp(-Z*(F*E)/(R*T))) < 1e-6): # denominator is small -> Taylor series
+            ghk = (1e-6) * Z * F * (Ci-co*np.exp(-z*(F*E)/(R*T)))*(1-(z*(F*E)/(R*T)))
+        else:
+            ghk = (1e-6) * Z**2*(E*F**2)/(R*T)*(Ci-co*np.exp(-Z*(F*E)/(R*T)))/(1-np.exp(-Z*(F*E)/(R*T)))
+        return ghk
+    
     def i_currents(self, V):
         """
         For the steady-state case, return the total current at voltage V
@@ -312,6 +330,9 @@ class PyramidalKanold(Pyramidal, Cell):
              self.ix['napyr'] = self.soma().napyr.gna*(V - self.soma().ena)
         if 'nap' in self.mechanisms:
              self.ix['nap'] = self.soma().nap.gnap*(V - self.soma().ena)
+        if 'cap' in self.mechanisms:
+             mc = self.soma().cap
+             self.ix['cap'] =mc.pcabar*mc.m*self._ghk(V, self.soma().cai, self.soma().cao, 2, mc) # (V - self.soma().ena)
         if 'kdpyr' in self.mechanisms:
              self.ix['kdpyr'] = self.soma().kdpyr.gk*(V - self.soma().ek)
         if 'kif' in self.mechanisms:
@@ -320,6 +341,10 @@ class PyramidalKanold(Pyramidal, Cell):
              self.ix['kis'] = self.soma().kis.gkis*(V - self.soma().ek)
         if 'kcnq' in self.mechanisms:
              self.ix['kcnq'] = self.soma().kcnq.gk*(V - self.soma().ek)
+        if 'kpksk' in self.mechanisms:
+             self.ix['kpksk'] = self.soma().kpksk.gk*(V - self.soma().ek)
+        if 'kir' in self.mechanisms:
+             self.ix['kir'] = self.soma().kir.gk*(V - self.soma().ek)
         if 'ihpyr' in self.mechanisms:
              self.ix['ihpyr'] = self.soma().ihpyr.gh*(V - self.soma().ihpyr.eh)
         if 'ihpyr_adj' in self.mechanisms:
