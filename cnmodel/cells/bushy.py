@@ -205,6 +205,8 @@ class BushyRothman(Bushy):
                 dataset = 'XM13_channels'
             elif modelName  == 'XM13_nacncoop':
                 dataset = 'XM13_nacncoop_channels'
+            elif modelName  == 'XM13_nacn':
+                dataset = 'XM13_nacn_channels'
             elif modelName  == 'XM13_nabu':
                 dataset = 'XM13_nabu_channels'
             elif modelName.startswith('mGBC'):  # mouse Globular bushy - a bit different (and experimental)
