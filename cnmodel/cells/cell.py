@@ -738,8 +738,7 @@ class Cell(object):
         if self.debug:
             cellpars.show()
         table = data._db.get_table_info(dataset)
-        
-        if len(table.keys()) == 0:
+        if len(list(table.keys())) == 0:
             raise ValueError('data table %s lacks keys - does it exist?' % dataset)
         chscale = data._db.get_table_info(decorationmap)
         pars = {}
