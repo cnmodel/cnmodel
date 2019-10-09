@@ -335,7 +335,7 @@ soma_Cap                  22.0   [1]
     soma_ihpyr_adj_q10        1.0    [2]      (removed for testing)
 
 [3] for implementing the additional channels from Li et al., and Leao et al. Default remains
-    original model
+    original model set to 0; also see Ceballo et al. 2016.
 
 """)
 
