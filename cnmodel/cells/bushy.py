@@ -334,7 +334,6 @@ class BushyRothman(Bushy):
         self.scaled = True
          
         soma = self.soma
-
         if self.status['species'] == 'mouse':
             # use conductance levels determined from Cao et al.,  J. Neurophys., 2007. as 
             # model description in Xie and Manis 2013. Note that
@@ -345,14 +344,17 @@ class BushyRothman(Bushy):
             if self.debug:
                 print (f"  Setting conductances for mouse {self.celltype.title():s} cell ({self.status['modelType']})")
 
-            self.vrange = [-68., -55.]  # set a default vrange for searching for rmp
+            self.vrange = [-68., -50.]  # set a default vrange for searching for rmp
             self.i_test_range = {'pulse': (-1., 1.0, 0.05)}
             self._valid_temperatures = (34., )
             if self.status['temperature'] is None:
                 self.status['temperature'] = 34. 
 
             self.set_soma_size_from_Cm(self.pars.cap)
-            self.adjust_na_chans(soma, sf=1.0)
+            if self.status['modelName'] == 'XM13_nabu':
+                self.adjust_na_chans(soma, sf=1.0, vshift=self.pars.nabu_vshift)
+            else:
+                self.adjust_na_chans(soma, sf=1.0)
             soma().kht.gbar = nstomho(self.pars.kht_gbar, self.somaarea)
             soma().klt.gbar = nstomho(self.pars.klt_gbar, self.somaarea)
             soma().ihvcn.gbar = nstomho(self.pars.ihvcn_gbar, self.somaarea)
