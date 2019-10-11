@@ -36,9 +36,9 @@ class Decorator():
                               parMap=parMap,
         )
         self.excludeMechs = [] # ['ihvcn', 'kht', 'klt', 'nav11']
-        print('modelType in dec: ', cell.status['modelType'])
-        print('modelName in dec is ', cell.status['modelName'])
-        print('cell type in dec: ', cellType)
+        # print('modelType in dec: ', cell.status['modelType'])
+        # print('modelName in dec is ', cell.status['modelName'])
+        # print('cell type in dec: ', cellType)
         cell.channel_manager(modelName=cell.status['modelName'], modelType=cell.status['modelType'])
 #        print 'Cell: \n', dir(cell)
 #        print 'mechanisms: ', cell.hr.mechanisms
@@ -147,14 +147,14 @@ class Decorator():
                     cell.hr.get_section(sec).Ra = self.channelInfo.newRa  # set Ra here
                     if gbar_setup is not None:
                         setattr(cell.hr.get_section(sec), gbar_setup, gbar)  # set conductance magnitude
-                     #   print('gbar_setup: %s %s' % (sectype, gbar_setup), gbar)
+                        # print('gbar_setup: %s %s' % (sectype, gbar_setup), gbar)
                     if vshift_setup is not None:
+                        # print(cell.hr.get_section(sec))
                         try:
                             setattr(cell.hr.get_section(sec), vshift_setup, vshift)  # set conductance magnitude
                         except:
                             print(dir(cell.hr.get_section(sec)))
                             raise ValueError (f'cannot set mechanism attribute %s  ... %s ' % (vshift_setup, vshift))
-                        # print('vshift_setup: %s %s' % (sectype, vshift_setup), vshift)
                         
                     if hasattr(cell, 'channelErevMap'):  # may not always have this mapping
                         secobj = cell.hr.get_section(sec)  # get the NEURON section object

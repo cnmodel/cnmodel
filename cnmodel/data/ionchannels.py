@@ -164,7 +164,7 @@ ka_gbar          0.0    [1]     0.0    [1]     0.0    [1]    0.0    [2]    125.0
 ihvcn_gbar       30.0   [1]     30.0   [1]     18.0   [1]    2.0    [2]    18.0   [1] 
 leak_gbar        2.0    [1]     2.0    [1]     8.0    [1]    2.0    [2]    8.0    [1] 
 leak_erev        -65    [1]     -65    [1]     -65    [1]    -65    [2]    -65    [1] 
-na_type          nacncoop [1]   nacncoop  [1]  nacncoop [1]  nacncoop [3]  nacncoop [1] 
+na_type          nacncoop [4]   nacncoop  [4]  nacncoop [4]  nacncoop [3]  nacncoop [4] 
 ih_type          ihvcn  [1]     ihvcn  [1]     ihvcn  [1]    ihvcn  [2]    ihvcn  [1] 
 soma_Cap         26.0   [1]     26.0   [1]     25.0   [1]    25.0   [2]    25.0   [1] 
 nacncoop_vshift  0.0    [1]     0.0    [1]     0.0    [1]    0.0    [1]    0.0    [1]

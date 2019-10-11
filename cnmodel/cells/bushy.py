@@ -187,7 +187,7 @@ class BushyRothman(Bushy):
                  
         """
         super(BushyRothman, self).__init__()
-        self.i_test_range={'pulse': (-1, 0, 0.05)}  # note that this might get reset with decorator according to channels
+        self.i_test_range={'pulse': (-1, 1, 0.05)}  # note that this might get reset with decorator according to channels
                                                     # The default values are set in the species_scaling routine
         if modelType == None:
             modelType = 'II'
@@ -279,6 +279,10 @@ class BushyRothman(Bushy):
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
         elif self.status['modelName'] == 'XM13':
+            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ihvcn_gbar', 'leak_gbar']:
+                pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
+                    field=g))
+        elif self.status['modelName'] == 'XM13nacncoop':
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ihvcn_gbar', 'leak_gbar']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
