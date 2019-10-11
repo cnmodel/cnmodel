@@ -512,7 +512,7 @@ class Cell(object):
                 erev = 0.
                 if m == 'leak':
                     erev = eval('section().'+m+'.erev')
-                if m in ['jsrna', 'na', 'nacn', 'nav11', 'nacncoop', 'napyr', 'nap']:
+                if m in ['jsrna', 'na', 'nacn', 'nav11', 'nacncoop', 'napyr', 'nap', 'nabu']:
                     erev = eval('section().ena')
                 if m in ['klt', 'kht', 'ka']:
                     erev = eval('section().e%s'%m)
@@ -602,7 +602,7 @@ class Cell(object):
     def get_cellpars(self, dataset, species='guineapig', cell_type='II'):
         raise NotImplementedError('get_cellpars should be reimplemented in the individual cell class')
 
-    def adjust_na_chans(self, soma, sf=1.0):
+    def adjust_na_chans(self, soma, sf=1.0, vshift=0.):
         """
         adjust the sodium channel conductance
         
@@ -681,6 +681,7 @@ class Cell(object):
 
         elif nach == 'nabu':  # sodium channel for bushy cells from Yang et al (Xu-Friedman lab)
             soma().nabu.gbar =  nstomho(self.pars.nabu_gbar, self.somaarea)*sf
+            soma().nabu.vshift = vshift
             soma.ena = 50 # self.e_na
             if self.debug:
                 print ("Using nabu")
@@ -752,18 +753,20 @@ class Cell(object):
                 pars[g] = x/refarea
             else:
                 pars[g] = x
-        
+                
         self.channelMap = OrderedDict()
         for c in chscale['compartment']:
             self.channelMap[c] = {}
             for g in pars.keys():
                 if g not in chscale['parameter']:
-#                    print ('Parameter %s not found in chscale parameters!' % g)
+                    # print ('Parameter %s not found in chscale parameters!' % g)
                     continue
                 scale = data._db.get(decorationmap, species=self.status['species'], model_type=modelType,
                         compartment=c, parameter=g)
-                if '_gbar' in g:
+                if '_gbar' in g:  # scale by multiplication relative to soma
                     self.channelMap[c][g] = pars[g]*scale
+                elif '_vshift' in g or '_vsna' in g:  # scale by addition  relative to soma
+                    self.channelMap[c][g] = pars[g] + scale
                 else:
                     self.channelMap[c][g] = pars[g]
         if self.debug:
@@ -781,7 +784,7 @@ class Cell(object):
                                  'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
                         }
         self.check_temperature()
-        return        
+        return
 
 
 
