@@ -192,8 +192,6 @@ class Toy(Protocol):
             temperature = self.celltypes[name][4]
             nrn_cell.set_temperature(float(temperature))
             ninjs = len(injcmds)
-            print( 'cell: ', name)
-            # print( 'injs: ', injcmds)
             pl[name] = self.win.addPlot(labels={'left': 'V (mV)', 'bottom': 'Time (ms)'})
             PH.nice_plot(pl[name])
             pl[name].setTitle(title=name, font=pg.QtGui.QFont('Arial', 10) )

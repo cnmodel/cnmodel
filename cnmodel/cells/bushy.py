@@ -203,8 +203,12 @@ class BushyRothman(Bushy):
                 modelName = 'XM13'
             if modelName == 'XM13':
                 dataset = 'XM13_channels'
-            elif modelName  == 'XM13nacncoop':
-                dataset = 'XM13nacncoop_channels'
+            elif modelName  == 'XM13_nacncoop':
+                dataset = 'XM13_nacncoop_channels'
+            elif modelName  == 'XM13_nacn':
+                dataset = 'XM13_nacn_channels'
+            elif modelName  == 'XM13_nabu':
+                dataset = 'XM13_nabu_channels'
             elif modelName.startswith('mGBC'):  # mouse Globular bushy - a bit different (and experimental)
                 dataset = 'mGBC_channels'
             else:
@@ -283,6 +287,18 @@ class BushyRothman(Bushy):
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
         elif self.status['modelName'] == 'mGBC':
+            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ihvcn_gbar', 'leak_gbar']:
+                pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
+                    field=g))
+        elif self.status['modelName'] == 'XM13_nabu':
+            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ihvcn_gbar', 'leak_gbar']:
+                pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
+                    field=g))
+        elif self.status['modelName'] == 'XM13_nacncoop':
+            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ihvcn_gbar', 'leak_gbar']:
+                pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
+                    field=g))
+        elif self.status['modelName'] == 'XM13_nacn':
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ihvcn_gbar', 'leak_gbar']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))

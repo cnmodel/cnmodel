@@ -65,6 +65,7 @@ class IVCurve(Protocol):
             timestep of simulation (0.025)
             
         """
+        # print('iv_curve:run')
         self.reset()
         self.cell = cell
         self.initdelay = initdelay
@@ -177,6 +178,7 @@ class IVCurve(Protocol):
             If true, force initialziation of the cell and computation of 
             point Rin, tau and Vm
         """
+        # print('iv_curve:run_one')
         (secmd, maxt, tstims) = make_pulse(stim)
         # print('maxt, dt*lencmd: ', maxt, len(secmd)*self.dt)# secmd = np.append(secmd, [0.])
         # print('stim: ', stim, self.tend)
@@ -194,8 +196,10 @@ class IVCurve(Protocol):
 
         # h('secondorder=0')  # direct call fails; let hoc do the work
         h.celsius = self.cell.status['temperature']
+        # print("iv_curve:run_one:calling cell_initialize")
         self.cell.cell_initialize()
         h.dt = self.dt
+        # print("iv_curve:run_one:calling custom_init")
         custom_init(v_init=self.cell.vm0)
 
         h.t = 0.

@@ -310,8 +310,11 @@ from Kanold and Manis, 2001
                                    
 soma_napyr_gbar           350.0  [1]      
 soma_nap_gbar             0.
+soma_cap_pcabar           0.     [3]
 soma_kdpyr_gbar           80.0   [1]
-soma_kcnq_gbar            0.
+soma_kcnq_gbar            0.     [3]
+soma_kpksk_gbar           0.     [3]
+soma_kir_gbar             0.     [3]
 soma_kif_gbar             150.0  [1]
 soma_kis_gbar             40.0   [1]
 soma_ihpyr_gbar           2.8    [1]     
@@ -321,14 +324,18 @@ soma_e_na                 50.    [1]
 soma_e_k                  -81.5  [1]
 soma_e_h                  -43.0  [1]
 soma_natype               napyr
-soma_Cap                  12     [1]
+soma_Cap                  22.0   [1]
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 [1] Kanold and Manis, 1999, 2001, 2005
     Age P11-14, Temperature=22C
     Units are nS.
+    Default cap is 12 pF.
 [2] Adjustable q10 added for fitting
     soma_ihpyr_adj_q10        1.0    [2]      (removed for testing)
+
+[3] for implementing the additional channels from Li et al., and Leao et al. Default remains
+    original model set to 0; also see Ceballo et al. 2016.
 
 """)
 

@@ -30,9 +30,13 @@ def get_source(*args, **kwds):
 
 def print_table(table):
     for k in DATA.keys():
-        if table == k[0]:
-            print('data key: ', k)
-            print( DATA[k][0])
+        if isinstance(k[0], tuple):  # order of tuple key values may be wrong - check types
+            ki = 1
+        else:
+            ki = 0
+        if table == k[ki]:
+            print('data key: ', k[ki])
+            print( DATA[k][ki])
 
 def get_table_info(table):
     """
@@ -40,7 +44,11 @@ def get_table_info(table):
     """
     tinfo = {}
     for k in DATA.keys():
-        if table == k[0]:
+        if isinstance(k[0], tuple):  # order of tuple key values may be wrong - check types
+            ki = 1
+        else:
+            ki = 0
+        if table == k[ki]:
             for p in k:
                 if not isinstance(p, tuple):
                     continue
