@@ -212,7 +212,7 @@ class BushyRothman(Bushy):
             elif modelName.startswith('mGBC'):  # mouse Globular bushy - a bit different (and experimental)
                 dataset = 'mGBC_channels'
             else:
-                raise ValueError(f"ModelName {self.status['modelName']:s} not recognized for mouse {self.celltype:s} cells")
+                raise ValueError(f"ModelName {modelName:s} not recognized for mouse {self.celltype:s} cells")
         else:
             raise ValueError(f"Species {species:s} not recognized for {self.celltype:s} cells")
 

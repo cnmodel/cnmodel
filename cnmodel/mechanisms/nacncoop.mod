@@ -49,7 +49,7 @@ NEURON {
         SUFFIX nacncoop
         USEION na READ ena WRITE ina
         RANGE gbar, gna, ina, p, KJ
-    	RANGE vsna : voltage shift parameter
+    	RANGE vshift : voltage shift parameter
         GLOBAL hinf, minf, htau, mtau, hinf2, minf2, htau2, mtau2
 }
 
@@ -65,7 +65,7 @@ PARAMETER {
         p  = 0.0 (): fraction of cooperative channels (0-1)
         KJ = 0 (mV) : coupling strength between cooperative channels (0-1000mV is usable range)
                       : setting either KJ = 0 or p = 0 will remove cooperativity.
-        vsna = 0 (mV)
+        vshift = 0. (mV)
 }
 
 STATE {
@@ -98,7 +98,7 @@ INITIAL {
     h = hinf
     m2 = minf2
     h2 = hinf2
-    vNa = v + vsna + KJ*m^3*h
+    vNa = v + vshift + KJ*m^3*h
 }
 
 DERIVATIVE states {  :Computes state variables m, h, and n
@@ -107,7 +107,7 @@ DERIVATIVE states {  :Computes state variables m, h, and n
     h' = (hinf - h)/htau
     m2' = (minf2 - m2)/mtau2
     h2' = (hinf2 - h2)/htau2
-    vNa = v + vsna + KJ*m^3*h  : note addition of vsna shift here so that we do not add it in rates
+    vNa = v + vshift + KJ*m^3*h  : note addition of vshift here so that we do not add it in rates
 }
 
 LOCAL qt
@@ -118,11 +118,11 @@ PROCEDURE rates(v) {  :Computes rate and other constants at current v.
     qt = q10^((celsius - 22)/10) : if you don't like room temp, it can be changed!
 
 : average sodium channel
-    minf = 1 / (1+exp(-(v + 38 + vsna) / 7))
-    hinf = 1 / (1+exp((v + 65 + vsna) / 6))
-    mtau =  (10 / (5*exp((v + 60 + vsna) / 18) + 36*exp(-(v + 60+vsna) / 25))) + 0.04
+    minf = 1 / (1+exp(-(v + 38 + vshift) / 7))
+    hinf = 1 / (1+exp((v + 65 + vshift) / 6))
+    mtau =  (10 / (5*exp((v + 60 + vshift) / 18) + 36*exp(-(v + 60+vshift) / 25))) + 0.04
     mtau = mtau/qt
-    htau =  (100 / (7*exp((v + 60 + vsna) / 11) + 10*exp(-(v + 60 + vsna) / 25))) + 0.6
+    htau =  (100 / (7*exp((v + 60 + vshift) / 11) + 10*exp(-(v + 60 + vshift) / 25))) + 0.6
     htau = htau/qt
 
 : cooperative group of channels
