@@ -55,7 +55,7 @@ class Decorator():
                         'ihvcn': 'eh', 'jsrna': 'ena', 'nav11': 'ena', 'nacncoop': 'ena',
                         'hcnobo': 'eh'}
         self.vshift_mapper = {'nacn': None, 'kht': None, 'klt': None, 'leak': None,
-                        'ihvcn': None, 'jsrna': None, 'nav11': 'vsna', 'nacncoop': 'vshift', 'nabu': 'vshift',
+                        'ihvcn': None, 'jsrna': None, 'nav11': 'vshift', 'nacncoop': 'vshift', 'nabu': 'vshift',
                         'hcnobo': None}
         self._biophys(cell, verify=verify)
         print('\033[1;31;40m Decorator: Model Decorated with channels (if this appears more than once per cell, there is a problem)\033[0m')
@@ -143,6 +143,7 @@ class Decorator():
                 # print('mapper: ', self.vshift_mapper[mech])
                 if self.vshift_mapper[mech] is not None:
                     vshift_setup = ('%s_%s' % (self.vshift_mapper[mech], mech))  # map voltage shift
+                    # print(cell.channelMap[sectype].keys())
                     vshift = cell.channelMap[sectype]['%s_%s' % (mech, self.vshift_mapper[mech])]
                     # print("Channel Map: \n   ", cell.channelMap)
                     # print(f'*********   Shift add to mechanism {mech:s}: gbar={gbar:e}, vshift: {vshift:.6f}')
