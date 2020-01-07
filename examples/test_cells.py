@@ -23,11 +23,11 @@ from cnmodel.protocols import IVCurve, VCCurve
 debugFlag = True
 ax = None
 h.celsius = 22
-default_durs = [10., 100., 20.]
+default_durs = [10., 100., 50.]
 cclamp = False
 
 cellinfo = {'types': ['bushy', 'bushycoop', 'tstellate', 'tstellatenav11', 'dstellate', 'dstellateeager', 'sgc',
-                      'cartwheel', 'pyramidal', 'octopus', 'tuberculoventral', 'mso'],
+                      'cartwheel', 'pyramidal', 'pyramidalceballos', 'octopus', 'tuberculoventral', 'mso'],
             'morphology': ['point', 'waxon', 'stick'],
             'nav': ['std', 'jsrna', 'nav11', 'nacncoop'],
             'species': ['guineapig', 'cat', 'rat', 'mouse'],
@@ -43,7 +43,7 @@ ccivrange = {'mouse':
                  'octopus': {'pulse': [(-1.0, 1.0, 0.05)]},
                  'sgc': {'pulse': [(-0.3, 0.6, 0.02)]},
                  'cartwheel': {'pulse': [(-0.5, 0.5, 0.05)]},
-                 'pyramidal': {'pulse': [(-0.3, 0.3, 0.025), (-0.040, 0.025, 0.005)]}, #, 'prepulse': [(-0.25, -0.25, 0.25)]},
+                 'pyramidalceballos': {'pulse': [(-0.3, 0.3, 0.025), (-0.040, 0.025, 0.005)]}, #, 'prepulse': [(-0.25, -0.25, 0.25)]},
                  'tuberculoventral': {'pulse': [(-0.35, 1.0, 0.05), (-0.040, 0.01, 0.005)]}
              },
 
@@ -84,6 +84,8 @@ scale = {'bushy': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
         'cartwheel': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
             'crossing', [0, -60]),
         'pyramidal': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
+            'crossing', [0, -60]),
+        'pyramidalceballos': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
             'crossing', [0, -60]),
         'tuberculoventral': (-1.0, -160., 1.0, -40, 0, 40, 'offset', 5,
             'crossing', [0, -60]),
@@ -191,7 +193,11 @@ class Tests():
         # DCN pyramidal cell tests
         #
         elif args.celltype == 'pyramidal':
-            cell = cells.Pyramidal.create(modelType=args.type, 
+            cell = cells.Pyramidal.create(modelType=args.type, model='POK', 
+                ttx=args.ttx, debug=debugFlag)
+
+        elif args.celltype == 'pyramidalceballos':
+            cell = cells.Pyramidal.create(modelType=args.type, model='Ceballos',
                 ttx=args.ttx, debug=debugFlag)
 
         #

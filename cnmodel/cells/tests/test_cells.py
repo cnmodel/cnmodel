@@ -58,9 +58,14 @@ def test_octopus():
 
 def test_pyramidal():
     reset(raiseError=False)
-    cell = cells.Pyramidal.create(species='rat', modelType='I')
+    cell = cells.Pyramidal.create(species='rat', model='POK', modelType='I')
     CellTester('pyramidal_rat_I', cell)
 
+def test_pyramidal_ceballos():
+    reset(raiseError=False)
+    cell = cells.PyramidalCeballos.create(species='mouse', model='Ceballos', modelType='I')
+    CellTester('pyramidal_mouse_I', cell)
+    
 def test_tuberculoventral():
     reset(raiseError=False)
     cell = cells.Tuberculoventral.create(species='mouse', modelType='TVmouse')

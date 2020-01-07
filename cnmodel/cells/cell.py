@@ -674,7 +674,7 @@ class Cell(object):
                     raise ValueError('Failed to convert nancoop for soma...')
             soma().nacncoop.KJ = 2000.
             soma().nacncoop.p = 0.25
-            soma().nacncoop.vsna = 0.
+            soma().nacncoop.vshift = 0.
             soma.ena = self.e_na
             if self.debug:
                 print('nacncoop gbar: ', soma().nacncoop.gbar)

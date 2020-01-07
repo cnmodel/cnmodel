@@ -309,7 +309,40 @@ from Kanold and Manis, 2001
                           pyramidal   
                                    
 soma_napyr_gbar           350.0  [1]      
-soma_nap_gbar             0.
+soma_kdpyr_gbar           80.0   [1]
+soma_kif_gbar             150.0  [1]
+soma_kis_gbar             40.0   [1]
+soma_ihpyr_gbar           2.8b     [1]     
+soma_leak_gbar            2.8    [1]
+soma_leak_erev            -62.0  [3]
+soma_e_na                 50.    [1]
+soma_e_k                  -81.5  [1]
+soma_e_h                  -43.0  [1]
+soma_natype               napyr
+soma_Cap                  12.0   [1]
+------------------------------------------------------------------------------------------------------------------------------------------
+
+[1] Kanold and Manis, 1999, 2001, 2005
+    Age P11-14, Temperature=32C
+    Units are nS.
+    Default cap is 12 pF.
+[2] Adjustable q10 added for fitting
+    soma_ihpyr_adj_q10        1.0    [2]      (removed for testing)
+[3] Original values (was -62 in tests?)
+
+""")
+
+add_table_data('Ceballos_channels', row_key='field', col_key='model_type', 
+               species='mouse', data=u"""
+
+This table describes the ion channel densities and voltage shifts for mouse DCN pyramidal cells,
+from Ceballos et al., 2016
+
+------------------------------------------------------------------------------------------------------------------------------------------
+                          pyramidal   
+                                   
+soma_napyr_gbar           350.0  [1]      
+soma_nappyr_gbar          0.
 soma_cap_pcabar           0.     [3]
 soma_kdpyr_gbar           80.0   [1]
 soma_kcnq_gbar            0.     [3]
@@ -327,7 +360,7 @@ soma_natype               napyr
 soma_Cap                  22.0   [1]
 ------------------------------------------------------------------------------------------------------------------------------------------
 
-[1] Kanold and Manis, 1999, 2001, 2005
+[1] Kanold and Manis, 1999, 2001, 2005 and Ceballos, 2016
     Age P11-14, Temperature=22C
     Units are nS.
     Default cap is 12 pF.
