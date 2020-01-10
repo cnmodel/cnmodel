@@ -23,7 +23,7 @@ from cnmodel.protocols import IVCurve, VCCurve
 debugFlag = True
 ax = None
 h.celsius = 22
-default_durs = [10., 100., 50.]
+default_durs = [10., 1000., 2000.]
 cclamp = False
 
 cellinfo = {'types': ['bushy', 'bushycoop', 'tstellate', 'tstellatenav11', 'dstellate', 'dstellateeager', 'sgc',
