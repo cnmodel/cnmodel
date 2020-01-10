@@ -408,11 +408,11 @@ class BushyRothman(Bushy):
                                  'nav11': {'gradient': 'exp', 'gminf': 0., 'lambda': 200.}}, # gradients are: flat, linear, exponential
                         }
 
-    def add_axon(self):
-        """
-        Add a default axon from the generic cell class to the bushy cell (see cell class).
-        """
-        Cell.add_axon(self, self.c_m, self.R_a, self.axonsf)
+    # def add_axon(self):
+    #     """
+    #     Add a default axon from the generic cell class to the bushy cell (see cell class).
+    #     """
+    #     Cell.add_axon(self, self.c_m, self.R_a, self.axonsf)
 
     def add_pumps(self):
         """
