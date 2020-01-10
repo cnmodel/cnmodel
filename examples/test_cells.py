@@ -23,7 +23,6 @@ from cnmodel.protocols import IVCurve, VCCurve
 debugFlag = True
 ax = None
 h.celsius = 22
-default_durs = [10., 1000., 2000.]
 cclamp = False
 
 cellinfo = {'types': ['bushy', 'bushycoop', 'tstellate', 'tstellatenav11', 'dstellate', 'dstellateeager', 'sgc',
@@ -232,6 +231,7 @@ class Tests():
 
         print(cell.__doc__)
         self.cell = cell
+        
 
     def run_test(self, sites, ptype, args):
         """
@@ -244,6 +244,7 @@ class Tests():
         """
         self.cell.set_temperature(float(args.temp))
         print(self.cell.status)
+        durations = eval(args.durations)
         V0 = self.cell.find_i0(showinfo=True)
 #        self.cell.cell_initialize()
         print('Currents at nominal Vrest= %.2f I = 0: I = %g ' % (V0, self.cell.i_currents(V=V0)))
@@ -253,7 +254,7 @@ class Tests():
         if args.cc is True:
             # define the current clamp electrode and default settings
             self.iv = IVCurve()
-            self.iv.run(ccivrange[args.species][args.celltype], self.cell, durs=default_durs,
+            self.iv.run(ccivrange[args.species][args.celltype], self.cell, durs=durations, 
                    sites=sites, reppulse=ptype, temp=float(args.temp))
             ret = self.iv.input_resistance_tau()
             print('    From IV: Rin = {:7.1f}  Tau = {:7.1f}  Vm = {:7.1f}'.format(ret['slope'], ret['tau'], ret['intercept']))
@@ -262,7 +263,7 @@ class Tests():
         elif args.rmp is True:
             print('temperature: ', self.cell.status['temperature'])
             self.iv = IVCurve()
-            self.iv.run({'pulse': (0, 0, 1)}, self.cell, durs=default_durs,
+            self.iv.run({'pulse': (0, 0, 1)}, self.cell, durs=durations,
                    sites=sites, reppulse=ptype, temp=float(args.temp))
             self.iv.show(cell=self.cell, rmponly=True)
 
@@ -283,7 +284,6 @@ def main():
     parser.add_argument('--type', action='store', default=None)
     parser.add_argument('--temp', action='store', default=22.0,
                         help=("Temp DegC (22 default)"))
-        # species is an optional option....
     parser.add_argument('-m', action="store", dest="morphology",
         default='point', help=("Set morphology: %s " %
             [morph for morph in cellinfo['morphology']]))
@@ -293,6 +293,9 @@ def main():
         help=("Use TTX (no sodium current"))
     parser.add_argument('-p', action="store", dest="pulsetype", default="step",
         help=("Set CCIV pulse to step or repeated pulse"))
+    parser.add_argument('-d', '--durations', action="store", dest="durations",
+        default='[10, 100, 20]',
+        help=("Set pulse durations in format '[10, 100, 20]' (as a string)"))
     clampgroup = parser.add_mutually_exclusive_group()
     clampgroup.add_argument('--vc', action='store_true',
         help="Run in voltage clamp mode")
@@ -301,8 +304,13 @@ def main():
     clampgroup.add_argument('--rmp', action='store_true',
         help="Run to get RMP in current clamp mode")
 
-
+    
     args = parser.parse_args()
+    try:
+        eval(args.durations)
+    except:
+        raise ValueError("Durations values could not be parsed\nFor example, use: '[10,100,10]' in quotes")
+        
     if args.celltype not in cellinfo['types']:
         print('cell: %s is not in our list of cell types' % (args.celltype))
         print('celltypes: ', cellinfo['types'])
