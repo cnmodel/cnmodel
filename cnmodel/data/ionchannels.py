@@ -308,11 +308,11 @@ from Kanold and Manis, 2001
 ------------------------------------------------------------------------------------------------------------------------------------------
                           pyramidal   
                                    
-soma_napyr_gbar           350.0  [1]      
+soma_napyr_gbar           350.0  [1]
 soma_kdpyr_gbar           80.0   [1]
 soma_kif_gbar             150.0  [1]
 soma_kis_gbar             40.0   [1]
-soma_ihpyr_gbar           2.8b     [1]     
+soma_ihpyr_gbar           2.8    [1]
 soma_leak_gbar            2.8    [1]
 soma_leak_erev            -62.0  [3]
 soma_e_na                 50.    [1]
@@ -341,34 +341,36 @@ from Ceballos et al., 2016
 ------------------------------------------------------------------------------------------------------------------------------------------
                           pyramidal   
                                    
-soma_napyr_gbar           350.0  [1]      
-soma_nappyr_gbar          0.
+soma_napyr_gbar           1005.0 [1]
+soma_nappyr_gbar          1.257
 soma_cap_pcabar           0.     [3]
-soma_kdpyr_gbar           80.0   [1]
+soma_kdpyr_gbar           251.3  [1]
 soma_kcnq_gbar            0.     [3]
 soma_kpksk_gbar           0.     [3]
-soma_kir_gbar             0.     [3]
+soma_kir_gbar             6.283  [3]
 soma_kif_gbar             150.0  [1]
-soma_kis_gbar             40.0   [1]
-soma_ihpyr_gbar           2.8    [1]     
-soma_leak_gbar            2.8    [1]
-soma_leak_erev            -62.0  [1]
+soma_kis_gbar             60.0   [1]
+soma_ihpyr_gbar           6.79   [1]
+soma_leak_gbar            1.885  [1]
+soma_leak_erev            -51.3  [1]
 soma_e_na                 50.    [1]
 soma_e_k                  -81.5  [1]
 soma_e_h                  -43.0  [1]
 soma_natype               napyr
-soma_Cap                  22.0   [1]
+soma_Cap                  15.2   [1]
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 [1] Kanold and Manis, 1999, 2001, 2005 and Ceballos, 2016
-    Age P11-14, Temperature=22C
+    Age P11-14, Temperature=32C
     Units are nS.
-    Default cap is 12 pF.
+    Default cap is 15.2 pF, for 22 um dia cell
+    Conversions calculated from Leao et al., 2012 and Ceballos, et al. 2016
 [2] Adjustable q10 added for fitting
     soma_ihpyr_adj_q10        1.0    [2]      (removed for testing)
 
 [3] for implementing the additional channels from Li et al., and Leao et al. Default remains
     original model set to 0; also see Ceballo et al. 2016.
+    6.283 is for 0.5 mmho/cm2 (quiet cells), vs 12.566 (1.0) for "active cells".
 
 """)
 
