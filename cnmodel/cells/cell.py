@@ -76,6 +76,7 @@ class Cell(object):
         self.e_leak = -65
         # Recommended current (min, max, step) for testing this cell
         self.i_test_range=(-0.5, 0.5, 0.05)  # defines default current steps for IC curve
+        self.vrange = None
         
         # Recommended threshold for detecting spikes from this cell
         self.spike_threshold = -40
@@ -341,7 +342,7 @@ class Cell(object):
     #                               (self.__class__.__name__))
 
     def connect(self, post_cell, pre_opts=None, post_opts=None, **kwds):
-        """
+        r"""
         Create a new synapse connecting this cell to a postsynaptic cell. 
         The synapse is automatically created using 
         pre_cell.make_terminal(post_cell, \**pre_opts) and  
@@ -385,7 +386,7 @@ class Cell(object):
         print('inputs: ', self.inputs)
     
     def make_terminal(self, post_cell, **kwds):
-        """
+        r"""
         Create a synaptic terminal release mechanism suitable for output
         from this cell to post_sec
         This routine is a placeholder and should be replaced in the specific
@@ -403,7 +404,7 @@ class Cell(object):
                                    post_cell.__class__.__name__))
 
     def make_psd(self, terminal, **kwds):
-        """
+        r"""
         Create a PSD suitable for synaptic input from pre_sec.
         This routine is a placeholder and should be overridden in the specific
         cell class with code that performs the required actions for that class.
@@ -412,7 +413,7 @@ class Cell(object):
         ----------
         terminal : the terminal that connects to the PSD (required)
         
-        \**kwds : parameters passed to the terminal
+        **kwds : parameters passed to the terminal
         
         """
         pre_cell = terminal.cell
@@ -462,8 +463,10 @@ class Cell(object):
         Initialize this cell to it's "rmp" under current conditions
         All sections in the cell are set to the same value
         """
-        if vrange is None:
+        if vrange is None and self.vrange is None:
             vrange = [-90., -50.]
+        if self.vrange is not None:
+            vrange = self.vrange
         if self.vm0 is None:
             self.vm0 = self.find_i0(showinfo=showinfo, vrange=vrange, **kwargs)
         for part in self.all_sections.keys():
@@ -507,23 +510,20 @@ class Cell(object):
             print(' {:>8s} '.format(s), end='')
         print('')
         for m in self.mechs:
-            try:
-                gx=eval('section().'+m+'.gbar')
-                erev = 0.
-                if m == 'leak':
-                    erev = eval('section().'+m+'.erev')
-                if m in ['jsrna', 'na', 'nacn', 'nav11', 'nacncoop', 'napyr', 'nap', 'nabu']:
-                    erev = eval('section().ena')
-                if m in ['klt', 'kht', 'ka']:
-                    erev = eval('section().e%s'%m)
-                if m in ['kis', 'kif', 'kdpyr', 'kcnq', 'kir']:
-                    erev = eval('section().ek')
-                if m in ['hcno', 'ihvcn', 'hcnobo', 'ihpyr', 'ihpyr_adj']:
-                    erev = eval('section().'+m+'.eh')
-                print('{0:>12s} : {2:8.1f} nS  {1:7.3e} mho/cm2  {3:>5.1f} mV'.
-                        format(m, gx, mho2ns(gx, self.somaarea), erev))
-            except:
-                print('{0:>12s} : <no gbar> '.format(m))
+            gx = eval('section().'+m+'.gbar')
+            erev = 0.
+            if m in ['leak']:
+                erev = eval('section().'+m+'.erev')
+            if m in ['jsrna', 'na', 'nacn', 'nav11', 'nacncoop', 'napyr', 'nap', 'nabu']:
+                erev = eval('section().ena')
+            if m in ['klt', 'kht', 'ka']:
+                erev = eval('section().ek')
+            if m in ['kis', 'kif', 'kdpyr', 'kcnq', 'kir']:
+                erev = eval('section().ek')
+            if m in ['hcno', 'ihvcn', 'hcnobo', 'ihpyr', 'ihpyr_adj']:
+                erev = eval('section().'+m+'.eh')
+            print(f"{m:>12s} : {gx:7.3e} mho/cm2  {erev:>5.1f} mV")
+            # print('{0:>12s} : <no gbar> '.format(m))
         print('-'*32)
         
     def print_all_mechs(self):
@@ -690,7 +690,7 @@ class Cell(object):
             raise ValueError(f'Sodium channel <{nach:s}> is not recognized for {self.celltype:s} cells')
 
     def channel_manager(self, modelName=None, modelType=None):
-        """
+        r"""
         This routine defines channel density maps and distance map patterns
         for each type of compartment in the cell. The maps
         are used by the ChannelDecorator class (specifically, its private
@@ -755,6 +755,8 @@ class Cell(object):
                 pars[g] = x
                 
         self.channelMap = OrderedDict()
+        print(chscale.keys())
+        print(decorationmap)
         for c in chscale['compartment']:
             self.channelMap[c] = {}
             for g in pars.keys():
@@ -786,8 +788,21 @@ class Cell(object):
         self.check_temperature()
         return
 
-
-
+    def _ghk(self, V, ci, co, Z, mc):
+        """
+        GHK equation - duplicate what is in .mod files
+        Only used so far for the "P" type calcium channel mechanism, "cap".
+        """
+        F = 9.6485e4 #  (coul)
+        R = 8.3145 # (joule/degC)
+        T = h.celsius + 273.19  # Kelvin
+        E = (1e-3) * V
+        Ci = ci + (mc.monovalPerm) * (mc.monovalConc)        ##Monovalent permeability
+        if (np.fabs(1.0-np.exp(-Z*(F*E)/(R*T))) < 1e-6): # denominator is small -> Taylor series
+            ghk = (1e-6) * Z * F * (Ci-co*np.exp(-z*(F*E)/(R*T)))*(1-(z*(F*E)/(R*T)))
+        else:
+            ghk = (1e-6) * Z**2*(E*F**2)/(R*T)*(Ci-co*np.exp(-Z*(F*E)/(R*T)))/(1-np.exp(-Z*(F*E)/(R*T)))
+        return ghk
 
     def i_currents(self, V):
         """
@@ -827,10 +842,12 @@ class Cell(object):
             self.ix['nacn'] = self.soma().nacn.gna*(V - self.soma().ena)
         if 'napyr' in self.mechanisms:
             self.ix['napyr'] = self.soma().napyr.gna*(V - self.soma().ena)
-        if 'nap' in self.mechanisms:
-            self.ix['nap'] = self.soma().nap.gna*(V - self.soma().ena)
         if 'nacncoop' in self.mechanisms:
             self.ix['nacncoop'] = self.soma().nacncoop.gna*(V - self.soma().ena)
+        if 'nap' in self.mechanisms:
+            self.ix['nap'] = self.soma().nap.gna*(V - self.soma().ena)
+        if 'nappyr' in self.mechanisms:
+             self.ix['nappyr'] = self.soma().nappyr.gnap*(V - self.soma().ena)
         
         if 'klt' in self.mechanisms:
             self.ix['klt'] = self.soma().klt.gklt*(V - self.soma().ek)
@@ -841,15 +858,15 @@ class Cell(object):
         if 'kdpyr' in self.mechanisms:
             self.ix['kdpyr'] = self.soma().kdpyr.gk*(V - self.soma().ek)
         if 'kcnq' in self.mechanisms:
-            self.ix['kcnq'] = self.soma().kdcnq.gk*(V - self.soma().ek)
+            self.ix['kcnq'] = self.soma().kcnq.gk*(V - self.soma().ek)
         if 'kpksk' in self.mechanisms:
             self.ix['kpksk'] = self.soma().kpksk.gk*(V - self.soma().ek)
         if 'kir' in self.mechanisms:
             self.ix['kir'] = self.soma().kir.gk*(V - self.soma().ek)
         if 'kis' in self.mechanisms:
-            self.ix['kis'] = self.soma().kis.gk*(V - self.soma().ek)
+            self.ix['kis'] = self.soma().kis.gkis*(V - self.soma().ek)
         if 'kif' in self.mechanisms:
-            self.ix['kif'] = self.soma().kif.gk*(V - self.soma().ek)
+            self.ix['kif'] = self.soma().kif.gkif*(V - self.soma().ek)
         
         if 'ihvcn' in self.mechanisms:
             self.ix['ihvcn'] = self.soma().ihvcn.gh*(V - self.soma().ihvcn.eh)
@@ -862,6 +879,10 @@ class Cell(object):
             #self.ix['hcno'] = self.soma().hcno.gh*(V - self.soma().hcno.eh)
         if 'hcnobo' in self.mechanisms:
             self.ix['hcnobo'] = self.soma().hcnobo.gh*(V - self.soma().hcnobo.eh)
+
+        if 'cap' in self.mechanisms:
+             mc = self.soma().cap
+             self.ix['cap'] =mc.pcabar*mc.m*self._ghk(V, self.soma().cai, self.soma().cao, 2, mc) # (V - self.soma().ena)
         
         if 'leak' in self.mechanisms:
             self.ix['leak'] = self.soma().leak.gbar*(V - self.soma().leak.erev)
@@ -889,7 +910,10 @@ class Cell(object):
         The voltage at which I = 0 in the vrange specified
         """
         if vrange is None:
+             print('vrange set to default')
              vrange = self.vrange
+        else:
+            print('vrange passed: ', vrange)
         # print( vrange)
         # print (self.i_currents(V=vrange[0]), self.i_currents(V=vrange[1]))
         # v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1], maxiter=10000)
@@ -950,6 +974,7 @@ class Cell(object):
                 'ihvcn': 'gh', 'hcno': 'gh', 'hcnobo': 'gh',
                 # pyramidal cell specific:
                 'napyr': 'gna', 'nap': 'gnap',
+                'nappyr': 'gnap',
                 'kdpyr': 'gk', 'kif': 'gkif', 'kis': 'gkis',
                 'ihpyr': 'gh', 'ihpyr_adj': 'gh',
                 'kcnq': 'gk', 'kir': 'gk',
@@ -1051,7 +1076,10 @@ class Cell(object):
                 pass
                 # print('    No section of type %s in cell' % sec)
 
-    def add_axon(self, c_m=1.0, R_a=150, axonsf=1.0, nodes=5, debug=False, dia=None, len=None, seg=None):
+    def add_axon(self, c_m=1.0, R_a=150, axonsf=1.0, nodes=5, debug=False, 
+        internodeDiameter=None, internodeLength=None, 
+        nodeDiameter=None, nodeLength=None, seg=None,
+        internodeELeak=-65, nodeELeak=-65):
         """
         Add an axon to the soma with an initial segment (tapered), and multiple nodes of Ranvier
         The size of the axon is determined by self.axonsf, which in turn is set by the species
@@ -1093,7 +1121,7 @@ class Cell(object):
             if debug:
                 print('Initial segment %d: gnabar = %9.6f' % (ip, gna))
             inseg.nacn.gbar = gna
-            inseg.klt.gbar = 0.2 * nstomho(200.0, self.somaarea)
+            inseg.klt.gbar = 0.2 * nstomho(20.0, self.somaarea)
             inseg.kht.gbar = nstomho(150.0, self.somaarea)
             inseg.ihvcn.gbar = 0.0 * nstomho(20.0, self.somaarea)
             inseg.leak.gbar = nstomho(2.0, self.somaarea)
@@ -1102,8 +1130,10 @@ class Cell(object):
             inseg.leak.erev = self.e_leak
 
         for i in nnodes:
-            axnode[i] = self.loadaxnodes(axnode[i], self.somaarea, eleak=self.e_leak)
-            internode[i] = self.loadinternodes(internode[i], self.somaarea, eleak=self.e_leak)
+            axnode[i] = self.loadaxnodes(axnode[i], self.somaarea, eleak=nodeELeak,
+                nodeDiameter=nodeDiameter, nodeLength=nodeLength)
+            internode[i] = self.loadinternodes(internode[i], self.somaarea, eleak=internodeELeak,
+                internodeLength=internodeLength, internodeDiameter=internodeDiameter)
 
         if debug:
             print("<< {:s} Axon Added >>".format(self.__class__.__name__))
@@ -1111,39 +1141,43 @@ class Cell(object):
         self.add_section(initsegment, 'initialsegment')
         self.add_section(axnode, 'axonnode')
         self.add_section(internode, 'internode')
+        self.initsegment = initsegment
+        self.axnode = axnode
+        self.internode = internode
+        
 
     @staticmethod
-    def loadaxnodes(axnode, somaarea, nodeLength=2.5, nodeDiameter=2.0, eleak=-65):
-        v_potassium = -80  # potassium reversal potential
-        v_sodium = 50  # sodium reversal potential
-        Ra = 150
+    def loadaxnodes(axnode, somaarea=None, nodeLength=1.0, nodeDiameter=2.0, eleak=-65.):
+        v_potassium = -90  # potassium reversal potential
+        v_sodium = 55  # sodium reversal potential
+        Ra = 70
         cm = 1.0
-        axnode.nseg = 1
+        axnode.nseg = 3
         axnode.L = nodeLength
         axnode.diam = nodeDiameter
         axnode.Ra = Ra
         axnode.cm = cm
-        axnode.insert('nacn')
+        axnode.insert('nacncoop')
         axnode.insert('kht')
         axnode.insert('klt')
         axnode.insert('leak')
         axnode.insert('ihvcn')
         for ax in axnode:
-            ax.nacn.gbar = nstomho(1000.0, somaarea)
-            ax.kht.gbar = nstomho(150.0, somaarea)
-            ax.klt.gbar = nstomho(200.0, somaarea)
+            ax.nacncoop.gbar = 588e-3 # nstomho(400.0, somaarea)
+            ax.kht.gbar = 0.e-3#nstomho(50.0, somaarea)
+            ax.klt.gbar = 80.e-3 # nstomho(10.0, somaarea)
             ax.ihvcn.gbar = 0
-            ax.leak.gbar = nstomho(2.0, somaarea)
+            ax.leak.gbar = 1.75e-3 #nstomho(1.0, somaarea)
             ax.ena = v_sodium
             ax.ek = v_potassium
             ax.leak.erev = eleak
         return axnode
 
     @staticmethod
-    def loadinternodes(internode, somaarea, internodeLength=1000, internodeDiameter=10, eleak=-65):
-        v_potassium = -80  # potassium reversal potential
+    def loadinternodes(internode, somaarea=None, internodeLength=200., internodeDiameter=3., eleak=-65.):
+        v_potassium = -90  # potassium reversal potential
         v_sodium = 50  # sodium reversal potential
-        Ra = 150
+        Ra = 70
         cm = 0.002
 
         internode.nseg = 20
@@ -1151,14 +1185,14 @@ class Cell(object):
         internode.diam = internodeDiameter
         internode.Ra = Ra
         internode.cm = cm
-        internode.insert('nacn')
-        internode.insert('kht')
+        # internode.insert('nacn')
+        # internode.insert('kht')
         internode.insert('leak')
         for inno in internode:
-            inno.leak.gbar = nstomho(0.002, somaarea)
-            inno.nacn.gbar = 0 * nstomho(500.0, somaarea)
-            inno.kht.gbar = 0 * nstomho(150.0, somaarea)
-            inno.ek = v_potassium
-            inno.ena = v_sodium
+            inno.leak.gbar = 1e-4 # nstomho(0.002, somaarea)
+            # inno.nacn.gbar = 0 # * nstomho(10.0, somaarea)
+            # inno.kht.gbar = 0 # * nstomho(150.0, somaarea)
+            # inno.ek = v_potassium
+            # inno.ena = v_sodium
             inno.leak.erev = eleak
         return internode
