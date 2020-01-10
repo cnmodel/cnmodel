@@ -253,107 +253,15 @@ class PyramidalKanold(Pyramidal, Cell):
             soma().ek = self.pars.soma_e_k
             soma().ihpyr.eh = self.pars.soma_e_h
 
-        # elif species in 'rat' and modelType == 'II':
-        #     """
-        #     Modified canonical K&M2001 model cell
-        #     In this model version, the specific membrane capacitance is modified
-        #     so that the overall membrane time constant is consistent with experimental
-        #     measures in slices. However, this is not a physiological value. Attempts
-        #     to use the normal 1 uF/cm2 value were unsuccessful in establishing the expected
-        #     ~12 msec time constant.
-        #     This model also adds a KCNQ channel, as described by Li et al., 2012.
-        #     """
-        #     self.c_m = 6.0
-        #     self.set_soma_size_from_Diam(30.0)
-        #     # self.set_soma_size_from_Cm(80.0)
-        #     # print 'diameter: %7.1f' % self.soma.diam
-        #     self._valid_temperatures = (34.,)
-        #     if self.status['temperature'] is None:
-        #         self.set_temperature(34.)
-        #     self.refarea = self.somaarea
-        #     soma().napyr.gbar = nstomho(550, self.refarea)
-        #     soma().nap.gbar = nstomho(60.0, self.refarea)
-        #     soma().kcnq.gbar = nstomho(2, self.refarea)  # pyramidal cells have kcnq: Li et al, 2011 (Thanos)
-        #     soma().kdpyr.gbar = nstomho(180, self.refarea) # Normally 80.
-        #     soma().kif.gbar = nstomho(150, self.refarea) # normally 150
-        #     soma().kis.gbar = nstomho(40, self.refarea) # 40
-        #     soma().ihpyr.gbar = nstomho(2.8, self.refarea)
-        #     soma().leak.gbar = nstomho(0.5, self.refarea)
-        #     soma().leak.erev = -62.  # override default values in cell.py
-        #     soma().ena = 50.0
-        #     soma().ek = -81.5
-        #     soma().ihpyr.eh = -43
-        #     if not self.status['dendrites']:
-        #         self.add_dendrites()
-
         else:
             raise ValueError(f"Species {self.status['species']:s} or species-type {self.status['modelType']:s} is not recognized for T-stellate cells")
 
-#        self.cell_initialize(showinfo=True)
         self.check_temperature()
         if not silent:
             print(f"Set cell as: {self.status['species']:s}, {self.status['modelType']:s}")
             print(self.status)
             for m in self.mechanisms:
                 print('%s.gbar = %f' % (m, eval('soma().%s.gbar' % m)))
-
-    def _ghk(self, V, ci, co, Z, mc):
-        """
-        GHK equation - duplicate what is in .mod file
-        """
-        F = 9.6485e4 #  (coul)
-        R = 8.3145 # (joule/degC)
-        T = h.celsius + 273.19  # Kelvin
-        E = (1e-3) * V
-        Ci = ci + (mc.monovalPerm) * (mc.monovalConc)        ##Monovalent permeability
-        if (np.fabs(1.0-np.exp(-Z*(F*E)/(R*T))) < 1e-6): # denominator is small -> Taylor series
-            ghk = (1e-6) * Z * F * (Ci-co*np.exp(-z*(F*E)/(R*T)))*(1-(z*(F*E)/(R*T)))
-        else:
-            ghk = (1e-6) * Z**2*(E*F**2)/(R*T)*(Ci-co*np.exp(-Z*(F*E)/(R*T)))/(1-np.exp(-Z*(F*E)/(R*T)))
-        return ghk
-    
-    def i_currents(self, V):
-        """
-        For the steady-state case, return the total current at voltage V
-        Used to find the zero current point
-        vrange brackets the interval
-        Overrides i_currents in cells.py because we have a different set of currents
-        to compute.
-        """
-        for part in self.all_sections.keys():
-            for sec in self.all_sections[part]:
-                sec.v = V
-        h.celsius = self.status['temperature']
-        h.finitialize()
-        self.ix = {}
-
-        if 'napyr' in self.mechanisms:
-             self.ix['napyr'] = self.soma().napyr.gna*(V - self.soma().ena)
-        # if 'nap' in self.mechanisms:
-        #      self.ix['nap'] = self.soma().nap.gnap*(V - self.soma().ena)
-        # if 'cap' in self.mechanisms:
-        #      mc = self.soma().cap
-        #      self.ix['cap'] =mc.pcabar*mc.m*self._ghk(V, self.soma().cai, self.soma().cao, 2, mc) # (V - self.soma().ena)
-        if 'kdpyr' in self.mechanisms:
-             self.ix['kdpyr'] = self.soma().kdpyr.gk*(V - self.soma().ek)
-        if 'kif' in self.mechanisms:
-             self.ix['kif'] = self.soma().kif.gkif*(V - self.soma().ek)
-        if 'kis' in self.mechanisms:
-             self.ix['kis'] = self.soma().kis.gkis*(V - self.soma().ek)
-        # if 'kcnq' in self.mechanisms:
-        #      self.ix['kcnq'] = self.soma().kcnq.gk*(V - self.soma().ek)
-        # if 'kpksk' in self.mechanisms:
-        #      self.ix['kpksk'] = self.soma().kpksk.gk*(V - self.soma().ek)
-        # if 'kir' in self.mechanisms:
-        #      self.ix['kir'] = self.soma().kir.gk*(V - self.soma().ek)
-        if 'ihpyr' in self.mechanisms:
-             self.ix['ihpyr'] = self.soma().ihpyr.gh*(V - self.soma().ihpyr.eh)
-        # if 'ihpyr_adj' in self.mechanisms:
-        #      self.ix['ihpyr_adj'] = self.soma().ihpyr_adj.gh*(V - self.soma().ihpyr_adj.eh)
-        # leak
-        if 'leak' in self.mechanisms:
-            self.ix['leak'] = self.soma().leak.gbar*(V - self.soma().leak.erev)
-        return np.sum([self.ix[i] for i in self.ix])
 
     def add_dendrites(self):
         """
@@ -469,7 +377,7 @@ class PyramidalCeballos(Pyramidal, Cell):
 
         # decorate the morphology with ion channels
         if decorator is None:   # basic model, only on the soma
-            self.mechanisms = ['napyr', 'kdpyr', 'kif', 'kis', 'ihpyr', 'leak', 'kcnq', 'kir', 'nap', 'kpksk', 'cap']
+            self.mechanisms = ['napyr', 'nappyr', 'kdpyr', 'kif', 'kis', 'kcnq', 'kir', 'ihpyr', 'leak']
             for mech in self.mechanisms:
                 try:
                     self.soma.insert(mech)
@@ -491,9 +399,10 @@ class PyramidalCeballos(Pyramidal, Cell):
         chtype = data.get(dataset, species=species, model_type=modelType,
             field='soma_natype')
         pars = Params(cap=cellcap, natype=chtype)
-        for g in ['soma_napyr_gbar', 'soma_kdpyr_gbar', 'soma_kif_gbar', 'soma_kis_gbar',
-                  'soma_kcnq_gbar', 'soma_kir_gbar', 'soma_kpksk_gbar', 'soma_cap_pcabar',
-                  'soma_nap_gbar', 'soma_ihpyr_gbar', 'soma_leak_gbar',
+        for g in ['soma_napyr_gbar', 'soma_nappyr_gbar', 
+                  'soma_kdpyr_gbar', 'soma_kif_gbar', 'soma_kis_gbar',
+                  'soma_kcnq_gbar', 'soma_kir_gbar', 'soma_ihpyr_gbar', 
+                  'soma_leak_gbar',
                   'soma_e_h','soma_leak_erev', 'soma_e_k', 'soma_e_na']:
             pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
             field=g))
@@ -532,16 +441,16 @@ class PyramidalCeballos(Pyramidal, Cell):
             if self.status['temperature'] is None:
               self.set_temperature(34.)
             self.i_test_range = {'pulse': (-0.3, 0.401, 0.02)}
-            self.vrange = [-75., -60.]
+            self.vrange = [-75., -55.]
             self.set_soma_size_from_Cm(self.pars.cap)
             soma().napyr.gbar = nstomho(self.pars.soma_napyr_gbar, self.somaarea)
-            soma().nap.gbar = nstomho(self.pars.soma_nap_gbar, self.somaarea) # does not exist in canonical model
+            soma().nappyr.gbar = nstomho(self.pars.soma_nappyr_gbar, self.somaarea) # does not exist in canonical model
             soma().kdpyr.gbar = nstomho(self.pars.soma_kdpyr_gbar, self.somaarea)
-            soma().kcnq.gbar = nstomho(self.pars.soma_kcnq_gbar, self.somaarea) # does not exist in canonical model.
-            soma().kpksk.gbar = nstomho(self.pars.soma_kpksk_gbar, self.somaarea) # does not exist in canonical model.
-            soma().kir.gbar = nstomho(self.pars.soma_kir_gbar, self.somaarea)
             soma().kif.gbar = nstomho(self.pars.soma_kif_gbar, self.somaarea)
             soma().kis.gbar = nstomho(self.pars.soma_kis_gbar, self.somaarea)
+            soma().kcnq.gbar = nstomho(self.pars.soma_kcnq_gbar, self.somaarea) # does not exist in canonical model.
+            # soma().kpksk.gbar = nstomho(self.pars.soma_kpksk_gbar, self.somaarea) # does not exist in canonical model.
+            soma().kir.gbar = nstomho(self.pars.soma_kir_gbar, self.somaarea)
             soma().ihpyr.gbar = nstomho(self.pars.soma_ihpyr_gbar, self.somaarea)
 #            soma().ihpyr_adj.q10 = 3.0  # no temp scaling to sta
             soma().leak.gbar = nstomho(self.pars.soma_leak_gbar, self.somaarea)
@@ -550,43 +459,9 @@ class PyramidalCeballos(Pyramidal, Cell):
             soma().ek = self.pars.soma_e_k
             soma().ihpyr.eh = self.pars.soma_e_h
 
-        # elif species in 'rat' and modelType == 'II':
-        #     """
-        #     Modified canonical K&M2001 model cell
-        #     In this model version, the specific membrane capacitance is modified
-        #     so that the overall membrane time constant is consistent with experimental
-        #     measures in slices. However, this is not a physiological value. Attempts
-        #     to use the normal 1 uF/cm2 value were unsuccessful in establishing the expected
-        #     ~12 msec time constant.
-        #     This model also adds a KCNQ channel, as described by Li et al., 2012.
-        #     """
-        #     self.c_m = 6.0
-        #     self.set_soma_size_from_Diam(30.0)
-        #     # self.set_soma_size_from_Cm(80.0)
-        #     # print 'diameter: %7.1f' % self.soma.diam
-        #     self._valid_temperatures = (34.,)
-        #     if self.status['temperature'] is None:
-        #         self.set_temperature(34.)
-        #     self.refarea = self.somaarea
-        #     soma().napyr.gbar = nstomho(550, self.refarea)
-        #     soma().nap.gbar = nstomho(60.0, self.refarea)
-        #     soma().kcnq.gbar = nstomho(2, self.refarea)  # pyramidal cells have kcnq: Li et al, 2011 (Thanos)
-        #     soma().kdpyr.gbar = nstomho(180, self.refarea) # Normally 80.
-        #     soma().kif.gbar = nstomho(150, self.refarea) # normally 150
-        #     soma().kis.gbar = nstomho(40, self.refarea) # 40
-        #     soma().ihpyr.gbar = nstomho(2.8, self.refarea)
-        #     soma().leak.gbar = nstomho(0.5, self.refarea)
-        #     soma().leak.erev = -62.  # override default values in cell.py
-        #     soma().ena = 50.0
-        #     soma().ek = -81.5
-        #     soma().ihpyr.eh = -43
-        #     if not self.status['dendrites']:
-        #         self.add_dendrites()
-
         else:
             raise ValueError(f"Species {self.status['species']:s} or species-type {self.status['modelType']:s} is not recognized for T-stellate cells")
 
-#        self.cell_initialize(showinfo=True)
         self.check_temperature()
         if not silent:
             print(f"Set cell as: {self.status['species']:s}, {self.status['modelType']:s}")
@@ -594,93 +469,3 @@ class PyramidalCeballos(Pyramidal, Cell):
             for m in self.mechanisms:
                 print('%s.gbar = %f' % (m, eval('soma().%s.gbar' % m)))
 
-    def _ghk(self, V, ci, co, Z, mc):
-        """
-        GHK equation - duplicate what is in .mod file
-        """
-        F = 9.6485e4 #  (coul)
-        R = 8.3145 # (joule/degC)
-        T = h.celsius + 273.19  # Kelvin
-        E = (1e-3) * V
-        Ci = ci + (mc.monovalPerm) * (mc.monovalConc)        ##Monovalent permeability
-        if (np.fabs(1.0-np.exp(-Z*(F*E)/(R*T))) < 1e-6): # denominator is small -> Taylor series
-            ghk = (1e-6) * Z * F * (Ci-co*np.exp(-z*(F*E)/(R*T)))*(1-(z*(F*E)/(R*T)))
-        else:
-            ghk = (1e-6) * Z**2*(E*F**2)/(R*T)*(Ci-co*np.exp(-Z*(F*E)/(R*T)))/(1-np.exp(-Z*(F*E)/(R*T)))
-        return ghk
-    
-    def i_currents(self, V):
-        """
-        For the steady-state case, return the total current at voltage V
-        Used to find the zero current point
-        vrange brackets the interval
-        Overrides i_currents in cells.py because we have a different set of currents
-        to compute.
-        """
-        for part in self.all_sections.keys():
-            for sec in self.all_sections[part]:
-                sec.v = V
-        h.celsius = self.status['temperature']
-        h.finitialize()
-        self.ix = {}
-
-        if 'napyr' in self.mechanisms:
-             self.ix['napyr'] = self.soma().napyr.gna*(V - self.soma().ena)
-        if 'nap' in self.mechanisms:
-             self.ix['nap'] = self.soma().nap.gnap*(V - self.soma().ena)
-        if 'cap' in self.mechanisms:
-             mc = self.soma().cap
-             self.ix['cap'] =mc.pcabar*mc.m*self._ghk(V, self.soma().cai, self.soma().cao, 2, mc) # (V - self.soma().ena)
-        if 'kdpyr' in self.mechanisms:
-             self.ix['kdpyr'] = self.soma().kdpyr.gk*(V - self.soma().ek)
-        if 'kif' in self.mechanisms:
-             self.ix['kif'] = self.soma().kif.gkif*(V - self.soma().ek)
-        if 'kis' in self.mechanisms:
-             self.ix['kis'] = self.soma().kis.gkis*(V - self.soma().ek)
-        if 'kcnq' in self.mechanisms:
-             self.ix['kcnq'] = self.soma().kcnq.gk*(V - self.soma().ek)
-        if 'kpksk' in self.mechanisms:
-             self.ix['kpksk'] = self.soma().kpksk.gk*(V - self.soma().ek)
-        if 'kir' in self.mechanisms:
-             self.ix['kir'] = self.soma().kir.gk*(V - self.soma().ek)
-        if 'ihpyr' in self.mechanisms:
-             self.ix['ihpyr'] = self.soma().ihpyr.gh*(V - self.soma().ihpyr.eh)
-        if 'ihpyr_adj' in self.mechanisms:
-             self.ix['ihpyr_adj'] = self.soma().ihpyr_adj.gh*(V - self.soma().ihpyr_adj.eh)
-        # leak
-        if 'leak' in self.mechanisms:
-            self.ix['leak'] = self.soma().leak.gbar*(V - self.soma().leak.erev)
-        return np.sum([self.ix[i] for i in self.ix])
-
-    def add_dendrites(self):
-        """
-        Add simple unbranched dendrite.
-        The dendrites have some kd, kif and ih current
-        """
-        nDend = range(2) # these will be simple, unbranced, N=4 dendrites
-        dendrites=[]
-        for i in nDend:
-            dendrites.append(h.Section(cell=self.soma))
-        for i in nDend:
-            dendrites[i].connect(self.soma)
-            dendrites[i].L = 250 # length of the dendrite (not tapered)
-            dendrites[i].diam = 1
-            dendrites[i].cm = self.c_m
-            #h('dendrites[i].diam(0:1) = 2:1') # dendrite diameter, with tapering
-            dendrites[i].nseg = 21 # # segments in dendrites
-            dendrites[i].Ra = 150 # ohm.cm
-            dendrites[i].insert('napyr')
-            dendrites[i]().napyr.gbar = 0.00
-            dendrites[i].insert('kdpyr')
-            dendrites[i]().kdpyr.gbar = 0.002 # a little Ht
-            dendrites[i].insert('kif')
-            dendrites[i]().kif.gbar = 0.0001 # a little Ht
-            dendrites[i].insert('leak') # leak
-            dendrites[i]().leak.gbar = 0.00001
-            dendrites[i].insert('ihpyr_adj') # some H current
-            dendrites[i]().ihvcn.gbar =  0. # 0.00002
-            dendrites[i]().ihvcn.eh = -43.0
-        self.maindend = dendrites
-        self.status['dendrites'] = True
-        self.add_section(self.maindend, 'maindend')
-    
