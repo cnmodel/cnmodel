@@ -1,8 +1,8 @@
 TITLE KCNQ potassium channel for GPe neuron
 
 COMMENT
- modeled by Gunay et al., 2008
- implemented in NEURON by Kitano, 2011
+modeled by Gunay et al., 2008
+implemented in NEURON by Kitano, 2011
 Threadsafe and unit checking, P.B. Manis, 2014
 
  ENDCOMMENT
