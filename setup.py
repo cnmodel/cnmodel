@@ -13,11 +13,32 @@ if version is None:
 
 setup(name='cnmodel',
       version=version,
-      description='A biophysically realistic model of the cochlear nucleus',
+      description='A biophysically realistic model of cochlear nucleus neurons and other neurons',
       url='http://github.com/pbmanis/cnmodel',
       author='Paul B. Manis and Luke Campagnola',
       author_email='pmanis@med.unc.edu',
       license='MIT',
       packages=find_packages(include=['cnmodel*']),
-      zip_safe=False)
+      install_requires=['matplotlib>=3.0', 'numpy>=1.1',
+          ],
+      entry_points={
+          'console_scripts': [
+               'CNtoy_model=examples.toy_model:main',
+               'CNtest_cells=examples.test_cells:main',
+               'CNunittests=test:main',
+               ],
+
+      },
+      zip_safe=False,
+      classifiers = [
+             "Programming Language :: Python :: 3.6+",
+             "Development Status ::  Beta",
+             "Environment :: Console",
+             "Intended Audience :: Neuroscientists, computational",
+             "License :: MIT",
+             "Operating System :: OS Independent",
+             "Topic :: Software Development :: Tools :: Python Modules",
+             "Topic :: Computational Modeling :: Neuroscience",
+             ],
+      )
       

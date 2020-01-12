@@ -223,11 +223,13 @@ class Toy(Protocol):
             print('{0:>14s} [{1:>24s}]   *** Rin = {2:6.1f} M\ohm  Tau = {3:6.1f} ms   Vm = {4:6.1f} mV'.
                 format(nrn_cell.status['name'], name, pars['Rin'], pars['tau'], pars['v']))
 
-
-if __name__ == "__main__":
+def main():
     t=Toy()
     t.run()
     if sys.flags.interactive == 0:
         pg.QtGui.QApplication.exec_()
+    
+if __name__ == "__main__":
+    main()
     # exporter = pg.exporters.ImageExporter(t.win.scene())
     # exporter.export('~/Desktop/Model_Figure2.svg')
