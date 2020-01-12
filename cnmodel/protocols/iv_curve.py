@@ -21,6 +21,7 @@ from .protocol import Protocol
 class IVCurve(Protocol):
     def __init__(self):
         super(IVCurve, self).__init__()
+        self.reset()
     
     def reset(self):
         super(IVCurve, self).reset()
@@ -28,12 +29,13 @@ class IVCurve(Protocol):
         self.durs = None  # durations of current steps
         self.current_cmd = None # Current command levels
         self.current_traces = []
+        self.axon_voltage_traces = None
         self.time_values = None
         self.dt = None
         self.initdelay = 0.
         
     def run(self, ivrange, cell, durs=None, sites=None, reppulse=None, temp=22,
-            dt=0.025, initdelay=0.):
+            dt=0.025, initdelay=0., stimdict=None):
         """
         Run a current-clamp I/V curve on *cell*.
         
@@ -63,6 +65,16 @@ class IVCurve(Protocol):
             temperature of simulation (32)
         dt : 
             timestep of simulation (0.025)
+        stim: dict
+            a dict with:
+            stimdict = {
+                'NP': 10,
+                'Sfreq': 400.0,
+                'delay': 10.0,
+                'dur': 1.0,
+                'amp': 1.0,
+                'PT': 0.0,
+            }
             
         """
         # print('iv_curve:run')
@@ -112,16 +124,19 @@ class IVCurve(Protocol):
         
         self.durs = durs
         # set up stimulation with a pulse train
-        if reppulse is not None:
+        if reppulse is not None and stimdict is None:
             stim = {
                 'NP': 10,
-                'Sfreq': 50.0,
+                'Sfreq': 400.0,
                 'delay': 10.0,
-                'dur': 2,
+                'dur': 1.0,
                 'amp': 1.0,
                 'PT': 0.0,
                 'dt': self.dt,
                 }
+        elif stimdict is not None:
+            stim = stimdict
+            stim['dt'] = self.dt
         elif 'prepulse' in ivrange.keys():
             stim = {
                 'NP': 2,
@@ -146,6 +161,7 @@ class IVCurve(Protocol):
             self.p_start = durs[0]
             self.p_end = self.p_start + durs[1]
             self.p_dur = durs[1]
+
         # print stim
         # print('p_: ', self.p_start, self.p_end, self.p_dur)
         istim = h.iStim(0.5, sec=cell.soma)
@@ -153,6 +169,7 @@ class IVCurve(Protocol):
         istim.dur = 1e9 # these actually do not matter...
         istim.iMax = 0.0
         self.tend = np.sum(durs) # maxt + len(iextend)*stim['dt']
+        self.axon_voltage_traces = []
 
         self.cell = cell
         for i in range(nsteps):
@@ -161,11 +178,11 @@ class IVCurve(Protocol):
             if npresteps > 0:
                 for j in range(npresteps):
                     stim['preamp'] = self.pre_current_cmd[j]
-                    self.run_one(istim, stim, initflag=(i==0 and j==0))
+                    self.run_one(istim, stim, initflag=(i==0 and j==0), sites=sites)
             else:
-                self.run_one(istim, stim, initflag=(i==0))
+                self.run_one(istim, stim, initflag=(i==0), sites=sites)
         
-    def run_one(self, istim, stim, initflag=True):
+    def run_one(self, istim, stim, initflag=True, sites=None):
         """
         Perform one run in current-clamp for the selected cell
         and add the data to the traces
@@ -177,6 +194,7 @@ class IVCurve(Protocol):
         initflag : boolean (default: True)
             If true, force initialziation of the cell and computation of 
             point Rin, tau and Vm
+        sites : list of sections to monitor in addition to the soma
         """
         # print('iv_curve:run_one')
         (secmd, maxt, tstims) = make_pulse(stim)
@@ -193,7 +211,10 @@ class IVCurve(Protocol):
         # self['ih_ntau'] = self.cell.soma(0.5).ihpyr_adj._ref_kh_n_tau
         self['i_inj'] = istim._ref_i
         self['time'] = h._ref_t
-
+        if sites is not None:
+            recvec = [h.Vector() for x in sites]
+            for i, r in enumerate(recvec):
+                r.record(sites[i](0.5)._ref_v, h.dt, 0, sec=sites[i])
         # h('secondorder=0')  # direct call fails; let hoc do the work
         h.celsius = self.cell.status['temperature']
         # print("iv_curve:run_one:calling cell_initialize")
@@ -210,6 +231,11 @@ class IVCurve(Protocol):
         self.voltage_traces.append(self['v_soma'])
         self.current_traces.append(self['i_inj'])
         self.time_values = np.array(self['time']-self.initdelay)
+        if sites is not None:
+            for i, r in enumerate(recvec):
+                print('r2: ', np.array(recvec[i]))
+            self.axon_voltage_traces.append(np.array(recvec.copy()))
+            print('# axon site traces: ', len(self.axon_voltage_traces))
         # self.mon_q10 = np.array(self['q10'])
         # self.mon_ih_ntau = np.array(self['ih_ntau'])
 
@@ -509,15 +535,19 @@ class IVCurve(Protocol):
         Vm = self.voltage_traces
         Iinj = self.current_traces
         Icmd = self.current_cmd
+        DVm = self.axon_voltage_traces
         t = self.time_values
         steps = len(Icmd)
 
-    
         # plot I, V traces
         colors = [(i, steps*3./2.) for i in range(steps)]
         for i in range(steps):
             Vplot.plot(t, Vm[i], pen=colors[i])
             Iplot.plot(t, Iinj[i], pen=colors[i])
+            if len(DVm) == 0:
+                continue
+            for j in range(len(DVm[i])):  # for each site
+                Vplot.plot(t, DVm[i][j], pen='w')
 
         if rmponly:
             return

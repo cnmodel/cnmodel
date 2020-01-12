@@ -910,14 +910,11 @@ class Cell(object):
         The voltage at which I = 0 in the vrange specified
         """
         if vrange is None:
-             print('vrange set to default')
              vrange = self.vrange
         else:
+            pass
             print('vrange passed: ', vrange)
-        # print( vrange)
-        # print (self.i_currents(V=vrange[0]), self.i_currents(V=vrange[1]))
         # v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1], maxiter=10000)
-        # print( 'v0: ', v0)
         i0 = self.i_currents(V=vrange[0])
         try:
             v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1], maxiter=10000)
