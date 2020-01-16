@@ -118,7 +118,6 @@ class Bushy(Cell):
             else:
                 raise NotImplementedError("No knowledge as to how to connect Bushy cell to cell type %s" %
                                         type(post_cell))
-            pre_sec = self.soma
             return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones,  spike_source=self.spike_source,
                                             delay=delay, **kwds)
         else:
