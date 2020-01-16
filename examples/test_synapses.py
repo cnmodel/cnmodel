@@ -137,7 +137,10 @@ def runtest():
     st.plots['latency_distribution'].setYRange(0., 1.0)
     return st  # need to keep st alive in memory
 
-if __name__ == '__main__':
+def main():
     st = runtest()
     if sys.flags.interactive == 0:
         pg.QtGui.QApplication.exec_()
+    
+if __name__ == '__main__':
+    main()
