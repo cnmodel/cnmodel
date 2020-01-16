@@ -324,23 +324,6 @@ class Cell(object):
         self.decorated.channelValidate(self, verify=False)
         self.mechanisms = self.hr.mechanisms  # copy out all of the mechanisms that were inserted
 
-    # def channel_manager(self, modelType='RM03'):
-    #     """
-    #     Every cell class should have a channel manager if it is set up to handle morphology.
-    #     This function should be overridden in the class with an appropriate routine that
-    #     builds the dictionary needed to decorate the cell. See the bushy cell class for
-    #     an example.
-    #
-    #     Parameters
-    #     ----------
-    #     modelType : string (default: 'RM03')
-    #          A string that identifies what type of model the channel manager will implement.
-    #          This may be used to define different kinds of channels, or channel densities
-    #          and compartmental placement for different cells.
-    #     """
-    #     raise NotImplementedError("No channel manager exists for cells of the class: %s" %
-    #                               (self.__class__.__name__))
-
     def connect(self, post_cell, pre_opts=None, post_opts=None, **kwds):
         r"""
         Create a new synapse connecting this cell to a postsynaptic cell. 
@@ -1076,7 +1059,7 @@ class Cell(object):
     def add_axon(self, c_m=1.0, R_a=150, axonsf=1.0, nodes=5, debug=False, 
         internodeDiameter=None, internodeLength=None, 
         nodeDiameter=None, nodeLength=None, seg=None,
-        internodeELeak=-65, nodeELeak=-65):
+        internodeELeak=-65, nodeELeak=-65, natype='nacn'):
         """
         Add an axon to the soma with an initial segment (tapered), and multiple nodes of Ranvier
         The size of the axon is determined by self.axonsf, which in turn is set by the species
@@ -1090,10 +1073,12 @@ class Cell(object):
         initsegment.connect(self.soma)
         for i in nnodes:
             axnode.append(Section(cell=self.soma))
-            internode.append(Section(cell=self.soma))
+            if i < nodes-1:
+                internode.append(Section(cell=self.soma))
         axnode[0].connect(initsegment)
         for i in nnodes:
-            internode[i].connect(axnode[i])
+            if i < nodes-1:
+                internode[i].connect(axnode[i])
             if i < nnodes[-1]:
                 axnode[i + 1].connect(internode[i])
 
@@ -1104,12 +1089,22 @@ class Cell(object):
         initsegment.L = 36.0 * axonsf
         initsegment.cm = c_m # c_m
         initsegment.Ra = R_a # R_a
-        initsegment.insert('nacn')  # uses a standard Rothman sodium channel
+        if natype == 'nacn':
+            initsegment.insert('nacn')  # uses a standard Rothman sodium channel
+        if natype == 'nacncoop':
+            initsegment.insert('nacncoop')  # uses a standard Rothman sodium channel
+        if natype == 'nav11':
+            initsegment.insert('nav11')
+        if natype == 'nacsh':
+            initsegment.insert('nacsh')
         initsegment.insert('kht')
         initsegment.insert('klt')
         initsegment.insert('ihvcn')
         initsegment.insert('leak')
-        gnamax = nstomho(6000.0, self.somaarea)
+        gmaxes = {'nacn': 1500e-3, 'nacncoop': 1500.e-3, 'nav11': 1500.e-3,
+             'nacsh': 45.}
+            # nstomho(6000.0, self.somaarea)
+        gnamax = gmaxes[natype]
         gnamin = 0.0 * gnamax
 
         gnastep = (gnamax - gnamin) / ninitseg  # taper sodium channel density
@@ -1117,7 +1112,16 @@ class Cell(object):
             gna = gnamin + ip * gnastep
             if debug:
                 print('Initial segment %d: gnabar = %9.6f' % (ip, gna))
-            inseg.nacn.gbar = gna
+            if natype == 'nacn':
+                inseg.nacn.gbar = gna
+            if natype == 'nacncoop':
+                inseg.nacncoop.gbar = gna
+            if natype == 'nav11':
+                inseg.nav11.gbar = gna
+            if natype == 'nacsh':
+                inseg.nacsh.gbar = gna
+                # inseg.nacsh.vShift = 0.
+                # inseg.nacsh.vShift_inact = 0.
             inseg.klt.gbar = 0.2 * nstomho(20.0, self.somaarea)
             inseg.kht.gbar = nstomho(150.0, self.somaarea)
             inseg.ihvcn.gbar = 0.0 * nstomho(20.0, self.somaarea)
@@ -1128,10 +1132,17 @@ class Cell(object):
 
         for i in nnodes:
             axnode[i] = self.loadaxnodes(axnode[i], self.somaarea, eleak=nodeELeak,
-                nodeDiameter=nodeDiameter, nodeLength=nodeLength)
-            internode[i] = self.loadinternodes(internode[i], self.somaarea, eleak=internodeELeak,
-                internodeLength=internodeLength, internodeDiameter=internodeDiameter)
-
+                nodeDiameter=nodeDiameter, nodeLength=nodeLength, natype=natype)
+            if i < nodes-1:
+                internode[i] = self.loadinternodes(internode[i], self.somaarea, eleak=internodeELeak,
+                internodeLength=internodeLength, internodeDiameter=internodeDiameter, natype=natype)
+        axnode[-1].insert('CaPCalyx')
+        axnode[-1].insert('cadiff')
+        for ax in axnode[-1]:
+            ax.CaPCalyx.gbar = 1e-3
+            # if i == max(nnodes)-1:
+            #     self.print_mechs(internode[-1])
+            #
         if debug:
             print("<< {:s} Axon Added >>".format(self.__class__.__name__))
             h.topology()
@@ -1143,8 +1154,7 @@ class Cell(object):
         self.internode = internode
         
 
-    @staticmethod
-    def loadaxnodes(axnode, somaarea=None, nodeLength=1.0, nodeDiameter=2.0, eleak=-65.):
+    def loadaxnodes(self, axnode, somaarea=None, nodeLength=1.0, nodeDiameter=2.0, eleak=-75., natype='nacn'):
         v_potassium = -90  # potassium reversal potential
         v_sodium = 55  # sodium reversal potential
         Ra = 70
@@ -1154,30 +1164,46 @@ class Cell(object):
         axnode.diam = nodeDiameter
         axnode.Ra = Ra
         axnode.cm = cm
-        axnode.insert('nacncoop')
+        if natype == 'nacn':
+            axnode.insert('nacn')  # uses a standard Rothman sodium channel
+        if natype == 'nacncoop':
+            axnode.insert('nacncoop')  # uses a standard Rothman sodium channel
+        if natype == 'nav11':
+            axnode.insert('nav11')
+        if natype == 'nacsh':
+            axnode.insert('nacsh')
         axnode.insert('kht')
         axnode.insert('klt')
         axnode.insert('leak')
         axnode.insert('ihvcn')
+        axnode.insert('kcnq')
         for ax in axnode:
-            ax.nacncoop.gbar = 588e-3 # nstomho(400.0, somaarea)
-            ax.kht.gbar = 0.e-3#nstomho(50.0, somaarea)
-            ax.klt.gbar = 80.e-3 # nstomho(10.0, somaarea)
+            if natype == 'nacn':
+                ax.nacn.gbar = 1500e-3 # 588e-3 # nstomho(400.0, somaarea)
+            if natype == 'nav11':
+                ax.nav11.gbar = 3500e-3 # 588e-3 # nstomho(400.0, somaarea)
+            if natype == 'nacsh':
+                ax.nacsh.gbar = 5000. # 588e-3 # nstomho(400.0, somaarea)
+            if natype == 'nacncoop':
+                ax.nacncoop.gbar = 500e-3 # 588e-3 # nstomho(400.0, somaarea)
+            ax.kht.gbar = 0. # 20.e-3#nstomho(50.0, somaarea)
+            ax.klt.gbar = 80.e-3 # 40.e-3 # nstomho(10.0, somaarea)
             ax.ihvcn.gbar = 0
-            ax.leak.gbar = 1.75e-3 #nstomho(1.0, somaarea)
+            ax.kcnq.gbar = 100e-3
+            ax.leak.gbar = 1.75e-4 #nstomho(1.0, somaarea)
             ax.ena = v_sodium
             ax.ek = v_potassium
             ax.leak.erev = eleak
         return axnode
 
-    @staticmethod
-    def loadinternodes(internode, somaarea=None, internodeLength=200., internodeDiameter=3., eleak=-65.):
+
+    def loadinternodes(self, internode, somaarea=None, internodeLength=200., internodeDiameter=3., eleak=-75., natype='nacn'):
         v_potassium = -90  # potassium reversal potential
         v_sodium = 50  # sodium reversal potential
         Ra = 70
         cm = 0.002
-
-        internode.nseg = 20
+        
+        internode.nseg = 11
         internode.L = internodeLength
         internode.diam = internodeDiameter
         internode.Ra = Ra
