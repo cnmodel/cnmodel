@@ -18,8 +18,8 @@ class StochasticTerminal(Terminal):
     """
     def __init__(self, pre_sec, target_cell, nzones=1, multisite=True, 
                  message=None, type='lognormal', identifier=0,
-                 stochastic_pars=None, calcium_pars=None, delay=0, debug=False,
-                 select=None, spike_source=None, dep_flag=1):
+                 stochastic_pars=None, calcium_pars=None, delay=0., debug=False,
+                 select=None, spike_source=None, spike_section=None, dep_flag=1):
         """
         This routine creates a (potentially) multisite synapse using a NEURON mod file with:
             - A MultiSiteSynapse release mechanism that includes stochastic release, with a lognormal
@@ -102,7 +102,7 @@ class StochasticTerminal(Terminal):
         if stochastic_pars is None:
             stochastic_pars = vPars
             
-        message='  >> creating terminal with %d release zones using lognormal release latencies (coh4)' % nzones
+        message='  >> creating StochasticTerminal with %d release zones using lognormal release latencies' % nzones
         if debug:
             print(message)
         terminal = pre_sec
@@ -168,11 +168,14 @@ class StochasticTerminal(Terminal):
             
         h.pop_section()
         self.relsite = relsite
-
+        sourcesec = pre_sec
+        if spike_section is not None:
+            sourcesec = spike_section
         if spike_source is None:
-            spike_source = pre_sec(0.5)._ref_v
-            
-        self.netcon = h.NetCon(spike_source, relsite, thresh, delay, 1.0, sec=pre_sec)
+            spike_source = sourcesec(0.5)._ref_v
+        if spike_source == 'cai':
+            spike_source = sourcesec(0.5)._ref_cai
+        self.netcon = h.NetCon(spike_source, relsite, thresh, delay, 1.0, sec=sourcesec)
         self.netcon.weight[0] = 1
         self.netcon.threshold = -30.0
 
