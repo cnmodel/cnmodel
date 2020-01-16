@@ -55,13 +55,14 @@ class SGC(Cell):
         elif term_type == 'multisite':
             n_rsites = data.get('sgc_synapse', species='mouse', post_type=post_cell.celltype,
                             field='n_rsites')
-            opts = {'nzones': n_rsites, 'delay': 0, 'dep_flag' : 1}
+            opts = {'nzones': n_rsites, 'delay': 0, 'dep_flag' : 1, 'spike_source': self.spike_source}
             opts.update(kwds)
             # when created, depflag is set True (1) so that we compute the DKR D*F to get release
             # this can be modified prior to the run by setting the terminal(s) so that dep_flag is 0
             # (no DKR: constant release probability)
             term = synapses.StochasticTerminal(pre_sec, post_cell,
-                    spike_source=self.spike_source, **opts)
+                    #spike_source=self.spike_source,
+                     **opts)
             
             kinetics = data.get('sgc_ampa_kinetics', species='mouse', post_type=post_cell.celltype,
                             field=['tau_g', 'amp_g'])
