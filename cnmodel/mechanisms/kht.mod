@@ -42,7 +42,7 @@ NEURON {
         THREADSAFE
         SUFFIX kht
         USEION k READ ek WRITE ik
-        RANGE gbar, gkht, ik, q10g
+        RANGE gbar, gkht, ik, q10g, vshift
         GLOBAL ninf, pinf, ntau, ptau
 }
 
@@ -66,6 +66,7 @@ PARAMETER {
         nf = 0.85 <0,1> :proportion of n vs p kinetics
         q10tau = 3.0
         q10g = 2.0
+        vshift = 0 (mV)
 }
 
 STATE {
@@ -98,12 +99,12 @@ DERIVATIVE states {  :Computes state variables m, h, and n
 PROCEDURE rates(v (mV)) {  :Computes rate and other constants at current v.
                       :Call once from HOC to initialize inf at resting v.
 
-    ninf =   (1 + exp(-(v + 15) / 5 (mV)))^-0.5
-    pinf =  1 / (1 + exp(-(v + 23) / 6 (mV)))
+    ninf =   (1 + exp(-(v + 15 + vshift) / 5 (mV)))^-0.5
+    pinf =  1 / (1 + exp(-(v + 23 + vshift) / 6 (mV)))
 
-    ntau =  (100 (ms)/ (11*exp((v+60) / 24 (mV)) + 21*exp(-(v+60) / 23 (mV)))) + 0.7
+    ntau =  (100 (ms)/ (11*exp((v+60+vshift) / 24 (mV)) + 21*exp(-(v+60+vshift) / 23 (mV)))) + 0.7
     ntau = ntau/q10
-    ptau = (100 (ms)/ (4*exp((v+60) / 32 (mV)) + 5*exp(-(v+60) / 22 (mV)))) + 5
+    ptau = (100 (ms)/ (4*exp((v+60+vshift) / 32 (mV)) + 5*exp(-(v+60+vshift) / 22 (mV)))) + 5
     ptau = ptau/q10
     
 }
