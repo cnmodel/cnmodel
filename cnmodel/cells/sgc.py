@@ -60,9 +60,7 @@ class SGC(Cell):
             # when created, depflag is set True (1) so that we compute the DKR D*F to get release
             # this can be modified prior to the run by setting the terminal(s) so that dep_flag is 0
             # (no DKR: constant release probability)
-            term = synapses.StochasticTerminal(pre_sec, post_cell,
-                    #spike_source=self.spike_source,
-                     **opts)
+            term = synapses.StochasticTerminal(pre_sec, post_cell, **opts)
             
             kinetics = data.get('sgc_ampa_kinetics', species='mouse', post_type=post_cell.celltype,
                             field=['tau_g', 'amp_g'])
