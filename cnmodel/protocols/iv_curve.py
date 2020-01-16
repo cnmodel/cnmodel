@@ -232,10 +232,10 @@ class IVCurve(Protocol):
         self.current_traces.append(self['i_inj'])
         self.time_values = np.array(self['time']-self.initdelay)
         if sites is not None:
-            for i, r in enumerate(recvec):
-                print('r2: ', np.array(recvec[i]))
+            # for i, r in enumerate(recvec):
+            #     print('r2: ', np.array(recvec[i]))
             self.axon_voltage_traces.append(np.array(recvec.copy()))
-            print('# axon site traces: ', len(self.axon_voltage_traces))
+            # print('# axon site traces: ', len(self.axon_voltage_traces))
         # self.mon_q10 = np.array(self['q10'])
         # self.mon_ih_ntau = np.array(self['ih_ntau'])
 
@@ -538,7 +538,6 @@ class IVCurve(Protocol):
         DVm = self.axon_voltage_traces
         t = self.time_values
         steps = len(Icmd)
-
         # plot I, V traces
         colors = [(i, steps*3./2.) for i in range(steps)]
         for i in range(steps):
@@ -546,8 +545,12 @@ class IVCurve(Protocol):
             Iplot.plot(t, Iinj[i], pen=colors[i])
             if len(DVm) == 0:
                 continue
+            nnodes = len(DVm[i])
+            axcolors = [pg.intColor(k, nnodes) for k in range(nnodes)]
             for j in range(len(DVm[i])):  # for each site
-                Vplot.plot(t, DVm[i][j], pen='w')
+                if j in range(nnodes): #[1, nnodes-1]:
+                    ilen = len(DVm[i][j])
+                    Vplot.plot(t[:ilen], DVm[i][j], pen=axcolors[j])
 
         if rmponly:
             return
