@@ -15,6 +15,7 @@ Available mechanisms::
         kis                  klt                 kpkj                kpkj2             kpkjslow
       kpksk                 leak                lkpkj                   na                naRsg
        nacn             nacncoop                  nap                napyr                nav11
+      nacsh
 
 Note: only modfiles that implement voltage-dependent ion channel models make sense to run
 with this routine. the list "nottestablemechs" in the file defines mechanisms provided
@@ -85,7 +86,7 @@ class ChannelKinetics():
         #
         self.tdur = {'CaPCalyx': [20., 10.], 
                      'nav11': [10., 5.], 'jsrna': [10., 5.], 'ichanWT2005': [10., 5.], 
-                     'nacn': [10., 5.], 'nacncoop': [10., 5.], 'nabu': [10., 5.],
+                     'nacn': [10., 5.], 'nacncoop': [10., 5.], 'nabu': [10., 5.], 'nacsh': [10., 5.],
                      'kht':[200., 20.], 'klt': [200., 20.], 'ka': [25., 5.],
                      'hcno': [1000., 200.], 'ih': [1000., 200.], 'ihvcn': [1000., 200.],'hcnobo': [1000., 200.],
                      'ihsgcBasalMiddle': [1000., 200.], 'ihsgcApical': [1000., 200.], 
@@ -118,7 +119,10 @@ class ChannelKinetics():
         tdelay = 5.0
         Channel = cnmodel.util.Mechanism(modfile)
         leak = cnmodel.util.Mechanism('leak')
-        Channel.set_parameters({'gbar': 1})
+        if modfile == 'nacsh':
+            Channel.set_parameters({'gbar': 6e3})  # weird units from Kole paper
+        else:
+            Channel.set_parameters({'gbar': 1})
         leak.set_parameters({'gbar': 1e-12})
 
         self.soma = cnmodel.util.Section(L=10, diam=10, mechanisms=[Channel, leak])
@@ -300,7 +304,7 @@ def getmechs():
             mechs.append(n)
     return mechs
 
-if __name__ == "__main__":
+def main():
     mechs = getmechs()
     if len(sys.argv) < 2:
 
@@ -339,3 +343,5 @@ if __name__ == "__main__":
     if sys.flags.interactive == 0:
         pg.QtGui.QApplication.exec_()
 
+if __name__ == "__main__":
+    main()
