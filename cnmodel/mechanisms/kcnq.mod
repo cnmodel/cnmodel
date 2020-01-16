@@ -5,7 +5,13 @@ modeled by Gunay et al., 2008
 implemented in NEURON by Kitano, 2011
 Threadsafe and unit checking, P.B. Manis, 2014
 
- ENDCOMMENT
+It is unclear what temperature this is based on.
+The original paper cites an older paper from an expression
+system, recordings at 22C. 
+The model has been used in other papers (e.g., Kitano et al. 2011)
+without specifying temperature, but it appears to be 37C. 
+
+ENDCOMMENT
 
 UNITS {
  (mV) = (millivolt)
@@ -17,6 +23,7 @@ NEURON {
  SUFFIX kcnq
  USEION k READ ek WRITE ik
  RANGE gbar, gk, iKCNQ
+ RANGE phi_m
 }
 
 PARAMETER {
