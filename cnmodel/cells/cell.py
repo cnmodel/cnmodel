@@ -45,9 +45,18 @@ class Cell(object):
         self.hr = None # hoc reader - e.g., we have read a morphology file.
         self.all_sections = {}
         # the following section types (parts) are known to us:
-        for k in ['soma', 'maindend', 'secdend', 'dend', 'dendrite', 'primarydendrite', 'secondarydendrite',
-            'internode',
-            'initialsegment', 'axonnode', 'axon', 'unmyelinatedaxon', 'myelinatedaxon', 'hillock']:
+        for k in [  'soma',
+                    'maindend', 'dend', 'dendrite', 'primarydendrite', 'Proximal_Dendrite',
+                    'secdend', 'secondarydendrite', 'Distal_Dendrite',
+                    'Dendritic_Hub', 'Dendritic_Swelling',
+                    'Basal_Dendrite', 'Apical_Dendrite',
+                    'axon', 'Myelinated_Axon', 'myelinatedaxon',
+                    'Axon_Hillock', 'hillock',
+                    'Unmyelinated_Axon', 'unmyelinatedaxon',
+                    'Axon_Initial_Segment', 'initialsegment',
+                    'Axon_Heminode', 'Axon_Node',  'axonnode',
+                    'Axon_Internode', 'internode',
+                    ]:
             self.all_sections[k] = []  # initialize to an empty list
         self.species = 'mouse'
         self.status = {}  # dictionary of parameters used to instantiate the cell.
@@ -144,6 +153,8 @@ class Cell(object):
         if isinstance(morphology_file, str):
             if morphology_file.endswith('.hoc'):
                 self.morphology = morphology.HocReader(morphology_file)
+            if morphology_file.endswith('.hocx'):
+                self.morphology = morphology.HocReader(morphology_file)
             elif morphology_file.endswith('.swc'):
                 self.morphology = morphology.SwcReader(morphology_file)
             else:
@@ -160,7 +171,7 @@ class Cell(object):
             for sec in self.hr.sec_groups[s]:
                 section =self.hr.get_section(sec)
                 mechs = self.hr.get_mechanisms(sec)
-                if s == 'myelinatedaxon':
+                if s in ['myelinatedaxon', 'Myelinated_Axon']:
                     section.cm = 0.002
                 self.add_section(section, s) # add the section to the cell.
                # print '\nmechanisms for section: %s', section
@@ -187,6 +198,7 @@ class Cell(object):
         done manually.
         
         """
+        # self.list_sections()
         if not isinstance(sec, list):
             sec = [sec]
         self.all_sections[sec_type].extend(sec)
