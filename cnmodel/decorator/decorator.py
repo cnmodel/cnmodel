@@ -91,6 +91,8 @@ class Decorator():
         cell.hr.mechanisms = []
         for s in list(cell.hr.sec_groups.keys()):
             sectype = self.remapSectionType(s.rsplit('[')[0])
+            if cell.hr.sec_groups[s] == set():
+                continue  # no sections of this type in the model, even if it was defined in a hoc file
             if sectype not in cell.channelMap.keys():
                 raise ValueError(f'Encountered unknown section group type: {sectype:s}. Cannot complete decoration')
             
@@ -116,8 +118,7 @@ class Decorator():
                 if mech not in cell.hr.mechanisms:  
                     cell.hr.mechanisms.append(mech)  # just add the mechanism to our list
                 x = nu.Mechanism(mech)
-                if cell.hr.sec_groups[s] == set():
-                    continue  # no sections of this type
+ 
                 for sec in cell.hr.sec_groups[s]:  # insert into all the sections of this type (group)
                     try:
                         x.insert_into(cell.hr.get_section(sec))
@@ -241,6 +242,8 @@ class Decorator():
         secstuff = {}
         for s in list(cell.hr.sec_groups.keys()):
             sectype = self.remapSectionType(s.rsplit('[')[0])
+            if cell.hr.sec_groups[s] == set():
+                continue  # no sections of this type in the model, even if it was defined in a hoc file
             if sectype not in cell.channelMap.keys():
                 if sectype in ['undefined']:  # skip undefined sections
                     continue
