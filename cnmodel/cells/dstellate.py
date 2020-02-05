@@ -206,7 +206,7 @@ class DStellateRothman(DStellate):
 
         self.debug = debug
 
-        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+        self.status = {self.somaname: True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'modelName': modelName,
                        'ttx': ttx, 'name': 'DStellate',
                        'morphology': morphology, 'decorator': decorator, 'temperature': None}
@@ -397,8 +397,8 @@ class DummyDStellate(DStellate):
         self.spike_source = self.vecstim
         
         # just an empty section for holding the terminal
-        self.add_section(h.Section(), 'soma')
-        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+        self.add_section(h.Section(), self.somaname)
+        self.status = {self.somaname: True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': None, 'species': species, 'modelType': 'Dummy', 'modelName': 'DummyDStellate',
                        'ttx': None, 'name': 'DummyDStellate',
                        'morphology': None, 'decorator': None, 'temperature': None}
@@ -452,7 +452,7 @@ class DStellateEager(DStellate):
         """
         super(DStellateEager, self).__init__()
 
-        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+        self.status = {self.somaname: True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'DStellateEager'}
         self.i_test_range=(-0.25, 0.25, 0.025)  # set range for ic command test
 
@@ -476,7 +476,7 @@ class DStellateEager(DStellate):
         soma.ek = self.e_k
         soma().leak.erev = self.e_leak
         self.mechanisms = ['kht', 'klt', 'ihvcn', 'leak', nach]
-        self.add_section(soma, 'soma')
+        self.add_section(soma, self.somaname)
         self.species_scaling(silent=False, species=species, modelType=modelType)  # set the default type II cell parameters
         self.add_axon()  # must follow species scaling so that area parameters are available
         self.add_dendrites()   # similar for dendrites

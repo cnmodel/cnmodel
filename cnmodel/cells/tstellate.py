@@ -196,7 +196,7 @@ class TStellateRothman(TStellate):
 
         self.debug = debug
         self.status = {'species': species, 'cellClass': self.celltype, 'modelType': modelType, 'modelName': modelName,
-                       'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+                       self.somaname: True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'ttx': ttx, 'name': self.celltype,
                        'morphology': morphology, 'decorator': decorator, 'temperature': None}
         self.c_m = 0.9  # default in units of uF/cm^2

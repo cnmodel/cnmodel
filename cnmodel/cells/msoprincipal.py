@@ -145,7 +145,7 @@ class MSOPrincipal(MSO):
         else:
             raise ValueError(f"Species {species:s} not recognized for {self.celltype:s} cells")
         
-        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False, 'hillock': False, 
+        self.status = {self.somaname: True, 'axon': False, 'dendrites': False, 'pumps': False, 'hillock': False, 
                        'initialsegment': False, 'myelinatedaxon': False, 'unmyelinatedaxon': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'MSO',
                        'morphology': morphology, 'decorator': decorator, 'temperature': temperature}

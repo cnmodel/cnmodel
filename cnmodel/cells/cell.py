@@ -45,7 +45,8 @@ class Cell(object):
         self.hr = None # hoc reader - e.g., we have read a morphology file.
         self.all_sections = {}
         # the following section types (parts) are known to us:
-        for k in [  'soma',
+        self.somaname = 'soma'
+        for k in [  'soma', 'Soma',
                     'maindend', 'dend', 'dendrite', 'primarydendrite', 'Proximal_Dendrite',
                     'secdend', 'secondarydendrite', 'Distal_Dendrite',
                     'Dendritic_Hub', 'Dendritic_Swelling',
@@ -121,7 +122,7 @@ class Cell(object):
                 print (f"<< {self.celltype.title():s} model: Creating point cell >>")
             soma = h.Section(name=f"{self.celltype.title():s}_Soma_%x" % id(self))  # one compartment of about 29000 um2
             soma.nseg = 1
-            self.add_section(soma, 'soma')
+            self.add_section(soma, self.somaname)
         else:
             """
             instantiate a structured model with the morphology as specified by 
@@ -158,12 +159,12 @@ class Cell(object):
             elif morphology_file.endswith('.swc'):
                 self.morphology = morphology.SwcReader(morphology_file)
             else:
-                raise ValueError('Unknown morphology file type [must be .hoc or .swc]')
+                raise ValueError('Unknown morphology file type [must be .hoc, .hocx, or .swc]')
         elif isinstance(morphology_file, morphology.Morphology):
             self.morphology = morphology_file
         else:
             print(morphology_file)
-            raise TypeError('Invalid morphology type: must be filename(str) or ')
+            raise TypeError('Invalid morphology type: must be filename(str) or morphology object')
         self.hr = self.morphology # extensive renaming required in calling classes, temporary fix.
         self.morphology.read_section_info()  # not sure this is necessary... 
         # these were not instantiated when the file was read, but when the decorator was run.
@@ -199,9 +200,14 @@ class Cell(object):
         
         """
         # self.list_sections()
+        # print(self.all_sections)
         if not isinstance(sec, list):
             sec = [sec]
+
         self.all_sections[sec_type].extend(sec)
+        # prevent using 'soma' and 'Soma' in the same cell. There can be only ONE soma
+        if sec_type in ['soma', 'Soma']:
+            assert (len(self.all_sections['soma']) + len(self.all_sections['Soma'])) <= 1
         for s in sec:
             Cell.sec_lookup[s.name()] = self
     
@@ -323,10 +329,10 @@ class Cell(object):
         """
         First (or only) section in the "soma" section group.
         """
-        if isinstance(self.all_sections['soma'], list):
-            return self.all_sections['soma'][0]
+        if isinstance(self.all_sections[self.somaname], list):
+            return self.all_sections[self.somaname][0]
         else:
-            return self.all_sections['soma']
+            return self.all_sections[self.somaname]
 
     def decorate(self):
         """
@@ -908,7 +914,7 @@ class Cell(object):
              vrange = self.vrange
         else:
             pass
-            print('vrange passed: ', vrange)
+            # print('vrange passed: ', vrange)
         # v0 = scipy.optimize.brentq(self.i_currents, vrange[0], vrange[1], maxiter=10000)
         i0 = self.i_currents(V=vrange[0])
         try:
@@ -983,7 +989,7 @@ class Cell(object):
             custom_init()
         self.computeAreas()
         gsum = 0.
-        soma_sections = self.all_sections['soma']
+        soma_sections = self.all_sections[self.somaname]
         # 1e-8*np.pi*soma.diam*soma.L
         somaarea = np.sum([1e-8*np.pi*s.L*s.diam for s in soma_sections])
         for sec in soma_sections:

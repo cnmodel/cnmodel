@@ -105,8 +105,8 @@ class DummySGC(SGC):
         self.spike_source = self.vecstim
         
         # just an empty section for holding the terminal
-        self.add_section(h.Section(), 'soma')
-        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+        self.add_section(h.Section(), self.somaname)
+        self.status = {self.somaname: True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': None, 'species': None, 'modelType': 'dummy', 'ttx': False, 'name': 'DummysGC',
                         'morphology': None, 'decorator': None, 'temperature': None}
 
@@ -205,7 +205,7 @@ class SGC_TypeI(SGC):
             raise ValueError(f"Species {species:s} not recognized for {self.celltype:s} cells")
 
 
-        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+        self.status = {self.somaname: True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'modelName': modelName,
                        'ttx': ttx, 'name': 'SGC',
                        'morphology': morphology, 'decorator': decorator, 'temperature': None}

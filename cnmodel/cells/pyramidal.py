@@ -157,7 +157,7 @@ class PyramidalKanold(Pyramidal, Cell):
         else:
             raise ValueError(f"Species {species:s} and modeltype {modelType:s} not recognized for {self.celltype:s} cells")
 
-        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+        self.status = {self.somaname: True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'modelName': modelName, 'ttx': ttx, 'name': 'Pyramidal',
                        'morphology': morphology, 'decorator': decorator, 'temperature': None,
                    }
@@ -361,7 +361,7 @@ class PyramidalCeballos(Pyramidal, Cell):
         else:
             raise ValueError(f"Species {species:s} and modeltype {modelType:s} not recognized for {self.celltype:s} cells")
 
-        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+        self.status = {self.somaname: True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'modelName': modelName, 'ttx': ttx, 'name': 'Pyramidal',
                        'morphology': morphology, 'decorator': decorator, 'temperature': None,
                    }

@@ -217,7 +217,7 @@ class BushyRothman(Bushy):
 
         self.debug = debug
         self.status = {'species': species, 'cellClass': self.celltype, 'modelType': modelType, 'modelName': modelName,
-                       'soma': True, 'axon': False, 'dendrites': False, 'pumps': False, 'hillock': False, 
+                       self.somaname: True, 'axon': False, 'dendrites': False, 'pumps': False, 'hillock': False, 
                        'initialsegment': False, 'myelinatedaxon': False, 'unmyelinatedaxon': False,
                        'na': nach, 'ttx': ttx, 'name': self.celltype,
                        'morphology': morphology, 'decorator': decorator, 'temperature': temperature}
@@ -226,7 +226,7 @@ class BushyRothman(Bushy):
         self.c_m = 0.9  # default in units of uF/cm^2
         self.spike_threshold = -40
         if self.debug:
-            print( 'model type, model name, species: ', modelType, modelName, species, nach)
+            print( 'model type, model name, species, somaname: ', modelType, modelName, species, nach, self.somaname)
 
 
         self._valid_temperatures = (temp, )

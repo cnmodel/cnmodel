@@ -190,7 +190,7 @@ class OctopusRothman(Octopus, Cell):
 
         self.debug = debug
         self.status = {'species': species, 'cellClass': self.celltype, 'modelType': modelType, 'modelName': modelName,
-                       'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+                       self.somaname: True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'ttx': ttx, 'name': self.celltype,
                        'morphology': morphology, 'decorator': decorator, 'temperature': None}
         self.spike_threshold = -50.
@@ -387,7 +387,7 @@ class OctopusSpencer(Octopus, Cell):
         super(OctopusSpencer, self).__init__()
         if modelType == None:
             modelType = 'Spencer'
-        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+        self.status = {self.somaname: True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Octopus',
                         'morphology': morphology, 'decorator': decorator, 'temperature': None}
         self.i_test_range=(-4.0, 6.0, 0.25)
@@ -400,7 +400,7 @@ class OctopusSpencer(Octopus, Cell):
             """
             soma = h.Section(name="Octopus_Soma_%x" % id(self))  # one compartment of about 29000 um2
             soma.nseg = 1
-            self.add_section(soma, 'soma')
+            self.add_section(soma, self.somaname)
             self.set_soma_size_from_Section(self.soma)
             
         else:
@@ -499,7 +499,7 @@ class OctopusSpencer(Octopus, Cell):
             )
             
             self.channelMap = {
-                'soma': {'jsrna': self.gBar.nabar, 'klt': self.gBar.kltbar_soma, 'kht': self.gBar.khtbar_soma,
+                self.somaname: {'jsrna': self.gBar.nabar, 'klt': self.gBar.kltbar_soma, 'kht': self.gBar.khtbar_soma,
                          'hcnobo': self.gBar.ihbar_soma, 'leak': self.gBar.leakbar, },
                 'hillock': {'jsrna': 0., 'klt': self.gBar.kltbar_hillock, 'kht': self.gBar.khtbar_hillock,
                             'hcnobo': self.gBar.ihbar_hillock,
@@ -517,7 +517,7 @@ class OctopusSpencer(Octopus, Cell):
                             }
             # reversal potential map
             self.channelErevMap = {
-                'soma': {'jsrna': 55., 'klt': -70, 'kht': -70,
+                self.somaname: {'jsrna': 55., 'klt': -70, 'kht': -70,
                          'hcnobo': -38, 'leak': -62., },
                 'hillock': {'jsrna': 55., 'klt': -70, 'kht': -70,
                          'hcnobo': -38, 'leak': -62., },

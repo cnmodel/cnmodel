@@ -184,7 +184,7 @@ class Tuberculoventral(Tuberculoventral):
         else:
             raise ValueError(f"Species {species:s} not recognized for {self.celltype:s} cells")
         self.debug = debug  
-        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+        self.status = {self.somaname: True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'modelName': modelName,
                        'ttx': ttx, 'name': 'Tuberculoventral',
                        'morphology': morphology, 'decorator': decorator, 'temperature': None}
@@ -336,7 +336,7 @@ class Tuberculoventral(Tuberculoventral):
 #                 'initseg': {'nacn': self.gBar.nabar, 'klt': 0., 'kht': self.gBar.khtbar,
 #                             'ihvcn': self.gBar.ihbar / 2.,
 #                             'leak': self.gBar.leakbar, },
-#                 'soma': {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar,
+#                 self.somaname: {'nacn': self.gBar.nabar, 'klt': self.gBar.kltbar,
 #                          'kht': self.gBar.khtbar, 'ihvcn': self.gBar.ihbar,
 #                          'leak': self.gBar.leakbar, },
 #                 'dend': {'nacn': self.gBar.nabar / 2.0, 'klt': 0., 'kht': self.gBar.khtbar * 0.5,
@@ -377,8 +377,8 @@ class DummyTuberculoventral(Tuberculoventral):
         self.spike_source = self.vecstim
         
         # just an empty section for holding the terminal
-        self.add_section(h.Section(), 'soma')
-        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+        self.add_section(h.Section(), self.somaname)
+        self.status = {self.somaname: True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': None, 'species': species, 'modelType': 'Dummy', 'modelName': 'DummyTuberculoventral',
                        'ttx': None, 'name': 'DummyTuberculoventral',
                        'morphology': None, 'decorator': None, 'temperature': None}

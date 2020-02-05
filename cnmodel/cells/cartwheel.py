@@ -151,7 +151,7 @@ class CartwheelDefault(Cartwheel, Cell):
         else:
             raise ValueError(f"Species {species:s} not recognized for {self.celltype:s} cells")
 
-        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+        self.status = {self.somaname: True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': self.celltype,
                        'morphology': morphology, 'decorator': decorator, 'temperature': None}
         self.debug = debug
