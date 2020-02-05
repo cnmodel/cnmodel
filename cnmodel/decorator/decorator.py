@@ -100,10 +100,6 @@ class Decorator():
             # note that a mechanism may have multiple parameters in the table (gbar, vshft), so we:
             #   a. only insert the mechanism once
             #   b. only adjust the relevant parameter
-            # if sectype == 'soma':
-            #     print('soma challenmap: ', cell.channelMap[sectype])
-            #     exit()
-            # print('sectype: ', sectype)
             for mechname in list(cell.channelMap[sectype].keys()):
                 mech = mechname.split('_')[0] # get the part before the _
                 parameter = mechname.split('_')[1]  # and the part after
