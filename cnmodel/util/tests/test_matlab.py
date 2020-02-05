@@ -41,3 +41,4 @@ def test_matlab():
 if __name__ == '__main__':
     if MATLAB_FOUND:
         test_matlab()
+        print('passed')
