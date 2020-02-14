@@ -154,12 +154,12 @@ class Cell(object):
         if isinstance(morphology_file, str):
             if morphology_file.endswith('.hoc'):
                 self.morphology = morphology.HocReader(morphology_file)
-            if morphology_file.endswith('.hocx'):
+            elif morphology_file.endswith('.hocx'):
                 self.morphology = morphology.HocReader(morphology_file)
             elif morphology_file.endswith('.swc'):
                 self.morphology = morphology.SwcReader(morphology_file)
             else:
-                raise ValueError('Unknown morphology file type [must be .hoc, .hocx, or .swc]')
+                raise ValueError('Unknown morphology file type [must be .hoc, .hocx, or .swc], got %s', morphology_file)
         elif isinstance(morphology_file, morphology.Morphology):
             self.morphology = morphology_file
         else:
@@ -207,7 +207,11 @@ class Cell(object):
         self.all_sections[sec_type].extend(sec)
         # prevent using 'soma' and 'Soma' in the same cell. There can be only ONE soma
         if sec_type in ['soma', 'Soma']:
-            assert (len(self.all_sections['soma']) + len(self.all_sections['Soma'])) <= 1
+            if (len(self.all_sections['soma'])>=1) and (len(self.all_sections['Soma']) >= 1):
+                print('adding to sec_type: ', sec_type)
+                print(len(self.all_sections['soma']))
+                print(len(self.all_sections['Soma']))
+                raise ValueError(f"Cannot have 'soma' and 'Soma' in same model")
         for s in sec:
             Cell.sec_lookup[s.name()] = self
     
