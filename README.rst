@@ -5,7 +5,8 @@ Changes
 
 This version of cnmodel runs under Python3.6 or Python3.7, using Neuron 7.6. New features include a method for changing the data tables on the fly without editing the original tables, and a tool for fitting Exp2Syn "simple" PSCs to the multisite PSC data (or, potentially, to experimental data) to get parameters for the synapse description table.
 
-The code base has been modified for Python 3. Functionally, the main internal change is that the parameters for the cells are (almost) completely removed to the data tables. All tests currently pass, but in a few cases are very close but not identical to the original Python 2.7 version (aka branch "master"). The source of one set of discrepancies has been traced to an error in a .mod file (a variable was declared in both the RANGE and GLOBAL lists); another discrepancy is in the mouse bushy type II cell, where the action potential threshold appears to be slightly shifted from the original version (reason currently unknown).
+The code base has been modified for Python 3. Functionally, the main internal change is that the parameters for the cells are (almost) completely removed to the data tables. All tests currently pass, but in a few cases are very close but not identical to the original Python 2.7 version (aka branch "master-Python27"). The source of one set of discrepancies has been traced to an error in a .mod file (a variable was declared in both the RANGE and GLOBAL lists).
+
 
 About CNModel
 =============
@@ -82,7 +83,13 @@ This can be provided one of two ways:
      it will perform the necessary compilation.
    
 5. neuronvis (optional) available at https://github.com/campagnola/neuronvis or (a newer version) https://github.com/pbmanis/neuronvis).
-   This provides 3D visualization for morphology, and is independent of cnmodel.
+   This provides 3D visualization for morphology, and is independent of cnmodel. neuronvis will require: mayavi, matplotlib, and pyqtgraph.
+
+Once CNModel has been downloaded, go to the directory, and make sure that you are using the right branch ("Python3")::
+        
+        $ cd cnmodel
+        $ git branch           # the active branch will have "*" next to it
+        $ git checkout Python3 #(if necessary)
 
 After the code is installed, enter the cnmodel directory and compile the NEURON mod files::
 
@@ -113,6 +120,7 @@ Windows Notes:
 2. Manually compile the mex files for the Zilany et al model. In Matlab, go to the an_model/models folder, and use mexANmodel.m to compile the files. Then, add the an_model/model folder to the Matlab path, so that it can find the files when needed.
 
 3. Under Windows, it may be best to use the standard Windows command terminal rather than the "bash" terminal provided by NEURON, at least to run the Python scripts.
+
 
 Testing
 -------
