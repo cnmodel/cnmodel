@@ -5,18 +5,27 @@ This program displays the results of inserting NEURON mechaanisms from .mod file
 into a point cell to voltage steps in voltage clamp.
 This code is primarily for visual verification of model function.
 
-Usage: python test_mechanisms.py <mechname>
+usage: test_mechanisms.py [-h] [-e]
+
+test ion channel mechanisms
+
+positional arguments:
+  {CaPCalyx,inav11,jsrnaf,nacn,nacncoop,nacsh,kht,klt,ka,hcno,ihvcn,hcno_bo,ihsgc_basalmiddle,ihsgc_apical,kif,kis,napyr,ihpyr,kdpyr,kcnq,nap,nappyr}
+                        data dictionary
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -e, --export          export plot of simulation
 
 Available mechanisms::
 
-   CaPCalyx                bkpkj                 hcno               hcnobo                 hpkj
-      ihpyr          ihsgcApical     ihsgcBasalMiddle                ihvcn                jsrna
+   CaPCalyx                bkpkj                 hcno              hcno_bo                 hpkj
+      ihpyr         ihsgc_apical    ihsgc_basalmiddle                ihvcn               jsrnaf
          ka                 kcnq                kdpyr                  kht                  kif
         kis                  klt                 kpkj                kpkj2             kpkjslow
       kpksk                 leak                lkpkj                   na                naRsg
-       nacn             nacncoop                  nap                napyr                nav11
-     nappyr
-      nacsh
+       nacn             nacncoop                  nap                napyr               inav11
+     nappyr                nacsh
 
 Note: only modfiles that implement voltage-dependent ion channel models make sense to run
 with this routine. the list "nottestablemechs" in the file defines mechanisms provided
@@ -24,9 +33,10 @@ with cnmodel that cannot be run with this program.
 
 """
 import sys
+import argparse
+from pathlib import Path
 from neuron import h
 from neuron import nrn
-
 import gc
 import numpy as np
 #import scipy as sp
@@ -39,6 +49,36 @@ import cnmodel.util.pynrnutilities as Util
 nottestablemechs = ['cadyn', 'ca_ion', 'cadiff', 'cadifpmp', 'Mechanism',
                 'capmp', 'capump', 'cl_ion', 'extracellular', 'fastpas',
                 'k_ion', 'KIR', 'hh', 'na_ion', 'narsg', 'pas', 'cap']  # cap uses "pcabar"
+
+tdurs = {'CaPCalyx': [20., 10.], 
+                     'inav11': [10., 5.], 'jsrnaf': [10., 5.], 'ichanWT2005': [10., 5.], 
+                     'nacn': [10., 5.], 'nacncoop': [10., 5.], 'nabu': [10., 5.], 'nacsh': [10., 5.],
+                     'kht':[200., 20.], 'klt': [200., 20.], 'ka': [25., 5.],
+                     'hcno': [1000., 200.], 'ih': [1000., 200.], 'ihvcn': [1000., 200.],'hcno_bo': [1000., 200.],
+                     'ihsgc_basalmiddle': [1000., 200.], 'ihsgc_apical': [1000., 200.], 
+                     'kif': [100., 100.], 'kis': [100., 10.], 'napyr': [10, 5.], 'ihpyr': [1000., 200.],
+                     'kdpyr': [200., 20.], 'kcnq': [200, 20], 'nap': [200., 100.],
+                     'nappyr': [200., 100.], 'default': [200, 20],
+                     }
+
+known = list(tdurs.keys())  # all the "known files"
+modfiles = Path('../cnmodel/mechanisms').glob('*.mod')
+modfiles = sorted([mf.stem for mf in modfiles])
+
+# remap maps from known name to modfile name
+remap = {'nav11': 'inav11', 'jsrnaf': 'jsrna', 'hcno_bo': 'hcnobo', 'ihsgc_apical': 'ihsgcApical',
+'ihsgc_basalmiddle': 'ihsgcBasalMiddle'}
+
+# get the available mechanisms (use as choices in the argparse call)
+availmech = []
+notavail = []
+for k in known:
+    if k in modfiles:
+        availmech.append(k)
+    elif k in list(remap.keys()):
+        availmech.append(remap[k])
+    else:
+        notavail.append(k)
 
 class ChannelKinetics():
     def __init__(self, args, export=False):
@@ -58,7 +98,7 @@ class ChannelKinetics():
         doKinetics = False
         self.app = pg.mkQApp()
         self.win = pg.GraphicsWindow()
-        self.win.setWindowTitle('VC Plots')
+        self.win.setWindowTitle(f"VC Plots for {args:s}")
         self.win.resize(900,600)
         # cw = QtGui.QWidget()
         # self.win.setCentralWidget(cw)
@@ -85,16 +125,8 @@ class ChannelKinetics():
         # self.tdur is a table of durations for the pulse and post-pulse for each channel type (best to highlight features
         # on appropriate time scales)
         #
-        self.tdur = {'CaPCalyx': [20., 10.], 
-                     'nav11': [10., 5.], 'jsrna': [10., 5.], 'ichanWT2005': [10., 5.], 
-                     'nacn': [10., 5.], 'nacncoop': [10., 5.], 'nabu': [10., 5.], 'nacsh': [10., 5.],
-                     'kht':[200., 20.], 'klt': [200., 20.], 'ka': [25., 5.],
-                     'hcno': [1000., 200.], 'ih': [1000., 200.], 'ihvcn': [1000., 200.],'hcnobo': [1000., 200.],
-                     'ihsgcBasalMiddle': [1000., 200.], 'ihsgcApical': [1000., 200.], 
-                     'kif': [100., 100.], 'kis': [100., 10.], 'napyr': [10, 5.], 'ihpyr': [1000., 200.],
-                     'kdpyr': [200., 20.], 'kcnq': [200, 20], 'nap': [200., 100.],
-                     'nappyr': [200., 100.],
-                     }
+        self.tdur = tdurs
+
         for i, mfile in enumerate(modfile):
             self.run(modfile=mfile, color=colors[i], export=export)
         s=''
@@ -119,6 +151,8 @@ class ChannelKinetics():
             tstep = [200., 50.]
         
         tdelay = 5.0
+        if modfile in list(remap.keys()):
+            modfile = remap[modfile]
         Channel = cnmodel.util.Mechanism(modfile)
         leak = cnmodel.util.Mechanism('leak')
         if modfile == 'nacsh':
@@ -308,39 +342,18 @@ def getmechs():
 
 def main():
     mechs = getmechs()
-    if len(sys.argv) < 2:
+    parser = argparse.ArgumentParser(description="test ion channel mechanisms")
+    parser.add_argument("mechanism", type=str, choices=availmech, help="data dictionary")
+    parser.add_argument(
+        "-e", "--export", action="store_true", help="export plot of simulation"
+    )
+    args = parser.parse_args()
 
-        print("\n\nUsage: python test_mechanisms.py <mechname>")
-        print("  Available mechanisms:")
-
-        linelen = 0
-        for i, n in enumerate(mechs):
-            if n in nottestablemechs: # 'Mechanism':
-                continue
-            print("%20s" % n, end=' ')
-            linelen += 20
-            if linelen > 80:
-                print("")
-
-                linelen = 0
-        sys.exit(1)
-    
-    if sys.argv[1:] in nottestablemechs:
-        exit()
-    export = False
-    if len(sys.argv) > 2:
-        if sys.argv[2] == 'export':
-            export = True
-    
-    if sys.argv[1] == 'all':
-        for n in mechs:
-            if n in nottestablemechs:
-                print(('Skipping %s' % n))
-                continue
-            else:
-                ck = ChannelKinetics(n)
+    if args.mechanism == 'all':
+        for n in availmech:
+            ck = ChannelKinetics(n)
     else:
-        ck = ChannelKinetics(sys.argv[1], export=export)
+        ck = ChannelKinetics(args.mechanism, export=args.export)
      
     if sys.flags.interactive == 0:
         pg.QtGui.QApplication.exec_()
