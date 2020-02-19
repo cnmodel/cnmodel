@@ -161,7 +161,11 @@ class IVCurve(Protocol):
                 "PT": 0.0,
                 "dt": self.dt,
             }
+            self.p_start = stim['delay']
+            self.p_dur = stim['dur']
+            self.p_end = self.p_start + self.p_dur + 10.
         elif stimdict is not None:
+            print('stimdict: ', stimdict)
             stim = stimdict
             stim["dt"] = self.dt
         elif "prepulse" in ivrange.keys():
