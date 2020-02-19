@@ -2,6 +2,7 @@
 Examples
 ========
 
+The following provides (minimal) documentation for the different scripts that can be found in the examples directory
 
 Contents:
 

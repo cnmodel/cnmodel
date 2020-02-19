@@ -3,30 +3,48 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to CNModel's documentation!
-===================================
+CNModel: Cochlear nucleus neuron models
+=======================================
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: About CNModel
 
    readme
+   publication
+   install
+   testing
    architecture
+   references
 
 .. toctree::
    :maxdepth: 1
-   
+   :caption: How to use CNModel
+
+   usage
    examples
+   newcelltypes
+   issues
+   
+.. toctree::
+   :maxdepth: 1
+   :caption: Modules
+   
    modules
 
-Indices and tables
-==================
+.. toctree::
+   :maxdepth: 1
+   :caption: Indices and Tables
 
 * :ref:`modindex`
 * :ref:`genindex`
 * :ref:`search`
 
-.. automodule:: cnmodel
+.. toctree::
+   :maxdepth: 1
+   :caption: API
+
+* .. automodule:: cnmodel
     :members:
     :show-inheritance:
     :undoc-members:
