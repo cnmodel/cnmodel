@@ -208,7 +208,8 @@ To add a new cell type, it is necessary to:
 
 
 MATLAB (R)
-------
+----------
+
 This version has been tested with the MATLAB AN model of Zilany et al., 2014. 
 Before using, you will need to compile the C code in an_model using Matlab's mex tool. First however, it *may* be necessary to change the following code:
 

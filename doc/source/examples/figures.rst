@@ -16,7 +16,6 @@ Note that Figure 7 may take several **hours** to generate.
 
 
 
-
 .. literalinclude:: ../../../examples/figures.sh
-   :language: python
+   :language: bash
    :linenos:
