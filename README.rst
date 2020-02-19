@@ -89,7 +89,7 @@ Once CNModel has been downloaded, go to the directory, and make sure that you ar
         
         $ cd cnmodel
         $ git branch           # the active branch will have "*" next to it
-        $ git checkout Python3 #(if necessary)
+        $ git checkout python3 #(if necessary)
 
 After the code is installed, enter the cnmodel directory and compile the NEURON mod files::
 
