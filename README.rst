@@ -4,7 +4,7 @@ There are 2 branches in this public repository for CNModel.
 
 The "master" branch is the original branch that goes with Manis and Campagnola, Hear. Res. 2018. This is a Python 2.7 branch.
 
-The "python3" branch is new (June, 2019). It has been tested with Python 3.6 and 3.7.3. Please read the notes on that branch for information on differences and new functionality.
+The "python3" branch is new (June, 2019). It has been tested with Python 3.6 and 3.7.3. Please read the notes on that branch for information on differences and new functionality. It has now been set as the default branch.
 
 Changes
 =======
@@ -136,7 +136,7 @@ Testing
 Make sure you are in the cnmodel directory, and that you have selected the right environment in Anaconda (in 
 my case, this is usually an environment called py3mpl3 - python 3 with matplotlib 3).
 
-After the code is installed, enter the cnmodel directory and compile the NEURON mod::
+After the code is installed, enter the cnmodel directory and compile the NEURON mod (you might have already done this if you are following the instructions above)::
 
     $ nrnivmodl cnmodel/mechanisms
 
