@@ -501,13 +501,13 @@ class ComodulationMasking(Sound):
 
     s2n : float
         signal re masker, in dbspl
-    
+
     fmod : float
         amplitude modulation frequency, in Hz
     
     dmod : float
         amplitude modulation depth, in %
-   
+ 
     fltype : string
         Flanking type:
         One of:
@@ -559,7 +559,7 @@ class ComodulationMasking(Sound):
         if 'flspl' not in kwds:
             kwds['flspl'] = kwds['dbspl']
         # if 'mask_spl' not in kwds:
-       #      kwds['mask_spl'] = kwds['dbspl']
+        #      kwds['mask_spl'] = kwds['dbspl']
         # if kwds['mask_spl'] is None:
         #     kwds['mask_spl'] = 0.
         if kwds['flspl'] is None:
@@ -1179,7 +1179,9 @@ def make_ssn(rate, duration, sig, samplingrate):
 
 
 def noise_from_signal(x, fs=40000, keep_env=True):
-    """Create a noise with same spectrum as the input signal.
+    """
+    Create a noise with same spectrum as the input signal.
+    
     Parameters
     ----------
     x : array_like
@@ -1189,6 +1191,7 @@ def noise_from_signal(x, fs=40000, keep_env=True):
     keep_env : bool
          Apply the envelope of the original signal to the noise. (Default
          value = False)
+    
     Returns
     -------
     ndarray

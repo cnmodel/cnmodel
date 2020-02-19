@@ -61,9 +61,9 @@ class test_sounds():
                                  pip_duration=0.8, pip_start=[10e-3], ramp_duration=2.5e-3,
                                  fmod=fmod, dmod=dmod, seed=seed)
 
-                    stims[stim][0].plot(wave.time, wave.sound)
-                    f, Pxx_spec = signal.periodogram(wave.sound, Fs) # window='flattop', nperseg=8192, noverlap=512, scaling='spectrum')
-                    specs[stim][0].plot(f, np.sqrt(Pxx_spec))
+                stims[stim][0].plot(wave.time, wave.sound)
+                f, Pxx_spec = signal.periodogram(wave.sound, Fs) # window='flattop', nperseg=8192, noverlap=512, scaling='spectrum')
+                specs[stim][0].plot(f, np.sqrt(Pxx_spec))
     
 
 if __name__ == '__main__':
