@@ -1,3 +1,11 @@
+A Note About the Branches
+=========================
+There are 2 branches in this public repository for CNModel.
+
+The "master" branch is the original branch that goes with Manis and Campagnola, Hear. Res. 2018. This is a Python 2.7 branch.
+
+The "python3" branch is new (June, 2019). It has been tested with Python 3.6 and 3.7.3. Please read the notes on that branch for information on differences and new functionality.
+
 Changes
 =======
 
