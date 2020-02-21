@@ -275,13 +275,26 @@ class ClickTrain(Sound):
                 raise TypeError("Missing required argument '%s'" % k)
         if kwds['click_duration'] < 1./kwds['rate']:
             raise ValueError("click_duration must be greater than sample rate.")
-        
+        if len(kwds['click_starts']) < 1:
+            raise ValueError("Click Train needs at least one click.")
+            
         Sound.__init__(self, **kwds)
         
     def generate(self):
         o = self.opts
-        return clicks(self.time, o['rate'], 
-                        o['dbspl'], o['click_duration'], o['click_starts'])
+        out = []
+        print('generate click')
+        print(o['click_starts'])
+        for i, start in enumerate(o['click_starts']):
+            print(i, start)
+            if i == 0:
+                out = click(self.time, o['rate'], 
+                        o['dbspl'], o['click_duration'], start)
+            else:
+                out += click(self.time, o['rate'], 
+                        o['dbspl'], o['click_duration'], start)
+        print('click out: ', out)
+        return out
     
 
 class SAMNoise(Sound):
@@ -1086,9 +1099,9 @@ def shape_signal(signal, t, rt, Fs, F0, dBSPL, pip_dur, pip_start):
 
     return pin
 
-def clicks(t, Fs, dBSPL, click_duration, click_starts):
+def click(t, Fs, dBSPL, click_duration, click_start):
     """
-    Create a waveform with multiple retangular clicks. Output is in 
+    Create a waveform with one retangular click. Output is in 
     Pascals.
     
     Parameters
@@ -1097,17 +1110,14 @@ def clicks(t, Fs, dBSPL, click_duration, click_starts):
         array of time values
     Fs : float
         sample frequency (Hz)
-    click_start : float (seconds)
-        delay to first click in train 
-    click_duration : float (seconds)
-        duration of each click
-    click_interval : float (seconds)
-        interval between click starts
-    nclicks : int
-        number of clicks in the click train
     dspl : float
-        maximum sound pressure level of pip
-
+        maximum sound pressure level of c
+    click_start : float (seconds)
+        delay to the click train 
+    click_duration : float (seconds)
+        duration of the click
+ 
+ 
     Returns
     -------
     array :
@@ -1116,15 +1126,19 @@ def clicks(t, Fs, dBSPL, click_duration, click_starts):
     """
     swave = np.zeros(t.size)
     amp = dbspl_to_pa(dBSPL)
+    t0 = int(np.floor(click_start * Fs))
     td = int(np.floor(click_duration * Fs))
-    nclicks = len(click_starts)
-    for n in range(nclicks):
-        t0s = click_starts[n]  # time for nth click
-        t0 = int(np.floor(t0s * Fs))  # index
-        if t0+td > t.size:
-            raise ValueError('Clicks: train duration exceeds waveform duration')
-        swave[t0:t0+td] = amp
+    print('to, td: ', t0, td)
+    swave[t0:t0+td] = amp
     return swave
+    # nclicks = len(click_starts)
+    # for n in range(nclicks):
+    #     t0s = click_starts[n]  # time for nth click
+    #     t0 = int(np.floor(t0s * Fs))  # index
+    #     if t0+td > t.size:
+    #         raise ValueError('Clicks: train duration exceeds waveform duration')
+    #     swave[t0:t0+td] = amp
+    # return swave
 
 
 def fmsweep(t, start, duration, freqs, ramp, dBSPL):
