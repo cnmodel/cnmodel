@@ -30,6 +30,10 @@ class Tuberculoventral(Cell):
         Cell.__init__(self)
         self.spike_source = None  # used by DummyTuberculoventral to connect VecStim to terminal
 
+    @property
+    def celltype(self):
+        return 'tuberculoventral'
+
     def make_psd(self, terminal, psd_type, **kwds):
         """
         Connect a presynaptic terminal to one post section at the specified location, with the fraction

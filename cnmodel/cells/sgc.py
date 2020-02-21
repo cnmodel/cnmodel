@@ -12,7 +12,6 @@ __all__ = ['SGC', 'SGC_TypeI', 'DummySGC']
 
 
 class SGC(Cell):
-    celltype = 'sgc'
     scaled = False
     
     @classmethod
@@ -35,6 +34,10 @@ class SGC(Cell):
         """ Center frequency
         """
         return self._cf
+    
+    @property
+    def celltype(self):
+        return 'sgc'
     
     @property
     def sr(self):
@@ -190,7 +193,6 @@ class SGC_TypeI(SGC):
             Nothing
         
         """         
-        
         super(SGC_TypeI, self).__init__(cf=cf, sr=sr)
         if species == 'guineapig':
             modelName = 'SGC'
