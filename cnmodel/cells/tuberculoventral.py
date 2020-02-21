@@ -183,6 +183,9 @@ class Tuberculoventral(Tuberculoventral):
                 raise ValueError(f"ModelName {self.status['modelName']:s} not recognized for mouse T-stellate cells")
         else:
             raise ValueError(f"Species {species:s} not recognized for {self.celltype:s} cells")
+        if modelType is None:
+            modelType = 'TVmouse'
+
         self.debug = debug  
         self.status = {self.somaname: True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'modelName': modelName,
@@ -207,6 +210,8 @@ class Tuberculoventral(Tuberculoventral):
                 print("<< Mouse TV cell created>>")
 
     def get_cellpars(self, dataset, species='mouse', modelType='TVmouse'):
+        assert modelType is not None
+        print('getcellpars: modelType: ', modelType)
         cellcap = data.get(dataset, species=species, model_type=modelType,
             field='soma_Cap')
         chtype = data.get(dataset, species=species, model_type=modelType,
