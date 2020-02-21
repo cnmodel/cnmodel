@@ -308,7 +308,8 @@ class Population(object):
         full_dist = np.ones(len(self._cells))
         nearest = None
         nearest_field = None
-        for field, dist in kwds.items():
+        for field, dist in list(kwds.items()):
+        # for field, dist in kwds.items():
             if np.isscalar(dist):
                 if nearest is not None:
                     raise Exception("May not specify multiple single-valued selection criteria.")

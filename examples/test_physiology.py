@@ -47,7 +47,7 @@ class CNSoundStim(Protocol):
         self.tuberculoventral = populations.Tuberculoventral()
         
         pops = [self.sgc, self.dstellate, self.tuberculoventral, self.tstellate, self.bushy]
-        self.populations = OrderedDict([(pop.type,pop) for pop in pops])
+        self.populations = OrderedDict([(pop.type, pop) for pop in pops])
         
         # set synapse type to use in the sgc population - simple is fast, multisite is slower
         # (eventually, we could do this for all synapse types..)
@@ -63,14 +63,11 @@ class CNSoundStim(Protocol):
 
         # Select cells to record from.
         # At this time, we actually instantiate the selected cells.
-        
-        # Pick a single bushy cell near 16kHz, with medium-SR inputs
-        bc = self.bushy.cells
-        msr_cells = bc[bc['sgc_sr'] == 1]  # filter for msr cells
-        ind = np.argmin(np.abs(msr_cells['cf'] - 16e3))  # find the one closest to 16kHz
-        cell_id = msr_cells[ind]['id']
-        self.bushy.create_cells([cell_id])  # instantiate just one cell
-
+        frequencies = [16e3]
+        cells_per_band = 1
+        for f in frequencies:
+            bushy_cell_ids = self.bushy.select(cells_per_band, cf=f, create=True)
+ 
         # Now create the supporting circuitry needed to drive the cells we selected.
         # At this time, cells are created in all populations and automatically 
         # connected with synapses.
@@ -108,9 +105,7 @@ class CNSoundStim(Protocol):
         h.celsius = self.temp
         h.dt = self.dt
         
-        print("init..")
         self.custom_init()
-        print("start..")
         last_update = time.time()
         while h.t < h.tstop:
             h.fadvance()
@@ -128,7 +123,9 @@ class CNSoundStim(Protocol):
                 continue
             spike_inds = np.argwhere((v[1:]>-20) & (v[:-1]<=-20))[:,0]
             spikes = self['t'][spike_inds]
-            pop = k.type
+            pop = k.celltype
+            print('pop: ', pop)
+            assert isinstance(pop, str)
             cell_ind = getattr(self, pop).get_cell_index(k)
             vec[(pop, cell_ind)] = [v, spikes]
         
@@ -422,7 +419,7 @@ class NetworkTree(QtGui.QTreeWidget):
         if all_conns == 0:
             return
         for cpop, conns in list(all_conns.items()):
-            pop_grp = QtGui.QTreeWidgetItem([cpop.type, str(conns)])
+            pop_grp = QtGui.QTreeWidgetItem([cpop.celltype, str(conns)])
             item.addChild(pop_grp)
 
 
@@ -513,14 +510,14 @@ class NetworkVisualizer(pg.PlotWidget):
                 for preind in preinds:
                     spot = prepop.cell_spots[preind].copy()
                     spot['size'] = 15
-                    spot['brush'] = 'r'
+                    spot['brush'] = pg.mkBrush((255, 0, 0, 75)) # 'r'
                     spots.append(spot)
                 
         # display postsynaptic cells
         for postpop, postind in pop.fwd_connections.get(i, []):
             spot = postpop.cell_spots[postind].copy()
             spot['size'] = 15
-            spot['brush'] = 'g'
+            spot['brush'] = pg.mkBrush((0, 255, 0, 75))# 'g'
             spots.append(spot)
         
         self.selected.setData(spots)
@@ -539,10 +536,10 @@ if __name__ == '__main__':
     stims = []
     parallel = True
     
-    nreps = 5
+    nreps = 1
     fmin = 4e3
     fmax = 32e3
-    octavespacing = 1/8.
+    octavespacing = 1/2.
     #octavespacing = 1.
     n_frequencies = int(np.log2(fmax/fmin) / octavespacing) + 1
     fvals = np.logspace(np.log2(fmin/1000.), np.log2(fmax/1000.), num=n_frequencies, endpoint=True, base=2)*1000.
@@ -584,16 +581,16 @@ if __name__ == '__main__':
                                     ramp_duration=2.5e-3, pip_duration=stimpar['pip'], 
                                     pip_start=stimpar['start'])
     
-            print(("=== Start run %d/%d ===" % (i+1, tot_runs)))
+            print(f"=== Start run {i+1:5d}/{tot_runs:5d} === ", end='')
             cachefile = os.path.join(cachepath, 'seed=%d_f0=%f_dbspl=%f_syntype=%s_iter=%d.pk' % (seed, f, db, syntype, iteration))
             if '--ignore-cache' in sys.argv or not os.path.isfile(cachefile):
                 result = prot.run(stim, seed=i)
                 pickle.dump(result, open(cachefile, 'wb'))
             else:
-                print("  (Loading cached results)")
+                print("  (Loading cached results)", end='')
                 result = pickle.load(open(cachefile, 'rb'))
             tasker.results[(f, db, iteration)] = (stim, result)
-            print(('--- finished run %d/%d ---' % (i+1, tot_runs)))
+            print(f"  --- finished run {i+1:5d}/{tot_runs:5d} ---" )
         
     # get time of run before display
     elapsed = timeit.default_timer() - start_time
