@@ -84,6 +84,11 @@ def make_key(**kwds):
             for k,v in val.items():
                 kwds[key + '.' + k] = v
     # sort and convert to string
+    for k in kwds:
+        if k == 'click_starts':
+            x = kwds[k]
+            xd = np.mean(np.diff(x))
+            kwds[k] = f"{x[0]:0.2f}-{x[-1]:0.2f}by{xd:0.2f}"
     kwds = list(kwds.items())
     kwds.sort()
     return '_'.join(['%s=%s' % kv for kv in kwds])
@@ -91,6 +96,7 @@ def make_key(**kwds):
 
 def get_cache_filename(cf, sr, seed, stim, **kwds):
     global _cache_path
+    # print('**stim.key(): ', make_key(**stim.key()))
     subdir = os.path.join(_cache_path, make_key(**stim.key()))
     filename = make_key(cf=cf, sr=sr, seed=seed, **kwds)
     filename = os.path.join(subdir, filename) + '.npz'

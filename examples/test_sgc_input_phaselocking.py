@@ -4,18 +4,32 @@ test_sgc_input_phaselocking.py
 Test phase locking from an input sgc to a target cell type. Runs simulations
 with AN input, and plots the results, including PSTH and phase histogram.
 
-Usage: python test_sgc_input_phaselocking.py celltype stimulus species
-   where:
-      celltype is one of [bushy, tstellate, octopus, dstellate] (default: bushy)
-      stimulus is one of [tone, SAM, clicks] (default: tone)
-      species is one of [guineapig, mouse] (default: guineapig)
+usage: test_sgc_input_phaselocking.py [-h]
+                                      [-c {bushy,tstellate,octopus,dstellate}]
+                                      [-S {tone,SAM,clicks}]
+                                      [-s {guineapig,rat,mouse}]
+
+test sgc input phaselocking
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -c {bushy,tstellate,octopus,dstellate}, --celltype {bushy,tstellate,octopus,dstellate}
+                        cell type
+  -S {tone,SAM,clicks}, --stimulus {tone,SAM,clicks}
+                        stimulus type
+  -s {guineapig,rat,mouse}, --species {guineapig,rat,mouse}
+                        species
+
+Note: Not all combinations of inputs are valid (not all cell types are known for each species)
 
 """
 
 import sys
 import numpy as np
-import pyqtgraph as pg
+import argparse
+
 from neuron import h
+import pyqtgraph as pg
 from cnmodel.protocols import Protocol
 from cnmodel import cells
 from cnmodel.util import sound
@@ -28,7 +42,6 @@ class SGCInputTestPL(Protocol):
         self.cell = cell
     
     def run(self, temp=34.0, dt=0.025, seed=575982035, stimulus='tone', species='mouse'):
-        assert stimulus in ['tone', 'SAM', 'clicks']  # cases available
         if self.cell == 'bushy':
             postCell = cells.Bushy.create(species=species)
         elif self.cell == 'tstellate':
@@ -65,11 +78,11 @@ class SGCInputTestPL(Protocol):
         if self.stimulus == 'clicks':
             self.click_rate = 0.020  # msec
             self.stim = sound.ClickTrain(rate=self.Fs, duration=self.run_duration,
-                        f0=self.f0, dbspl=self.dbspl, click_start=0.010, click_duration=100.e-6,
-                        click_interval=self.click_rate, nclicks=int((self.run_duration-0.01)/self.click_rate),
+                        dbspl=self.dbspl, click_starts=np.linspace(0.01, self.run_duration-0.01, int((self.run_duration)/self.click_rate)),
+                        click_duration=100.e-6,
+                        # click_interval=self.click_rate, nclicks=int((self.run_duration-0.01)/self.click_rate),
                         ramp_duration=2.5e-3)
-        
-        n_sgc = data.get('convergence', species=species, post_type=postCell.type, pre_type='sgc')[0]
+        n_sgc = data.get('convergence', species=species, post_type=postCell.celltype, pre_type='sgc')[0]
         self.n_sgc = int(np.round(n_sgc))
 
         self.pre_cells = []
@@ -168,27 +181,16 @@ class SGCInputTestPL(Protocol):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1 and sys.argv[1] in ['help', '-h', '--help']:
-        print("\nUsage: python test_sgc_input_phaselocking.py\n    celltype [bushy, tstellate, octopus, dstellate] (default: bushy)")
-        print("    stimulus [tone, SAM, clicks] (default: tone)")
-        print("    species [guineapig mouse] (default: guineapig)\n")
-        exit(0)
-    if len(sys.argv) > 1:
-        cell = sys.argv[1]
-    else:
-        cell = 'bushy'
-    if len(sys.argv) > 2:
-        stimulus = sys.argv[2]
-    else:
-        stimulus = 'tone'
-    if len(sys.argv) > 3:
-        species = sys.argv[3]
-    else:
-        species = 'guineapig'
-    print('cell type: ', cell)
+
+    parser = argparse.ArgumentParser(description="test sgc input phaselocking")
+    parser.add_argument('-c', '--celltype',  type=str, choices=['bushy', 'tstellate', 'octopus', 'dstellate'], default='bushy', help="cell type")
+    parser.add_argument('-S', "--stimulus", type=str, choices=['tone', 'SAM', 'clicks', ], default='tone', help="stimulus type")
+    parser.add_argument('-s', "--species", type=str, choices=['guineapig', 'rat', 'mouse',], default='guineapig', help="species")
+    args = parser.parse_args()
+
     prot = SGCInputTestPL()
-    prot.set_cell(cell)
-    prot.run(stimulus=stimulus, species=species)
+    prot.set_cell(args.celltype)
+    prot.run(stimulus=args.stimulus, species=args.species)
     prot.show()
 
     import sys
