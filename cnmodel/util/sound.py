@@ -283,17 +283,13 @@ class ClickTrain(Sound):
     def generate(self):
         o = self.opts
         out = []
-        print('generate click')
-        print(o['click_starts'])
         for i, start in enumerate(o['click_starts']):
-            print(i, start)
             if i == 0:
                 out = click(self.time, o['rate'], 
                         o['dbspl'], o['click_duration'], start)
             else:
                 out += click(self.time, o['rate'], 
                         o['dbspl'], o['click_duration'], start)
-        print('click out: ', out)
         return out
     
 
@@ -1128,18 +1124,8 @@ def click(t, Fs, dBSPL, click_duration, click_start):
     amp = dbspl_to_pa(dBSPL)
     t0 = int(np.floor(click_start * Fs))
     td = int(np.floor(click_duration * Fs))
-    print('to, td: ', t0, td)
     swave[t0:t0+td] = amp
     return swave
-    # nclicks = len(click_starts)
-    # for n in range(nclicks):
-    #     t0s = click_starts[n]  # time for nth click
-    #     t0 = int(np.floor(t0s * Fs))  # index
-    #     if t0+td > t.size:
-    #         raise ValueError('Clicks: train duration exceeds waveform duration')
-    #     swave[t0:t0+td] = amp
-    # return swave
-
 
 def fmsweep(t, start, duration, freqs, ramp, dBSPL):
     """
