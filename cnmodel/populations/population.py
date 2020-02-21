@@ -31,7 +31,7 @@ class Population(object):
         self._post_connections = []  # populations this one connects to
         self._pre_connections = []  # populations connecting to this one
         self._synapsetype = synapsetype
-        # numpy record array with information about each cell in the 
+        # fields are a numpy record array with information about each cell in the 
         # population
         fields = [
             ('id', int),

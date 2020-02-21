@@ -124,7 +124,7 @@ class CNSoundStim(Protocol):
             spike_inds = np.argwhere((v[1:]>-20) & (v[:-1]<=-20))[:,0]
             spikes = self['t'][spike_inds]
             pop = k.celltype
-            print('pop: ', pop)
+            # print('pop: ', pop)
             assert isinstance(pop, str)
             cell_ind = getattr(self, pop).get_cell_index(k)
             vec[(pop, cell_ind)] = [v, spikes]
