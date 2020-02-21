@@ -118,7 +118,7 @@ class Bushy(Cell):
             else:
                 raise NotImplementedError("No knowledge as to how to connect Bushy cell to cell type %s" %
                                         type(post_cell))
-            return synapses.StochasticTerminal(pre_sec, post_cell, nzones=nzones,  spike_source=self.spike_source,
+            return synapses.StochasticTerminal(self.soma, post_cell, nzones=nzones,  spike_source=self.spike_source,
                                             delay=delay, **kwds)
         else:
             raise ValueError("Unsupported terminal type %s" % term_type)
