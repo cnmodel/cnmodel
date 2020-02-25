@@ -66,7 +66,7 @@ author = u'Paul B. Manis and Luke Campagnola'
 #path = os.path.join('../..', 'cnmodel', os.path.dirname(__file__))
 path = Path(Path(os.path.dirname(__file__)).parent.parent, 'cnmodel', '__init__.py')
 version = None
-for line in open(path, 'r').readlines():  # os.path.join(path, '__init__.py'), 'r').readlines():
+for line in open(str(path), 'r').readlines():  # os.path.join(path, '__init__.py'), 'r').readlines():
     if line.startswith('__version__'):
         version = line.partition('=')[2].strip('"\' \n')
         break
