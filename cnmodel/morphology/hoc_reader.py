@@ -1,12 +1,15 @@
 from __future__ import print_function
-from neuron import h
-import neuron
-import collections
-import numpy as np
-import pyqtgraph as pg
+
 import os
 import re
-import os.path
+from pathlib import Path
+import collections
+import numpy as np
+
+from neuron import h
+import neuron
+import pyqtgraph as pg
+
 try:
   basestring
 except NameError:
@@ -26,14 +29,14 @@ class HocReader(object):
         
         self.file_loaded = False
         if isinstance(hoc, basestring):
-            fullfile = os.path.join(os.getcwd(), hoc)
-            if not os.path.isfile(fullfile):
-                raise Exception("File not found: %s" % (fullfile))
+            fullfile = Path(hoc) # path.join(os.getcwd(), hoc)
+            if not fullfile.is_file():
+                raise Exception("File not found: %s" % (str(fullfile)))
             neuron.h.hoc_stdout('/dev/null')  # prevent junk from printing while reading the file
             success = neuron.h.load_file(str(fullfile))
             neuron.h.hoc_stdout()
             if success == 0: # indicates failure to read the file
-                raise NameError("Found file, but NEURON load failed: %s" % (fullfile))
+                raise NameError("Found file, but NEURON load failed: %s" % (str(fullfile)))
             self.file_loaded = True
             self.h = h # save a copy of the hoc object itself.
         else:
