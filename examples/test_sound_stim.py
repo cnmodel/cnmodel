@@ -15,15 +15,18 @@ is faster with the pure Python interface than with the Matlab interface, and
 fastest for retrieval of pre-computed trains. Note that changing the value
 of "seed" will force a recomputation of the spike trains.
 """
+
+import sys
 import numpy as np
+import time
+
 import pyqtgraph as pg
 from cnmodel import an_model
 from cnmodel.util import sound
 import cochlea
 
-import time
 seed = 34986
-    
+
 
 def time_usage(func):
     def wrapper(*args, **kwargs):
@@ -32,14 +35,15 @@ def time_usage(func):
         end_ts = time.time()
         print(("** Elapsed time: %f" % (end_ts - beg_ts)))
         return res
+
     return wrapper
 
 
 def set_dbspl(signal, dbspl):
     """Scale the level of `signal` to the given dB_SPL."""
     p0 = 20e-6
-    rms = np.sqrt(np.sum(signal**2) / signal.size)
-    scaled = signal * 10**(dbspl / 20.0) * p0 / rms
+    rms = np.sqrt(np.sum(signal ** 2) / signal.size)
+    scaled = signal * 10 ** (dbspl / 20.0) * p0 / rms
     return scaled
 
 
@@ -50,49 +54,62 @@ def sound_stim(seed, useMatlab=True):
 
     result = {}
     if useMatlab:
-        simulator = 'matlab'
+        simulator = "matlab"
     else:
-        simulator = 'cochlea'
-    for sr in 1,2,3:
+        simulator = "cochlea"
+    for sr in 1, 2, 3:
         spikes = []
         for level in levels:
-            stim = sound.TonePip(rate=100e3, duration=0.5, f0=cf, dbspl=level, 
-                             pip_duration=0.5, pip_start=[0], ramp_duration=2.5e-3)
-            if simulator == 'cochlea':
-                stim._sound = set_dbspl(stim.sound, level) # adjust scaling here
-            spikes.append(an_model.get_spiketrain(cf=cf, sr=sr, seed=seed, stim=stim, simulator=simulator))
+            stim = sound.TonePip(
+                rate=100e3,
+                duration=0.5,
+                f0=cf,
+                dbspl=level,
+                pip_duration=0.5,
+                pip_start=[0],
+                ramp_duration=2.5e-3,
+            )
+            if simulator == "cochlea":
+                stim._sound = set_dbspl(stim.sound, level)  # adjust scaling here
+            spikes.append(
+                an_model.get_spiketrain(
+                    cf=cf, sr=sr, seed=seed, stim=stim, simulator=simulator
+                )
+            )
             seed += 1
-        result[sr] = {'levels': levels, 'spikes': spikes}
+        result[sr] = {"levels": levels, "spikes": spikes}
     return result
 
-import sys
 
 def runtest():
     usematlab = True
     if len(sys.argv) > 0:
         if len(sys.argv) == 1:
-            print('Call requires argument, must be either "matlab" or "cochlea"; default is "matlab"')
+            print(
+                'Call requires argument, must be either "matlab" or "cochlea"; default is "matlab"'
+            )
             exit()
         flag = sys.argv[1]
-        if flag not in ['matlab', 'cochlea']:
+        if flag not in ["matlab", "cochlea"]:
             print('Flag must be either "matlab" or "cochlea"; default is "matlab"')
             exit()
-        if flag == 'cochlea':
-            usematlab=False
+        if flag == "cochlea":
+            usematlab = False
     if usematlab:
-        print('Running with matlab simulator')
+        print("Running with matlab simulator")
     else:
-        print('Running with MR cochlea simulator')
-            
+        print("Running with MR cochlea simulator")
+
     result = sound_stim(seed, useMatlab=usematlab)
 
     win = pg.GraphicsWindow()
-    p1 = win.addPlot(title='Rate-level function')
+    p1 = win.addPlot(title="Rate-level function")
     for i, x in enumerate(result.keys()):
-        p1.plot(result[x]['levels'], [s.size for s in result[x]['spikes']], pen=(x, 6))
+        p1.plot(result[x]["levels"], [s.size for s in result[x]["spikes"]], pen=(x, 6))
     return win
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     win = runtest()
     if sys.flags.interactive == 0:
         pg.QtGui.QApplication.exec_()
