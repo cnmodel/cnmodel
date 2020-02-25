@@ -50,10 +50,10 @@ rc('font',**{'family':'sans-serif','sans-serif':['Arial']})
 # check for LaTeX install - 
 from distutils.spawn import find_executable
 latex_avail = False
-if find_executable('latex'):
-    latex_avail = True
-rc('text', usetex=latex_avail)
-rcParams['text.latex.unicode'] = latex_avail
+# if find_executable('latex'):
+#     latex_avail = True
+# rc('text', usetex=latex_avail)
+# rcParams['text.latex.unicode'] = latex_avail
 
 def _ax_tolist(ax):
     if isinstance(ax, list):
