@@ -2,10 +2,11 @@ import sys
 import argparse
 import numpy as np
 import timeit
-# import dask
-import cloudpickle
 import pyqtgraph as pg
 import pyqtgraph.multiprocess as mp
+
+# import dask
+# import dask.delayed
 
 from neuron import h
 from cnmodel.protocols import Protocol
@@ -46,7 +47,7 @@ def buildCell(cell):
         post_cell = cells.DStellate.create(species=species)
     else:
         raise ValueError("cell %s is not yet implemented for PSTH testing" % self.cell)
-    print('made postcell')
+    # print('made postcell')
     return post_cell
 
 def makeSynapses(post_cell, info):
@@ -69,6 +70,7 @@ def makeSynapses(post_cell, info):
     synapses = []
     j = 0
     xmtr = {}
+
     for nsgc, sgc in enumerate(range(info["n_sgc"])):
         pre_cells.append(cells.DummySGC(cf=info["cf"], sr=info["sr"]))
         if synapseType == "simple":
@@ -92,25 +94,13 @@ def makeSynapses(post_cell, info):
         pre_cells[-1].set_sound_stim(
             info["stim"], seed=info["seed"] + nsgc, simulator=info["simulator"]
         )
-    print('makesyn ok')
+    # print('makesyn ok')
     return {'pre_cells':pre_cells, 'synapses': synapses, 'xmtr':xmtr}
 
-# def setupNeuron(post_cell, info):
-#     Vm = h.Vector()
-#     Vm.record(post_cell.soma(0.5)._ref_v)
-#     rtime = h.Vector()
-#     rtime.record(h._ref_t)
-#     h.tstop = 1e3 * info["run_duration"]  # duration of a run
-#     h.celsius = info["temp"]
-#     h.dt = info["dt"]
-#     post_cell.cell_initialize()
-#     # info["init"]()
-#     print('setup ok')
-#     return {'rtime': rtime, 'Vm': Vm}
     
 def runNeuron(post_cell, info, psx):
 
-    print('runNeuron entry')
+    # print('runNeuron entry')
     Vm = h.Vector()
     Vm.record(post_cell.soma(0.5)._ref_v)
     rtime = h.Vector()
@@ -121,16 +111,22 @@ def runNeuron(post_cell, info, psx):
     post_cell.cell_initialize()
     info["init"]()
     h.t = 0.0
-    h.run()
-    print('runNeuron exit')
+    while h.t < h.tstop:
+        h.fadvance()
+    # print('runNeuron exit')
+    pre_trains = [psx['pre_cells'][k]._spiketrain for k in range(len(psx['pre_cells']))]
+    # print(psx['xmtr'].keys())
+    # print([psx['xmtr'][k].to_python() for k in list(psx['xmtr'].keys())])
+    # exit()
     return {
         "time": np.array(rtime),
         "vm": Vm.to_python(),
-        "xmtr": psx['xmtr'],
-        "pre_cells": psx['pre_cells'],
-        "post_cell": post_cell,
-        "synapses": psx['synapses'],
+        "xmtr": [psx['xmtr'][k].to_python() for k in list(psx['xmtr'].keys())],
+        "pre_cells": pre_trains,
+        # "post_cell": post_cell,
+        # "synapses": psx['synapses'],
     }
+
 
 def runTrial(cell, info):
     post_cell = buildCell(cell)
@@ -138,6 +134,7 @@ def runTrial(cell, info):
     # setupNeuron(post_cell, info)
     res = runNeuron(post_cell, info, psx)
     return(res)
+
 
 # # dask delayed routines for parallelism
 # @dask.delayed
@@ -151,31 +148,21 @@ def runTrial(cell, info):
 # @dask.delayed
 # def runNeuron_dask(post_cell, info,  psx): # , rtime, Vm):
 #     return runNeuron(post_cell, info, psx)
-    # Vm = h.Vector()
-    # Vm.record(post_cell.soma(0.5)._ref_v)
-    # rtime = h.Vector()
-    # rtime.record(h._ref_t)
-    # h.tstop = 1e3 * info["run_duration"]  # duration of a run
-    # h.celsius = info["temp"]
-    # h.dt = info["dt"]
-    # post_cell.cell_initialize()
-    # info["init"]()
-    # h.t = 0.0
-    # h.run()
-    # return {
-    #     "time": np.array(rtime),
-    #     "vm": np.array(Vm),
-    #     "xmtr": psx['xmtr'],
-    #     "pre_cells": psx['pre_cells'],
-    #     "post_cell": post_cell,
-    #     "synapses": psx['synapses'],
-    # }
-    
-
+#
+#
 # @dask.delayed
 # def setupNeuron_dask(post_cell, info):
 #     return setupNeuron(post_cell, info)
-
+#
+# @dask.delayed
+# def runTrial_dask(cell, info):
+#     return runTrial(cell, info)
+#     # post_cell = buildCell_dask(cell)
+#     # psx = makeSynapses_dask(post_cell, info)
+#     # return runNeuron_dask(post_cell, info, psx)
+#
+    
+    
 class SGCInputTestPSTH(Protocol):
     def __init__(self):
         self.nrep = 10
@@ -215,7 +202,7 @@ class SGCInputTestPSTH(Protocol):
         reps=10,
         stimulus="tone",
         simulator="cochlea",
-        parallelize=False,
+        parallelmode='serial',
     ):
         assert stimulus in ["tone", "SAM", "clicks"]  # cases available
         assert self.cell in [
@@ -296,7 +283,7 @@ class SGCInputTestPSTH(Protocol):
             "dt": dt,
             "init": custom_init,
         }
-        if not parallelize:
+        if parallelmode == 'serial':
             start_time = timeit.default_timer()
             for nr in range(self.nrep):
                 info["seed"] = seed + 3 * self.n_sgc * nr
@@ -304,62 +291,73 @@ class SGCInputTestPSTH(Protocol):
                 # res contains: {'time': time, 'vm': Vm, 'xmtr': xmtr, 'pre_cells': pre_cells, 'post_cell': post_cell}
                 self.pre_cells[nr] = res["pre_cells"]
                 self.time[nr] = res["time"]
-                self.xmtr = {k: v.to_python() for k, v in list(res["xmtr"].items())}
+                self.xmtrs[nr] = res['xmtr'] # {k: v.to_python() for k, v in list(res["xmtr"].items())}
                 self.vms[nr] = res["vm"]
-                self.synapses[nr] = res["synapses"]
-                self.xmtrs[nr] = self.xmtr
+                # self.synapses[nr] = res["synapses"]
+                # self.xmtrs[nr] = self.xmtr
             elapsed = timeit.default_timer() - start_time
             print(f"Not Parallel Elapsed time for {self.nrep:d} stimuli: {elapsed:f} secs")
 
-        if parallelize:
-
+        if parallelmode in ['mp', 'multiprocessing']:
             results = {}
-            workers = 1 if not parallelize else None
+            workers = None  # use all available
             tot_runs = self.nrep
             tasks = []
             for nr in range(self.nrep):
-                tasks.append(nr)
+                tasks.append((nr))
             start_time = timeit.default_timer()
             with mp.Parallelize(enumerate(tasks), results=results, workers=workers) as tasker:
                 for i, task in tasker:
-                    iteration = task
+                    info["seed"] = seed + 3 * self.n_sgc * i
                     repres = runTrial(self.cell, info)
-                    tasker.results[i] = (stim, result)
-                    print(f"  --- finished run {i+1:5d}/{tot_runs:5d} ---" )
-        
+                    tasker.results[i] = repres
             # get time of run before display
             elapsed = timeit.default_timer() - start_time
-            print('Elapsed time for %d stimuli: %f  (%f sec per stim), synapses: %s' % (len(tasks), elapsed, elapsed/len(tasks), prot.bushy._synapsetype))
-
-
-            # import dask.multiprocessing
-            # dask.config.set(scheduler='processes')
-            # # from dask.distributed import Client, LocalCluster
-            # # cluster = LocalCluster()
-            # # client = Client(cluster) # client = Client('127.0.0.1:8786')
-            # start_time = timeit.default_timer()
-            # def _tasks(nrep, nsgc, info, cell):
-            #     res = []
-            #     for nr in range(nrep):
-            #         info["seed"] = seed + 3 * nsgc * nr
-            #         post_cell = buildCell_dask(cell)
-            #         psx = makeSynapses_dask(post_cell, info )
-            #         # nvars = setupNeuron_dask(post_cell, info)
-            #         repres = runNeuron_dask(post_cell, info, psx) # , nvars['rtime'], nvars['Vm'])
-            #         res.append(repres)
-            #     return(res)
-            #
-            # res = dask.compute(_tasks(self.nrep, self.n_sgc, info, self.cell)) #, scheduler='single-threaded')
-            # elapsed = timeit.default_timer() - start_time
-            # print(f"Parallel Elapsed time for {self.nrep:d} stimuli: {elapsed:f} secs")
+            print('Elapsed time for %d stimuli: %f  (%f sec per stim)' % (len(tasks), elapsed, elapsed/len(tasks)))
             res = results
             for nr in range(self.nrep):
                 self.pre_cells[nr] = res[nr]["pre_cells"]
                 self.time[nr] = res[nr]["time"]
-                self.xmtr = {k: v.to_python() for k, v in list(res[nr]["xmtr"].items())}
+                self.xmtrs[nr] = res[nr]["xmtr"] # {k: v.to_python() for k, v in list(res[nr]["xmtr"].items())}
                 self.vms[nr] = res[nr]["vm"]
-                self.synapses[nr] = res[nr]["synapses"]
-                self.xmtrs[nr] = self.xmtr
+                # self.synapses[nr] = res[nr]["synapses"]
+                
+        # if parallelmode == 'dask':
+        #     # this does not work...
+        #     # dask does not allow neuron section objects cannot be pickled to be passed between
+        #     # elements of the task.
+        #     # import dask.multiprocessing
+        #     # dask.config.set(scheduler='processes')
+        #     from dask.distributed import Client, LocalCluster
+        #     cluster = LocalCluster()
+        #     client = Client(cluster) #client = Client() # Client(cluster) # client = Client('127.0.0.1:8786')
+        #     start_time = timeit.default_timer()
+        #     def _tasks(nrep, nsgc, info, cell):
+        #         res = []
+        #         for nr in range(nrep):
+        #             info["seed"] = seed + 3 * nsgc * nr
+        #             # repres = runTrial_dask(self.cell, info)
+        #             post_cell = buildCell_dask(cell)
+        #             psx = makeSynapses_dask(post_cell, info)
+        #             # nvars = setupNeuron_dask(post_cell, info)
+        #             repres = runNeuron_dask(post_cell, info, psx) # , nvars['rtime'], nvars['Vm'])
+        #             res.append(repres)
+        #         return(res)
+        #
+        #     res = dask.compute(_tasks(self.nrep, self.n_sgc, info, self.cell))# , scheduler='single-threaded')
+        #     elapsed = timeit.default_timer() - start_time
+        #     print(f"Parallel Elapsed time for {self.nrep:d} stimuli: {elapsed:f} secs")
+        #     # res = results
+        #     res = res[0]
+        #     for nr in range(self.nrep):
+        #         # print('nr: ', nr)
+        #         # print(res[nr])
+        #         self.pre_cells[nr] = res[nr]["pre_cells"]
+        #         self.time[nr] = res[nr]["time"]
+        #         self.xmtrs[nr] = res[nr]["xmtr"] # {k: v.to_python() for k, v in list(res[nr]["xmtr"].items())}
+        #         self.vms[nr] = res[nr]["vm"]
+        #         # self.synapses[nr] = res[nr]["synapses"]
+        #
 
 
     def show(self):
@@ -382,7 +380,7 @@ class SGCInputTestPSTH(Protocol):
             xan = []
             yan = []
             for k in range(len(self.pre_cells[nr])):
-                r = self.pre_cells[nr][k]._spiketrain
+                r = self.pre_cells[nr][k] # [k]._spiketrain
                 xan.extend(r)
                 yr = k + np.zeros_like(r) + 0.2
                 yan.extend(yr)
@@ -441,20 +439,24 @@ class SGCInputTestPSTH(Protocol):
             title="xmtr", row=0, col=1, labels={"bottom": "T (ms)", "left": "gSyn"}
         )
         if synapseType == "multisite":
-            for nr in [0]:
-                syn = self.synapses[nr]
-                j = 0
-                for k in range(self.n_sgc):
-                    synapse = syn[k]
-                    for i in range(synapse.terminal.n_rzones):
+            # for nr in [0]:
+            #     syn = self.synapses[nr]
+            #     if syn is None:
+            #         continue
+            for nr in range(self.nrep):
+                # for k in range(self.n_sgc):
+                    # print(len(self.xmtrs[k]))
+                    # synapse = syn[k]
+                    for j in range(len(self.xmtrs[nr])):
+                        if j > 10:  # just show a few events... 
+                            continue
                         p5.plot(
                             self.time[nr],
-                            self.xmtrs[nr]["xmtr%04d" % j],
+                            self.xmtrs[nr][j], # ["xmtr%04d" % j],
                             pen=pg.mkPen(
                                 pg.intColor(nr, self.nrep), hues=self.nrep, width=1.0
                             ),
                         )
-                        j = j + 1
         p5.setXLink(p1)
 
         p6 = self.win.addPlot(
@@ -491,42 +493,6 @@ class SGCInputTestPSTH(Protocol):
             fillLevel=0,
         )
 
-        # p6 = self.win.addPlot(title='AN phase', row=1, col=1)
-        # phasewin = [self.pip_start[0] + 0.25*self.pip_duration, self.pip_start[0] + self.pip_duration]
-        # prespk = self.pre_cells[0]._spiketrain  # just sample one...
-        # spkin = prespk[np.where(prespk > phasewin[0]*1e3)]
-        # spikesinwin = spkin[np.where(spkin <= phasewin[1]*1e3)]
-        # print "\nCell type: %s" % self.cell
-        # print "Stimulus: "
-        #
-        # # set freq for VS calculation
-        # if self.stimulus == 'tone':
-        #     f0 = self.f0
-        #     print "Tone: f0=%.3f at %3.1f dbSPL, cell CF=%.3f" % (self.f0, self.dbspl, self.cf)
-        # if self.stimulus == 'SAM':
-        #     f0 = self.fMod
-        #     print ("SAM Tone: f0=%.3f at %3.1f dbSPL, fMod=%3.1f  dMod=%5.2f, cell CF=%.3f" %
-        #          (self.f0, self.dbspl, self.fMod, self.dMod, self.cf))
-        # if self.stimulus == 'clicks':
-        #     f0 = 1./self.click_rate
-        #     print "Clicks: interval %.3f at %3.1f dbSPL, cell CF=%.3f " % (self.click_rate, self.dbspl, self.cf)
-        # vs = PU.vector_strength(spikesinwin, f0)
-        #
-        # print 'AN Vector Strength: %7.3f, d=%.2f (us) Rayleigh: %7.3f  p = %.3e  n = %d' % (vs['r'], vs['d']*1e6, vs['R'], vs['p'], vs['n'])
-        # (hist, binedges) = np.histogram(vs['ph'])
-        # curve = p6.plot(binedges, hist, stepMode=True, fillBrush=(100, 100, 255, 150), fillLevel=0)
-        # p6.setXRange(0., 2*np.pi)
-        #
-        # p7 = self.win.addPlot(title='%s phase' % self.cell, row=2, col=1)
-        # spkin = bspk[np.where(bspk > phasewin[0]*1e3)]
-        # spikesinwin = spkin[np.where(spkin <= phasewin[1]*1e3)]
-        # vs = PU.vector_strength(spikesinwin, f0)
-        # print '%s Vector Strength: %7.3f, d=%.2f (us) Rayleigh: %7.3f  p = %.3e  n = %d' % (self.cell, vs['r'], vs['d']*1e6, vs['R'], vs['p'], vs['n'])
-        # (hist, binedges) = np.histogram(vs['ph'])
-        # curve = p7.plot(binedges, hist, stepMode=True, fillBrush=(100, 100, 255, 150), fillLevel=0)
-        # p7.setXRange(0., 2*np.pi)
-        # p7.setXLink(p6)
-
         self.win.show()
 
 
@@ -548,6 +514,16 @@ if __name__ == "__main__":
         ],
         help="Select target cell",
     )
+    parser.add_argument(
+        "-p",
+        "--parallel",
+        type=str,
+        dest="parallelmode",
+        default="serial",
+        choices=["serial", "mp", "multiprocessing"], # , "dask"], # dask does not work with this... 
+        help="Select stimulus from ['serial', 'mp' or 'multiprocessing']",  #, 'dask']",
+    )
+    
     parser.add_argument(
         "-s",
         "--stimulus",
@@ -598,12 +574,13 @@ if __name__ == "__main__":
 
     print("cell type: ", cell)
     print('nrep: ', args.nrep)
+    print('parallelmode: ', args.parallelmode)
     prot = SGCInputTestPSTH()
     prot.set_cell(cell)
     prot.set_db(args.dbspl)
     prot.set_sr(args.srgroup)
     
-    prot.run(stimulus=args.stimulus, reps=args.nrep, simulator='cochlea', parallelize=True)
+    prot.run(stimulus=args.stimulus, reps=args.nrep, simulator='cochlea', parallelmode=args.parallelmode)
     prot.show()
 
     import sys
