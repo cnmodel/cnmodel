@@ -233,7 +233,9 @@ class DStellateRothman(DStellate):
         self.get_mechs(self.soma)
 
         if self.debug:
-            print (f"<< {self.celltype.title():s} model: Creating cell with morphology from {morphology:s} >>" )
+            print('selfcelltype: ', self.celltype.title())
+            print('morpholog: ', morphology)
+            print (f"<< {self.celltype.title():s} model: Creating cell with morphology from {str(morphology):s} >>" )
 
     def get_cellpars(self, dataset, species='guineapig', modelType='I-II'):
         """
