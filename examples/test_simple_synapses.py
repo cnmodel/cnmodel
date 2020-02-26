@@ -20,7 +20,7 @@ def runtest():
     parser = argparse.ArgumentParser(description="test simple synapses")
     parser.add_argument("cells", type=str, nargs=2,
         choices=['sgc', 'bushy', 'tstellate', 'dstellate', 'tuberculoventral', 'pyramidal'], 
-        help="select multiple cell types")
+        help="Specify source and target cells.")
     args = parser.parse_args()
     
     convergence = {
