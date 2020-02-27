@@ -18,11 +18,22 @@ from cnmodel.synapses import Synapse
 
 def runtest():
     parser = argparse.ArgumentParser(description="test simple synapses")
-    parser.add_argument("cells", type=str, nargs=2,
-        choices=['sgc', 'bushy', 'tstellate', 'dstellate', 'tuberculoventral', 'pyramidal'], 
-        help="Specify source and target cells.")
+    parser.add_argument(
+        "cells",
+        type=str,
+        nargs=2,
+        choices=[
+            "sgc",
+            "bushy",
+            "tstellate",
+            "dstellate",
+            "tuberculoventral",
+            "pyramidal",
+        ],
+        help="Specify source and target cells.",
+    )
     args = parser.parse_args()
-    
+
     convergence = {
         "sgc": {
             "bushy": 1,
