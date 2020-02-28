@@ -32,6 +32,7 @@ def test_max_open_probability():
         
     print('test_mechanism:: test open prob apsd: ', max(op[0]), apsd.MaxOpen)
     print('test_mechanism:: test open prob npsd: ', max(op[1]), npsd.MaxOpen)
+    print('op[1]')
     assert np.allclose(max(op[0]), apsd.MaxOpen)
     assert np.allclose(max(op[1]), npsd.MaxOpen)
     # assert 1 == 0
