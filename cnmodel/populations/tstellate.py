@@ -38,7 +38,7 @@ class TStellate(Population):
         from .. import populations
 
         if isinstance(pop, populations.SGC):
-            # Select SGC inputs from a all SR groups
+            # Select SGC inputs from all SR groups
             sr_vals = pop.cells['sr']
            # print('SRs for TS: ', np.bincount(sr_vals)/sr_vals.shape[0], np.unique(sr_vals))
             dist['sr'] = (sr_vals < 3).astype(float)
