@@ -233,7 +233,7 @@ class BushyRothman(Bushy):
         if self.status['temperature'] == None:
             self.status['temperature'] = temp
 
-        soma = self.do_morphology(morphology)
+        self.do_morphology(morphology)
 
         self.pars = self.get_cellpars(dataset, species=species, modelType=modelType)
         self.status['na'] = self.pars.natype
