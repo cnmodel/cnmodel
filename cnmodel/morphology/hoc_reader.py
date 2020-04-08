@@ -81,6 +81,16 @@ class HocReader(object):
         # generate topology
         self._generate_topology()
 
+    def find_sec_group(self, secname):
+        """
+        Find which group a section belongs to
+        """
+        for group in self.sec_groups:
+            secs = self.get_section_group(group)
+            if secname in secs:
+                return group
+        return None
+
     def get_section(self, sec_name):
         """
         Get the section associated with the section name
