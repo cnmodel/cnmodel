@@ -85,8 +85,8 @@ THREADSAFE
     RANGE C0, C1, C2, D, O1, O2
     RANGE Rb, Ru1, Ru2, Rd, Rr, Ro1, Rc1, Ro2, Rc2, Open, MaxOpen
     GLOBAL vmin, vmax
-	GLOBAL Q10, Mode
-	GLOBAL zd, Kd0
+    GLOBAL Q10, Mode
+    GLOBAL zd, Kd0
     RANGE g, rb, gmax, PA, Erev
     NONSPECIFIC_CURRENT i
 }
@@ -105,13 +105,13 @@ PARAMETER {
     gmax    = 10  (pS)  : maximal conductance
     vmin = -120 (mV)
     vmax = 100  (mV)
-	Q10 = 1.5 : temperature sensitivity
+    Q10 = 1.5 (/degC): temperature sensitivity
     Mode = 0 : flag to control rectification calculation
 
 : polyamine block parameters (Wang & Manis unpublished data)
-	zd = 1.032     
-	PA = 45
-	Kd0 = 31.e-6
+    zd = 1.032     
+    PA = 45
+    Kd0 = 31.e-6
 
 : Rates
 
@@ -134,7 +134,7 @@ PARAMETER {
     : of Open.
     MaxOpen = 0.72418772400 (1)  
     
-	aflag = 1 : Flag for control of printout of initial values.....
+    aflag = 1 : Flag for control of printout of initial values.....
 
 }
 
@@ -142,11 +142,11 @@ ASSIGNED {
     v       (mV)    : postsynaptic voltage
     i       (nA)    : current = g*(v - Erev)
     g       (pS)    : conductance
-	g0		(pS)	: conductance for voltage-dependent block by polyamines
-	gvdep   (pS)   : voltage-dependence of conductance
+    g0        (pS)    : conductance for voltage-dependent block by polyamines
+    gvdep   (pS)   : voltage-dependence of conductance
     XMTR    (mM)    : pointer to glutamate concentration
     rb      (/ms)   : binding
-	qfac   : q10 factor for rate scaling
+    qfac   : q10 factor for rate scaling
     celsius (degC)
 
 }
@@ -162,17 +162,17 @@ STATE {
 }
 
 INITIAL {
-    usetable = 0
-	C0=1
+    :usetable = 0
+    C0=1
     C1=0
     C2=0
     D=0
     O1=0
     O2=0
     Open = 0
-	qfac = Q10^((celsius-22)/10)
-:	VERBATIM
-:	fprintf(stdout, "AMPA.MOD gmax: %f    Q10 = %f  celsius = %f\n", gmax, Q10, celsius);
+    qfac = Q10^((celsius-22)/10)
+:    VERBATIM
+:    fprintf(stdout, "AMPA.MOD gmax: %f    Q10 = %f  celsius = %f qfac = %f\n", :gmax, Q10, celsius, qfac);
 :    ENDVERBATIM
     gvdepcalc(v)
 }
@@ -187,13 +187,13 @@ BREAKPOINT {
     Open = O1 + O2
     g = gmax * Open / MaxOpen
     if ( Mode == 1) {
-		g0 = 1.0 + 0.6*exp((v-50)/40)  : eq. 5 of Washburn et al., 1997, slightly modified
-		gvdep = g0*(1/(1+PA/(Kd0*exp(-zd*v/25.3))))
-		i = (1e-6) * g * gvdep * (v - Erev)
-	}
-	else {
-		i = (1e-6)*g*(v-Erev)
-	}
+        g0 = 1.0 + 0.6*exp((v-50)/40)  : eq. 5 of Washburn et al., 1997, slightly modified
+        gvdep = g0*(1/(1+PA/(Kd0*exp(-zd*v/25.3))))
+        i = (1e-6) * g * gvdep * (v - Erev)
+    }
+    else {
+        i = (1e-6)*g*(v-Erev)
+    }
 }
 
 KINETIC kstates {
@@ -210,7 +210,7 @@ KINETIC kstates {
 
 LOCAL g0
 PROCEDURE gvdepcalc(v) {
-	TABLE gvdep DEPEND PA, Kd0, zd FROM -100 TO 100 WITH 200
+    TABLE gvdep DEPEND PA, Kd0, zd FROM -100 TO 100 WITH 200
  :   VERBATIM
  :   fprintf(stderr, "gvdepcalc starts ");
  :   ENDVERBATIM
