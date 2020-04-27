@@ -34,7 +34,7 @@ EPSC_cv           0.12 [8]          0.499759 [9]      0.886406 [9]      1.393382
 Pr                1.000 [11]        1.000 [11]        1.000 [11]        1.000 [11]        1.000 [8]         1.000 [8]         0
 n_rsites          100 [5]           4 [6]             1 [4]             1 [4]             2 [8]             2 [8]             0
 delay             0.600             0.600             0.600             0.600             0.600             0.600             0
-weight            0.020377          0.003679          0.000457          0.001311          0.000327          0.000808          0
+weight            0.020377          0.0               0.000457          0.001311          0.000327          0.000808          0
 tau1              0.158             0.174             0.152             0.125             0.167             0.157             0
 tau2              0.246             1.501             1.652             0.251             1.489             1.641             0
 erev              0.0               0.0               0.0               0.0               0.0               0.0               0
@@ -165,6 +165,8 @@ erev              0.0               0.0               0.0               0.0     
       Parameters Weight, tau1, tau2, delay and erev from comare_simple_multisynapses 
       run and curve fitting (all cells)
 
+[14]  Tstellate weight to match AMPA multisite input:
+      0.003679
 """)
 
 
