@@ -77,10 +77,11 @@ class UserTester(object):
                 if not np.allclose(info[mask], expect[mask], rtol=self.rtol):
                     print( '\nComparing data array, shapes match: ', info.shape == expect.shape)
                     print( 'Model tested: %s, measure: %s' % (self.key, key))
-                    #print( 'args: ', dir(self.args[0]))
+                    print( 'args: ', dir(self.args[0]))
                     print( 'Array expected: ', expect[mask])
                     print('Array received: '  , info[mask])
-                    self.args[0].print_all_mechs()
+                    print('args[0]: ', self.args[0])
+                    #self.args[0].print_all_mechs()
                 assert np.allclose(info[mask], expect[mask], rtol=self.rtol)
             else:
                 for k in info.dtype.fields.keys():
