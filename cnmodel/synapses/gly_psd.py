@@ -53,7 +53,7 @@ class GlyPSD(PSD):
         self.post_cell = cells.cell_from_section(post_sec)
 
         self.psdType = psdType
-        
+        self.gmax = gmax
         glyslowPoMax = 0.162297  # thse were measured from the kinetic models in Synapses.py, as peak open P for the glycine receptors
         glyfastPoMax = 0.038475  # also later verified, same numbers...
         if self.psdType == 'glyfast':
@@ -108,7 +108,6 @@ class GlyPSD(PSD):
             for pname, pval in params.items():
                 setattr(clefts[k], pname, pval)
 
-#            clefts[k].setpointer(clefts[k]._ref_CXmtr, 'XMTR', psd[k]) #connect transmitter release to the PSD
             h.setpointer(clefts[k]._ref_CXmtr, 'XMTR', psd[k]) #connect transmitter release to the PSD
             
             v = 1.0 + gvar * np.random.standard_normal()
@@ -117,9 +116,7 @@ class GlyPSD(PSD):
             psd[k].Erev = eRev # set the reversal potential
         
         par = list(par)
-        #if self.psdType == 'ampa': # include nmda receptors in psd
-            #psd.extend(psdn)
-            #par.extend(parn)
+
         if message is not None:
             print(message)
                 

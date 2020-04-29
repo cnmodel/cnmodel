@@ -16,15 +16,17 @@ def test_max_open_probability():
     # And a presynaptic terminal to provide XMTR input
     term = h.MultiSiteSynapse(0.5, sec=sec)
     term.nZones = 1
+
     h.setpointer(term._ref_XMTR[0], 'XMTR', apsd)
-    h.setpointer(term._ref_XMTR[0], 'XMTR', npsd)
-    
+    h.setpointer(term._ref_XMTR[0], 'XMTR', npsd)  # must use separate point process
+
     h.celsius = 34.0
     h.finitialize()
     op = [[], []]
     for i in range(100):
         # force very high transmitter concentration for every timestep
         term.XMTR[0] = 10000
+
         sec.v = 40.0
         h.fadvance()
         op[0].append(apsd.Open)

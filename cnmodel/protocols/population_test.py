@@ -5,8 +5,8 @@ import pyqtgraph as pg
 from neuron import h
 
 import cnmodel.util as util
-from .protocol import Protocol
-from ..util import custom_init
+from cnmodel.protocols import Protocol
+from cnmodel.util import custom_init
 from cnmodel.util import sound
 
 class PopulationTest(Protocol):
@@ -123,7 +123,7 @@ class PopulationTest(Protocol):
             pass
         
         self.win.nextRow()
-        pre_plot = self.win.addPlot(title=self.pre_cells[0].type + ' Vm')
+        pre_plot = self.win.addPlot(title=self.pre_cells[0].celltype + ' Vm')
         for i in range(len(self.pre_cells)):
             pre_plot.plot(self['t'], self['v_pre%d'%i], pen=pg.mkPen(pg.intColor(i, len(self.pre_cells)), hues=len(self.pre_cells), width=1.0))
         

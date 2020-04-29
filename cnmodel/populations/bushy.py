@@ -19,12 +19,13 @@ class Bushy(Population):
         freqs = self._get_cf_array(species)
         fields = [
             ('cf', float),
-            ('sgc_sr', int),   # preferred SR group for SGC inputs
+            ('input_sr', list),   # distribution probability of SGC SR groups
+            ('sr', int),
         ]
         super(Bushy, self).__init__(species, len(freqs), fields=fields, **kwds)
         self._cells['cf'] = freqs
-        self._cells['sgc_sr'] = np.arange(len(freqs)) % 3
-    
+        self._cells['input_sr'] = [np.tile([1., 1., 1.], len(freqs))]
+
     def create_cell(self, cell_rec):
         """ Return a single new cell to be used in this population. The 
         *cell_rec* argument is the row from self.cells that describes the cell 
@@ -47,6 +48,10 @@ class Bushy(Population):
             # (this relationship is hypothesized based on reconstructions of
             # endbulbs)
             sr_vals = pop.cells['sr']
-            dist['sr'] = (sr_vals == cell_rec['sgc_sr']).astype(float)
+            u = np.random.choice(sr_vals)  # assign input sr for this cell
+#            print('u: ', u)
+            # pick from one sr group for all inputs, with prob same as distribution in nerve
+            dist['sr'] = (sr_vals == u).astype(float)
+            self._cells['sr'] = u
 
         return size, dist

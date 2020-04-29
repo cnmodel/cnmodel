@@ -52,6 +52,11 @@ class UserTester(object):
         # Check test structures are the same
         assert type(info) is type(expect)
         if hasattr(info, '__len__'):
+            if len(info) != len(expect):
+                print('\nComparing Lists, Model tested: %s, measure: %s' % (self.key, key))
+                print('Lengths: expected: %d  received: %d' % (len(expect), len(info)))
+                print('Array received: ', info)
+                print('Array expected: ', expect)
             assert len(info) == len(expect)
             
         if isinstance(info, dict):
@@ -82,15 +87,21 @@ class UserTester(object):
                     print('Array received: '  , info[mask])
                     print('args[0]: ', self.args[0])
                     #self.args[0].print_all_mechs()
+                    try:
+                        self.args[0].print_all_mechs()
+                    except:
+                        print('args[0] is string: ', self.args[0])
                 assert np.allclose(info[mask], expect[mask], rtol=self.rtol)
             else:
                 for k in info.dtype.fields.keys():
                     self.compare_results(k, info[k], expect[k])
         elif np.isscalar(info):
             if not np.allclose(info, expect, rtol=self.rtol):
-                print('Comparing Scalar data, model: %s, measure: %s' % (self.key, key))
+                print('\nComparing Scalar data, model: %s, measure: %s' % (self.key, key))
                 #print 'args: ', dir(self.args[0])
                 print('Expected: ', expect, ',  received: ', info, '  relative tolerance: ', self.rtol)
+                print('Ratio: received/expected: ', info/expect)
+                print('Difference: received-expected: ', info - expect)
                 if isinstance(self.args[0], str):
                     pass
                     # print ': ', str
@@ -127,7 +138,7 @@ class UserTester(object):
         win.setData(expect, info)
         win.show()
         print("Store new test results? [y/n]",)
-        yn = raw_input()
+        yn = input()
         win.hide()
         return yn.lower().startswith('y')
     

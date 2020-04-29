@@ -103,7 +103,7 @@ PARAMETER {
     rseed (1)        : random number generator seed (for SCOP module)
     latency = 0.0 (ms)
     latstd = 0.0 (ms)
-    
+    multisite = 1 (1)  : whether zones are modeled individually (1) or as a single, variable-amplitude zone (0)
     : Time course of latency shift in release during repetitive stimulation
     Lat_Flag = 0 (1) : 0 means fixed latency, 1 means lognormal distribution
     Lat_t0 = 0.0 (ms) : minimum time since simulation start before changes in latency are calculated
@@ -124,7 +124,6 @@ PARAMETER {
 ASSIGNED {
     : Externally set assignments
     nZones (1)    : number of zones in the model
-    multisite (1)  : whether zones are modeled individually (1) or as a single, variable-amplitude zone (0)
     nRequests (1) 
     nReleases (1)
     EventLatencies[EVENT_N] (0)

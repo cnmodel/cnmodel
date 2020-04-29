@@ -38,7 +38,8 @@ class SynapseTest(Protocol):
         synapses = []
         for i in range(n_synapses):
             synapses.append(pre_cell.connect(post_cell, type=synapsetype))
-
+        if len(synapses) == 0:
+            raise ValueError('No synapses created for this cell combination!')
         self.synapses = synapses
         self.pre_sec = synapses[0].terminal.section
         self.post_sec = synapses[0].psd.section
@@ -200,7 +201,7 @@ class SynapseTest(Protocol):
             self.all_release_events.append(self.release_events())
 
         elapsed = timeit.default_timer() - start_time
-        print('Elapsed time for %d Repetions: %f' % (iterations, elapsed))
+        print('Elapsed time for %d Repetitions: %f' % (iterations, elapsed))
         
     def release_events(self, syn_no=0):
         """

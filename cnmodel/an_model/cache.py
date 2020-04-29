@@ -8,6 +8,7 @@ import numpy as np
 from .wrapper import get_matlab, model_ihc, model_synapse, seed_rng
 from ..util.filelock import FileLock
 
+import cochlea
 try:
     import cochlea
     HAVE_COCHLEA = True
@@ -83,6 +84,11 @@ def make_key(**kwds):
             for k,v in val.items():
                 kwds[key + '.' + k] = v
     # sort and convert to string
+    for k in kwds:
+        if k == 'click_starts':
+            x = kwds[k]
+            xd = np.mean(np.diff(x))
+            kwds[k] = f"{x[0]:0.2f}-{x[-1]:0.2f}by{xd:0.2f}"
     kwds = list(kwds.items())
     kwds.sort()
     return '_'.join(['%s=%s' % kv for kv in kwds])
@@ -90,6 +96,7 @@ def make_key(**kwds):
 
 def get_cache_filename(cf, sr, seed, stim, **kwds):
     global _cache_path
+    # print('**stim.key(): ', make_key(**stim.key()))
     subdir = os.path.join(_cache_path, make_key(**stim.key()))
     filename = make_key(cf=cf, sr=sr, seed=seed, **kwds)
     filename = os.path.join(subdir, filename) + '.npz'
@@ -141,14 +148,14 @@ def generate_spiketrain(cf, sr, stim, seed, simulator=None, **kwds):
     if len(kwds) > 0:
         raise TypeError("Invalid keyword arguments: %s" % list(kwds.keys()))
     
-    if simulator == 'matlab':
+    if simulator in ['MATLAB', 'matlab']:
         seed_rng(seed)
         vihc = model_ihc(_transfer=False, **ihc_kwds) 
         m, v, psth = model_synapse(vihc, _transfer=False, **syn_kwds)
         psth = psth.get().ravel()
         times = np.argwhere(psth).ravel()
         return times * stim.dt
-    elif simulator == 'cochlea' and HAVE_COCHLEA:
+    elif (simulator in ['cochlea']) and HAVE_COCHLEA:
         fs = int(0.5+1./stim.dt)  # need to avoid roundoff error
         srgrp = [0,0,0] # H, M, L (but input is 1=L, 2=M, H = 3)
         srgrp[2-sr] = 1
@@ -161,7 +168,8 @@ def generate_spiketrain(cf, sr, stim, seed, simulator=None, **kwds):
                 species='cat')
         return np.array(sp.spikes.values[0])
     else:  # it remains possible to have a typo.... 
-        raise ValueError("anmodel/cache.py: Simulator must be specified as either MATLAB or cochlea; found %s" % simulator)
+        raise ValueError("anmodel/cache.py: Simulator must be specified as either MATLAB or cochlea; found <%s> of type %s (cochlea? %r)"
+            % (simulator, type(simulator), HAVE_COCHLEA))
 
 
 def detect_simulator():

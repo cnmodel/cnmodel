@@ -30,9 +30,13 @@ def get_source(*args, **kwds):
 
 def print_table(table):
     for k in DATA.keys():
-        if table == k[0]:
-            print('data key: ', k)
-            print( DATA[k][0])
+        if isinstance(k[0], tuple):  # order of tuple key values may be wrong - check types
+            ki = 1
+        else:
+            ki = 0
+        if table == k[ki]:
+            print('data key: ', k[ki])
+            print( DATA[k][ki])
 
 def get_table_info(table):
     """
@@ -40,7 +44,11 @@ def get_table_info(table):
     """
     tinfo = {}
     for k in DATA.keys():
-        if table == k[0]:
+        if isinstance(k[0], tuple):  # order of tuple key values may be wrong - check types
+            ki = 1
+        else:
+            ki = 0
+        if table == k[ki]:
             for p in k:
                 if not isinstance(p, tuple):
                     continue
@@ -123,8 +131,8 @@ def add_table_data(name, row_key, col_key, data, **kwds):
     
     """
     if isinstance(data, str) and '\xc2' in data:
-        raise TypeError('Data table appears to contain unicode characters but'
-                        'was not defined as unicode.')
+        raise TypeError('Data table <%s> appears to contain unicode characters but'
+                        'was not defined as unicode.' % name)
     
     lines = data.split('\n')
     
@@ -173,8 +181,8 @@ def add_table_data(name, row_key, col_key, data, **kwds):
             if len(line) < c:
                 continue
             if line[c-1] != " ":
-                print('line : ', line)
-                raise Exception("Table line %d column %s does not obey column boundaries." % (i, j))
+                print('Table line with error: \n    ', line)
+                raise Exception("Table <%s> line: %d, column: %s does not obey column boundaries." % (name, i, j))
             
     # Break table into cells
     cells = []
@@ -254,10 +262,14 @@ def report_changes(changes):
     For changes to data tables, give user a readout
     """
     if len(changes) > 0:
-        print("\nWarning: Data Table '%s' (in memory) has been modified!" % changes[0]['name'])
+        anychg = False
         for ch in changes:
             # print('  >>> Changing %s, %s from default (%s) to %s' % (ch['row'], ch['col'], str(ch['new'][0]), str(ch['old'][0])))
-            print('  >>> Changing %s, from default (%s) to %s' % (ch['key'], str(ch['old'][0]), str(ch['new'][0])))
+            if str(ch['old'][0]) != str(ch['new'][0]):
+                if anychg is False:
+                    print("\nWarning: Data Table '%s' (in memory) has been modified!" % changes[0]['name'])
+                    anychg = True
+                print('  >>> Changing %s, from default (%s) to %s' % (ch['key'], str(ch['old'][0]), str(ch['new'][0])))
 
 
 def parse_sources(lines):

@@ -50,7 +50,7 @@ NEURON {
     RANGE gna
     RANGE gbar
     RANGE minf, mtau, hinf, htau, sinf, stau, inat, m, h, s
-	RANGE vsna : voltage shift parameter
+	RANGE vshift : voltage shift parameter
 }
 
  
@@ -58,7 +58,7 @@ INDEPENDENT {t FROM 0 TO 100 WITH 100 (ms)}
 
  
 PARAMETER {
-    vsna = 4.3 (mV)
+    vshift = 4.3 (mV)
     celsius (degC)
     dt (ms) 
     ena (mV)
@@ -76,7 +76,7 @@ ASSIGNED {
     minf hinf sinf
     mtau (ms) htau (ms) stau (ms)
     mexp hexp sexp
-:	vsna (mV)
+:	vshift (mV)
 } 
 
 
@@ -159,7 +159,7 @@ PROCEDURE trates(v (mV)) {  :Build table with rate and other constants at curren
 }
 
 FUNCTION f_minf(v (mV)) {
-        f_minf = 1/(1+exp(-(v+27.4+vsna)*4.7*0.03937))
+        f_minf = 1/(1+exp(-(v+27.4+vshift)*4.7*0.03937))
 
         }
 FUNCTION f_mtau(v (mV)) {
@@ -167,20 +167,20 @@ FUNCTION f_mtau(v (mV)) {
         }
 
 FUNCTION f_hinf(v (mV)) {
-        f_hinf = 1/(1+exp((v+41.9+vsna)/6.7))
+        f_hinf = 1/(1+exp((v+41.9+vshift)/6.7))
     }
 
 FUNCTION f_htau(v (mV)) {
-        f_htau = 23.12*exp(-0.5*((v+77.58+vsna)/43.92)^2)
+        f_htau = 23.12*exp(-0.5*((v+77.58+vshift)/43.92)^2)
         }
 
 
 FUNCTION f_sinf(v (mV)) {
-    f_sinf = 1/(1+exp((v+46.0+vsna)/6.6))
+    f_sinf = 1/(1+exp((v+46.0+vshift)/6.6))
         }
 
 FUNCTION f_stau(v (mV)) {
-        f_stau = 1000*140.4*exp(-0.5*((v+71.3+vsna)/30.9)^2)
+        f_stau = 1000*140.4*exp(-0.5*((v+71.3+vshift)/30.9)^2)
     }
 
 

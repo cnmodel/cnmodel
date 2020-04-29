@@ -25,9 +25,14 @@ class SGC(Population):
         ]
         super(SGC, self).__init__(species, len(freqs), fields=fields, model=model, **kwds)
         self._cells['cf'] = freqs
-        # evenly distribute SR groups
-        self._cells['sr'] = np.arange(len(freqs)) % 3
-    
+        # old version:
+            # evenly distribute SR groups
+            #self._cells['sr'] = np.arange(len(freqs)) % 3
+        # new version:
+        # draw from distributions matching approximate SR distribution 
+        sr_vals = self.get_sgcsr_array(freqs, species='mouse')
+        self._cells['sr'] = sr_vals
+        
     def set_seed(self, seed):
         self.next_seed = seed
     
@@ -51,11 +56,11 @@ class SGC(Population):
         logging.info("Assigning spike trains to %d SGC cells..", len(real))
         if not parallel:
             for i, ind in enumerate(real):
-                logging.info("Assigning spike train to SGC %d (%d/%d)", ind, i, len(real))
+                #logging.info("Assigning spike train to SGC %d (%d/%d)", ind, i, len(real))
                 cell = self.get_cell(ind)
                 cell.set_sound_stim(stim, self.next_seed)
                 self.next_seed += 1
-                
+
         else:
             seeds = range(self.next_seed, self.next_seed + len(real))
             self.next_seed = seeds[-1] + 1

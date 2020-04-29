@@ -1,3 +1,21 @@
+A Note About the Branches
+=========================
+There are 2 branches in this public repository for CNModel.
+
+The "master" branch is the original branch that goes with Manis and Campagnola, Hear. Res. 2018. This is a Python 2.7 branch.
+
+The "python3" branch is new (June, 2019). It has been tested with Python 3.6 and 3.7.3. Please read the notes on that branch for information on differences and new functionality. It has now been set as the default branch.
+
+Changes
+=======
+
+01 May 2019, 04 June 2019
+
+This version of cnmodel runs under Python3.6 or Python3.7, using Neuron 7.6. New features include a method for changing the data tables on the fly without editing the original tables, and a tool for fitting Exp2Syn "simple" PSCs to the multisite PSC data (or, potentially, to experimental data) to get parameters for the synapse description table.
+
+The code base has been modified for Python 3. Functionally, the main internal change is that the parameters for the cells are (almost) completely removed to the data tables. All tests currently pass, but in a few cases are very close but not identical to the original Python 2.7 version (aka branch "master-Python27"). The source of one set of discrepancies has been traced to an error in a .mod file (a variable was declared in both the RANGE and GLOBAL lists).
+
+
 About CNModel
 =============
 
@@ -34,15 +52,34 @@ Installation requirements
 -------------------------
 This package depends on the following:
 
-1. Python 2.7 with numpy (1.11), scipy (0.19.0), lmfit (0.9.6), matplotlib (2.0 or 1.5), faulthandler, and pyqtgraph (0.9.10). The cochlea module requires pandas as well. 
+1. Python 3.6 or 3.7 with numpy (1.14.3 or later), scipy (1.1.0 or later), lmfit (0.9.11 or later), matplotlib (3.0.3), faulthandler, and pyqtgraph (0.11.0). The cochlea module requires pandas as well. 
    An Anaconda install with the appropriate scientific packages works well::
        
-       conda install python=2.7 pyqt pyqtgraph matplotlib numpy scipy pandas pytest faulthandler
+       conda install python=3.6 pyqt pyqtgraph matplotlib numpy scipy pandas pytest cython
+       pip install resampy
+       pip install lmfit
+       pip install cochlea
        
-2. lmfit (nonlinear fitter) is best obtained via pip to install the latest versions: ``pip install lmfit``
-3. A Python-linked version of NEURON (www.neuron.yale.edu). The code has been tested with NEURON 7.3, 7.4 and 7.5.
-4. A C compiler (gcc). Needed for compilation of mechanisms for NEURON.
-5. The Zilany et al (JASA 2014) auditory periphery model. This can be provided one of two ways:
+       or:
+       
+       conda create --name py3mpl3 python=3.6 pyqt pyqtgraph matplotlib=3 numpy scipy pandas pytest cython
+       pip install resampy
+       pip install lmfit
+       pip install cochlea
+       
+      
+       (Note that under MacOSX, python 3.7 is usable, including with Matlab R2019a; the Windows version of Matlab R2018b is restricted
+           to python 3.6)
+
+
+2. A Python-linked version of NEURON (www.neuron.yale.edu). The code has been tested with NEURON 7.5 and 7.6. We recommend
+getting the most recent version of NEURON and recompiling the .mod files in the mechanisms directory.
+
+3. A C compiler (gcc). Needed for compilation of mechanisms for NEURON.
+
+4. The Zilany et al (JASA 2014) auditory periphery model.
+
+This can be provided one of two ways:
     
    * The Python-based cochlea model by Rudnicki and Hemmert at https://github.com/mrkrd/cochlea. 
      This is probably best installed via pip per the instructions on the PyPi site: ``pip install cochlea``.
@@ -53,39 +90,165 @@ This package depends on the following:
      and the THRESHOLD_ALL_* files. When cnmodel attempts to access this code the first time, 
      it will perform the necessary compilation.
    
-6. neuronvis (optional) available at https://github.com/campagnola/neuronvis or https://github.com/pbmanis/neuronvis).
-   This provides 3D visualization for morphology.
+5. neuronvis (optional) available at https://github.com/campagnola/neuronvis or (a newer version) https://github.com/pbmanis/neuronvis).
+   This provides 3D visualization for morphology, and is independent of cnmodel. neuronvis will require: mayavi, matplotlib, and pyqtgraph.
 
-For more detailed information on setup in a Windows environment, see the file Windows_setup.md. Thanks to Laurel Carney for prompting the generation of this set of instructions, and for identifying issues on Windows.
+Once CNModel has been downloaded, go to the directory, and make sure that you are using the right branch ("Python3")::
+        
+        $ cd cnmodel
+        $ git branch           # the active branch will have "*" next to it
+        $ git checkout python3 #(if necessary)
 
-Note: *This package is not yet compatible with Python 3.x. Neuron is not yet compatible with Python 3.x*
+After the code is installed, enter the cnmodel directory and compile the NEURON mod files::
+
+        $ nrnivmodl cnmodel/mechanisms
+
+This will create a directory ("x86_64" or "special") in the top cnmodel directory with the compiled mechanisms.
+
+    Under Windows 10, use::
+
+         $ mknrndll cnmodel\mechanisms
+
+to do the same thing. 
+
+    Finally, go into the cnmodel directory and run::
+    
+        python setup.py develop
+        or:
+        python setup.py install
+
+We prefer the "develop" method, as it allows you to change the code in the cnmodel directory if necessary, without re-running the setup command.
+
+
+Windows Notes:
+--------------
+
+1. For more detailed information on setup in a Windows environment for Python 2.7, see the file Windows_setup.md. Thanks to Laurel Carney for prompting the generation of this set of instructions, and for identifying issues on Windows. A similar setup should work for Python 3.6+.
+
+2. Manually compile the mex files for the Zilany et al model. In Matlab, go to the an_model/models folder, and use mexANmodel.m to compile the files. Then, add the an_model/model folder to the Matlab path, so that it can find the files when needed.
+
+3. Under Windows, it may be best to use the standard Windows command terminal rather than the "bash" terminal provided by NEURON, at least to run the Python scripts.
+
 
 Testing
 -------
 
-After the code is installed, enter the cnmodel directory and compile the NEURON mod files::
+Make sure you are in the cnmodel directory, and that you have selected the right environment in Anaconda (in 
+my case, this is usually an environment called py3mpl3 - python 3 with matplotlib 3).
+
+After the code is installed, enter the cnmodel directory and compile the NEURON mod (you might have already done this if you are following the instructions above)::
 
     $ nrnivmodl cnmodel/mechanisms
 
 This will create a directory ("x86_64" or "special") in the top cnmodel directory with the compiled mechanisms.
 
-At that point::
+Then::
 
     $ python examples/toy_model.py
      
 should generate a plot with several sets of traces showing responses of individual neuron models to depolarizing and hyperpolarizing current steps.
 
-The test suite should be run as:
+The test suite should then be run as::
 
     $ python test.py
 
 This will test each of the models against reference data, the synapse mechanisms, a number of internal routines, and the auditory nerve model. The tests should pass for each component. Failures may indicate incorrect installation or incorrect function within individual components. These should be corrected before proceeding with simulations.
 
+Individual test suite components can be run directly using pytest, for example::
+
+    $  pytest cnmodel/cells/tests/test_cells.py -k "test_bushy_mouse"
+
+
+Usage
+-----
+CNModel is meant to be used as an imported package under Python. See the files in the examples directory to see how this is done. Typically, we create a separate directory (a "simulation" directory) that holds the code that uses cnmodel for simulations, at the same level as cnmodel or elsewhere (do not place the simulation directory inside cnmodel).
+
+The data tables in the cnmodel/data directory (synapses, ionchannels, populations, connectivity) should not be modified. If it is desired to change the parameters specified in these tables, it is best to copy them into the "simulation" directory in a separate path, and modify them there. The data tables can then be used as follows::
+
+        from cnmodel import data
+        import data_XM13nacncoop as CHAN  # where data_XM13nacncoop.py is a modified table in the simulation directory
+        # The following takes the table named "XM13nacncoop_channels" from the CHAN table,
+        # and overwrites the original table "XM13nacncoop_channels" that is in ionchannels.py. The original file in cnmodel is
+        # not modified, only the data in memory. 
+        changes = data.add_table_data('XM13nacncoop_channels', row_key='field', col_key='model_type',
+                       species='mouse', data=CHAN.ChannelData)
+        # The following takes the table indicating how the channel compartments should be decorated from the ChannelComparments
+        # table, overwriting the original named table in ionchannels.py
+        changes_c = data.add_table_data('XM13nacncoop_channels_compartments', row_key='parameter', col_key='compartment',
+                species='mouse', model_type='II', data=CHAN.ChannelCompartments)
+        # now print out what was changed!
+        data.report_changes(changes)
+        data.report_changes(changes_c)
+
+That is all that it takes. Note the following: 
+
+1. There are some limitations as to which parameters can be changed. as some paramaters, such as rate constants for the receptors and ion channels, are specified in the .mod files and are not exposed externally. 
+
+2. The connectivity data table can be modified to represent a particular pattern of connectivity, and the populations data table can be modified to change the relative numbers of cells.
+        
+3. The data tables are very strict about column alignment. The first character of the column title and the each of the values in that column must line up directly. It is best/easiest to edit these tables in a programming editor with fixed width fonts and the ability to perform column-based insertions. Changes to the data tables should be annotated appropriately.
+
+4. Channels and receptors are all specified as NEURON .mod files. Adding new mechanisms to a cell will require modification of the code to recognize the mechanisms at several points. It is especially to handle this in cnmodel/cells.py, where knowledge of channel names is needed to compute initial states; in the cell code itself where the channels are actually inserted, and in the relevant data tables. Specific naming conventions should be followed to simplify integration. Contact the authors for help.
+
+Adding new cell types
+---------------------
+
+To add a new cell type, it is necessary to:
+    
+1. Create a source file in cnmodel/cells, likely based on the bushy.py source, renaming variables as necessary. The main routines in the class however, should maintain their present names and calling parameters.
+    
+1. Add the values for the cells to the data tables (all tables will need to be updated with new columns for the cell type).
+
+1. Run the model and make sure the new cell type is performing as desired. Target parameters should be identified and verified against the model.
+
+1.  Update the unit tests to include the new cell type.
+
+
+
+
+
+MATLAB (R)
+----------
+
+This version has been tested with the MATLAB AN model of Zilany et al., 2014. 
+Before using, you will need to compile the C code in an_model using Matlab's mex tool. First however, it *may* be necessary to change the following code:
+
+In model_Synapse.c (cnmodel/an_model/model):
+
+Change (line 63 in the source)::
+
+	$ int    nrep, pxbins, lp,  outsize[2], totalstim;
+
+to::
+
+	$ int    nrep, pxbins, lp,  totalstim;
+    $ size_t outsize[2];
+    
+Likewise, in model_IHC.c, change::
+
+	$ int    nrep, pxbins, lp,  outsize[2], totalstim, species;
+
+to::
+
+	$ int    nrep, pxbins, lp,  totalstim, species;
+    $ size_t outsize[2];
+
+Then, in Matlab, go to the cnmodel/an_model/model directory, and run::
+
+    $ mexANmodel
+
+Then, cd to an_model and run::
+    
+    $ testANmodel    
+    
+to confirm that the model is installed and working.
+(You may need to add the model directory to the Matlab path.)
+
 
 Figures
 -------
 
-The data for the figures in the manuscript (Manis and Campagnola, Hearing Research 2018) can be generated using the bash script "figures.sh" in the examples subdirectory. 
+The data for most of the figures in the manuscript (Manis and Campagnola, Hearing Research 2018) can be generated using the bash script "figures.sh" in the examples subdirectory. 
 From the main cnmodel directory::
 
     $ ./examples figures.sh fignum
@@ -103,7 +266,8 @@ A number of additional tests are included in the examples directory.
 - `test_an_model.py` verifies that the auditory nerve model can be run. If necessary, it will compile (using MEX) the mechanisms for matlab. 
 - `test_ccstim.py` tests the generation of different stimulus waveforms by the pulse generator module.
 - `test_cells.py` runs different cell models in current or voltage clamp. 
-  Usage:: 
+  
+  Usage::
       
       test_cells.py celltype species[-h] [--type TYPE] [--temp TEMP] [-m MORPHOLOGY]
                     [--nav NAV] [--ttx] [-p PULSETYPE] [--vc | --cc | --rmp]
@@ -163,22 +327,34 @@ A number of additional tests are included in the examples directory.
 Potential Issues and Solutions
 ------------------------------
 
-1.  Occasionally one of the AN spike train files, which are stored in the directory `cnmodel/an_model/cache`, become locked. This can occur if the calling routines are aborted (^C, ^Z) in the middle of a transaction accessing the cache file, or perhaps during when parallel processing is enabled and a routine fails or is aborted. In this case, a file with the extension ``".lock"`` exists, which prevents the an_model code from accessing the file. The ``".lock"`` file needs to be deleted from the cache directory.
+1.  Occasionally one of the AN spike train files, which are stored in the directory `cnmodel/an_model/cache`, become locked. This can occur if the calling routines (e.g., simulation runs) are aborted (^C, ^Z) in the middle of a transaction accessing the cache file, or perhaps during when parallel processing is enabled and a routine fails or is aborted. In this case, a file with the extension ``".lock"`` exists, which prevents the an_model code from accessing the file. The ``".lock"`` file needs to be deleted from the cache directory. Because the cache directory contains an hierarchical arrangement of subdirectories, and can be populated with thousands of files after a few runs requiring many auditory nerve datasets, finding the lock file can be somewhat tedious. The following should help under Unix:
     
   *  First, print a list of the locked files::
-  
-      $ find /path/to/cache -name '*.lock'
+      
+          - find /path/to/cache -name '*.lock'
     
   * Where /path/to/cache may be something like `cnmodel/an_model/cache`. 
     There is most likely only one such file in the diretory.
 
   * Next, to delete the files::
   
-      $ find /path/to/cache -name '*.lock' -delete
+      - find /path/to/cache -name '*.lock' -delete
        
   * Under Windows (and other OS's), you should be able do accomplish the same thing
     with the File Explorer/Finder, limiting the files by extension.
     
+  * An alternative (for any OS) is to take advantage of Python's pathlib module. The glob search is 
+    remarkably fast (on my system, it takes under a minute to search through more than 3.5 million
+    cached AN spike trains)::
+    
+            >>python
+            > from pathlib import Path
+            > gl = Path('.').rglob('*.lock')
+            > locks = list(gl) # (could do this in the next line)
+            > # print(locks)  # see the lock files
+            > for g in locks:  # now remove the lock files
+            >    g.unlink()
+            >
    
 References
 ----------

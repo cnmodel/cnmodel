@@ -23,7 +23,7 @@ def test_bushy21():
 
 def test_bushy_mouse():
     reset(raiseError=False)
-    cell = cells.Bushy.create(species='mouse', modelType='II')
+    cell = cells.Bushy.create(species='mouse', modelType='II', nach='na')
     CellTester('bushy-mouse-typeII', cell)
     
 def test_tstellate():
@@ -40,12 +40,6 @@ def test_tstellatet():
     reset(raiseError=False)
     cell = cells.TStellate.create(species='guineapig', modelType='I-t')
     CellTester('tstellate_guineapig-typeI-t', cell)
-
-# not implemented yet
-# def test_tstellatet_mouse():
-#     reset(raiseError=False)
-#     cell = cells.TStellate.create(species='mouse', modelType='I-t')
-#     CellTester('tstellate_mouse-typeI-t', cell)
 
 def test_dstellate():
     reset(raiseError=False)
@@ -64,9 +58,14 @@ def test_octopus():
 
 def test_pyramidal():
     reset(raiseError=False)
-    cell = cells.Pyramidal.create(species='rat', modelType='I')
+    cell = cells.Pyramidal.create(species='rat', model='POK', modelType='I')
     CellTester('pyramidal_rat_I', cell)
 
+def test_pyramidal_ceballos():
+    reset(raiseError=False)
+    cell = cells.PyramidalCeballos.create(species='mouse', model='Ceballos', modelType='I')
+    CellTester('pyramidal_mouse_I', cell)
+    
 def test_tuberculoventral():
     reset(raiseError=False)
     cell = cells.Tuberculoventral.create(species='mouse', modelType='TVmouse')
@@ -79,15 +78,18 @@ def test_cartwheel():
 
 def test_sgc_basal_middle():
     reset(raiseError=False)
-    cell = cells.SGC.create(species='mouse', modelType='bm')
+    cell = cells.SGC.create(species='mouse', modelType='sgc-bm')
     CellTester('SGC_rat_bm', cell)
 
 def test_sgc_apical():
     reset(raiseError=False)
-    cell = cells.SGC.create(species='mouse', modelType='a')
+    cell = cells.SGC.create(species='mouse', modelType='sgc-a')
     CellTester('SGC_rat_a', cell)
 
-
+def test_mso():
+    reset(raiseError=False)
+    cell = cells.MSO.create(species='guineapig', modelType='principal')
+    CellTester('mso_guineapig-principal', cell)
 
 #
 # Supporting functions

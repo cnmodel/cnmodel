@@ -50,10 +50,10 @@ rc('font',**{'family':'sans-serif','sans-serif':['Arial']})
 # check for LaTeX install - 
 from distutils.spawn import find_executable
 latex_avail = False
-if find_executable('latex'):
-    latex_avail = True
-rc('text', usetex=latex_avail)
-rcParams['text.latex.unicode'] = latex_avail
+# if find_executable('latex'):
+#     latex_avail = True
+# rc('text', usetex=latex_avail)
+# rcParams['text.latex.unicode'] = latex_avail
 
 def _ax_tolist(ax):
     if isinstance(ax, list):
@@ -271,7 +271,7 @@ def labelPanels(axl, axlist=None, font='Arial', fontsize=18, weight='normal', xy
     # if not isinstance(axl, list):
     #     axl = [axl]
     if axlist is None:
-        axlist = string.uppercase[0:len(axl)]
+        axlist = string.ascii_uppercase[0:len(axl)]
     # assume we wish to go in sequence
     if len(axlist) > len(axl):
         raise ValueError ('axl must have more entries than axlist: got axl=%d and axlist=%d for axlist:' % (len(axl), len(axlist)), axlist)
@@ -1062,7 +1062,7 @@ class Plotter():
  
         if len(self.axdict) == 0:
             for i, a in enumerate(self.axarr.flatten()):
-                label = string.uppercase[i]
+                label = string.ascii_uppercase[i]
                 self.axdict[label] = a
         
         if title is not None:
@@ -1102,7 +1102,7 @@ class Plotter():
                         self.axlist.append(self.axarr[j, i])
                 
             if self.nrows*self.ncolumns > 26:  # handle large plot using "A1..."
-                ctxt = string.uppercase[0:self.ncolumns]  # columns are lettered
+                ctxt = string.ascii_uppercase[0:self.ncolumns]  # columns are lettered
                 rtxt = [str(x+1) for x in range(self.nrows)] # rows are numbered, starting at 1
                 axl = []
                 for i in range(self.nrows):
@@ -1233,7 +1233,7 @@ if __name__ == '__main__':
 #    hfig, ax = mpl.subplots(2, 3)
     axd = OrderedDict()
     for i, a in enumerate(P.axarr.flatten()):
-        label = string.uppercase[i]
+        label = string.ascii_uppercase[i]
         axd[label] = a
     for a in list(axd.keys()):
         axd[a].plot(np.random.random(10), np.random.random(10))

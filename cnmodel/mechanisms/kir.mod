@@ -1,108 +1,101 @@
-TITLE KIR channel
+TITLE kir.mod 
+ 
 COMMENT
-Reference: Steephen JE, Manchanda R (2009) Differences in biophysical
-properties of nucleus accumbens medium spiny neurons emerging from
-inactivation of inward rectifying potassium currents. J Comput Neurosci [PubMed] 
 
-Found on ModelDB, 1/21/2013 PBManis
-
+Inwardly rectifying potassium (Kir) currents
+based on mathematical model from Leao et al (2012)
+ Ceballos CC, Li S, Roque AC, Tzounopoulos T, Leão RM (2016) Ih Equalizes Membrane Input Resistance in a Heterogeneous Population of Fusiform Neurons in the Dorsal Cochlear Nucleus. Front Cell Neurosci 10:249 [PubMed]
+ModelDB Accession: 206252
+Reduced from fusiform.mod from Leao et al. 2012, 
 
 ENDCOMMENT
-
-NEURON {
-	SUFFIX KIR
-	USEION  k READ ek WRITE ik
-	RANGE g, ik, gbar
-	GLOBAL minf, mtau
-}
-
+ 
+ 
 UNITS {
-	(mA) = (milliamp)
-	(uA) = (microamp)
-	(mV) = (millivolt)
-	(mS) = (millimho)
+        (mA) = (milliamp)
+        (mV) = (millivolt)
 }
 
+ 
+NEURON {
+    SUFFIX kir
+    USEION k READ ek WRITE ik
+
+	RANGE gk, gbar 	: Persistent Na channels and KIR channels 
+	GLOBAL ntau, ninf	: time constants for Na channels and K channels 
+
+}
+
+ 
+INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}
+ 
 PARAMETER {
-	celsius (degC)
-	ek			(mV)
-	gbar = 1.4e-4	(mho/cm2)	<0,1e9>
-	m_vh = -82	(mV)	: half activation
-	m_ve = 13		(mV)	: slope
+    v (mV)
+    celsius (degC)
+    dt (ms)
+	ek (mV)
+    ena (mV)
+	ekir (mV)
+    gbar = 0.0005 (mho/cm2)    <0,1e9>
+	ntau = 0.5 (ms) <0,100>
 }
 
-ASSIGNED {
-	v	(mV)
-	g	(mho/cm2)
-	ik	(mA/cm2)
-	minf	(1)
-	mtau	(ms)
-	qt (1)
-}
 
 STATE {
-	m
+    nir
+}
+ 
+ASSIGNED {
+    gk (mho/cm2)
+
+    ik (mA/cm2)
+
+    ninf 
 }
 
+
+LOCAL nexp
+ 
+? currents
 BREAKPOINT {
-	SOLVE states METHOD cnexp
-	g = gbar*m
-	ik = g*(v - ek)
+    SOLVE states METHOD cnexp
+
+    gk = gbar*nir
+	ik = gk*(v - ek)
 }
+? currents
+
+UNITSOFF 
+ 
 
 INITIAL {
-	qt = 3^((celsius-35)/10)
 	rates(v)
-	m = minf
+	nir = ninf
 }
 
-DERIVATIVE states { 
-	rates(v)
-	m' = (minf-m)/mtau
-}
 
-FUNCTION_TABLE tabmtau(v(mV)) (ms)
-
-: rates() computes rate and other constants at present v
-: call once from hoc to initialize inf at resting v
-
-PROCEDURE rates(v(mV)) {
-:	mtau = tabmtau(v)
-	mtau = tabmtau(v)/qt
-	minf = 1/(1 + exp((v - m_vh)/m_ve))
+? states
+DERIVATIVE states {  
+    rates(v)
+    nir' = (ninf - nir) / ntau
 }
  
-COMMENT
-/* TABLES
-The tables here are built as vecs in hoc, and then loaded into the mod file arrays before use...
+LOCAL q10
 
- * 
- * Steephen, J. E., & Manchanda, R. (2009). Differences in biophysical properties of nucleus accumbens medium spiny neurons emerging from inactivation of inward rectifying potassium currents. J Comput Neurosci, 
- * doi:10.1007/s10827-009-0161-7
- */
- 
-//KIR
-objref vecmtau_KIR, vecv_KIR
-vecmtau_KIR = new Vector()
-vecv_KIR = new Vector()
-vecv_KIR.indgen(-120, 0, 10)
-vecmtau_KIR.append(7.465, 7.465, 7.465, 8, 9.435, 10.755, 12.12, 13.795, 15.385, 14.285, 11.765, 8.89, 8) // At 35 deg C
-table_tabmtau_KIR(&vecmtau_KIR.x[0], vecv_KIR.size, &vecv_KIR.x[0]) 
+? rates
+PROCEDURE rates(v(mV)) {  :Computes rate and other constants at current v.
+	                      :Call once from HOC to initialize inf at resting v.
+	TABLE ninf DEPEND celsius FROM -200 TO 100 WITH 400
 
-//inKIR
-objref vecv_inKIR, vechinf_inKIR, vechtau_inKIR, vecv_tau_inKIR
-vecv_tau_inKIR = new Vector()
-vechtau_inKIR= new Vector()
-vecv_tau_inKIR.append(-120,-90, -50)
-vechtau_inKIR.append(7.767, 15, 25.333) // At 35 deg C
-table_tabhtau_inKIR(&vechtau_inKIR.x[0],vecv_tau_inKIR.size, &vecv_tau_inKIR.x[0])
+UNITSOFF
+	q10 = 3^((celsius - 32)/10)
 
-vecv_inKIR = new Vector()
-vechinf_inKIR = new Vector()
-vecv_inKIR.append(-120,-90, -50)
-vechinf_inKIR.append(0, 0.13, 1)
-table_tabhinf_inKIR(&vechinf_inKIR.x[0], vecv_inKIR.size, &vecv_inKIR.x[0])
-table_tabmtau_inKIR(&vecmtau_KIR.x[0], vecv_KIR.size, &vecv_KIR.x[0]) 
+	:"n" potassium activation system
+        ninf = kird_m(v)
+}
 
-ENDCOMMENT
+FUNCTION kird_m(x) { : KIR activation
+	kird_m = 1/(1+exp((x+85.48)/12)) 
+}
 
+UNITSON

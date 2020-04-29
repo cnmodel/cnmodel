@@ -150,7 +150,7 @@ if __name__ == '__main__':
             test_sgc_bushy_psd(plot=True)
             test_sgc_tstellate_psd(plot=True)
             test_sgc_dstellate_psd(plot=True)
-            test_sgc_octopus(plot=True)
+            test_sgc_octopus_psd(plot=True)
             
 #    pg.show()
     if sys.flags.interactive == 0:

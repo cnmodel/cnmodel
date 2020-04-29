@@ -27,7 +27,8 @@ __all__ = ['Octopus', 'OctopusRothman', 'OctopusSpencer']
 
 class Octopus(Cell):
 
-    type = 'octopus'
+    celltype = 'octopus'
+    scaled = False
     
     @classmethod
     def create(cls, modelType='RM03', **kwds):
@@ -65,18 +66,33 @@ class Octopus(Cell):
             post_sec = self.soma
         
         if psd_type == 'simple':
-            return self.make_exp2_psd(post_sec, terminal, loc=loc)
+            if terminal.cell.celltype in ['sgc']:
+                weight = data.get('%s_synapse' % terminal.cell.celltype, species=self.species,
+                        post_type=self.celltype, field='weight')
+                tau1 = data.get('%s_synapse' % terminal.cell.celltype, species=self.species,
+                        post_type=self.celltype, field='tau1')
+                tau2 = data.get('%s_synapse' % terminal.cell.celltype, species=self.species,
+                        post_type=self.celltype, field='tau2')
+                erev = data.get('%s_synapse' % terminal.cell.celltype, species=self.species,
+                        post_type=self.celltype, field='erev')
+                return self.make_exp2_psd(post_sec, terminal, weight=weight, loc=loc,
+                        tau1=tau1, tau2=tau2, erev=erev)
+            else:
+                raise TypeError("Cannot make simple PSD for %s => %s" % 
+                            (terminal.cell.celltype, self.celltype))
+
+            
         elif psd_type == 'multisite':
-            if terminal.cell.type == 'sgc':
+            if terminal.cell.celltype == 'sgc':
                 # Max conductances for the glu mechanisms are calibrated by 
                 # running `synapses/tests/test_psd.py`. The test should fail
                 # if these values are incorrect
                 self.AMPAR_gmax = data.get('sgc_synapse', species=self.species,
-                        post_type=self.type, field='AMPAR_gmax')*1e3
+                        post_type=self.celltype, field='AMPAR_gmax')*1e3
                 self.NMDAR_gmax = data.get('sgc_synapse', species=self.species,
-                        post_type=self.type, field='NMDAR_gmax')*1e3
+                        post_type=self.celltype, field='NMDAR_gmax')*1e3
                 self.Pr = data.get('sgc_synapse', species=self.species,
-                        post_type=self.type, field='Pr')
+                        post_type=self.celltype, field='Pr')
                 # adjust gmax to correct for initial Pr
                 self.AMPAR_gmax = self.AMPAR_gmax/self.Pr
                 self.NMDAR_gmax = self.NMDAR_gmax/self.Pr
@@ -87,11 +103,11 @@ class Octopus(Cell):
                 if 'NMDAScale' in kwds:
                     self.NMDAR_gmax = self.NMDAR_gmax*kwds['NMDAScale']
                 return self.make_glu_psd(post_sec, terminal, self.AMPAR_gmax, self.NMDAR_gmax, loc=loc)
-            elif terminal.cell.type == 'dstellate':
-                return self.make_gly_psd(post_sec, terminal, type='glyslow', loc=loc)
+            elif terminal.cell.celltype == 'dstellate':
+                return self.make_gly_psd(post_sec, terminal, psdtype='glyslow', loc=loc)
             else:
                 raise TypeError("Cannot make PSD for %s => %s" % 
-                            (terminal.cell.type, self.type))
+                            (terminal.cell.celltype, self.celltype))
         else:
             raise ValueError("Unsupported psd type %s" % psd_type)
 
@@ -102,8 +118,10 @@ class OctopusRothman(Octopus, Cell):
     Rothman and Manis, 2003abc (Type II, with high gklt and hcno - octopus cell h current).
     """
 
-    def __init__(self, morphology=None, decorator=None, nach=None, ttx=False,
-                species='guineapig', modelType=None, debug=False):
+    def __init__(self, morphology=None, decorator=None, nach=None,
+                ttx=False, temperature=None,
+                species='guineapig', modelType=None, modelName=None,
+                debug=False):
         """
         initialize the octopus cell, using the default parameters for guinea pig from
         R&M2003, as a type II cell with modified conductances.
@@ -133,6 +151,10 @@ class OctopusRothman(Octopus, Cell):
         species: string (default 'guineapig')
             species defines the channel density that will be inserted for different models. Note that
             if a decorator function is specified, this argument is ignored.
+
+        modelName: string (default: None)
+            modelName specifies the source conductance pattern (RM03, XM13, etc).
+            modelName is passed to the decorator, or to species_scaling to adjust point (single cylinder) models.
             
         modelType: string (default: None)
             modelType specifies the type of the model that will be used (e.g., "II", "II-I", etc).
@@ -147,32 +169,36 @@ class OctopusRothman(Octopus, Cell):
         """
         
         super(OctopusRothman, self).__init__()
-        if modelType == None:
+        if modelType is None:
             modelType = 'II-o'
-        if nach == None and species == 'guineapig':
+        if species == 'guineapig':
+            modelName = 'RM03'
+            dataset = 'RM03_channels'
+            temp = 22.
             nach = 'jsrna'
-        if nach == None and species == 'mouse':
-            nach = 'nacn'
-        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
-                       'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Octopus',
-                        'morphology': morphology, 'decorator': decorator, 'temperature': None}
-        self.i_test_range = {'pulse': (-4.0, 4.0, 0.2)}
-        self.spike_threshold = -50
-        self.vrange = [-70., -57.]  # set a default vrange for searching for rmp
-        
-        if morphology is None:
-            """
-            instantiate a basic soma-only ("point") model
-            """
-            soma = h.Section(name="Octopus_Soma_%x" % id(self))  # one compartment of about 29000 um2
-            soma.nseg = 1
-            self.add_section(soma, 'soma')
+        elif species == 'mouse':
+            if modelName is None:
+                modelName = 'XM13'
+            if modelName == 'XM13':
+                dataset = 'XM13_channels'
+            elif modelName  == 'XM13nacncoop':
+                dataset = 'XM13_channels_nacncoop'
+            else:
+                raise ValueError(f"ModelName {self.status['modelName']:s} not recognized for mouse T-stellate cells")
         else:
-            """
-            instantiate a structured model with the morphology as specified by 
-            the morphology file
-            """
-            self.set_morphology(morphology_file=morphology)
+            raise ValueError(f"Species {species:s} not recognized for {self.celltype:s} cells")
+
+        self.debug = debug
+        self.status = {'species': species, 'cellClass': self.celltype, 'modelType': modelType, 'modelName': modelName,
+                       self.somaname: True, 'axon': False, 'dendrites': False, 'pumps': False,
+                       'na': nach, 'ttx': ttx, 'name': self.celltype,
+                       'morphology': morphology, 'decorator': decorator, 'temperature': None}
+        self.spike_threshold = -50.
+        
+        soma = self.do_morphology(morphology)
+
+        self.pars = self.get_cellpars(dataset, species=species, modelType=modelType)
+        self.status['na'] = self.pars.natype
 
         # decorate the morphology with ion channels
         if decorator is None:   # basic model, only on the soma
@@ -180,9 +206,9 @@ class OctopusRothman(Octopus, Cell):
             self.e_h = -38. # from McGinley et al. 
             self.R_a = 195  # McGinley et al. 
             if self.status['species'] == 'mouse':
-                self.mechanisms = ['klt', 'kht', 'hcnobo', 'leak', nach]
-            else:
-                self.mechanisms = ['klt', 'kht', 'ihvcn', 'leak', nach]
+                self.mechanisms = ['klt', 'kht', 'hcnobo', 'leak', self.pars.natype]
+            elif self.status['species'] == 'guineapig':
+                self.mechanisms = ['klt', 'kht', 'ihvcn', 'leak', self.pars.natype]
             for mech in self.mechanisms:
                 self.soma.insert(mech)
             self.soma.ek = self.e_k
@@ -193,17 +219,55 @@ class OctopusRothman(Octopus, Cell):
                 self.soma().ihvcn.eh = self.e_h
             self.soma().leak.erev = self.e_leak
             self.soma.Ra = self.R_a
-            self.species_scaling(silent=True, species=species, modelType=modelType)  # set the default type II cell parameters
+            self.species_scaling(silent=True)  # set the default type II cell parameters
         else:  # decorate according to a defined set of rules on all cell compartments
             self.decorate()
         self.save_all_mechs()  # save all mechanisms inserted, location and gbar values...
         self.get_mechs(self.soma)
         
-        if debug:
-            print("<< octopus: octopus cell model created >>")
-        #print 'Cell created: ', self.status
+        if self.debug:
+                print("<< T-stellate: JSR Stellate Type 1 cell model created >>")
 
-    def species_scaling(self, species='guineapig', modelType='II-o', silent=True):
+    def get_cellpars(self, dataset, species='guineapig', modelType='I-c'):
+        """
+        Retrieve parameters for the specifed model type and species from the data tables
+        
+        dataset : str (no default)
+            name of the data table to use
+        
+        species : str (default: 'guineapig')
+            Species table to use
+        
+        modelType : str (default: 'I-c')
+            Model type to get parameters from the table.
+        
+        """
+        cellcap = data.get(dataset, species=species, model_type=modelType,
+            field='soma_Cap')
+        chtype = data.get(dataset, species=species, model_type=modelType,
+            field='na_type')
+        pars = Params(cap=cellcap, natype=chtype)
+
+        if self.status['modelName'] == 'RM03':
+            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'ka_gbar', 'ih_gbar', 'leak_gbar', 'leak_erev', 'ih_eh', 'e_k', 'e_na']:
+                pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
+                    field=g))
+        elif self.status['modelName'] == 'XM13':
+            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'ka_gbar', 'ihvcn_gbar', 'leak_gbar', 'leak_erev', 'ih_eh', 'e_k', 'e_na']:
+                pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
+                    field=g))
+        # elif self.status['modelName'] == 'mGBC':
+        #     for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'ka_gbar', 'ihvcn_gbar', 'leak_gbar', 'leak_erev', 'ih_eh', 'e_k', 'e_na']:
+        #         pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
+        #             field=g))
+        else:
+            raise ValueError(f"get_cellpars: Model name {self.status['modelName']} is not yet implemented for cell type {self.celltype.title():s}")
+            
+        if self.debug:
+            pars.show()
+        return pars
+    
+    def species_scaling(self, silent=True):
         """
         Adjust all of the conductances and the cell size according to the species requested.
         Used ONLY for point models.
@@ -220,10 +284,15 @@ class OctopusRothman(Octopus, Cell):
         silent : boolean (default: True)
             run silently (True) or verbosely (False)
         """
+        assert self.scaled is False  # block double scaling!
+        self.scaled = True
+
         soma = self.soma
 
-        if species == 'guineapig' and modelType =='II-o':
+        if self.status['species'] == 'guineapig' and self.status['modelType'] =='II-o':
             self.c_m = 0.9
+            self.i_test_range = {'pulse': (-4.0, 4.0, 0.2)}
+            self.vrange = [-70., -57.]  # set a default vrange for searching for rmp
             self.set_soma_size_from_Cm(25.0)
             self._valid_temperatures = (22., 38.)
             if self.status['temperature'] is None:
@@ -232,20 +301,20 @@ class OctopusRothman(Octopus, Cell):
             if self.status['temperature'] == 38.:  # adjust for 2003 model conductance levels at 38
                 sf = 3.03  # Q10 of 2, 22->38C. (p3106, R&M2003c)
                 # note that kinetics are scaled in the mod file.
-#            self.print_soma_info()
             self.adjust_na_chans(soma, sf=sf)
             soma().kht.gbar = sf*nstomho(150.0, self.somaarea)  # 6.1 mmho/cm2
             soma().klt.gbar = sf*nstomho(1000.0, self.somaarea)  #  40.7 mmho/cm2  3195?
             soma().ihvcn.gbar = sf*nstomho(30.0, self.somaarea)  # 7.6 mmho/cm2, cf. Bal and Oertel, Spencer et al. 25 u dia cell 40ns?
             soma().leak.gbar = sf*nstomho(2.0, self.somaarea)
             self.axonsf = 1.0
-        elif species == 'mouse' and modelType =='II-o':
+        elif self.status['species'] == 'mouse' and self.status['modelType'] =='II-o':
+            self.i_test_range = {'pulse': (-4.0, 4.0, 0.2)}
+            self.vrange = [-70., -57.]  # set a default vrange for searching for rmp
             self.set_soma_size_from_Cm(25.0)
             self._valid_temperatures = (34., )
             if self.status['temperature'] is None:
                 self.set_temperature(34.)
-#            self.print_soma_info()
-            self.adjust_na_chans(soma, gbar=3000.)
+            self.adjust_na_chans(soma, sf=1.0)
             soma().kht.gbar = nstomho(150.0, self.somaarea)  # 6.1 mmho/cm2
             soma().klt.gbar = nstomho(3196.0, self.somaarea)  #  40.7 mmho/cm2
             soma().hcnobo.gbar = nstomho(40.0, self.somaarea)  # 7.6 mmho/cm2, cf. Bal and Oertel, Spencer et al. 25 u dia cell
@@ -253,59 +322,17 @@ class OctopusRothman(Octopus, Cell):
             self.axonsf = 1.0
         else:
             raise ValueError('Species "%s" or species-type "%s" is not recognized for octopus cells' %  (species, type))
-        self.status['species'] = species
-        self.status['modelType'] = modelType
-#        self.cell_initialize(showinfo=True)
         self.check_temperature()
-        if not silent:
-            print('set cell as: ', species)
-            print(' with Vm rest = %6.3f' % self.vm0)
 
-    def adjust_na_chans(self, soma, sf=1.0, gbar=1000., debug=False):
-        """
-        adjust the sodium channel conductance
-        
-        Parameters
-        ----------
-        soma : neuron section object
-            a soma object whose sodium channel complement will have it's 
-            conductances adjusted depending on the channel type
-        
-        gbar : float (default: 1000.)
-            the maximal conductance for the sodium channel
-        
-        debug : boolean (false):
-            verbose printing
-            
-        Returns
-        -------
-        Nothing
-        """
-        
-        if self.status['ttx']:
-            gnabar = 0.0
-        else:
-            gnabar = sf* nstomho(gbar, self.somaarea)  # mmho/cm2 - 4244.1 moh - 4.2441
-        nach = self.status['na']
-        if nach == 'jsrna':
-            soma().jsrna.gbar = gnabar
-            soma.ena = self.e_na
-            if debug:
-                print('octopus using jsrna, gbar: ', soma().jsrna.gbar)
-        elif nach == 'nav11':
-            soma().nav11.gbar = gnabar
-            soma.ena = self.e_na
-            soma().nav11.vsna = 4.3
-            if debug:
-                print("octopus using inva11, gbar:", soma().nav11.gbar)
-        elif nach in ['na', 'nacn']:
-            soma().nacn.gbar = gnabar
-            soma.ena = self.e_na
-            if debug:
-                print('octopus cell using na/nacn, gbar: ', soma().na.gbar)
-        else:
-            raise ValueError('Sodium channel %s is not recognized for octopus cells', nach)
 
+"""
+*****************************************************************************************************************************
+
+****************The following is experimental code and has not been fully tested or integrated ******************************
+
+In other words, use at your own risk.
+*****************************************************************************************************************************
+"""
 
 class OctopusSpencer(Octopus, Cell):
     """
@@ -360,7 +387,7 @@ class OctopusSpencer(Octopus, Cell):
         super(OctopusSpencer, self).__init__()
         if modelType == None:
             modelType = 'Spencer'
-        self.status = {'soma': True, 'axon': False, 'dendrites': False, 'pumps': False,
+        self.status = {self.somaname: True, 'axon': False, 'dendrites': False, 'pumps': False,
                        'na': nach, 'species': species, 'modelType': modelType, 'ttx': ttx, 'name': 'Octopus',
                         'morphology': morphology, 'decorator': decorator, 'temperature': None}
         self.i_test_range=(-4.0, 6.0, 0.25)
@@ -373,7 +400,7 @@ class OctopusSpencer(Octopus, Cell):
             """
             soma = h.Section(name="Octopus_Soma_%x" % id(self))  # one compartment of about 29000 um2
             soma.nseg = 1
-            self.add_section(soma, 'soma')
+            self.add_section(soma, self.somaname)
             self.set_soma_size_from_Section(self.soma)
             
         else:
@@ -472,7 +499,7 @@ class OctopusSpencer(Octopus, Cell):
             )
             
             self.channelMap = {
-                'soma': {'jsrna': self.gBar.nabar, 'klt': self.gBar.kltbar_soma, 'kht': self.gBar.khtbar_soma,
+                self.somaname: {'jsrna': self.gBar.nabar, 'klt': self.gBar.kltbar_soma, 'kht': self.gBar.khtbar_soma,
                          'hcnobo': self.gBar.ihbar_soma, 'leak': self.gBar.leakbar, },
                 'hillock': {'jsrna': 0., 'klt': self.gBar.kltbar_hillock, 'kht': self.gBar.khtbar_hillock,
                             'hcnobo': self.gBar.ihbar_hillock,
@@ -490,7 +517,7 @@ class OctopusSpencer(Octopus, Cell):
                             }
             # reversal potential map
             self.channelErevMap = {
-                'soma': {'jsrna': 55., 'klt': -70, 'kht': -70,
+                self.somaname: {'jsrna': 55., 'klt': -70, 'kht': -70,
                          'hcnobo': -38, 'leak': -62., },
                 'hillock': {'jsrna': 55., 'klt': -70, 'kht': -70,
                          'hcnobo': -38, 'leak': -62., },

@@ -31,7 +31,7 @@ class Population(object):
         self._post_connections = []  # populations this one connects to
         self._pre_connections = []  # populations connecting to this one
         self._synapsetype = synapsetype
-        # numpy record array with information about each cell in the 
+        # fields are a numpy record array with information about each cell in the 
         # population
         fields = [
             ('id', int),
@@ -205,9 +205,63 @@ class Population(object):
             raise TypeError("Cannot connect population %s to %s; no convergence range specified in data table." % (pop, self))
             
         dist = {'cf': scipy.stats.lognorm(input_range, scale=cf)}
-
+#        print(cf, input_range, dist)
         return size, dist
-    
+
+    def get_sgcsr_array(self, freqs, species='mouse'):
+        """
+        Create an array of length (freqs) (number of SGCs)
+        Each entry is a value indicating the SR group, according to some proportion
+        2 = high, 1 = medium, 0 = low
+        
+        Parameters
+        ----------
+        freqs : nunpy array
+        
+        species : str (default: 'mouse')
+            name of the species for the map.
+        
+        Returns:
+            numpy array
+            An array matched to freqs, with SR's indicated numerically
+        """
+        assert species == 'mouse'  # only mice so far.
+        nhs = np.random.random_sample(freqs.shape[0])  # uniform random distribution across frequency
+        sr_array = np.zeros_like(freqs)  # build array  - initially all low sponts
+        sr_array[np.argwhere(nhs < 0.53)] = 2  # high spont (53% estimated from Taberner and Liberman, 2005)
+        sr_array[np.argwhere((nhs >= 0.53) & (nhs < 0.77))] = 1  # medium spont, about 24% (1-20 sp/sec)
+        # the rest have SR value of 0, corresponding to the low-spont group
+        return(sr_array)
+
+    def select_sgcsr_inputs(self, sr_array, weights):
+        """
+        Subsample the arrays above to create a distribution for cells that might only get
+        a subset of inputs (for example, only msr and lsr fibers)
+        
+        Parameters
+        ----------
+        sr_array : numpy array
+            the SR array to draw the samples from
+        
+        weights : 3 element list
+            Weights for [lsr, msr, hsr] ANFs. Proportions will be computed
+            from these weights (e.g., [1,1,1] is uniform for all fibers)
+            weights of [1,1,0] means all hsr fibers will be masked
+        
+        Returns:
+            numpy array of "dist"
+                Values of 0 are sgcs masked from input, 1 are ok
+        """
+        assert len(weights) == 3
+        
+        dist = np.zeros_like(sr_array)  # boolean array, all values
+        norm_wt = 3.0*np.array(weights/np.sum(weights))  # fraction from within each group
+        for i in range(len(weights)):
+            dx = np.where(sr_array == i)[0]
+            ind = np.random.choice(len(dx), int(norm_wt[i]*len(dx)))
+            dist[dx[ind]] = 1
+        return dist
+        
     def _get_cf_array(self, species):
         """Return the array of CF values that should be used when instantiating
         this population. 
@@ -219,7 +273,7 @@ class Population(object):
         fmax = data.get('populations', species=species, cell_type=self.type, field='cf_max')
         s = (fmax / fmin) ** (1./size)
         freqs = fmin * s**np.arange(size)
-        
+#        print('frqs #: ', len(freqs))
         # Cut off at 40kHz because the auditory nerve model only goes that far :(
         freqs = freqs[freqs<=40e3]
         
@@ -254,7 +308,8 @@ class Population(object):
         full_dist = np.ones(len(self._cells))
         nearest = None
         nearest_field = None
-        for field, dist in kwds.items():
+        for field, dist in list(kwds.items()):
+        # for field, dist in kwds.items():
             if np.isscalar(dist):
                 if nearest is not None:
                     raise Exception("May not specify multiple single-valued selection criteria.")
@@ -272,7 +327,7 @@ class Population(object):
                 raise TypeError("Distributed criteria must be array or rv_frozen.")
                 
         # Select cells nearest to the requested value, but only pick from 
-        # cells with nonzero probability. 
+        # cells with nonzero probability.
         if nearest is not None:
             cells = []
             mask = full_dist == 0
@@ -296,7 +351,6 @@ class Population(object):
                 if len(u) > 0:
                     cell = u[0,0]
                     cells.append(cell)
-            
         if create:
             self.create_cells(cells)
         

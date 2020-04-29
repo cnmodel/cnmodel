@@ -1,6 +1,13 @@
 # -*- encoding: utf-8 -*-
 from ._db import add_table_data
 
+# sgc old weights:
+             # bushy             tstellate          dstellate         octopus         pyramidal      tuberculoventral
+# weight       0.027 [12]        0.006 [12]         0.00064 [12]      0.0011 [12]     0.0023 [12]    0.0029 [12]
+# tau1         0.1 [5]           0.1 [5]            0.2 [5]           0.1 [5]         0.1 [5]        0.1 [5]
+# tau2         0.3 [5]           0.3 [5]            0.5 [5]           0.3 [5]         0.3 [5]        0.3 [5]
+# erev         0   [5]           0   [5]            0   [5]           0   [5]         0   [5]        0   [5]
+
 add_table_data('sgc_synapse', row_key='field', col_key='post_type', 
                species='mouse', data=u"""
 
@@ -15,20 +22,23 @@ at +40 mV (see below)
 
 n_rsites is the number of release sites per SGC terminal.
 
------------------------------------------------------------------------------------------------------------------------------------
-             bushy             tstellate          dstellate         octopus         pyramidal      tuberculoventral
-                                                                                                                    
-AMPA_gmax    21.05±15.4 [1]    4.6±3.1 [2]        0.49±0.29 [7]     0.87±0.23 [3]   0.6±0.3 [8]    2.2±1.5 [8]
-AMPAR_gmax   4.6516398 [10]    4.632848  [10]     1.7587450 [10]    16.975147 [10]  0.9 [8]        2.2  [8]
-NMDA_gmax    10.8±4.6 [1]      2.4±1.6 [2]        0.552±0.322 [7]   0.17±0.046 [3]  0.4±0.33 [8]   2.4±1.6 [8]
-NMDAR_gmax   0.4531933 [10]    1.2127097 [10]     0.9960820 [10]    0.6562702 [10]  0.2 [8]        1.2127097 [8]
-NMDAR_vsh    -15.0 [12]        -15.0 [12]         -15.0 [12]        -15.0 [12]      -15.0 [12]     -15.0 [12]
-NMDAR_vshift 0.0   [12]        0.0   [12]         0.0   [12]        0.0   [12]      0.0   [12]     0.0   [12]
-EPSC_cv      0.12 [8]          0.499759 [9]       0.886406 [9]      1.393382 [9]    0.499 [8]      0.499 [8]
-Pr           1.000 [11]        1.000 [11]         1.000 [11]        1.000 [11]      1.000 [8]      1.000 [8]
-n_rsites     100 [5]           4 [6]              1 [4]             1 [4]           2 [8]          2 [8]
-weight       0.027 [12]        0.006 [12]         0.00064 [12]      0.0011 [12]     0.0023 [12]    0.0029 [12]
------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------
+                  bushy             tstellate         dstellate         octopus           pyramidal         tuberculoventral  cartwheel                                                                                                                    
+                                                                                                            
+AMPA_gmax         21.05±15.4 [1]    4.6±3.1 [2]       0.49±0.29 [7]     0.87±0.23 [3]     0.6±0.3 [8]       2.2±1.5 [8]       0
+AMPAR_gmax        4.6516398 [10]    4.632848  [10]    1.7587450 [10]    16.975147 [10]    0.9 [8]           2.2  [8]          0
+NMDA_gmax         10.8±4.6 [1]      2.4±1.6 [2]       0.552±0.322 [7]   0.17±0.046 [3]    0.4±0.33 [8]      2.4±1.6 [8]       0
+NMDAR_gmax        0.4531933 [10]    1.2127097 [10]    0.9960820 [10]    0.6562702 [10]    0.2 [8]           1.2127097 [8]     0
+NMDAR_vshift      0.0   [12]        0.0   [12]        0.0   [12]        0.0   [12]        0.0   [12]        0.0   [12]        0
+EPSC_cv           0.12 [8]          0.499759 [9]      0.886406 [9]      1.393382 [9]      0.499 [8]         0.499 [8]         0
+Pr                1.000 [11]        1.000 [11]        1.000 [11]        1.000 [11]        1.000 [8]         1.000 [8]         0
+n_rsites          100 [5]           4 [6]             1 [4]             1 [4]             2 [8]             2 [8]             0
+delay             0.600             0.600             0.600             0.600             0.600             0.600             0
+weight            0.020377          0.0               0.000457          0.001311          0.000327          0.000808          0
+tau1              0.158             0.174             0.152             0.125             0.167             0.157             0
+tau2              0.246             1.501             1.652             0.251             1.489             1.641             0
+erev              0.0               0.0               0.0               0.0               0.0               0.0               0
+----------------------------------------------------------------------------------------------------------------------------------------
 
 [1] Derived from Cao, X. & Oertel, D. (2010). Single-terminal conductance was
     reported as 21.5±15.4 nS (1.4±1.0 nA at -65 mV). The ratio of NMDA current to 
@@ -132,7 +142,7 @@ weight       0.027 [12]        0.006 [12]         0.00064 [12]      0.0011 [12] 
 [12]  NMDA_vshift is the voltage shift for the activation of the NMDAR's, relative
       to 0 (standard in the NMDA_Kampa model). A negative value shifts the voltage
       dependence to the right (depolarizing).
-      The value of the shift here (-15 mV) was chosen based on an exploration
+      The value of the shift (0 or -15 mV) was chosen based on an exploration
       of fitting functions against the NMDA-Kampa IV curve in an SGC-bushy cell
       model, and comparing them against data. The functions were the modified
       Woodhull function and a Boltzmann function, yielding values of 1.19 mM for 
@@ -143,11 +153,20 @@ weight       0.027 [12]        0.006 [12]         0.00064 [12]      0.0011 [12] 
       an approximate 10-fold difference between AMPA and NMDA conductance in
       mouse bushy cells. An exact fit was not obtained, but no other parameters
       of the NMDA_Kampa model were changed. 
+      ***
+      Removed the follwing line 4/30/2019, as it was confusing.
+      These were the -15 mV shifts. They cause the sgc->busy psd (for example) to fail, 
+      because that was computed with a 0 mV scaling.
+      NMDAR_vsh         -15.0 [12]        -15.0 [12]        -15.0 [12]        -15.0 [12]        -15.0 [12]        -15.0 [12]        0
+      
    
 [13]  weight is the weight to use in a netcon object (NEURON) for "simple"
-      synapses based on the exp2syn mechanism. These are ~ AMPAR_gmax * 
-      0.065*2e-2, to approximate the current injected by the multisite
-      synapse.
+      synapses based on the exp2syn mechanism.
+      Parameters Weight, tau1, tau2, delay and erev from comare_simple_multisynapses 
+      run and curve fitting (all cells)
+
+[14]  Tstellate weight to match AMPA multisite input:
+      0.003679
 """)
 
 
@@ -220,7 +239,7 @@ Kinetic parameters correspond to variables as described by Dittman et al.
 
 F: ~ Resting release probability
 
-------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------
              bushy             tstellate         dstellate        pyramidal     octopus        tuberculoventral
                                                                                
 F            0.29366 [1]       0.43435 [1]       0.43435 [2]      0.43435 [1]   0.29366 [14]   0.43435 [1]   
@@ -235,7 +254,7 @@ tauf         9.75 [1]          11.38 [1]         11.38 [2]        11.38 [1]     
 dD           0.57771 [1]       2.46535 [1]       2.46535 [2]      2.46535 [1]   0.57771 [14]   2.46535 [1]   
 dF           0.60364 [1]       1.44543 [1]       1.44543 [2]      1.44543 [1]   0.60364 [14]   1.44543 [1]   
 
-------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------
 
 [1] Xie & Manis 2013, Table 1. Although independently measured in > P30 CBA/CaJ mice,
     the values are similar to the measurements from Yang and Xu-Friedman, 2008
@@ -277,11 +296,132 @@ XMax         0.733 [1]    0.731 [1]        0.731 [1]     0.731 [2]         0.731
 
 """)
 
+add_table_data('dstellate_synapse', row_key='field', col_key='post_type', 
+                species='mouse', data=u"""
 
-# Mouse data
-# TV conductance onto pyr cells: 2.1 nS SD 2.9 nS (Kuo et al., 2012)
-# TV conductance onto TV cells: 1.8 ns SD 2.3 nS.
-#
+DStellate Synapse values
+gly_gmax is the default value in the program (scaled by Po for the receptors). See synapses/gly_psd.py
+IPSC_cv is the coefficient of variation of the IPSC. (Not currently used in the model)
+Pr is the release probabilty (not currently used); built into release mechanism for multisite synapses.
+n_rsites is the number of release sites per dstellate terminal.
+
+---------------------------------------------------------------------------------------------------------------------------------------
+                  bushy             tstellate         dstellate         octopus           pyramidal         tuberculoventral  cartwheel
+                                                                                                                              
+gly_gmax          2.5 [1]           1.0 [5]           1.0 [2]           0. [2]            2.0 [3]           2.0 [3]           0±0 [2]
+IPSC_cv           0.3 [3]           0.3 [3]           0.3 [3]           0.3 [3]           0.3 [3]           0.3 [3]           0.3 [3]    
+Pr                1.000 [4]         1.000 [4]         1.000 [4]         1.000 [4]         1.000 [4]         1.000 [4]         1.000 [4]  
+n_rsites          10 [5]            5 [5]             5 [5]             0 [2]             5 [5]             25 [5]            0 [2]      
+delay             0.000             0.000             0.000             0                 0.000             0.000             0
+weight            0.004131          0.004455          0.0               0                 0.002228          0.012097          0
+tau1              0.187             0.152             0.152             0                 0.152             0.152             0
+tau2              7.953             1.247             1.247             0                 1.247             1.247             0
+erev              -70.0             -70.0             -70.0             0                 -70.0             -70.0             0
+---------------------------------------------------------------------------------------------------------------------------------------
+
+[1] Estimate
+
+[2] No evidence for dstellate inputs to other d stellate cells or cartwheel cells.
+    Octopus cells do not get inhibitory input
+    
+[3] Guess
+
+[4] Default value
+
+[5] Guess *educated* DS->TS from Xie and Manis, 2013. 99 pA mini @ 50 mV driving ~ 2 nS
+
+[6] delay from pre to post; default is 0
+
+[7] Parameters Weight, tau1, tau2, delay and erev from comare_simple_multisynapses run and curve fitting (all cells)
+
+""")
+
+
+
+add_table_data('tuberculoventral_synapse', row_key='field', col_key='post_type', 
+                species='mouse', data=u"""
+
+Tuberculventral Synapse values
+gly_gmax is the default value in the program (scaled by Po for the receptors). See synapses/gly_psd.py
+IPSC_cv is the coefficient of variation of the IPSC. (Not currently used in the model)
+Pr is the release probabilty (not currently used)
+n_rsites is the number of release sites per tuberculoventral terminal.
+
+-----------------------------------------------------------------------------------------------------------------------------------
+                  bushy             tstellate         dstellate         octopus           pyramidal         tuberculoventral  cartwheel
+                                                                                                                              
+gly_gmax          5.0 [3]           3.0 [3]           3.0 [3]           0. [2]            2.1±2.9 [6]       1.8±2.3 [6]       0±0 [6]
+IPSC_cv           0.3 [3]           0.3 [3]           0.3 [3]           0.3 [3]           1.0 [3]           0.3 [3]           0.3 [3]    
+Pr                1.000 [4]         1.000 [4]         1.000 [4]         1.000 [4]         1.000 [4]         1.000 [4]         1.000 [4]  
+n_rsites          6 [5]             6 [5]             0 [1]             0 [2]             6 [5]             6 [5]             6 [5]      
+delay             0.600             0.600             0                 0                 0.600             0.600             0
+weight            0.002371          0.008114          0                 0                 0.002705          0.002705          0
+tau1              0.190             0.149             0                 0                 0.149             0.149             0
+tau2              7.952             1.250             0                 0                 1.250             1.250             0
+erev              -70.0             -70.0             0                 0                 -70.0             -70.0             0
+-----------------------------------------------------------------------------------------------------------------------------------
+
+[1] Default value from GlyPSD
+
+[2] No evidence for tuberculo inputs to other d stellate cells or cartwheel cells.
+    Octopus cells do not get inhibitory input
+    
+[3] Guess
+
+[4] Default value
+
+[5] Guess
+
+[6] Mouse data
+    TV conductance onto pyr cells: 2.1 nS SD 2.9 nS (Kuo et al., 2012)
+    TV conductance onto TV cells: 1.8 ns SD 2.3 nS.
+
+[7] Parameters Weight, tau1, tau2, delay and erev from comare_simple_multisynapses run and curve fitting (all cells)
+    Fitting done against 200 rep average for bushy, 500 rep average for all others.
+
+""")
+
+add_table_data('cartwheel_synapse', row_key='field', col_key='post_type', 
+                species='mouse', data=u"""
+
+Cartwheel cell synapse values
+gly_gmax is the default value in the program (scaled by Po for the receptors). See synapses/gly_psd.py
+IPSC_cv is the coefficient of variation of the IPSC. (Not currently used in the model)
+Pr is the release probabilty (not currently used)
+n_rsites is the number of release sites per cartwheel cell terminal.
+
+-----------------------------------------------------------------------------------------------------------------------------------
+             bushy             tstellate          dstellate         octopus         pyramidal      tuberculoventral  cartwheel
+                                                                                                                
+gly_gmax     0.0 [3]           0.0 [3]            0.0 [3]           0. [2]          2.1±2.9 [6]    0±0 [6]           1.8±2.3 [6]    
+IPSC_cv      0.3 [3]           0.3 [3]            0.3 [3]           0.3 [3]         1.0 [3]        0.3 [3]           0.3 [3]       
+Pr           1.000 [4]         1.000 [4]          1.000 [4]         1.000 [4]       1.000 [4]      1.000 [4]         1.000 [4]       
+n_rsites     6 [5]             6 [5]              0 [1]             0 [2]           6 [5]          6 [5]             6 [5]            
+delay        0 [7]             0                  0                 0               0              0                 0
+weight       0.01              0.01               0.01              0.0             0.01           0.01              0.01 
+tau1         0.3 [5]           0.3 [5]            0.3 [5]           0.3 [5]         0.3 [5]        0.3 [5]           0.3 [5]
+tau2         2.0 [5]           2.0 [5]            2.0 [5]           2.0 [5]         2.0 [5]        2.0 [5]           2.0 [5]
+erev         -70 [5]           -70 [5]            -70 [5]           -70 [5]         -70 [5]        -70 [5]           -70 [5]
+-----------------------------------------------------------------------------------------------------------------------------------
+
+[1] Default value from GlyPSD
+
+[2] No evidence for cartwheel inputs to Dstellate, bushy or tstellate cells.
+    Octopus cells do not get inhibitory input
+    
+[3] Guess
+
+[4] Default value
+
+[5] Guess
+
+[6] Mouse data
+    TV conductance onto pyr cells: 2.1 nS SD 2.9 nS (Kuo et al., 2012)
+    TV conductance onto TV cells: 1.8 ns SD 2.3 nS.
+
+[7] delay from pre to post; default is just 0
+
+""")
 
 add_table_data('bushy_synapse', row_key='field', col_key='post_type', 
                species='mouse', data=u"""
@@ -306,8 +446,9 @@ NMDA_gmax    0 [3]
 NMDAR_gmax   0 [3]
 EPSC_cv      0.12 [4]      
 Pr           1.000 [5]    
-n_rsites     36 [6]         
-
+n_rsites     50 [6]         
+weight       0.01
+delay        0
 -----------------------------------------------------------------------------------------------------------------------------------
 
 [1] Taken from the mouse bushy cell model.

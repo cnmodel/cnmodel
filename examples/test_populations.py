@@ -17,32 +17,50 @@ of connectivity in the cochlear nucleus. A lower-level approach is demonstrated
 in test_synapses.py, in which the individual pre- and postsynaptic cells are
 manually created and connected.
 """
+import sys
+import argparse
+
 from cnmodel import populations
 from cnmodel.protocols import PopulationTest
 import pyqtgraph as pg
-import sys
+
 
 def testpopulation():
-    if len(sys.argv) < 3:
-        print("Usage:  python test_populations.py <pre_celltype> <post_celltype>")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="test simple synapses")
+    parser.add_argument(
+        "cells",
+        type=str,
+        nargs=2,
+        choices=[
+            "sgc",
+            "bushy",
+            "tstellate",
+            "dstellate",
+            "tuberculoventral",
+            "pyramidal",
+        ],
+        help="Specify source and target cells.",
+    )
+    args = parser.parse_args()
 
     pop_types = {
-        'sgc': populations.SGC,
-        'bushy': populations.Bushy,
-        'tstellate': populations.TStellate,
-        'dstellate': populations.DStellate,
-        'pyramidal': populations.Pyramidal,
-        'tuberculoventral': populations.Tuberculoventral,
-        }
+        "sgc": populations.SGC,
+        "bushy": populations.Bushy,
+        "tstellate": populations.TStellate,
+        "dstellate": populations.DStellate,
+        "pyramidal": populations.Pyramidal,
+        "tuberculoventral": populations.Tuberculoventral,
+    }
 
     pops = []
-    for cell_type in sys.argv[1:3]:
+    for cell_type in args.cells:
         if cell_type not in pop_types:
-            print('\nUnsupported cell type: "%s". Options are %s' % (cell_type, list(pop_types.keys())))
+            print(
+                '\nUnsupported cell type: "%s". Options are %s'
+                % (cell_type, list(pop_types.keys()))
+            )
             sys.exit(-1)
         pops.append(pop_types[cell_type]())
-
 
     pt = PopulationTest()
     pt.run(pops)
@@ -51,5 +69,6 @@ def testpopulation():
     if sys.flags.interactive == 0:
         pg.QtGui.QApplication.exec_()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     testpopulation()

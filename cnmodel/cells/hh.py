@@ -39,6 +39,6 @@ class HH(Cell):
             else:
                 print( message)
         
-        self.add_section(soma, 'soma')
+        self.add_section(soma, self.somaname)
         
         self.vm0 = -67.536

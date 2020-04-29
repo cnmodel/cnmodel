@@ -1,12 +1,15 @@
 from __future__ import print_function
-from neuron import h
-import neuron
-import collections
-import numpy as np
-import pyqtgraph as pg
+
 import os
 import re
-import os.path
+from pathlib import Path
+import collections
+import numpy as np
+
+from neuron import h
+import neuron
+import pyqtgraph as pg
+
 try:
   basestring
 except NameError:
@@ -26,12 +29,14 @@ class HocReader(object):
         
         self.file_loaded = False
         if isinstance(hoc, basestring):
-            fullfile = os.path.join(os.getcwd(), hoc)
-            if not os.path.isfile(fullfile):
-                raise Exception("File not found: %s" % (fullfile))
-            success = neuron.h.load_file(1, fullfile)
+            fullfile = Path(hoc) # path.join(os.getcwd(), hoc)
+            if not fullfile.is_file():
+                raise Exception("File not found: %s" % (str(fullfile)))
+            neuron.h.hoc_stdout('/dev/null')  # prevent junk from printing while reading the file
+            success = neuron.h.load_file(str(fullfile))
+            neuron.h.hoc_stdout()
             if success == 0: # indicates failure to read the file
-                raise NameError("Found file, but NEURON load failed: %s" % (fullfile))
+                raise NameError("Found file, but NEURON load failed: %s" % (str(fullfile)))
             self.file_loaded = True
             self.h = h # save a copy of the hoc object itself.
         else:
@@ -75,6 +80,16 @@ class HocReader(object):
 
         # generate topology
         self._generate_topology()
+
+    def find_sec_group(self, secname):
+        """
+        Find which group a section belongs to
+        """
+        for group in self.sec_groups:
+            secs = self.get_section_group(group)
+            if secname in secs:
+                return group
+        return None
 
     def get_section(self, sec_name):
         """
@@ -176,7 +191,8 @@ class HocReader(object):
             gmech = 0.
         return np.mean(gmech)
 
-    def get_sec_info(self, section):
+
+    def get_sec_info(self, section, html=False):
         """
         Get the info of the given section
         modified from: neuronvisio
@@ -191,24 +207,34 @@ class HocReader(object):
         str
             containing the information, with html formatting.
         """
-
-        info = "<b>Section Name:</b> %s<br/>" %section.name()
-        info += "<b>Length [um]:</b> %f<br/>" % section.L
-        info += "<b>Diameter [um]:</b> %f<br/>" % section.diam
-        info += "<b>Membrane Capacitance:</b> %f<br/>" % section.cm
-        info += "<b>Axial Resistance :</b> %f<br/>" % section.Ra
-        info += "<b>Number of Segments:</b> %f<br/>" % section.nseg
+        if html:
+            br = '   <b>'
+            bre = '</b>'
+            lbrk= '<br/>'
+            li = '<li>'
+            lie = '</li>'
+        else:
+            br = '   '
+            bre = ''
+            li = ''
+            lie = ''
+            lbrk = '\n'
+        info = f"{br:s}Section Name:{bre:s} {section.name():s}{lbrk:s}"
+        info += f"{br:s}Length [um]:{bre:s} {section.L:f}{lbrk:s}"
+        info += f"{br:s}Diameter [um]:{bre:s} {section.diam:f}{lbrk:s}"
+        info += f"{br:s}Membrane Capacitance:{bre:s} {section.cm:f}{lbrk:s}"
+        info += f"{br:s}Axial Resistance :{bre:s} {section.Ra:f}{lbrk:s}" 
+        info += f"{br:s}Number of Segments:{bre:s} {section.nseg:f}{lbrk:s}"
         mechs = []
         for seg in section:
             for mech in seg:
                 mechs.append(mech.name())
         mechs = set(mechs) # Excluding the repeating ones
 
-        mech_info = "<b>Mechanisms in the section</b><ul>"
+        mech_info = f"{br:s}Mechanisms in the section{bre:s}{lbrk:s}"
         for mech_name in mechs:
-            s = "<li> %s </li>" % mech_name
+            s = f"{li:s} {mech_name:s} {lie:s}"
             mech_info += s
-        mech_info += "</ul>"
         info += mech_info
         return info
 

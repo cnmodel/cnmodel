@@ -6,7 +6,7 @@ Run unit tests for cnmodel
 import os, sys
 import pytest
 
-def runtests():
+def main():
     # Make sure we look for cnmodel here first.
     path = os.path.dirname(__file__)
     sys.path.insert(0, path)
@@ -34,9 +34,13 @@ def runtests():
     if add_path:
         flags.append('cnmodel/')
 
+    # ignore the an cache
+    flags.append('--ignore=cnmodel/an_model/cache/')
+
     # Start tests.
     print("Testing with flags: %s" % " ".join(flags))
     pytest.main(flags)
 
+
 if __name__ == '__main__':
-    runtests()
+    main()
