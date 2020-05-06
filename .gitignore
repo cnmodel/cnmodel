@@ -11,6 +11,8 @@ cnmodel/mechanisms/*.c
 cnmodel/mechanisms/*.o
 cnmodel/an_model/model/*.mexmaci64
 cochleae
+examples/*.pdf
+examples/*.p
 x86_64
 cnmodel/an_model
 doc/build
