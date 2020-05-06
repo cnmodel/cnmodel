@@ -1,0 +1,30 @@
+# cnmodel for Python 3 with basic working environment
+#
+
+black==19.10b0
+Cython==0.29.17
+
+lmfit==0.9.13
+# matlabengineforpython===R2018a
+matplotlib==3.2.0
+matplotlib-scalebar==0.5.1
+# NEURON==7.8.0.119
+nose==1.3.7
+numba==0.43.1
+numpy==1.17.3
+psutil==5.6.7
+
+-e git+https://github.com/pbmanis/pylibrary.git@f16bcbe490e8a11d99792dfd65d3ed18a0cd6756#egg=pylibrary
+
+pyparsing==2.4.0
+-e git+https://github.com/pbmanis/pyqtgraph.git@e3ac16b3a220f76b69bf26c295edf140e2e928b4#egg=pyqtgraph
+
+pytest==4.5.0
+
+resampy==0.2.1
+scipy==1.3.0
+
+pyqt5==5.12.3
+pyqt5-sip==4.19.18
+
+
