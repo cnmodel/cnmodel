@@ -80,11 +80,13 @@ class UserTester(object):
                 assert np.all(inans == enans)
                 mask = ~inans
                 if not np.allclose(info[mask], expect[mask], rtol=self.rtol):
-                    print('\nComparing data array, shapes match: ', info.shape == expect.shape)
-                    print('Model tested: %s, measure: %s' % (self.key, key))
-                    #print( 'args: ', dir(self.args[0]))
-                    print('Array expected: ', expect[mask])
+                    print( '\nComparing data array, shapes match: ', info.shape == expect.shape)
+                    print( 'Model tested: %s, measure: %s' % (self.key, key))
+                    print( 'args: ', dir(self.args[0]))
+                    print( 'Array expected: ', expect[mask])
                     print('Array received: '  , info[mask])
+                    print('args[0]: ', self.args[0])
+                    #self.args[0].print_all_mechs()
                     try:
                         self.args[0].print_all_mechs()
                     except:
