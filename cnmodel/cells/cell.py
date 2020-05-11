@@ -85,6 +85,7 @@ class Cell(object):
         self.inputs = []  # inputs are recorded - synapse object, post_opts and kwds
         self.outputs = []
         self.initial_mechanisms = None
+        self.nsets = 0  # count number of times we have initialized the cell.... should only be 1
         # each cell has the following parameters:
         self.use_morphology = (
             False  # Ths will be true if we are using real morphology from hoc file
@@ -225,9 +226,7 @@ class Cell(object):
             # print '\nmechanisms for section: %s', section
             # self.print_mechs(section)
         self.use_morphology = True
-        self.set_soma_size_from_Section(
-            self.soma
-        )  # this is used for reporting and setting g values...
+        self.set_soma_size_from_soma_Sections()  # this is used for reporting and setting g values...
         if isinstance(self.soma, list):
             self.distances(self.soma[1])
         else:
@@ -1189,10 +1188,17 @@ class Cell(object):
             self.cell_initialize(vrange=vrange)
             custom_init()
         self.computeAreas()
-        gsum = 0.0
+
         soma_sections = self.all_sections[self.somaname]
         # 1e-8*np.pi*soma.diam*soma.L
-        somaarea = np.sum([1e-8 * np.pi * s.L * s.diam for s in soma_sections])
+        # somaarea = np.sum([1e-8 * np.pi * s.L * s.diam for s in soma_sections])
+        self.somaarea = 0.0  # units are um2
+        for sec in soma_sections:
+            # print(f"   segment: {i:d} area={seg.area():.3f}")
+            for seg in sec.allseg():
+                self.somaarea += seg.area()
+        # print(f'{name:s} area: {area:.3f} ')
+        gsum = 0.0  # total condutance in us/cm2
         for sec in soma_sections:
             u = self.get_mechs(sec)
             for m in u:
@@ -1203,9 +1209,10 @@ class Cell(object):
             # print('{0:>12s} : gx '.format(m))
             # convert gsum from us/cm2 to nS using cell area
         #        print ('gsum, self.somaarea: ', gsum, self.somaarea)
-        gs = mho2ns(gsum, self.somaarea)
+        gs = mho2ns(gsum, self.somaarea*1e-8)
         Rin = 1e3 / gs  # convert to megohms
-        tau = Rin * self.totcap * 1e-3  # convert to msec
+        tau = Rin*1e3 * self.totcap*1e-6  # MOhm->Ohm * uF->F, 1e3 convert to msec
+        # print("INIT: gs: ", gs, 'nS  ', self.totcap*1e-6, 'pF ', self.somaarea, 'um2 ', self.somaarea*self.c_m, 'pF')
         return {"Rin": Rin, "tau": tau, "v": self.soma(0.5).v}
 
     def set_soma_size_from_Cm(self, cap):
@@ -1240,7 +1247,17 @@ class Cell(object):
         self.soma.diam = diam
         self.soma.L = diam
 
-    def set_soma_size_from_Section(self, soma):
+    def set_soma_size_from_soma_Sections(self, repeat=False):
+        """
+        Set the soma total cap and area from the seg/section measures
+        Note that we find our own soma sections here... 
+        
+        Parameters
+        repeat : bool (default: False)
+             Allow this to be called repeatedly when adjusting
+             areas. Otherwise, we only allow this to be called ONCE
+             per cell
+        """
         print("Setting soma size from soma section(s) (morphology)")
         self.somaarea = 0.
         for secname in self.all_sections:  # keys for names of section types
@@ -1250,6 +1267,10 @@ class Cell(object):
                     self.somaarea += self._segareasec(sec=sec)                
         self.totcap = self.c_m * self.somaarea * 1e-8  # in uF
         print(f"Soma area: {self.somaarea:9.3f}  Cap: {self.totcap:.4e}")
+        self.nsets += 1
+        if not repeat:
+            if self.nsets > 1:
+                raise ValueError()
 
     def print_soma_info(self):
         print("-" * 40)
