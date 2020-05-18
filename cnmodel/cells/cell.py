@@ -1216,7 +1216,7 @@ class Cell(object):
         """
         if self.use_morphology:
             return  # do not do this if we are using morphology
-        print("Setting soma size from Cm (cap)")
+        # print("Setting soma size from Cm (cap)")
         # assert self.use_morphology is False  # do not reset values if we are using hoc file
         self.totcap = cap
         self.somaarea = self.totcap * 1e-6 / self.c_m  # pf -> uF, cm = 1uf/cm^2 nominal
@@ -1232,7 +1232,7 @@ class Cell(object):
         """
         if self.use_morphology:
             return  # do not do this if we are using morphology
-        print("Setting soma size from Diameter",)
+        # print("Setting soma size from Diameter",)
         # assert self.use_morphology is False  # do not reset values if we are using hoc file
         self.somaarea = 1e-8 * 4.0 * np.pi * (diam / 2.0) ** 2  # in microns^2
         self.totcap = self.c_m * self.somaarea * 1e6
@@ -1241,7 +1241,7 @@ class Cell(object):
         self.soma.L = diam
 
     def set_soma_size_from_Section(self, soma):
-        print("Setting soma size from soma section(s) (morphology)")
+        # print("Setting soma size from soma section(s) (morphology)")
         self.somaarea = 0.
         for secname in self.all_sections:  # keys for names of section types
             s = self.all_sections[secname]  # get all the sections with that name
