@@ -1,0 +1,40 @@
+# cnmodel for Python 3 with basic working environment
+# Used by make_env.sh
+
+black==19.10b0
+Cython==0.29.17
+lmfit==0.9.13
+
+matplotlib==3.2.0
+matplotlib-scalebar==0.5.1
+nose==1.3.7
+numba==0.43.1
+numpy==1.17.3
+psutil==5.6.7
+pyparsing==2.4.0
+pytest==4.5.0
+resampy==0.2.1
+scipy==1.3.0
+pyqt5==5.12.3
+pyqt5-sip==4.19.18
+
+
+seaborn==0.10.1
+dill==0.3.1.1
+xlrd>=1.0.0
+# required for 3d display in pyqtgraph
+PyOpenGL==3.1.5
+# required for mayavi in neuronvis
+vtk==8.1.2
+
+
+-e git+https://github.com/pbmanis/pyqtgraph.git@e3ac16b3a220f76b69bf26c295edf140e2e928b4#egg=pyqtgraph
+-e git+https://github.com/pbmanis/pylibrary.git@f16bcbe490e8a11d99792dfd65d3ed18a0cd6756#egg=pylibrary
+-e git+https://github.com/pbmanis/ephys.git#egg=ephys
+
+# to support montager in ephys package
+Shapely==1.7.0
+imreg_dft>=2.0
+descartes
+mahotas
+-e git+https://github.com/pbmanis/montager.git@578ba75af12bb2321e377451f35921977656041a#egg=montage

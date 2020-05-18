@@ -1,4 +1,8 @@
 from setuptools import setup, find_packages
+import setuptools
+import os, shutil
+
+
 import os
 
 path = os.path.join(os.path.dirname(__file__), 'cnmodel')
@@ -9,7 +13,6 @@ for line in open(os.path.join(path, '__init__.py'), 'r').readlines():
         break
 if version is None:
     raise Exception("Could not read __version__ from cnmodel/__init__.py")
-
 
 setup(name='cnmodel',
       version=version,
@@ -30,8 +33,10 @@ setup(name='cnmodel',
 
       },
       zip_safe=False,
+      data_files=[('mechs', ['x86_64/*'])],  # includes the current compiled mechanisms
+#      cmdclass={'makeneuron': 'Build_Nmodl'},
       classifiers = [
-             "Programming Language :: Python :: 3.6+",
+             "Programming Language :: Python :: 3.7+",
              "Development Status ::  Beta",
              "Environment :: Console",
              "Intended Audience :: Neuroscientists, computational",
