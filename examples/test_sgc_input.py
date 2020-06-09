@@ -27,11 +27,13 @@ from cnmodel import cells
 from cnmodel.util import sound
 from cnmodel.util import custom_init
 
+cellmap = {'bushy': cells.Bushy, 'tstellate': cells.TStellate}
 
 class SGCInputTest(Protocol):
-    def run(self, temp=34.0, dt=0.025, seed=575982035, simulator=None):
+    def run(self, celltype='bushy', temp=34.0, dt=0.025, seed=575982035, simulator=None):
         preCell = cells.DummySGC(cf=4000, sr=2)
-        postCell = cells.Bushy.create()
+        self.celltype = celltype
+        postCell = cellmap[celltype].create() # cells.Bushy.create()
         synapse = preCell.connect(postCell)
         self.pre_cell = preCell
         self.post_cell = postCell
@@ -60,7 +62,7 @@ class SGCInputTest(Protocol):
     def show(self):
         self.win = pg.GraphicsWindow()
         
-        p1 = self.win.addPlot(title='Bushy Vm')
+        p1 = self.win.addPlot(title=f'{self.celltype.capitalize():s} Vm')
         p1.plot(self['t'], self['vm'])
         p2 = self.win.addPlot(title='xmtr', row=1, col=0)
         for i in range(30):
@@ -82,8 +84,11 @@ if __name__ == '__main__':
     simulator = None
     if len(sys.argv) > 1:
         simulator=sys.argv[1]
+    celltype = 'bushy'
+    if len(sys.argv) > 2:
+        celltype = sys.argv[2]
     prot = SGCInputTest()
-    prot.run(simulator=simulator)
+    prot.run(simulator=simulator, celltype=celltype)
     prot.show()
 
     if sys.flags.interactive == 0:
