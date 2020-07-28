@@ -15,7 +15,7 @@ class SynapseTest(Protocol):
     def reset(self):
         super(SynapseTest, self).reset()
 
-    def run(self, pre_sec, post_sec, n_synapses, temp=34.0, dt=0.025, 
+    def run(self, pre_sec, post_sec, n_synapses, temp=34.0, dt=0.025, NP=10,
             vclamp=40.0, iterations=1, tstop=240.0, stim_params=None, synapsetype='multisite', **kwds):
         """ 
         Basic synapse test. Connects sections of two cells with *n_synapses*.
@@ -64,7 +64,7 @@ class SynapseTest(Protocol):
         
         istim = h.iStim(0.5, sec=pre_cell.soma)
         stim = {
-            'NP': 10,
+            'NP': NP,
             'Sfreq': 100.0,
             'delay': 10.0,
             'dur': 0.5,
@@ -375,7 +375,7 @@ class SynapseTest(Protocol):
             ('peak', float),
             ('peak index', int),
         ])
-        events[:] = np.nan
+        # events[:] = np.nan
         
         minLat = 0.0 # minimum latency for an event, in ms
         minStart = int(minLat / self.dt)  # first index relative to pulse to search for psc peak
