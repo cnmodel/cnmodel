@@ -202,8 +202,10 @@ class BushyRothman(Bushy):
                 modelName = 'XM13'
             if modelName == 'XM13':
                 dataset = 'XM13_channels'
-            elif modelName  == 'XM13_nacncoop':
+            elif modelName  in 'XM13_nacncoop':
                 dataset = 'XM13_nacncoop_channels'
+            elif modelName  in 'XM13A_nacncoop':
+                dataset = 'XM13A_nacncoop_channels'
             elif modelName  == 'XM13_nacn':
                 dataset = 'XM13_nacn_channels'
             elif modelName  == 'XM13_nabu':
@@ -281,10 +283,10 @@ class BushyRothman(Bushy):
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ihvcn_gbar', 'leak_gbar']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
-        elif self.status['modelName'] == 'XM13nacncoop':
-            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ihvcn_gbar', 'leak_gbar']:
-                pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
-                    field=g))
+        # elif self.status['modelName'] == 'XM13nacncoop':
+ #            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ihvcn_gbar', 'leak_gbar']:
+ #                pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
+ #                    field=g))
         elif self.status['modelName'] == 'mGBC':
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ihvcn_gbar', 'leak_gbar']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
@@ -293,7 +295,7 @@ class BushyRothman(Bushy):
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ihvcn_gbar', 'leak_gbar']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
-        elif self.status['modelName'] == 'XM13_nacncoop':
+        elif self.status['modelName'] in ['XM13_nacncoop', 'XM13A_nacncoop']:
             for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'klt_gbar', 'ihvcn_gbar', 'leak_gbar']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
@@ -343,6 +345,7 @@ class BushyRothman(Bushy):
             if self.debug:
                 print (f"  Setting conductances for mouse {self.celltype.title():s} cell ({self.status['modelType']})")
 
+            print(self.pars)
             self.vrange = [-68., -50.]  # set a default vrange for searching for rmp
             self.i_test_range = {'pulse': (-1., 1.0, 0.05)}
             self._valid_temperatures = (34., )
