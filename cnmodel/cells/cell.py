@@ -882,17 +882,34 @@ class Cell(object):
             raise ValueError("data table %s lacks keys - does it exist?" % dataset)
         chscale = data._db.get_table_info(decorationmap)
         pars = {}
-        # retrive the conductances from the data set
+        # first find the units of the conductance values
+        units = 'nS' # default units
+        for g in table["field"]:
+            if g == 'units':
+                x = data._db.get(
+                    dataset, species=self.status["species"], model_type=modelType, field=g
+                )
+                if x in ['nS', 'mho/cm2', 'mmho/cm2']:
+                    units = x
+                else:
+                    raise ValueError('Data table units not recognized: ', x)
+        # rNow etrive the conductances from the data set and scale as needed
         for g in table["field"]:
             x = data._db.get(
                 dataset, species=self.status["species"], model_type=modelType, field=g
             )
             if not isinstance(x, float):
                 continue
+            print(x, refarea, g)
             if "_gbar" in g:
-                pars[g] = x / refarea
+                if units == 'nS':  # scale by the default reference area
+                    pars[g] = x / refarea
+                elif units == 'mho/cm2':  # use the absolute value given
+                    pars[g] = x
+                elif units == 'mmho/cm2': # use the value, but convert to mho
+                    pars[g] = x*1e-3  # convert to mho
             else:
-                pars[g] = x
+                pars[g] = x  # just save the parameters
 
         self.channelMap = OrderedDict()
         # print(chscale.keys())
@@ -1266,7 +1283,7 @@ class Cell(object):
                 for sec in s:
                     self.somaarea += self._segareasec(sec=sec)                
         self.totcap = self.c_m * self.somaarea * 1e-8  # in uF
-        print(f"Soma area: {self.somaarea:9.3f}  Cap: {self.totcap:.4e}")
+        # print(f"Original soma area: {self.somaarea:9.3f}  Cap: {self.totcap:.4e}")
         self.nsets += 1
         if not repeat:
             if self.nsets > 1:

@@ -127,6 +127,7 @@ class Decorator():
                 gbar = 0.
                 if parameter == 'gbar':
                     gbar = self.gbarAdjust(cell, sectype, mechname, sec)  # map density by location/distance
+                    print(mechname, gbar)
                     gbar_setup = ('%s_%s' % (self.gbar_mapper[mech], mech))  # map name into .mod file name
                     # if parMap is not None and mech in parMap.keys():  # note, this allows parmap to have elements BESIDES mechanisms
                     #     if verify:
