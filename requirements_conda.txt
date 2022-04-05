@@ -73,7 +73,6 @@ numba==0.43.1
 numpy>=1.21.1
 pandas==0.24.2
 pandocfilters==1.4.2
-paramiko==2.7.1
 parso==0.6.1
 pathspec==0.7.0
 pexpect==4.8.0
