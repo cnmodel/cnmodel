@@ -167,6 +167,10 @@ class Toy(Protocol):
                     "Octopus, II-o",
                     (cells.Octopus, "II-o", "guineapig", (-2.5, 2.5, 11), 22),
                 ),
+                (
+                    "Octopus, II-o",
+                    (cells.Octopus, "II-o", "mouse", (-4, 4, 15),34),
+                ),
                 ("Bushy, II, Mouse", (cells.Bushy, "II", "mouse", (-1, 1.2, 13), 34)),
                 (
                     "TStellate, I-c, Mouse",

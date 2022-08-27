@@ -56,6 +56,11 @@ def test_octopus():
     cell = cells.Octopus.create(species='guineapig', modelType='II-o')
     CellTester('octopus_guineapig-typeII-o', cell)
 
+def test_octopus_mouse():
+    reset(raiseError=False)
+    cell = cells.Octopus.create(species='mouse', modelType='II-o')
+    CellTester('octopus_mouse-typeII-o', cell)
+
 def test_pyramidal():
     reset(raiseError=False)
     cell = cells.Pyramidal.create(species='rat', model='POK', modelType='I')
