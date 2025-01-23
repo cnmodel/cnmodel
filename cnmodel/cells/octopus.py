@@ -181,6 +181,7 @@ class OctopusRothman(Octopus, Cell):
                 modelName = 'XM13'
             if modelName == 'XM13':
                 dataset = 'XM13_channels'
+                temp = 34.0
             elif modelName  == 'XM13nacncoop':
                 dataset = 'XM13_channels_nacncoop'
             else:
@@ -206,17 +207,18 @@ class OctopusRothman(Octopus, Cell):
             self.e_h = -38. # from McGinley et al. 
             self.R_a = 195  # McGinley et al. 
             if self.status['species'] == 'mouse':
-                self.mechanisms = ['klt', 'kht', 'hcnobo', 'leak', self.pars.natype]
+                # self.mechanisms = ['klt', 'kht', 'hcnobo', 'leak', self.pars.natype]
+                self.mechanisms = ['klt', 'kht', 'ihvcn', 'leak', self.pars.natype]
             elif self.status['species'] == 'guineapig':
                 self.mechanisms = ['klt', 'kht', 'ihvcn', 'leak', self.pars.natype]
             for mech in self.mechanisms:
                 self.soma.insert(mech)
             self.soma.ek = self.e_k
             self.soma.ena = self.e_na
-            if self.status['species'] == 'mouse':
-                self.soma().hcnobo.eh = self.e_h
-            else:
-                self.soma().ihvcn.eh = self.e_h
+            # if self.status['species'] == 'mouse':
+            #     self.soma().hcnobo.eh = self.e_h
+            # else:
+            self.soma().ihvcn.eh = self.e_h
             self.soma().leak.erev = self.e_leak
             self.soma.Ra = self.R_a
             self.species_scaling(silent=True)  # set the default type II cell parameters
@@ -253,7 +255,7 @@ class OctopusRothman(Octopus, Cell):
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
         elif self.status['modelName'] == 'XM13':
-            for g in ['%s_gbar' % pars.natype, 'kht_gbar', 'ka_gbar', 'ihvcn_gbar', 'leak_gbar', 'leak_erev', 'ih_eh', 'e_k', 'e_na']:
+            for g in ['%s_gbar' % pars.natype,'klt_gbar', 'kht_gbar', 'ka_gbar', 'ihvcn_gbar', 'leak_gbar', 'leak_erev', 'ih_eh', 'e_k', 'e_na']:
                 pars.additem(g,  data.get(dataset, species=species, model_type=modelType,
                     field=g))
         # elif self.status['modelName'] == 'mGBC':
@@ -310,15 +312,16 @@ class OctopusRothman(Octopus, Cell):
         elif self.status['species'] == 'mouse' and self.status['modelType'] =='II-o':
             self.i_test_range = {'pulse': (-4.0, 4.0, 0.2)}
             self.vrange = [-70., -57.]  # set a default vrange for searching for rmp
-            self.set_soma_size_from_Cm(25.0)
+            self.set_soma_size_from_Cm(self.pars.cap)
             self._valid_temperatures = (34., )
             if self.status['temperature'] is None:
                 self.set_temperature(34.)
             self.adjust_na_chans(soma, sf=1.0)
-            soma().kht.gbar = nstomho(150.0, self.somaarea)  # 6.1 mmho/cm2
-            soma().klt.gbar = nstomho(3196.0, self.somaarea)  #  40.7 mmho/cm2
-            soma().hcnobo.gbar = nstomho(40.0, self.somaarea)  # 7.6 mmho/cm2, cf. Bal and Oertel, Spencer et al. 25 u dia cell
-            soma().leak.gbar = nstomho(2.0, self.somaarea)
+            soma().kht.gbar = nstomho(self.pars.kht_gbar, self.somaarea)  # 6.1 mmho/cm2
+            soma().klt.gbar = nstomho(self.pars.klt_gbar, self.somaarea)  #  40.7 mmho/cm2
+            # soma().hcnobo.gbar = nstomho(40.0, self.somaarea)  # 7.6 mmho/cm2, cf. Bal and Oertel, Spencer et al. 25 u dia cell
+            soma().ihvcn.gbar = nstomho(self.pars.ihvcn_gbar, self.somaarea)  # 7.6 mmho/cm2, cf. Bal and Oertel, Spencer et al. 25 u dia cell 40ns?
+            soma().leak.gbar = nstomho(self.pars.leak_gbar, self.somaarea)
             self.axonsf = 1.0
         else:
             raise ValueError('Species "%s" or species-type "%s" is not recognized for octopus cells' %  (species, type))

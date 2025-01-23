@@ -22,7 +22,8 @@ cnmodel.egg*
 .cache*
 .pytest*
 Figure6*
-
-
+cnmodel/cells/tests/cell_data/*
+cnmode/synapses/tests/test_data/*
+*.dll
 
 
